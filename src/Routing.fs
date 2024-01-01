@@ -6,6 +6,8 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Builder
+open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.OptimizedClosures
 open Microsoft.FSharp.Reflection
 open Oxpecker
 
@@ -22,7 +24,7 @@ module private RouteTemplateBuilder =
         | 'f' -> name, sprintf "{%s:double}" name                   // float
         | _   -> failwithf "%c is not a supported route format character." c
 
-    let convertToRouteTemplate (path : PrintfFormat<_,_,_,_, 'T>) =
+    let convertToRouteTemplate (pathValue : string) =
         let rec convert (i : int) (chars : char list) =
             match chars with
             | '%' :: '%' :: tail ->
@@ -37,9 +39,72 @@ module private RouteTemplateBuilder =
                 c.ToString() + template, mappings
             | [] -> "", []
 
-        path.Value
+        pathValue
         |> List.ofSeq
         |> convert 0
+
+module private RequestDelegateBuilder =
+
+    let tryGetParser (c : char) =
+        let decodeSlashes (s : string) = s.Replace("%2F", "/").Replace("%2f", "/")
+
+        match c with
+        | 's' -> Some (decodeSlashes    >> box)
+        | 'i' -> Some (int              >> box)
+        | 'b' -> Some (bool.Parse       >> box)
+        | 'c' -> Some (char             >> box)
+        | 'd' -> Some (int64            >> box)
+        | 'f' -> Some (float            >> box)
+        | _   -> None
+
+    let private convertToTuple (mappings : (string * char) list) (routeData : RouteData) =
+        let values =
+            mappings
+            |> List.map (fun (placeholderName, formatChar) ->
+                let routeValue = routeData.Values.[placeholderName]
+                match tryGetParser formatChar with
+                | Some parseFn -> parseFn (routeValue.ToString())
+                | None         -> routeValue)
+            |> List.toArray
+
+        let result =
+            match values.Length with
+            | 1 -> values.[0]
+            | _ ->
+                let types =
+                    values
+                    |> Array.map (fun v -> v.GetType())
+                let tupleType = FSharpType.MakeTupleType types
+                FSharpValue.MakeTuple(values, tupleType)
+        result
+
+    let private wrapDelegate f = new RequestDelegate(f)
+
+    let private handleResult (result : HttpContext option) (ctx : HttpContext) =
+        match result with
+        | None   -> ctx.SetStatusCode (int HttpStatusCode.UnprocessableEntity)
+        | Some _ -> ()
+
+    let createRequestDelegate (handler : HttpHandler) =
+        let func : HttpFunc = handler earlyReturn
+        fun (ctx : HttpContext) ->
+            task {
+                let! result = func ctx
+                return handleResult result ctx
+            } :> Task
+        |> wrapDelegate
+
+    let createTokenizedRequestDelegate (mappings : (string * char) list) (tokenizedHandler : 'T -> HttpHandler) =
+        fun (ctx : HttpContext) ->
+            task {
+                let tuple =
+                    ctx.GetRouteData()
+                    |> convertToTuple mappings
+                    :?> 'T
+                let! result = tokenizedHandler tuple earlyReturn ctx
+                return handleResult result
+            } :> Task
+        |> wrapDelegate
 
 [<AutoOpen>]
 module Routers =
@@ -70,6 +135,9 @@ module Routers =
         | TemplateEndpoint of HttpVerb * RouteTemplate * RouteTemplateMappings * (obj -> HttpHandler)  * MetadataList
         | NestedEndpoint   of RouteTemplate * Endpoint list  * MetadataList
         | MultiEndpoint    of Endpoint list
+
+    type Endpoint2 =
+        HttpVerb * RouteTemplate * RequestDelegate * MetadataList
 
     let rec private applyHttpVerbToEndpoint
         (verb     : HttpVerb)
@@ -162,7 +230,7 @@ module Routers =
     let routef
         (path         : PrintfFormat<_,_,_,_, 'T>)
         (routeHandler : 'T -> HttpHandler) : Endpoint =
-        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path
+        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
         let boxedHandler (o : obj) =
             let t = o :?> 'T
             routeHandler t
@@ -175,69 +243,38 @@ module Routers =
 
 
 
+    let routef2
+        (path         : PrintfFormat<'T,unit,unit, HttpHandler>)
+        (routeHandler: 'T) : Endpoint2 =
 
-module private RequestDelegateBuilder =
+        let handlerType = routeHandler.GetType()
+        let handlerMethod = handlerType.GetMethods()[0]
+        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
 
-    let private tryGetParser (c : char) =
-        let decodeSlashes (s : string) = s.Replace("%2F", "/").Replace("%2f", "/")
 
-        match c with
-        | 's' -> Some (decodeSlashes    >> box)
-        | 'i' -> Some (int              >> box)
-        | 'b' -> Some (bool.Parse       >> box)
-        | 'c' -> Some (char             >> box)
-        | 'd' -> Some (int64            >> box)
-        | 'f' -> Some (float            >> box)
-        | _   -> None
 
-    let private convertToTuple (mappings : (string * char) list) (routeData : RouteData) =
-        let values =
-            mappings
-            |> List.map (fun (placeholderName, formatChar) ->
-                let routeValue = routeData.Values.[placeholderName]
-                match tryGetParser formatChar with
-                | Some parseFn -> parseFn (routeValue.ToString())
-                | None         -> routeValue)
-            |> List.toArray
+        let requestDelegate =
+            fun (ctx : HttpContext) ->
+                let routeData = ctx.GetRouteData()
+                let values =
+                    mappings
+                    |> List.map (fun (placeholderName, formatChar) ->
+                        let routeValue = routeData.Values[placeholderName]
+                        match RequestDelegateBuilder.tryGetParser formatChar with
+                        | Some parseFn -> parseFn (routeValue.ToString())
+                        | None         -> routeValue)
+                    |> List.toArray
+                let z = handlerMethod.Invoke(routeHandler, [|
+                    yield! values
+                    earlyReturn
+                    ctx
+                |])
+                z :?> Task
+        HttpVerb.GET, template, requestDelegate, []
 
-        let result =
-            match values.Length with
-            | 1 -> values.[0]
-            | _ ->
-                let types =
-                    values
-                    |> Array.map (fun v -> v.GetType())
-                let tupleType = FSharpType.MakeTupleType types
-                FSharpValue.MakeTuple(values, tupleType)
-        result
 
-    let private wrapDelegate f = new RequestDelegate(f)
 
-    let private handleResult (result : HttpContext option) (ctx : HttpContext) =
-        match result with
-        | None   -> ctx.SetStatusCode (int HttpStatusCode.UnprocessableEntity)
-        | Some _ -> ()
 
-    let createRequestDelegate (handler : HttpHandler) =
-        let func : HttpFunc = handler earlyReturn
-        fun (ctx : HttpContext) ->
-            task {
-                let! result = func ctx
-                return handleResult result ctx
-            } :> Task
-        |> wrapDelegate
-
-    let createTokenizedRequestDelegate (mappings : (string * char) list) (tokenizedHandler : 'T -> HttpHandler) =
-        fun (ctx : HttpContext) ->
-            task {
-                let tuple =
-                    ctx.GetRouteData()
-                    |> convertToTuple mappings
-                    :?> 'T
-                let! result = tokenizedHandler tuple earlyReturn ctx
-                return handleResult result
-            } :> Task
-        |> wrapDelegate
 
 
 type EndpointRouteBuilderExtensions() =
@@ -320,3 +357,13 @@ type EndpointRouteBuilderExtensions() =
                 builder.MapSingleEndpoint(v, t, d, ml)
             | NestedEndpoint (t, e, ml) -> builder.MapNestedEndpoint (t, e, ml)
             | MultiEndpoint (el) -> builder.MapMultiEndpoint ("", el, [])
+
+
+    [<Extension>]
+    static member MapOxpeckerEndpoints2
+        (builder  : IEndpointRouteBuilder,
+        endpoints : Endpoint2 seq) =
+
+        for (v, t, h, l) in endpoints do
+            builder
+                .Map(t, h) |> ignore

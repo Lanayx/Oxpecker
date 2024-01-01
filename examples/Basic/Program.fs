@@ -1,4 +1,5 @@
 ﻿open System
+open System.Threading.Tasks
 open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
@@ -21,6 +22,21 @@ let handler3 (a : string, b : string, c : string, d : int) : HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
         sprintf "Hello %s %s %s %i" a b c d
         |> ctx.WriteTextAsync
+
+let handler5 (firstName : string) (age : int): HttpHandler =
+    fun (_ : HttpFunc) (ctx : HttpContext) ->
+        sprintf "Hello %s, you are %i years old." firstName age
+        |> ctx.WriteTextAsync
+
+let handler6 (firstName : string) (age : string) =
+    fun (_ : HttpFunc) (ctx : HttpContext) ->
+        sprintf "Hello %s, you are %s years old." firstName age
+        |> ctx.WriteTextAsync
+
+
+let xx = routef2 "xx/%s/%i" handler5
+let yy = routef2 "yy/%s/%s" handler6
+
 
 let endpoints =
     [
@@ -49,6 +65,7 @@ let configureApp (appBuilder : IApplicationBuilder) =
     appBuilder
         .UseRouting()
         .UseOxpecker(endpoints)
+        .UseOxpecker2([xx; yy])
     |> ignore
 
 let configureServices (services : IServiceCollection) =
@@ -56,8 +73,18 @@ let configureServices (services : IServiceCollection) =
         .AddRouting()
     |> ignore
 
+
+
+
+
+
 [<EntryPoint>]
 let main args =
+
+
+
+
+
     let builder = WebApplication.CreateBuilder(args)
     configureServices builder.Services
 
@@ -68,5 +95,6 @@ let main args =
 
     configureApp app
     app.Run()
+
 
     0
