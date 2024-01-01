@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9EDF9D3C-DA11-44A2-A20C-4B466FEB7E06}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{40C4900E-D46D-450F-9A93-A2CE2E4EF5CA}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker", "src\Oxpecker.fsproj", "{625D9E19-8077-40D5-B208-23AFAC2B5F75}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{A1BC9EB1-C6D9-470C-B0F6-323814A0D0AC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Basic", "examples\Basic\Basic.fsproj", "{60E2245C-332D-488E-8D2A-95A88A058762}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{625D9E19-8077-40D5-B208-23AFAC2B5F75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{625D9E19-8077-40D5-B208-23AFAC2B5F75}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{625D9E19-8077-40D5-B208-23AFAC2B5F75}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{625D9E19-8077-40D5-B208-23AFAC2B5F75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60E2245C-332D-488E-8D2A-95A88A058762}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60E2245C-332D-488E-8D2A-95A88A058762}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60E2245C-332D-488E-8D2A-95A88A058762}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60E2245C-332D-488E-8D2A-95A88A058762}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{625D9E19-8077-40D5-B208-23AFAC2B5F75} = {9EDF9D3C-DA11-44A2-A20C-4B466FEB7E06}
+		{60E2245C-332D-488E-8D2A-95A88A058762} = {A1BC9EB1-C6D9-470C-B0F6-323814A0D0AC}
+	EndGlobalSection
+EndGlobal
