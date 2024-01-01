@@ -4,6 +4,7 @@ open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Server.Kestrel.Core
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Oxpecker
@@ -15,8 +16,7 @@ let handler1 : HttpHandler =
 
 let handler2 (firstName : string, age : int) : HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
-        sprintf "Hello %s, you are %i years old." firstName age
-        |> ctx.WriteTextAsync
+        ctx.WriteTextAsync "handler2"
 
 let handler3 (a : string, b : string, c : string, d : int) : HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
@@ -25,8 +25,7 @@ let handler3 (a : string, b : string, c : string, d : int) : HttpHandler =
 
 let handler5 (firstName : string) (age : int): HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
-        sprintf "Hello %s, you are %i years old." firstName age
-        |> ctx.WriteTextAsync
+        ctx.WriteTextAsync "handler5"
 
 let handler6 (firstName : string) (age : string) =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
@@ -34,8 +33,7 @@ let handler6 (firstName : string) (age : string) =
         |> ctx.WriteTextAsync
 
 
-let xx = routef2 "xx/%s/%i" handler5
-let yy = routef2 "yy/%s/%s" handler6
+let xx = routef2 "55/%s/%i" handler5
 
 
 let endpoints =
@@ -47,7 +45,7 @@ let endpoints =
         ]
         GET [
             route  "/" (text "Hello World")
-            routef "/%s/%i" handler2
+            routef "22/%s/%i" handler2
             routef "/%s/%s/%s/%i" handler3
         ]
         GET_HEAD [
@@ -65,7 +63,7 @@ let configureApp (appBuilder : IApplicationBuilder) =
     appBuilder
         .UseRouting()
         .UseOxpecker(endpoints)
-        .UseOxpecker2([xx; yy])
+        .UseOxpecker2([xx])
     |> ignore
 
 let configureServices (services : IServiceCollection) =
@@ -74,27 +72,13 @@ let configureServices (services : IServiceCollection) =
     |> ignore
 
 
-
-
-
-
 [<EntryPoint>]
 let main args =
-
-
-
-
-
-    let builder = WebApplication.CreateBuilder(args)
-    configureServices builder.Services
-
-    let app = builder.Build()
-
-    if app.Environment.IsDevelopment() then
-        app.UseDeveloperExceptionPage() |> ignore
-
-    configureApp app
-    app.Run()
-
+    WebHostBuilder()
+        .UseKestrel()
+        .Configure(configureApp)
+        .ConfigureServices(configureServices)
+        .Build()
+        .Run()
 
     0

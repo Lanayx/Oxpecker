@@ -250,22 +250,18 @@ module Routers =
         let handlerType = routeHandler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
         let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
-
-
+        let arrMappings = mappings |> List.toArray
 
         let requestDelegate =
             fun (ctx : HttpContext) ->
                 let routeData = ctx.GetRouteData()
-                let values =
-                    mappings
-                    |> List.map (fun (placeholderName, formatChar) ->
+                let z = handlerMethod.Invoke(routeHandler, [|
+                    for mapping in arrMappings do
+                        let placeholderName, formatChar = mapping
                         let routeValue = routeData.Values[placeholderName]
                         match RequestDelegateBuilder.tryGetParser formatChar with
-                        | Some parseFn -> parseFn (routeValue.ToString())
-                        | None         -> routeValue)
-                    |> List.toArray
-                let z = handlerMethod.Invoke(routeHandler, [|
-                    yield! values
+                        | Some parseFn -> parseFn (string routeValue)
+                        | None         -> routeValue
                     earlyReturn
                     ctx
                 |])
