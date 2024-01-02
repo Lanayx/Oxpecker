@@ -4,7 +4,6 @@ open Microsoft.AspNetCore
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
-open Microsoft.AspNetCore.Server.Kestrel.Core
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Oxpecker
@@ -14,23 +13,16 @@ let handler1 : HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
         ctx.WriteTextAsync "Hello World"
 
-let handler2 (firstName : string, age : int) : HttpHandler =
+let handler2 (firstName : string) (age : int) : HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
-        ctx.WriteTextAsync "handler2"
+        sprintf "Hello %s, you are %i years old." firstName age
+        |> ctx.WriteTextAsync
 
-let handler3 (a : string, b : string, c : string, d : int) : HttpHandler =
+let handler3 (a : string) (b : string) (c : string) (d : int) : HttpHandler =
     fun (_ : HttpFunc) (ctx : HttpContext) ->
         sprintf "Hello %s %s %s %i" a b c d
         |> ctx.WriteTextAsync
 
-let handler5 (firstName : string) (age : int): HttpHandler =
-    fun (_ : HttpFunc) (ctx : HttpContext) ->
-        ctx.WriteTextAsync "handler5"
-
-let handler6 (firstName : string) (age : string) =
-    fun (_ : HttpFunc) (ctx : HttpContext) ->
-        sprintf "Hello %s, you are %s years old." firstName age
-        |> ctx.WriteTextAsync
 
 let endpoints =
     [
@@ -41,8 +33,8 @@ let endpoints =
         ]
         GET [
             route  "/" (text "Hello World")
-            routef "22/%s:int/%i" handler2
-            routef "/%s/%s/%s/%i" handler3
+            routef "/{%s}/{%i}" handler2
+            routef "/{%s}/{%s}/{%s}/{%i}" handler3
         ]
         GET_HEAD [
             route "/foo" (text "Bar")
@@ -55,17 +47,10 @@ let endpoints =
         ]
     ]
 
-let endpoints2 = [
-    Oxpecker.Routing2.Routers.GET [
-        Oxpecker.Routing2.Routers.routef "55/{%s}/{%i}" handler5
-    ]
-]
-
 let configureApp (appBuilder : IApplicationBuilder) =
     appBuilder
         .UseRouting()
         .UseOxpecker(endpoints)
-        .UseOxpecker2(endpoints2)
     |> ignore
 
 let configureServices (services : IServiceCollection) =
