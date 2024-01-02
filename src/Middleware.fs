@@ -25,6 +25,6 @@ type ApplicationBuilderExtensions() =
     [<Extension>]
     static member UseOxpecker2
         (builder  : IApplicationBuilder,
-        endpoints : Endpoint2 seq) =
+        endpoints : Oxpecker.Routing2.Routers.Endpoint2 seq) =
 
-        builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoints2 endpoints)
+        builder.UseEndpoints(fun builder -> Oxpecker.Routing2.EndpointRouteBuilderExtensions.MapOxpeckerEndpoints2(builder, endpoints))

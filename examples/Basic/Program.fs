@@ -33,7 +33,7 @@ let handler6 (firstName : string) (age : string) =
         |> ctx.WriteTextAsync
 
 
-let xx = routef2 "55/%s/%i" handler5
+let xx = Oxpecker.Routing2.Routers.routef2 "55/{%s}/{%i}" handler5
 
 
 let endpoints =
@@ -45,7 +45,7 @@ let endpoints =
         ]
         GET [
             route  "/" (text "Hello World")
-            routef "22/%s/%i" handler2
+            routef "22/%s:int/%i" handler2
             routef "/%s/%s/%s/%i" handler3
         ]
         GET_HEAD [
@@ -74,11 +74,22 @@ let configureServices (services : IServiceCollection) =
 
 [<EntryPoint>]
 let main args =
-    WebHostBuilder()
-        .UseKestrel()
-        .Configure(configureApp)
-        .ConfigureServices(configureServices)
-        .Build()
-        .Run()
+    // WebHostBuilder()
+    //     .UseKestrel()
+    //     .Configure(configureApp)
+    //     .ConfigureServices(configureServices)
+    //     .Build()
+    //     .Run()
+
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+
+    let app = builder.Build()
+
+    if app.Environment.IsDevelopment() then
+        app.UseDeveloperExceptionPage() |> ignore
+
+    configureApp app
+    app.Run()
 
     0

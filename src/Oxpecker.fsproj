@@ -11,6 +11,7 @@
         <Compile Include="HttpContextExtensions.fs" />
         <Compile Include="Core.fs" />
         <Compile Include="Routing.fs" />
+        <Compile Include="Routing2.fs" />
         <Compile Include="Middleware.fs" />
     </ItemGroup>
 

@@ -1,5 +1,6 @@
-namespace Oxpecker.Routing
+namespace Oxpecker.Routing2
 
+open System
 open System.Net
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
@@ -13,17 +14,6 @@ open Oxpecker
 
 module private RouteTemplateBuilder =
 
-    let private getConstraint (i : int) (c : char) =
-        let name = sprintf "%c%i" c i
-        match c with
-        | 'b' -> name, sprintf "{%s:bool}" name                     // bool
-        | 'c' -> name, sprintf "{%s:length(1)}" name                // char
-        | 's' -> name, sprintf "{%s}" name                          // string
-        | 'i' -> name, sprintf "{%s:int}" name                      // int
-        | 'd' -> name, sprintf "{%s:long}" name                     // int64
-        | 'f' -> name, sprintf "{%s:double}" name                   // float
-        | _   -> failwithf "%c is not a supported route format character." c
-
     let convertToRouteTemplate (pathValue : string) =
         let rec convert (i : int) (chars : char list) =
             match chars with
@@ -32,8 +22,8 @@ module private RouteTemplateBuilder =
                 "%" + template, mappings
             | '%' :: c :: tail ->
                 let template, mappings = convert (i + 1) tail
-                let placeholderName, placeholderTemplate = getConstraint i c
-                placeholderTemplate + template, (placeholderName, c) :: mappings
+                let placeholderName = $"{c}{i}"
+                placeholderName + template, (placeholderName, c) :: mappings
             | c :: tail ->
                 let template, mappings = convert i tail
                 c.ToString() + template, mappings
@@ -46,7 +36,7 @@ module private RouteTemplateBuilder =
 module private RequestDelegateBuilder =
 
     let tryGetParser (c : char) =
-        let decodeSlashes (s : string) = s.Replace("%2F", "/").Replace("%2f", "/")
+        let decodeSlashes (s : string) = s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase)
 
         match c with
         | 's' -> Some (decodeSlashes    >> box)
@@ -135,6 +125,9 @@ module Routers =
         | TemplateEndpoint of HttpVerb * RouteTemplate * RouteTemplateMappings * (obj -> HttpHandler)  * MetadataList
         | NestedEndpoint   of RouteTemplate * Endpoint list  * MetadataList
         | MultiEndpoint    of Endpoint list
+
+    type Endpoint2 =
+        HttpVerb * RouteTemplate * RequestDelegate * MetadataList
 
     let rec private applyHttpVerbToEndpoint
         (verb     : HttpVerb)
@@ -240,6 +233,32 @@ module Routers =
 
 
 
+    let routef2
+        (path         : PrintfFormat<'T,unit,unit, HttpHandler>)
+        (routeHandler: 'T) : Endpoint2 =
+
+        let handlerType = routeHandler.GetType()
+        let handlerMethod = handlerType.GetMethods()[0]
+        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
+        let arrMappings = mappings |> List.toArray
+
+        let requestDelegate =
+            fun (ctx : HttpContext) ->
+                let routeData = ctx.GetRouteData()
+                let z = handlerMethod.Invoke(routeHandler, [|
+                    for mapping in arrMappings do
+                        let placeholderName, formatChar = mapping
+                        let routeValue = routeData.Values[placeholderName]
+                        match RequestDelegateBuilder.tryGetParser formatChar with
+                        | Some parseFn -> parseFn (string routeValue)
+                        | None         -> routeValue
+                    earlyReturn
+                    ctx
+                |])
+                z :?> Task
+        HttpVerb.GET, template, requestDelegate, []
+
+
 type EndpointRouteBuilderExtensions() =
 
     [<Extension>]
@@ -306,17 +325,11 @@ type EndpointRouteBuilderExtensions() =
 
 
     [<Extension>]
-    static member MapOxpeckerEndpoints
+    static member MapOxpeckerEndpoints2
         (builder  : IEndpointRouteBuilder,
-        endpoints : Endpoint seq) =
+        endpoints : Endpoint2 seq) =
 
-        for endpoint in endpoints do
-            match endpoint with
-            | SimpleEndpoint (v, t, h, ml) ->
-                let d = RequestDelegateBuilder.createRequestDelegate h
-                builder.MapSingleEndpoint (v, t, d, ml)
-            | TemplateEndpoint(v, t, m, h, ml) ->
-                let d = RequestDelegateBuilder.createTokenizedRequestDelegate m h
-                builder.MapSingleEndpoint(v, t, d, ml)
-            | NestedEndpoint (t, e, ml) -> builder.MapNestedEndpoint (t, e, ml)
-            | MultiEndpoint (el) -> builder.MapMultiEndpoint ("", el, [])
+        for (v, t, h, l) in endpoints do
+            builder
+                .Map(t, h) |> ignore
+        builder.MapGet("/native", fun (ctx : HttpContext) -> ctx.Response.WriteAsync("Hello World!")) |> ignore
