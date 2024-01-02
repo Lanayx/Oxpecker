@@ -201,6 +201,30 @@ module Routers =
         (endpoints : Endpoint seq) : Endpoint =
         NestedEndpoint (path, endpoints, [||])
 
+    let rec applyBefore
+        (httpHandler  : HttpHandler)
+        (endpoint     : Endpoint) =
+        match endpoint with
+        | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, httpHandler >=> h, ml)
+        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, List.map (applyBefore httpHandler) lst, ml)
+        | MultiEndpoint(lst)               -> MultiEndpoint(List.map (applyBefore httpHandler) lst)
+
+    let rec applyAfter
+        (httpHandler  : HttpHandler)
+        (endpoint     : Endpoint) =
+        match endpoint with
+        | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, h >=> httpHandler, ml)
+        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, List.map (applyAfter httpHandler) lst, ml)
+        | MultiEndpoint(lst)               -> MultiEndpoint(List.map (applyAfter httpHandler) lst)
+
+    let rec addMetadata
+        (metadata: obj)
+        (endpoint: Endpoint) =
+        match endpoint with
+        | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, h, [| metadata; yield! ml |])
+        | NestedEndpoint(t, e, ml)       -> NestedEndpoint(t, e, [| metadata; yield! ml |])
+        | MultiEndpoint(e)               -> MultiEndpoint(Seq.map (addMetadata metadata) e)
+
 type EndpointRouteBuilderExtensions() =
 
     [<Extension>]

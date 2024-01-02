@@ -23,6 +23,30 @@ type HttpFunc = HttpContext -> HttpFuncResult
 /// </summary>
 type HttpHandler = HttpFunc -> HttpFunc
 
+
+/// <summary>
+/// Combines two <see cref="HttpHandler"/> functions into one.
+/// Please mind that both <see cref="HttpHandler"/>  functions will get pre-evaluated at runtime by applying the next <see cref="HttpFunc"/> parameter of each handler.
+/// You can also use the fish operator `>=>` as a more convenient alternative to compose.
+/// </summary>
+/// <param name="handler1"></param>
+/// <param name="handler2"></param>
+/// <param name="final"></param>
+/// <returns>A <see cref="HttpFunc"/>.</returns>
+let compose (handler1 : HttpHandler) (handler2 : HttpHandler) : HttpHandler =
+    fun (final : HttpFunc) ->
+        let func = final |> handler2 |> handler1
+        fun (ctx : HttpContext) ->
+            match ctx.Response.HasStarted with
+            | true  -> final ctx
+            | false -> func ctx
+
+/// <summary>
+/// Combines two <see cref="HttpHandler"/> functions into one.
+/// Please mind that both <see cref="HttpHandler"/> functions will get pre-evaluated at runtime by applying the next <see cref="HttpFunc"/> parameter of each handler.
+/// </summary>
+let (>=>) = compose
+
 /// <summary>
 /// Use earlyReturn to shortcircuit the <see cref="HttpHandler"/> pipeline and return Some HttpContext to the surrounding <see cref="HttpHandler"/> or the Oxpecker middleware (which would subsequently end the pipeline by returning the response back to the client).
 /// </summary>
