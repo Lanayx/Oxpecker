@@ -32,10 +32,6 @@ let handler6 (firstName : string) (age : string) =
         sprintf "Hello %s, you are %s years old." firstName age
         |> ctx.WriteTextAsync
 
-
-let xx = Oxpecker.Routing2.Routers.routef2 "55/{%s}/{%i}" handler5
-
-
 let endpoints =
     [
         subRoute "/foo" [
@@ -59,11 +55,17 @@ let endpoints =
         ]
     ]
 
+let endpoints2 = [
+    Oxpecker.Routing2.Routers.GET [
+        Oxpecker.Routing2.Routers.routef "55/{%s}/{%i}" handler5
+    ]
+]
+
 let configureApp (appBuilder : IApplicationBuilder) =
     appBuilder
         .UseRouting()
         .UseOxpecker(endpoints)
-        .UseOxpecker2([xx])
+        .UseOxpecker2(endpoints2)
     |> ignore
 
 let configureServices (services : IServiceCollection) =
