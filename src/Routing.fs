@@ -54,14 +54,6 @@ module private RequestDelegateBuilder =
         | None   -> ctx.SetStatusCode (int HttpStatusCode.UnprocessableEntity)
         | Some _ -> ()
 
-    let createRequestDelegate (handler : HttpHandler) =
-        let func : HttpFunc = handler earlyReturn
-        fun (ctx : HttpContext) ->
-            task {
-                let! result = func ctx
-                return handleResult result ctx
-            } :> Task
-
 
 [<AutoOpen>]
 module Routers =
@@ -87,7 +79,7 @@ module Routers =
     type Metadata = obj[]
 
     type Endpoint =
-        | SimpleEndpoint   of HttpVerb * RouteTemplate * RequestDelegate * Metadata
+        | SimpleEndpoint   of HttpVerb * RouteTemplate * HttpHandler * Metadata
         | NestedEndpoint   of RouteTemplate * Endpoint seq  * Metadata
         | MultiEndpoint    of Endpoint seq
 
@@ -169,8 +161,7 @@ module Routers =
     let route
         (path     : string)
         (handler  : HttpHandler) : Endpoint =
-        let d = RequestDelegateBuilder.createRequestDelegate handler
-        SimpleEndpoint (HttpVerb.NotSpecified, path, d, [||])
+        SimpleEndpoint (HttpVerb.NotSpecified, path, handler, [||])
 
     let routef
         (path         : PrintfFormat<'T,unit,unit, HttpHandler>)
@@ -190,7 +181,6 @@ module Routers =
                         match RequestDelegateBuilder.tryGetParser formatChar with
                         | Some parseFn -> parseFn (string routeValue)
                         | None         -> routeValue
-                    earlyReturn
                     ctx
                 |])
                 z :?> Task
@@ -206,16 +196,16 @@ module Routers =
         (endpoint     : Endpoint) =
         match endpoint with
         | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, httpHandler >=> h, ml)
-        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, List.map (applyBefore httpHandler) lst, ml)
-        | MultiEndpoint(lst)               -> MultiEndpoint(List.map (applyBefore httpHandler) lst)
+        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, Seq.map (applyBefore httpHandler) lst, ml)
+        | MultiEndpoint(lst)               -> MultiEndpoint(Seq.map (applyBefore httpHandler) lst)
 
     let rec applyAfter
         (httpHandler  : HttpHandler)
         (endpoint     : Endpoint) =
         match endpoint with
         | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, h >=> httpHandler, ml)
-        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, List.map (applyAfter httpHandler) lst, ml)
-        | MultiEndpoint(lst)               -> MultiEndpoint(List.map (applyAfter httpHandler) lst)
+        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, Seq.map (applyAfter httpHandler) lst, ml)
+        | MultiEndpoint(lst)               -> MultiEndpoint(Seq.map (applyAfter httpHandler) lst)
 
     let rec addMetadata
         (metadata: obj)
@@ -252,8 +242,8 @@ type EndpointRouteBuilderExtensions() =
         let routeTemplate = sprintf "%s%s" subRouteTemplate
         for endpoint in endpoints do
             match endpoint with
-            | SimpleEndpoint (v, t, d, ml) ->
-                builder.MapSingleEndpoint(v, routeTemplate t, d, [| yield! ml; yield! parentMetadata|])
+            | SimpleEndpoint (v, t, h, ml) ->
+                builder.MapSingleEndpoint(v, routeTemplate t, h, [| yield! ml; yield! parentMetadata|])
             | NestedEndpoint (t, e, ml) ->
                 builder.MapSeveralEndpoints(routeTemplate t, e, [| yield! ml; yield! parentMetadata|])
             | MultiEndpoint el ->
@@ -266,6 +256,6 @@ type EndpointRouteBuilderExtensions() =
 
         for endpoint in endpoints do
             match endpoint with
-            | SimpleEndpoint (v, t, d, ml) -> builder.MapSingleEndpoint (v, t, d, ml)
+            | SimpleEndpoint (v, t, h, ml) -> builder.MapSingleEndpoint (v, t, h, ml)
             | NestedEndpoint (t, e, ml) -> builder.MapSeveralEndpoints (t, e, ml)
             | MultiEndpoint e -> builder.MapSeveralEndpoints ("", e, [||])
