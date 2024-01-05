@@ -1,7 +1,7 @@
 ﻿open System
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Oxpecker
 open Oxpecker.Routing
@@ -18,8 +18,7 @@ let handler1: EndpointHandler =
     fun ctx -> ctx.WriteTextAsync "Hello World"
 
 let handler2 (firstName: string) (age: int): EndpointHandler =
-    setHttpHeaderMw "foo" "var"
-    >=> _.WriteTextAsync(sprintf "Hello %s, you are %i years old." firstName age)
+    _.WriteTextAsync(sprintf "Hello %s, you are %i years old." firstName age)
 
 let handler3 (a: string) (b: string) (c: string) (d: int): EndpointHandler =
     _.WriteTextAsync(sprintf "Hello %s %s %s %i" a b c d)
@@ -33,8 +32,8 @@ let endpoints =
         ]
         GET [
             route  "/" (text "Hello World")
-            routef "/{%s}/{%i}" handler2
-            routef "/{%s}/{%s}/{%s}/{%i}" handler3
+            routef "/{%s}/{%i}" (fun name age ctx -> (setHttpHeaderMw "foo" "var"  >=> handler2 name age) ctx)
+            routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         ]
         GET_HEAD [
             route "/foo" (text "Bar")
@@ -47,36 +46,19 @@ let endpoints =
         ]
     ]
 
+let notFoundHandler (ctx: HttpContext) =
+    ctx.SetStatusCode 404
+    ctx.WriteTextAsync("Page not found!") :> Task
+
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder
         .UseRouting()
         .UseOxpecker(endpoints)
-    |> ignore
-
-let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-    |> ignore
-
+        .Run(notFoundHandler)
 
 [<EntryPoint>]
 let main args =
-    // WebHostBuilder()
-    //     .UseKestrel()
-    //     .Configure(configureApp)
-    //     .ConfigureServices(configureServices)
-    //     .Build()
-    //     .Run()
-
-    let builder = WebApplication.CreateBuilder(args)
-    configureServices builder.Services
-
-    let app = builder.Build()
-
-    if app.Environment.IsDevelopment() then
-        app.UseDeveloperExceptionPage() |> ignore
-
+    let app = WebApplication.CreateBuilder(args).Build()
     configureApp app
     app.Run()
-
     0

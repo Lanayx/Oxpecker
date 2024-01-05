@@ -1,5 +1,6 @@
 namespace Oxpecker
 
+open System
 open System.Runtime.CompilerServices
 open System.Text
 open Microsoft.AspNetCore.Http
@@ -77,8 +78,22 @@ module Helpers =
     let is5xxStatusCode (statusCode : int) =
         500 <= statusCode && statusCode <= 599
 
+type MissingDependencyException(dependencyName : string) =
+    inherit Exception $"Could not retrieve object of type '%s{dependencyName}' from ASP.NET Core's dependency container."
+
 [<Extension>]
 type HttpContextExtensions() =
+
+    /// <summary>
+    /// Gets an instance of `'T` from the request's service container.
+    /// </summary>
+    /// <returns>Returns an instance of `'T`.</returns>
+    [<Extension>]
+    static member GetService<'T>(ctx : HttpContext) =
+        let t = typeof<'T>
+        match ctx.RequestServices.GetService t with
+        | null    -> raise <| MissingDependencyException t.Name
+        | service -> service :?> 'T
 
     /// <summary>
     /// Sets the HTTP status code of the response.

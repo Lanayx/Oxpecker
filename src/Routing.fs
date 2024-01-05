@@ -32,6 +32,15 @@ module private RouteTemplateBuilder =
         |> convert 0
 
 module private RequestDelegateBuilder =
+    // Kestrel has made the weird decision to
+    // partially decode a route argument, which
+    // means that a given route argument would get
+    // entirely URL decoded except for '%2F' (/).
+    // Hence decoding %2F must happen separately as
+    // part of the string parsing function.
+    //
+    // For more information please check:
+    // https://github.com/aspnet/Mvc/issues/4599
     let stringParse (s: string) = s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase) |> box
     let intParse (s: string) = int s |> box
     let boolParse (s: string) = bool.Parse s |> box
@@ -163,6 +172,8 @@ module Routers =
         (handler : EndpointHandler): Endpoint =
         SimpleEndpoint (HttpVerb.Any, path, handler, Seq.empty)
 
+    exception RouteParseException of string
+
     let routef
         (path        : PrintfFormat<'T,unit,unit, EndpointHandler>)
         (routeHandler: 'T): Endpoint =
@@ -174,22 +185,33 @@ module Routers =
         let requestDelegate =
             fun (ctx: HttpContext) ->
                 let routeData = ctx.GetRouteData()
-                let z = handlerMethod.Invoke(routeHandler, [|
-                    for mapping in arrMappings do
-                        let placeholderName, formatChar = mapping
-                        let routeValue = routeData.Values[placeholderName]
-                        match RequestDelegateBuilder.tryGetParser formatChar with
-                        | Some parseFn -> parseFn (string routeValue)
-                        | None         -> routeValue
-                    ctx
-                |])
-                z :?> Task
+                try
+                    handlerMethod.Invoke(routeHandler, [|
+                        for mapping in arrMappings do
+                            let placeholderName, formatChar = mapping
+                            let routeValue = routeData.Values[placeholderName] |> string
+                            match RequestDelegateBuilder.tryGetParser formatChar with
+                            | Some parseFn ->
+                                try
+                                    parseFn routeValue
+                                with
+                                | :? FormatException ->
+                                    raise <| RouteParseException routeValue
+                            | None ->
+                                routeValue
+                        ctx
+                    |]) :?> Task
+                with
+                | RouteParseException(value) ->
+                    ctx.SetStatusCode 400
+                    ctx.WriteTextAsync $"Url segment value '%s{value}' has invalid format"
+
         SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
 
     let subRoute
         (path     : string)
         (endpoints: Endpoint seq): Endpoint =
-        NestedEndpoint (path, endpoints, [||])
+        NestedEndpoint (path, endpoints, Seq.empty)
 
     let rec applyBefore
         (httpHandler : EndpointHandler)

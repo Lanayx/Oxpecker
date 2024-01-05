@@ -6,10 +6,10 @@ open System.Text
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 
-// Fsharp-friendly alias for RequestDelegate
+/// Fsharp-friendly alias for RequestDelegate
 type EndpointHandler = HttpContext -> Task
 
-// Endpoint middleware is analogue to ASP.NET Core Middleware, but for Endpoint level.
+/// Endpoint middleware is analogue to ASP.NET Core Middleware, but for Endpoint level.
 type EndpointMiddleware = EndpointHandler -> EndpointHandler
 
 let inline compose_opImpl (_ : ^OpImpl) left right =
