@@ -79,7 +79,7 @@ module Routers =
     type Metadata = obj[]
 
     type Endpoint =
-        | SimpleEndpoint   of HttpVerb * RouteTemplate * HttpHandler * Metadata
+        | SimpleEndpoint   of HttpVerb * RouteTemplate * EndpointHandler * Metadata
         | NestedEndpoint   of RouteTemplate * Endpoint seq  * Metadata
         | MultiEndpoint    of Endpoint seq
 
@@ -160,11 +160,11 @@ module Routers =
 
     let route
         (path     : string)
-        (handler  : HttpHandler) : Endpoint =
+        (handler  : EndpointHandler) : Endpoint =
         SimpleEndpoint (HttpVerb.NotSpecified, path, handler, [||])
 
     let routef
-        (path         : PrintfFormat<'T,unit,unit, HttpHandler>)
+        (path         : PrintfFormat<'T,unit,unit, EndpointHandler>)
         (routeHandler : 'T) : Endpoint =
         let handlerType = routeHandler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
@@ -192,7 +192,7 @@ module Routers =
         NestedEndpoint (path, endpoints, [||])
 
     let rec applyBefore
-        (httpHandler  : HttpHandler)
+        (httpHandler  : EndpointHandler)
         (endpoint     : Endpoint) =
         match endpoint with
         | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, httpHandler >=> h, ml)
@@ -200,7 +200,7 @@ module Routers =
         | MultiEndpoint(lst)               -> MultiEndpoint(Seq.map (applyBefore httpHandler) lst)
 
     let rec applyAfter
-        (httpHandler  : HttpHandler)
+        (httpHandler  : EndpointHandler)
         (endpoint     : Endpoint) =
         match endpoint with
         | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, h >=> httpHandler, ml)

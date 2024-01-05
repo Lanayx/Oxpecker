@@ -9,28 +9,37 @@ open Microsoft.Extensions.Hosting
 open Oxpecker
 open Oxpecker.Routing
 
-let handler1 : HttpHandler =
+let handler1 : EndpointHandler =
     fun (ctx : HttpContext) ->
         ctx.WriteTextAsync "Hello World"
 
-let handler2 (firstName : string) (age : int) : HttpHandler =
+let handler2 (firstName : string) (age : int) : EndpointHandler =
     fun (ctx : HttpContext) ->
         ctx.WriteTextAsync(sprintf "Hello %s, you are %i years old." firstName age)
 
-let handler3 (a : string) (b : string) (c : string) (d : int) : HttpHandler =
+let handler3 (a : string) (b : string) (c : string) (d : int) : EndpointHandler =
     fun (ctx : HttpContext) ->
         ctx.WriteTextAsync(sprintf "Hello %s %s %s %i" a b c d)
+
+let setHttpHeaderMw key value : EndpointMiddleware =
+    fun (next : EndpointHandler) (ctx : HttpContext) ->
+        ctx.SetHttpHeader(key, value)
+        task {
+            do! next ctx
+            Console.WriteLine($"Header {key} set")
+        }
+
 
 let endpoints =
     [
         subRoute "/foo" [
             GET [
-                route "/bar" (text "Aloha!")
+                route "/bar" (setHttpHeaderMw "too" "bar" >=> setHttpHeaderMw "foo" "bar" >=> text "Aloha!")
             ]
         ]
         GET [
             route  "/" (text "Hello World")
-            routef "/{%s}/{%i}" handler2
+            routef "/{%s}/{%i}" (fun name age ctx -> (setHttpHeaderMw "foo" "var" >=> handler2 name age) ctx)
             routef "/{%s}/{%s}/{%s}/{%i}" handler3
         ]
         GET_HEAD [
