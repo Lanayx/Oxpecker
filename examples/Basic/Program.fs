@@ -6,6 +6,8 @@ open Microsoft.Extensions.Hosting
 open Oxpecker
 open Oxpecker.Routing
 
+type RequiresAuditAttribute() = inherit Attribute()
+
 let setHttpHeaderMw key value: EndpointMiddleware =
     fun (next: EndpointHandler) (ctx: HttpContext) ->
         ctx.SetHttpHeader(key, value)
@@ -23,6 +25,13 @@ let handler2 (firstName: string) (age: int): EndpointHandler =
 let handler3 (a: string) (b: string) (c: string) (d: int): EndpointHandler =
     _.WriteTextAsync(sprintf "Hello %s %s %s %i" a b c d)
 
+let authHandler: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        if ctx.Request.Path.Value.Contains("closed") then
+            ctx.SetStatusCode 401
+            ctx.WriteTextAsync "Unauthorized"
+        else
+            Task.CompletedTask
 let endpoints =
     [
         subRoute "/foo" [
@@ -44,6 +53,11 @@ let endpoints =
         subRoute "/sub" [
             route "/test" handler1
         ]
+
+        subRoute "/auth" ([
+            route "/open" handler1
+            route "/closed" handler1 |> addMetadata (RequiresAuditAttribute())
+        ] |> List.map (applyBefore authHandler))
     ]
 
 let notFoundHandler (ctx: HttpContext) =
