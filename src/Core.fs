@@ -12,8 +12,8 @@ type EndpointHandler = HttpContext -> Task
 // Endpoint middleware is analogue to ASP.NET Core Middleware, but for Endpoint level.
 type EndpointMiddleware = EndpointHandler -> EndpointHandler
 
-let inline compose_opImpl (_ : ^OpImpl) xs1 xs2 =
-    ((^OpImpl or ^a) :(static member Compose: 'a * 'b -> 'b) (xs1, xs2))
+let inline compose_opImpl (_ : ^OpImpl) left right =
+    ((^OpImpl or ^left) :(static member Compose: ^left * ^right -> ^right) (left, right))
 type Composition =
     static member Compose (handler1: EndpointHandler, handler2: EndpointHandler): EndpointHandler =
         fun (ctx: HttpContext) ->
@@ -46,9 +46,9 @@ type Composition =
                 | false -> resultMiddleware ctx
 
 /// <summary>
-/// Combines two <see cref="EndpointHandler"/> or two <see cref="EndpointMiddleware"/> functions into one. Also can combine middleware with handler
+/// Combines two <see cref="EndpointHandler"/> or two <see cref="EndpointMiddleware"/> functions into one. Also can combine middleware with handler (but not vise versa)
 /// </summary>
-let inline (>=>) xs1 xs2 = compose_opImpl Unchecked.defaultof<Composition> xs1 xs2
+let inline (>=>) left right = compose_opImpl Unchecked.defaultof<Composition> left right
 
 
 /// <summary>

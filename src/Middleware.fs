@@ -14,7 +14,7 @@ type ApplicationBuilderExtensions() =
     /// </summary>
     [<Extension>]
     static member UseOxpecker
-        (builder  : IApplicationBuilder,
-        endpoints : Endpoint seq) =
+        (builder : IApplicationBuilder,
+        endpoints: Endpoint seq) =
 
         builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoints endpoints)
