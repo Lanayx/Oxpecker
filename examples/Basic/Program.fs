@@ -32,6 +32,9 @@ let authHandler: EndpointHandler =
             ctx.WriteTextAsync "Unauthorized"
         else
             Task.CompletedTask
+
+let MY_AUTH = applyBefore authHandler |> Seq.map
+
 let endpoints =
     [
         GET [
@@ -51,10 +54,12 @@ let endpoints =
             ]
         ]
 
-        subRoute "/auth" ([
-            route "/open" handler1
-            route "/closed" handler1 |> addMetadata (RequiresAuditAttribute())
-        ] |> List.map (applyBefore authHandler))
+        subRoute "/auth" (
+            MY_AUTH [
+                route "/open" handler1
+                route "/closed" handler1 |> addMetadata (RequiresAuditAttribute())
+            ]
+        )
     ]
 
 let notFoundHandler (ctx: HttpContext) =
