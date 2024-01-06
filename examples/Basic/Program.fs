@@ -35,6 +35,9 @@ let handler4 (a: MyModel): EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteJson { a with Name = a.Name + "!" }
 
+let handler5 (test1: string) (test2: string) (a: MyModel): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJson {| a with Name = a.Name + "!"; Test = test1 + test2 |}
 
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -50,9 +53,10 @@ let endpoints =
     [
         GET [
             route  "/" (text "Hello World")
-            routef "/{%s}/{%i}" (fun name age ctx -> (setHttpHeaderMw "foo" "var"  >=> handler2 name age) ctx)
+            routef "/{%s}/{%i}" (fun name age -> setHttpHeaderMw "foo" "var" >=> handler2 name age)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
             route "/x" (bindQuery handler4)
+            routef "/x/{%s}/{%s}" (fun test1 test2 -> bindQuery <| handler5 test1 test2)
         ]
         POST [
             route "/x" (bindJson handler4)

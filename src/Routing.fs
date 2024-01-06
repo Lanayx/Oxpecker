@@ -2,12 +2,14 @@ namespace Oxpecker.Routing
 
 open System
 open System.Net
+open System.Reflection
 open System.Runtime.CompilerServices
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Builder
 open Microsoft.FSharp.Core
+open Microsoft.FSharp.Core.OptimizedClosures
 open Oxpecker
 
 module private RouteTemplateBuilder =
@@ -170,6 +172,29 @@ module Routers =
         SimpleEndpoint (HttpVerb.Any, path, handler, Seq.empty)
 
 
+    let private invokeHandler<'T> (ctx: HttpContext) (methodInfo: MethodInfo) (handler: 'T) (mappings: (string*char) array) (routeData: RouteData) =
+        let mappingArguments = seq {
+            for mapping in mappings do
+                let placeholderName, formatChar = mapping
+                let routeValue = routeData.Values[placeholderName] |> string
+                match RequestDelegateBuilder.tryGetParser formatChar with
+                | Some parseFn ->
+                    try
+                        parseFn routeValue
+                    with
+                    | :? FormatException as ex ->
+                        raise <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
+                | None ->
+                    routeValue
+        }
+        let paramCount = methodInfo.GetParameters().Length
+        if paramCount = mappings.Length+1 then
+            methodInfo.Invoke(handler, [| yield! mappingArguments; ctx |]) :?> Task
+        elif paramCount = mappings.Length then
+            let result = methodInfo.Invoke(handler, [| yield! mappingArguments |]) :?> FSharpFunc<HttpContext, Task>
+            result ctx
+        else
+            failwith "Unsupported"
 
     let routef
         (path: PrintfFormat<'T,unit,unit, EndpointHandler>)
@@ -182,21 +207,7 @@ module Routers =
         let requestDelegate =
             fun (ctx: HttpContext) ->
                 let routeData = ctx.GetRouteData()
-                handlerMethod.Invoke(routeHandler, [|
-                    for mapping in arrMappings do
-                        let placeholderName, formatChar = mapping
-                        let routeValue = routeData.Values[placeholderName] |> string
-                        match RequestDelegateBuilder.tryGetParser formatChar with
-                        | Some parseFn ->
-                            try
-                                parseFn routeValue
-                            with
-                            | :? FormatException as ex ->
-                                raise <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
-                        | None ->
-                            routeValue
-                    ctx
-                |]) :?> Task
+                invokeHandler<'T> ctx handlerMethod routeHandler arrMappings routeData
 
         SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
 
