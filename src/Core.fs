@@ -70,7 +70,7 @@ let text (str : string) : EndpointHandler =
 /// <param name="dataObj">The object to be send back to the client.</param>
 /// <param name="ctx"></param>
 /// <typeparam name="'T"></typeparam>
-/// <returns>A Giraffe <see cref="HttpHandler" /> function which can be composed into a bigger web application.</returns>
+/// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
 let json<'T> (dataObj: 'T) : EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteJsonAsync dataObj

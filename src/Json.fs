@@ -7,7 +7,7 @@ module Json =
 
     /// <summary>
     /// Interface defining JSON serialization methods.
-    /// Use this interface to customize JSON serialization in Giraffe.
+    /// Use this interface to customize JSON serialization in Oxpecker.
     /// </summary>
     [<AllowNullLiteral>]
     type ISerializer =
@@ -28,7 +28,7 @@ module SystemTextJson =
     open System.Threading.Tasks
 
     /// <summary>
-    /// <see cref="SystemTextJson.Serializer" /> is an alternaive <see cref="Json.ISerializer"/> in Giraffe.
+    /// <see cref="SystemTextJson.Serializer" /> is an alternaive <see cref="Json.ISerializer"/> in Oxpecker.
     ///
     /// It uses <see cref="System.Text.Json"/> as the underlying JSON serializer to (de-)serialize
     /// JSON content.

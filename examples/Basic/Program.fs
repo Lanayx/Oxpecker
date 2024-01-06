@@ -30,7 +30,7 @@ let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
             ctx.SetStatusCode 401
-            ctx.WriteTextAsync "Unauthorized"
+            json {| Status = "Unauthorized" |} ctx
         else
             Task.CompletedTask
 
