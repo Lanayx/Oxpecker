@@ -2,6 +2,7 @@
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Oxpecker
 open Oxpecker.Routing
@@ -44,7 +45,7 @@ let endpoints =
         ]
         GET_HEAD [
             route "/x"   (text "y")
-            route "/abc" (text "def")
+            route "/abc" (json {| X = "Y" |})
         ]
         // Not specifying a http verb means it will listen to all verbs
         route "/foo" (text "Bar")
@@ -72,9 +73,17 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseOxpecker(endpoints)
         .Run(notFoundHandler)
 
+let configureServices (services: IServiceCollection) =
+    services
+        .AddRouting()
+        .AddOxpecker()
+    |> ignore
+
 [<EntryPoint>]
 let main args =
-    let app = WebApplication.Create(args)
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+    let app = builder.Build()
     configureApp app
     app.Run()
     0

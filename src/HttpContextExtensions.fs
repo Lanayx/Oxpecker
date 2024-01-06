@@ -96,6 +96,14 @@ type HttpContextExtensions() =
         | service -> service :?> 'T
 
     /// <summary>
+    /// Gets an instance of <see cref="Oxpecker.Json.ISerializer"/> from the request's service container.
+    /// </summary>
+    /// <returns>Returns an instance of <see cref="Oxpecker.Json.ISerializer"/>.</returns>
+    [<Extension>]
+    static member GetJsonSerializer(ctx : HttpContext) : Json.ISerializer =
+        ctx.GetService<Json.ISerializer>()
+
+    /// <summary>
     /// Sets the HTTP status code of the response.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
@@ -172,4 +180,19 @@ type HttpContextExtensions() =
     static member WriteTextAsync (ctx : HttpContext, str : string) =
         ctx.SetContentType "text/plain; charset=utf-8"
         ctx.WriteStringAsync str
+
+    /// <summary>
+    /// Serializes an object to JSON and writes the output to the body of the HTTP response.
+    /// It also sets the HTTP Content-Type header to application/json and sets the Content-Length header accordingly.
+    /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="dataObj">The object to be send back to the client.</param>
+    /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
+    [<Extension>]
+    static member WriteJsonAsync<'T> (ctx : HttpContext, dataObj : 'T) =
+        ctx.SetContentType "application/json; charset=utf-8"
+        let serializer = ctx.GetJsonSerializer()
+        serializer.SerializeToBytes dataObj
+        |> ctx.WriteBytesAsync
 
