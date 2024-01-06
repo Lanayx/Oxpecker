@@ -1,7 +1,6 @@
 ﻿[<AutoOpen>]
 module Oxpecker.Middleware
 
-open System
 open System.Runtime.CompilerServices
 open Microsoft.AspNetCore.Builder
 open Oxpecker.Routing

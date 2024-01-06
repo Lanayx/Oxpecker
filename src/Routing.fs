@@ -93,7 +93,7 @@ module Routers =
         | MultiEndpoint    of Endpoint seq
 
     let rec private applyHttpVerbToEndpoint
-        (verb    : HttpVerb)
+        (verb: HttpVerb)
         (endpoint: Endpoint): Endpoint =
         match endpoint with
         | SimpleEndpoint (_, template, handler, metadata) ->
@@ -129,30 +129,27 @@ module Routers =
         |> MultiEndpoint
 
     let rec private applyHttpVerbsToEndpoints
-        (verbs    : HttpVerb seq)
+        (verbs: HttpVerb seq)
         (endpoints: Endpoint seq): Endpoint =
         endpoints
-        |> Seq.map(
-            fun endpoint ->
-                match endpoint with
-                | SimpleEndpoint (_, routeTemplate, requestDelegate, metadata) ->
-                    verbs
-                    |> Seq.map(fun verb -> SimpleEndpoint (verb, routeTemplate, requestDelegate, metadata))
-                    |> MultiEndpoint
-                | NestedEndpoint (routeTemplate, endpoints, metadata) ->
-                    verbs
-                    |> Seq.map(
-                        fun verb ->
-                            NestedEndpoint (
-                                routeTemplate,
-                                endpoints
-                                |> Seq.map (applyHttpVerbToEndpoint verb),
-                                metadata))
-                    |> MultiEndpoint
-                | MultiEndpoint endpoints ->
-                    verbs
-                    |> Seq.map(fun verb -> applyHttpVerbToEndpoints verb endpoints)
-                    |> MultiEndpoint
+        |> Seq.map(function
+            | SimpleEndpoint (_, routeTemplate, requestDelegate, metadata) ->
+                verbs
+                |> Seq.map (fun verb -> SimpleEndpoint (verb, routeTemplate, requestDelegate, metadata))
+                |> MultiEndpoint
+            | NestedEndpoint (template, endpoints, metadata) ->
+                verbs
+                |> Seq.map(
+                    fun verb ->
+                        NestedEndpoint (
+                            template,
+                            endpoints |> Seq.map (applyHttpVerbToEndpoint verb),
+                            metadata))
+                |> MultiEndpoint
+            | MultiEndpoint endpoints ->
+                verbs
+                |> Seq.map(fun verb -> applyHttpVerbToEndpoints verb endpoints)
+                |> MultiEndpoint
         ) |> MultiEndpoint
 
     let GET_HEAD: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints [ GET; HEAD ]
@@ -168,14 +165,14 @@ module Routers =
     let CONNECT: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints CONNECT
 
     let route
-        (path    : string)
-        (handler : EndpointHandler): Endpoint =
+        (path   : string)
+        (handler: EndpointHandler): Endpoint =
         SimpleEndpoint (HttpVerb.Any, path, handler, Seq.empty)
 
     exception RouteParseException of string
 
     let routef
-        (path        : PrintfFormat<'T,unit,unit, EndpointHandler>)
+        (path       : PrintfFormat<'T,unit,unit, EndpointHandler>)
         (routeHandler: 'T): Endpoint =
         let handlerType = routeHandler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
@@ -209,25 +206,25 @@ module Routers =
         SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
 
     let subRoute
-        (path     : string)
+        (path    : string)
         (endpoints: Endpoint seq): Endpoint =
         NestedEndpoint (path, endpoints, Seq.empty)
 
     let rec applyBefore
-        (httpHandler : EndpointHandler)
-        (endpoint    : Endpoint) =
+        (httpHandler: EndpointHandler)
+        (endpoint   : Endpoint) =
         match endpoint with
-        | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, httpHandler >=> h, ml)
-        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, Seq.map (applyBefore httpHandler) lst, ml)
-        | MultiEndpoint(lst)               -> MultiEndpoint(Seq.map (applyBefore httpHandler) lst)
+        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, httpHandler >=> handler, metadata)
+        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyBefore httpHandler) endpoints, metadata)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyBefore httpHandler) endpoints)
 
     let rec applyAfter
-        (httpHandler : EndpointHandler)
-        (endpoint    : Endpoint) =
+        (httpHandler: EndpointHandler)
+        (endpoint   : Endpoint) =
         match endpoint with
-        | SimpleEndpoint(v, p, h, ml)      -> SimpleEndpoint(v, p, h >=> httpHandler, ml)
-        | NestedEndpoint(t, lst, ml)       -> NestedEndpoint(t, Seq.map (applyAfter httpHandler) lst, ml)
-        | MultiEndpoint(lst)               -> MultiEndpoint(Seq.map (applyAfter httpHandler) lst)
+        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, handler >=> httpHandler, metadata)
+        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyAfter httpHandler) endpoints, metadata)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyAfter httpHandler) endpoints)
 
     let rec addMetadata
         (newMetadata: obj)
@@ -240,43 +237,50 @@ module Routers =
 type EndpointRouteBuilderExtensions() =
 
     [<Extension>]
-    static member private MapSingleEndpoint
-        (builder       : IEndpointRouteBuilder,
-        singleEndpoint : HttpVerb * RouteTemplate * RequestDelegate * Metadata) =
-
-        let verb, routeTemplate, requestDelegate, metadata = singleEndpoint
+    static member private MapSingleEndpoint(builder: IEndpointRouteBuilder, verb: HttpVerb,
+            routeTemplate: RouteTemplate, requestDelegate: RequestDelegate, metadata: Metadata) =
         match verb with
         | Any  ->
             builder
                 .Map(routeTemplate, requestDelegate)
-                .WithMetadata(metadata) |> ignore
+                .WithMetadata(metadata)
         | _  ->
             builder
                 .MapMethods(routeTemplate, [| verb.ToString() |], requestDelegate)
-                .WithMetadata(metadata) |> ignore
+                .WithMetadata(metadata)
+        |> ignore
 
     [<Extension>]
-    static member private MapSeveralEndpoints
-        (builder     : IEndpointRouteBuilder,
-        multiEndpoint: RouteTemplate * Endpoint seq * Metadata) =
-
-        let parentTemplate, endpoints, parentMetadata = multiEndpoint
+    static member private MapNestedEndpoint(builder: IEndpointRouteBuilder, parentTemplate: RouteTemplate,
+            endpoints: Endpoint seq, parentMetadata: Metadata) =
+        let groupBuilder = builder.MapGroup(parentTemplate)
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint (verb, template, handler, metadata) ->
-                builder.MapSingleEndpoint(verb, $"{parentTemplate}{template}", handler, seq { yield! parentMetadata; yield! metadata; })
+                groupBuilder.MapSingleEndpoint(verb, template, handler, seq { yield! parentMetadata; yield! metadata; })
             | NestedEndpoint (template, endpoints, metadata) ->
-                builder.MapSeveralEndpoints($"{parentTemplate}{template}", endpoints, seq { yield! parentMetadata; yield! metadata })
-            | MultiEndpoint el ->
-                builder.MapSeveralEndpoints(parentTemplate, el, parentMetadata)
+                groupBuilder.MapNestedEndpoint(template, endpoints, seq { yield! parentMetadata; yield! metadata })
+            | MultiEndpoint endpoints ->
+                builder.MapMultiEndpoint endpoints
+
+    [<Extension>]
+    static member private MapMultiEndpoint(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
+        for endpoint in endpoints do
+            match endpoint with
+            | SimpleEndpoint (verb, template, handler, metadata) ->
+                builder.MapSingleEndpoint(verb, template, handler, metadata)
+            | NestedEndpoint (template, endpoints, metadata) ->
+                builder.MapNestedEndpoint(template, endpoints, metadata)
+            | MultiEndpoint endpoints ->
+                builder.MapMultiEndpoint endpoints
 
     [<Extension>]
     static member MapOxpeckerEndpoints
-        (builder : IEndpointRouteBuilder,
+        (builder: IEndpointRouteBuilder,
         endpoints: Endpoint seq) =
 
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint (verb, template, handler, metadata) -> builder.MapSingleEndpoint (verb, template, handler, metadata)
-            | NestedEndpoint (template, endpoints, metadata) -> builder.MapSeveralEndpoints (template, endpoints, metadata)
-            | MultiEndpoint endpoints -> builder.MapSeveralEndpoints ("", endpoints, Seq.empty)
+            | NestedEndpoint (template, endpoints, metadata) -> builder.MapNestedEndpoint (template, endpoints, metadata)
+            | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints

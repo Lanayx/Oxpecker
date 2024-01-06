@@ -34,24 +34,21 @@ let authHandler: EndpointHandler =
             Task.CompletedTask
 let endpoints =
     [
-        subRoute "/foo" [
-            GET [
-                route "/bar" (setHttpHeaderMw "foo" "bar" >=> setHttpHeaderMw "moo" "gar" >=> text "FooBar!")
-            ]
-        ]
         GET [
             route  "/" (text "Hello World")
             routef "/{%s}/{%i}" (fun name age ctx -> (setHttpHeaderMw "foo" "var"  >=> handler2 name age) ctx)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         ]
         GET_HEAD [
-            route "/foo" (text "Bar")
             route "/x"   (text "y")
             route "/abc" (text "def")
         ]
         // Not specifying a http verb means it will listen to all verbs
-        subRoute "/sub" [
-            route "/test" handler1
+        route "/foo" (text "Bar")
+        subRoute "/sub1" [
+            subRoute "/sub2" [
+                route "/test" handler1
+            ]
         ]
 
         subRoute "/auth" ([
@@ -72,7 +69,7 @@ let configureApp (appBuilder: IApplicationBuilder) =
 
 [<EntryPoint>]
 let main args =
-    let app = WebApplication.CreateBuilder(args).Build()
+    let app = WebApplication.Create(args)
     configureApp app
     app.Run()
     0
