@@ -55,13 +55,40 @@ let inline (>=>) left right = compose_opImpl Unchecked.defaultof<Composition> le
 /// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
 /// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-let bindJson<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
+let bindJson<'T> (f: 'T -> EndpointHandler): EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             let! model = ctx.BindJson<'T>()
             return! f model ctx
         }
 
+/// <summary>
+/// Parses a HTTP form payload into an instance of type 'T.
+/// </summary>
+/// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
+/// <param name="ctx">HttpContext</param>
+/// <typeparam name="'T"></typeparam>
+/// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
+    fun (ctx : HttpContext) ->
+        task {
+            let! model = ctx.BindForm<'T>()
+            return! f model ctx
+        }
+
+/// <summary>
+/// Parses a HTTP query string into an instance of type 'T.
+/// </summary>
+/// <param name="f">A function which accepts an object of type 'T and returns a <see cref="HttpHandler"/> function.</param>
+/// <param name="ctx"></param>
+/// <typeparam name="'T"></typeparam>
+/// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+let bindQuery<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
+    fun (ctx : HttpContext) ->
+        task {
+            let model = ctx.BindQuery<'T>()
+            return! f model ctx
+        }
 
 /// <summary>
 /// Writes an UTF-8 encoded string to the body of the HTTP response and sets the HTTP Content-Length header accordingly, as well as the Content-Type header to text/plain.
@@ -69,8 +96,8 @@ let bindJson<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
 /// <param name="str">The string value to be send back to the client.</param>
 /// <param name="ctx">HttpContext</param>
 /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-let text (str : string) : EndpointHandler =
-    fun (ctx : HttpContext) ->
+let text (str: string): EndpointHandler =
+    fun (ctx: HttpContext) ->
         ctx.WriteText str
 
 /// <summary>
@@ -79,7 +106,7 @@ let text (str : string) : EndpointHandler =
 /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>.
 /// </summary>
 /// <param name="dataObj">The object to be send back to the client.</param>
-/// <param name="ctx"></param>
+/// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
 /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
 let json<'T> (dataObj: 'T) : EndpointHandler =

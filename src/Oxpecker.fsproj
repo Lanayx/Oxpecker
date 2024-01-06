@@ -9,6 +9,7 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Json.fs" />
+        <Compile Include="ModelParser.fs" />
         <Compile Include="HttpContextExtensions.fs" />
         <Compile Include="Core.fs" />
         <Compile Include="Auth.fs" />

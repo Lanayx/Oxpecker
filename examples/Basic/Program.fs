@@ -26,7 +26,7 @@ let handler2 (name: string) (age: int): EndpointHandler =
 let handler3 (a: string) (b: string) (c: string) (d: int): EndpointHandler =
     _.WriteText(sprintf "Hello %s %s %s %i" a b c d)
 
-
+[<CLIMutable>]
 type MyModel = {
     Name: string
     Age: int
@@ -52,6 +52,7 @@ let endpoints =
             route  "/" (text "Hello World")
             routef "/{%s}/{%i}" (fun name age ctx -> (setHttpHeaderMw "foo" "var"  >=> handler2 name age) ctx)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
+            route "/x" (bindQuery handler4)
         ]
         POST [
             route "/x" (bindJson handler4)

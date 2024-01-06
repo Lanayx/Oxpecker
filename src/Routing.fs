@@ -165,14 +165,14 @@ module Routers =
     let CONNECT: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints CONNECT
 
     let route
-        (path   : string)
+        (path: string)
         (handler: EndpointHandler): Endpoint =
         SimpleEndpoint (HttpVerb.Any, path, handler, Seq.empty)
 
 
 
     let routef
-        (path       : PrintfFormat<'T,unit,unit, EndpointHandler>)
+        (path: PrintfFormat<'T,unit,unit, EndpointHandler>)
         (routeHandler: 'T): Endpoint =
         let handlerType = routeHandler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
@@ -201,25 +201,25 @@ module Routers =
         SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
 
     let subRoute
-        (path    : string)
+        (path: string)
         (endpoints: Endpoint seq): Endpoint =
         NestedEndpoint (path, endpoints, Seq.empty)
 
     let rec applyBefore
-        (httpHandler: EndpointHandler)
-        (endpoint   : Endpoint) =
+        (beforeHandler: EndpointHandler)
+        (endpoint: Endpoint) =
         match endpoint with
-        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, httpHandler >=> handler, metadata)
-        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyBefore httpHandler) endpoints, metadata)
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyBefore httpHandler) endpoints)
+        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeHandler >=> handler, metadata)
+        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyBefore beforeHandler) endpoints, metadata)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyBefore beforeHandler) endpoints)
 
     let rec applyAfter
-        (httpHandler: EndpointHandler)
-        (endpoint   : Endpoint) =
+        (afterHandler: EndpointHandler)
+        (endpoint: Endpoint) =
         match endpoint with
-        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, handler >=> httpHandler, metadata)
-        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyAfter httpHandler) endpoints, metadata)
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyAfter httpHandler) endpoints)
+        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, handler >=> afterHandler, metadata)
+        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, metadata)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints)
 
     let rec addMetadata
         (newMetadata: obj)

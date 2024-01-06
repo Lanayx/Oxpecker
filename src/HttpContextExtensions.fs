@@ -1,6 +1,7 @@
 namespace Oxpecker
 
 open System
+open System.Globalization
 open System.IO
 open System.Runtime.CompilerServices
 open System.Text
@@ -134,6 +135,44 @@ type HttpContextExtensions() =
                 return raise <| ModelBindException("Unable to deserialize model", ex)
         }
 
+    /// <summary>
+    /// Parses all input elements from an HTML form into an object of type 'T.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
+    [<Extension>]
+    static member BindForm<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
+        task {
+            let! form = ctx.Request.ReadFormAsync()
+            return
+                form
+                |> Seq.map (fun i -> i.Key, i.Value)
+                |> dict
+                |> ModelParser.parse<'T> cultureInfo false
+                |> function
+                    | Ok objData -> objData
+                    | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
+
+        }
+
+    /// <summary>
+    /// Parses all parameters of a request's query string into an object of type 'T.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>Returns an instance of type 'T</returns>
+    [<Extension>]
+    static member BindQuery<'T> (ctx: HttpContext, ?cultureInfo : CultureInfo) =
+        ctx.Request.Query
+        |> Seq.map (fun i -> i.Key, i.Value)
+        |> dict
+        |> ModelParser.parse<'T> cultureInfo false
+        |> function
+            | Ok objData -> objData
+            | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
 
     /// <summary>
     /// Writes a byte array to the body of the HTTP response and sets the HTTP Content-Length header accordingly.<br />
