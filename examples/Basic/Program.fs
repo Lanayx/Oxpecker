@@ -18,13 +18,23 @@ let setHttpHeaderMw key value: EndpointMiddleware =
         }
 
 let handler1: EndpointHandler =
-    fun ctx -> ctx.WriteTextAsync "Hello World"
+    fun ctx -> ctx.WriteText "Hello World"
 
-let handler2 (firstName: string) (age: int): EndpointHandler =
-    _.WriteTextAsync(sprintf "Hello %s, you are %i years old." firstName age)
+let handler2 (name: string) (age: int): EndpointHandler =
+    _.WriteText(sprintf "Hello %s, you are %i years old." name age)
 
 let handler3 (a: string) (b: string) (c: string) (d: int): EndpointHandler =
-    _.WriteTextAsync(sprintf "Hello %s %s %s %i" a b c d)
+    _.WriteText(sprintf "Hello %s %s %s %i" a b c d)
+
+
+type MyModel = {
+    Name: string
+    Age: int
+}
+let handler4 (a: MyModel): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJson { a with Name = a.Name + "!" }
+
 
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -43,8 +53,8 @@ let endpoints =
             routef "/{%s}/{%i}" (fun name age ctx -> (setHttpHeaderMw "foo" "var"  >=> handler2 name age) ctx)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         ]
-        GET_HEAD [
-            route "/x"   (text "y")
+        POST [
+            route "/x" (bindJson handler4)
             route "/abc" (json {| X = "Y" |})
         ]
         // Not specifying a http verb means it will listen to all verbs
@@ -65,7 +75,7 @@ let endpoints =
 
 let notFoundHandler (ctx: HttpContext) =
     ctx.SetStatusCode 404
-    ctx.WriteTextAsync("Page not found!") :> Task
+    ctx.WriteText "Page not found!" :> Task
 
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder

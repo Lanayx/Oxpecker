@@ -169,7 +169,7 @@ module Routers =
         (handler: EndpointHandler): Endpoint =
         SimpleEndpoint (HttpVerb.Any, path, handler, Seq.empty)
 
-    exception RouteParseException of string
+
 
     let routef
         (path       : PrintfFormat<'T,unit,unit, EndpointHandler>)
@@ -182,26 +182,21 @@ module Routers =
         let requestDelegate =
             fun (ctx: HttpContext) ->
                 let routeData = ctx.GetRouteData()
-                try
-                    handlerMethod.Invoke(routeHandler, [|
-                        for mapping in arrMappings do
-                            let placeholderName, formatChar = mapping
-                            let routeValue = routeData.Values[placeholderName] |> string
-                            match RequestDelegateBuilder.tryGetParser formatChar with
-                            | Some parseFn ->
-                                try
-                                    parseFn routeValue
-                                with
-                                | :? FormatException ->
-                                    raise <| RouteParseException routeValue
-                            | None ->
-                                routeValue
-                        ctx
-                    |]) :?> Task
-                with
-                | RouteParseException(value) ->
-                    ctx.SetStatusCode 400
-                    ctx.WriteTextAsync $"Url segment value '%s{value}' has invalid format"
+                handlerMethod.Invoke(routeHandler, [|
+                    for mapping in arrMappings do
+                        let placeholderName, formatChar = mapping
+                        let routeValue = routeData.Values[placeholderName] |> string
+                        match RequestDelegateBuilder.tryGetParser formatChar with
+                        | Some parseFn ->
+                            try
+                                parseFn routeValue
+                            with
+                            | :? FormatException as ex ->
+                                raise <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
+                        | None ->
+                            routeValue
+                    ctx
+                |]) :?> Task
 
         SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
 

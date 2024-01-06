@@ -30,5 +30,5 @@ type ServiceCollectionExtensions() =
     /// <returns>Returns an <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> builder object.</returns>
     [<Extension>]
     static member AddOxpecker(svc : IServiceCollection) =
-        svc.TryAddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer(SystemTextJson.Serializer.DefaultOptions) :> Json.ISerializer)
+        svc.TryAddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer() :> Json.ISerializer)
         svc

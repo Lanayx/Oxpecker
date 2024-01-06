@@ -1,8 +1,6 @@
 [<AutoOpen>]
 module Oxpecker.Core
 
-open System
-open System.Text
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 
@@ -50,17 +48,30 @@ type Composition =
 /// </summary>
 let inline (>=>) left right = compose_opImpl Unchecked.defaultof<Composition> left right
 
+/// <summary>
+/// Parses a JSON payload into an instance of type 'T.
+/// </summary>
+/// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
+/// <param name="ctx">HttpContext</param>
+/// <typeparam name="'T"></typeparam>
+/// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+let bindJson<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            let! model = ctx.BindJson<'T>()
+            return! f model ctx
+        }
+
 
 /// <summary>
 /// Writes an UTF-8 encoded string to the body of the HTTP response and sets the HTTP Content-Length header accordingly, as well as the Content-Type header to text/plain.
 /// </summary>
 /// <param name="str">The string value to be send back to the client.</param>
+/// <param name="ctx">HttpContext</param>
 /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
 let text (str : string) : EndpointHandler =
-    let bytes = Encoding.UTF8.GetBytes str
     fun (ctx : HttpContext) ->
-        ctx.SetContentType "text/plain; charset=utf-8"
-        ctx.WriteBytesAsync bytes
+        ctx.WriteText str
 
 /// <summary>
 /// Serializes an object to JSON and writes the output to the body of the HTTP response.
@@ -73,4 +84,4 @@ let text (str : string) : EndpointHandler =
 /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
 let json<'T> (dataObj: 'T) : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJsonAsync dataObj
+        ctx.WriteJson dataObj
