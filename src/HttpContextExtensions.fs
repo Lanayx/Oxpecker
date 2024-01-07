@@ -7,6 +7,7 @@ open System.Runtime.CompilerServices
 open System.Text
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Logging
 open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
@@ -86,6 +87,24 @@ type HttpContextExtensions() =
         match ctx.RequestServices.GetService t with
         | null    -> raise <| MissingDependencyException t.Name
         | service -> service :?> 'T
+
+    /// <summary>
+    /// Gets an instance of <see cref="Microsoft.Extensions.Logging.ILogger{T}" /> from the request's service container.
+    ///
+    /// The type `'T` should represent the class or module from where the logger gets instantiated.
+    /// </summary>
+    /// <returns> Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger{T}" />.</returns>
+    [<Extension>]
+    static member GetLogger<'T>(ctx : HttpContext) =
+        ctx.GetService<ILogger<'T>>()
+
+    /// <summary>
+    /// Gets an instance of <see cref="Microsoft.Extensions.Logging.ILogger" /> from the request's service container.    ///
+    /// </summary>
+    /// <returns> Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger" />.</returns>
+    [<Extension>]
+    static member GetLogger(ctx : HttpContext) =
+        ctx.GetService<ILogger>()
 
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.Json.ISerializer"/> from the request's service container.

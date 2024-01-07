@@ -4,6 +4,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.Extensions.Logging
 open Oxpecker
 open Oxpecker.Routing
 
@@ -103,8 +104,10 @@ let endpoints =
     ]
 
 let notFoundHandler (ctx: HttpContext) =
+    let logger = ctx.GetLogger()
+    logger.LogWarning("Unhandled 404 error")
     ctx.SetStatusCode 404
-    ctx.WriteText "Page not found!" :> Task
+    ctx.WriteText "Page not found!"
 
 let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
     task {
@@ -113,9 +116,13 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
         with
         | :? ModelBindException
         | :? RouteParseException as ex ->
+            let logger = ctx.GetLogger()
+            logger.LogWarning(ex, "Unhandled 400 error")
             ctx.SetStatusCode StatusCodes.Status400BadRequest
             return! ctx.WriteText <| string ex
         | ex ->
+            let logger = ctx.GetLogger()
+            logger.LogError(ex, "Unhandled 500 error")
             ctx.SetStatusCode StatusCodes.Status500InternalServerError
             return! ctx.WriteText <| string ex
     } :> Task
@@ -131,7 +138,10 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
+        .AddSingleton<ILogger>(fun sp ->
+            sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.Basic"))
     |> ignore
+
 
 [<EntryPoint>]
 let main args =
