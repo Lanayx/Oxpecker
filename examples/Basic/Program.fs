@@ -16,6 +16,8 @@ let setHttpHeaderMw key value: EndpointMiddleware =
             do! next ctx
             Console.WriteLine($"Header {key} set")
         }
+let handler0 (name: string) : EndpointHandler =
+    _.WriteText(sprintf "Hello %s" name)
 
 let handler1: EndpointHandler =
     fun ctx -> ctx.WriteText "Hello World"
@@ -39,6 +41,10 @@ let handler5 (test1: string) (test2: string) (a: MyModel): EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteJson {| a with Name = a.Name + "!"; Test = test1 + test2 |}
 
+let handler6 (test: string) (a: MyModel): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJson {| a with Name = a.Name + "!"; Test = test |}
+
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
@@ -53,17 +59,19 @@ let endpoints =
     [
         GET [
             route  "/" (text "Hello World")
-            routef "/{%s}/{%i}" (fun name age -> setHttpHeaderMw "foo" "var" >=> handler2 name age)
+            routef "/{%s}" (setHttpHeaderMw "foo" "moo" >>=> handler0)
+            routef "/{%s}/{%i}" (setHttpHeaderMw "foo" "var" >>=>+ handler2)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
             route "/x" (bindQuery handler4)
-            routef "/x/{%s}/{%s}" (fun test1 test2 -> bindQuery <| handler5 test1 test2)
+            routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
+            routef "/xx/{%s}" (bindQuery << handler6)
         ]
         POST [
             route "/x" (bindJson handler4)
             route "/abc" (json {| X = "Y" |})
         ]
         // Not specifying a http verb means it will listen to all verbs
-        route "/foo" (text "Bar")
+        route "/foo" (setHttpHeaderMw "foo" "bar" >=> text "Bar")
         subRoute "/sub1" [
             subRoute "/sub2" [
                 route "/test" handler1

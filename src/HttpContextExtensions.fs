@@ -20,6 +20,10 @@ module Helpers =
     /// <returns>Returns true if the object is not null otherwise false.</returns>
     let inline isNotNull x = not (isNull x)
 
+    let inline (<<+) func2 func1 x y = func2 (func1 x y)
+
+    let inline (<<++) func2 func1 x y z = func2 (func1 x y z)
+
     /// <summary>
     /// Utility function for matching 1xx HTTP status codes.
     /// </summary>

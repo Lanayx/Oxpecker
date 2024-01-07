@@ -48,6 +48,10 @@ type Composition =
 /// </summary>
 let inline (>=>) left right = compose_opImpl Unchecked.defaultof<Composition> left right
 
+let inline (>>=>) left right x = compose_opImpl Unchecked.defaultof<Composition> left (right x)
+let inline (>>=>+) left right x y = compose_opImpl Unchecked.defaultof<Composition> left (right x y)
+let inline (>>=>++) left right x y z = compose_opImpl Unchecked.defaultof<Composition> left (right x y z)
+
 /// <summary>
 /// Parses a JSON payload into an instance of type 'T.
 /// </summary>
