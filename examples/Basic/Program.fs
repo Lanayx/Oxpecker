@@ -106,9 +106,24 @@ let notFoundHandler (ctx: HttpContext) =
     ctx.SetStatusCode 404
     ctx.WriteText "Page not found!" :> Task
 
+let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
+    task {
+        try
+            return! next.Invoke(ctx)
+        with
+        | :? ModelBindException
+        | :? RouteParseException as ex ->
+            ctx.SetStatusCode StatusCodes.Status400BadRequest
+            return! ctx.WriteText <| string ex
+        | ex ->
+            ctx.SetStatusCode StatusCodes.Status500InternalServerError
+            return! ctx.WriteText <| string ex
+    } :> Task
+
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder
         .UseRouting()
+        .Use(errorHandler)
         .UseOxpecker(endpoints)
         .Run(notFoundHandler)
 

@@ -158,7 +158,6 @@ type HttpContextExtensions() =
                 |> function
                     | Ok objData -> objData
                     | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
-
         }
 
     /// <summary>
@@ -189,30 +188,29 @@ type HttpContextExtensions() =
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="bytes">The byte array to be send back to the client.</param>
-    /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
+    /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteBytes(ctx: HttpContext, bytes: byte[]) =
-        task {
-            let canIncludeContentLengthHeader =
-                match ctx.Response.StatusCode, ctx.Request.Method with
-                | statusCode, _ when statusCode |> is1xxStatusCode || statusCode = 204 -> false
-                | statusCode, method when method = "CONNECT" && statusCode |> is2xxStatusCode -> false
-                | _ -> true
-            let is205StatusCode = ctx.Response.StatusCode = 205
-            if canIncludeContentLengthHeader then
-                let contentLength = if is205StatusCode then 0 else bytes.Length
-                ctx.SetHttpHeader(HeaderNames.ContentLength, string contentLength)
-            if ctx.Request.Method <> HttpMethods.Head then
-                do! ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
-            return Some ctx
-        }
+        let canIncludeContentLengthHeader =
+            match ctx.Response.StatusCode, ctx.Request.Method with
+            | statusCode, _ when statusCode |> is1xxStatusCode || statusCode = 204 -> false
+            | statusCode, method when method = "CONNECT" && statusCode |> is2xxStatusCode -> false
+            | _ -> true
+        let is205StatusCode = ctx.Response.StatusCode = 205
+        if canIncludeContentLengthHeader then
+            let contentLength = if is205StatusCode then 0 else bytes.Length
+            ctx.SetHttpHeader(HeaderNames.ContentLength, string contentLength)
+        if ctx.Request.Method <> HttpMethods.Head then
+            ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
+        else
+            Task.CompletedTask
 
     /// <summary>
     /// Writes an UTF-8 encoded string to the body of the HTTP response and sets the HTTP `Content-Length` header accordingly, as well as the `Content-Type` header to `text/plain`.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="str">The string value to be send back to the client.</param>
-    /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
+    /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteText (ctx: HttpContext, str: string) =
         ctx.SetContentType "text/plain; charset=utf-8"
@@ -225,7 +223,7 @@ type HttpContextExtensions() =
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="dataObj">The object to be send back to the client.</param>
-    /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
+    /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteJson<'T> (ctx: HttpContext, dataObj: 'T) =
         ctx.SetContentType "application/json; charset=utf-8"
