@@ -90,9 +90,14 @@ let endpoints =
         // Not specifying a http verb means it will listen to all verbs
         route "/foo" (setHttpHeaderMw "foo" "bar" >=> text "Bar")
         subRoute "/sub1" [
-            subRoute "/sub2" [
-                route "/test" handler1
+            GET [
+                subRoute "/sub2" [
+                    route "/test" handler1
+                ]
             ]
+            POST (MY_AUTH [
+                route "/sub2/test" handler1
+            ])
         ]
 
         subRoute "/auth" (

@@ -267,7 +267,7 @@ type EndpointRouteBuilderExtensions() =
             | NestedEndpoint (template, endpoints, metadata) ->
                 groupBuilder.MapNestedEndpoint(template, endpoints, seq { yield! parentMetadata; yield! metadata })
             | MultiEndpoint endpoints ->
-                builder.MapMultiEndpoint endpoints
+                groupBuilder.MapMultiEndpoint endpoints
 
     [<Extension>]
     static member private MapMultiEndpoint(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
