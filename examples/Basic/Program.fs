@@ -45,6 +45,18 @@ let handler6 (test: string) (a: MyModel): EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteJson {| a with Name = a.Name + "!"; Test = test |}
 
+let handler7 (a: MyModel) (b: MyModel): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJson {| a with Name = b.Name + "!"; Test = b.Name |}
+
+let handler8 (test: string) (a: MyModel) (b: MyModel): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJson {| a with Name = b.Name + "!"; Test = test |}
+
+let handler9 (test1: string) (test2: string) (a: MyModel) (b: MyModel): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJson {| a with Name = b.Name + "!"; Test = test1 + test2 |}
+
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
@@ -58,16 +70,20 @@ let MY_AUTH = applyBefore authHandler |> Seq.map
 let endpoints =
     [
         GET [
-            route  "/" (text "Hello World")
+            route "/" (text "Hello World")
             routef "/{%s}" (setHttpHeaderMw "foo" "moo" >>=> handler0)
             routef "/{%s}/{%i}" (setHttpHeaderMw "foo" "var" >>=>+ handler2)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
             route "/x" (bindQuery handler4)
             routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
-            routef "/xx/{%s}" (bindQuery << handler6)
+            routef "/xx/{%s}" (setHttpHeaderMw "foo" "xx" >>=> bindQuery << handler6)
+            routef "/xx/{%s}/{%s}" (setHttpHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
         ]
         POST [
             route "/x" (bindJson handler4)
+            route "/y" (bindQuery (bindJson << handler7))
+            routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
+            routef "/y/{%s}/{%s}" (setHttpHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
             route "/abc" (json {| X = "Y" |})
         ]
         // Not specifying a http verb means it will listen to all verbs
