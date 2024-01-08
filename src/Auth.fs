@@ -70,8 +70,8 @@ module Auth =
     /// Validates if a user is a member of a specific role.
     /// </summary>
     /// <param name="role">The required role of which a user must be a member of in order to pass the validation.</param>
-    /// <param name="authFailedHandler">A <see cref="HttpHandler"/> function which will be executed when validation fails.</param>
-    /// <returns>An Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <param name="authFailedHandler">A <see cref="EndpointHandler"/> function which will be executed when validation fails.</param>
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
     let requiresRole (role: string) (authFailedHandler: EndpointHandler): EndpointMiddleware =
         authorizeUser
             (fun user -> user.IsInRole role)
@@ -81,8 +81,8 @@ module Auth =
     /// Validates if a user is a member of at least one of a given list of roles.
     /// </summary>
     /// <param name="roles">A list of roles of which a user must be a member of (minimum one) in order to pass the validation.</param>
-    /// <param name="authFailedHandler">A <see cref="HttpHandler"/> function which will be executed when validation fails.</param>
-    /// <returns>An Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <param name="authFailedHandler">A <see cref="EndpointHandler"/> function which will be executed when validation fails.</param>
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
     let requiresRoleOf (roles: string seq) (authFailedHandler: EndpointHandler): EndpointMiddleware =
         authorizeUser
             (fun user -> Seq.exists user.IsInRole roles)
@@ -95,7 +95,7 @@ module Auth =
     /// <param name="authFailedHandler">A <see cref="EndpointHandler"/> function which will be executed when validation fails.</param>
     /// <param name="next">Next handler</param>
     /// <param name="ctx">Http context</param>
-    /// <returns>An Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
     let authorizeByPolicyName (policyName: string) (authFailedHandler: EndpointHandler): EndpointMiddleware =
         fun (next: EndpointHandler) (ctx: HttpContext) ->
             task {
@@ -108,10 +108,10 @@ module Auth =
     /// Validates if a user meets a given authorization policy.
     /// </summary>
     /// <param name="policy">The name of an <see cref="Microsoft.AspNetCore.Authorization.AuthorizationPolicy"/> which a user must meet in order to pass the validation.</param>
-    /// <param name="authFailedHandler">A <see cref="HttpHandler"/> function which will be executed when validation fails.</param>
+    /// <param name="authFailedHandler">A <see cref="EndpointHandler"/> function which will be executed when validation fails.</param>
     /// <param name="next">Next handler</param>
     /// <param name="ctx">Http context</param>
-    /// <returns>An Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
     let authorizeByPolicy (policy: AuthorizationPolicy) (authFailedHandler: EndpointHandler): EndpointMiddleware =
         fun (next: EndpointHandler) (ctx: HttpContext) ->
             task {

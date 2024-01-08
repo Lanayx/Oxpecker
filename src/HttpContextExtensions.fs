@@ -2,13 +2,12 @@ namespace Oxpecker
 
 open System
 open System.Globalization
-open System.IO
 open System.Runtime.CompilerServices
 open System.Text
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
 [<AutoOpen>]
@@ -95,7 +94,7 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns> Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger{T}" />.</returns>
     [<Extension>]
-    static member GetLogger<'T>(ctx : HttpContext) =
+    static member GetLogger<'T>(ctx: HttpContext) =
         ctx.GetService<ILogger<'T>>()
 
     /// <summary>
@@ -103,8 +102,16 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns> Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger" />.</returns>
     [<Extension>]
-    static member GetLogger(ctx : HttpContext) =
+    static member GetLogger(ctx: HttpContext) =
         ctx.GetService<ILogger>()
+
+    /// <summary>
+    /// Gets an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/> from the request's service container.
+    /// </summary>
+    /// <returns>Returns an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/>.</returns>
+    [<Extension>]
+    static member GetHostingEnvironment(ctx: HttpContext) =
+        ctx.GetService<IWebHostEnvironment>()
 
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.Json.ISerializer"/> from the request's service container.
@@ -187,7 +194,7 @@ type HttpContextExtensions() =
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns an instance of type 'T</returns>
     [<Extension>]
-    static member BindQuery<'T> (ctx: HttpContext, ?cultureInfo : CultureInfo) =
+    static member BindQuery<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
         ctx.Request.Query
         |> Seq.map (fun i -> i.Key, i.Value)
         |> dict

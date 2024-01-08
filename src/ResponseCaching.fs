@@ -36,9 +36,9 @@ module ResponseCaching =
     /// <param name="vary">Optionally specify which HTTP headers have to match in order to return a cached response (e.g. Accept and/or Accept-Encoding).</param>
     /// <param name="varyByQueryKeys">An optional list of query keys which will be used by the ASP.NET Core response caching middleware to vary (potentially) cached responses. If this parameter is used then the ASP.NET Core response caching middleware has to be enabled. For more information check the official [VaryByQueryKeys](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware?view=aspnetcore-2.1#varybyquerykeys) documentation.</param>
     /// <param name="ctx"></param>
-    /// <returns>An Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
-    let responseCaching (directive   : CacheDirective)
-                        (vary           : string option)
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+    let responseCaching (directive: CacheDirective)
+                        (vary: string option)
                         (varyByQueryKeys: string[] option): EndpointHandler =
         fun (ctx: HttpContext) ->
 

@@ -10,7 +10,7 @@ type EndpointHandler = HttpContext -> Task
 /// Endpoint middleware is analogue to ASP.NET Core Middleware, but for Endpoint level.
 type EndpointMiddleware = EndpointHandler -> EndpointHandler
 
-let inline compose_opImpl (_ : ^OpImpl) left right =
+let inline compose_opImpl (_: ^OpImpl) left right =
     ((^OpImpl or ^left) :(static member Compose: ^left * ^right -> ^right) (left, right))
 type Composition =
     static member Compose (handler1: EndpointHandler, handler2: EndpointHandler): EndpointHandler =
@@ -74,7 +74,7 @@ let bindJson<'T> (f: 'T -> EndpointHandler): EndpointHandler =
 /// <typeparam name="'T"></typeparam>
 /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
 let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
-    fun (ctx : HttpContext) ->
+    fun (ctx: HttpContext) ->
         task {
             let! model = ctx.BindForm<'T>()
             return! f model ctx
@@ -83,12 +83,12 @@ let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
 /// <summary>
 /// Parses a HTTP query string into an instance of type 'T.
 /// </summary>
-/// <param name="f">A function which accepts an object of type 'T and returns a <see cref="HttpHandler"/> function.</param>
+/// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
 /// <param name="ctx"></param>
 /// <typeparam name="'T"></typeparam>
 /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-let bindQuery<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
-    fun (ctx : HttpContext) ->
+let bindQuery<'T> (f: 'T -> EndpointHandler): EndpointHandler =
+    fun (ctx: HttpContext) ->
         task {
             let model = ctx.BindQuery<'T>()
             return! f model ctx
@@ -113,6 +113,6 @@ let text (str: string): EndpointHandler =
 /// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
 /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-let json<'T> (dataObj: 'T) : EndpointHandler =
+let json<'T> (dataObj: 'T): EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteJson dataObj

@@ -138,11 +138,11 @@ module ModelParser =
                 sprintf "Could not parse value '%s' to type %s." rawValue (t.ToString())
                 |> Error
 
-    let rec private parseModel<'T> (model      : 'T)
+    let rec private parseModel<'T> (model    : 'T)
                                    (cultureInfo: CultureInfo option)
-                                   (data       : IDictionary<string, StringValues>)
-                                   (strict     : bool)
-                                  : Result<'T, string> =
+                                   (data     : IDictionary<string, StringValues>)
+                                   (strict   : bool)
+                                : Result<'T, string> =
         // Normalize data
         let normalizeKey (key: string) =
             key.ToLowerInvariant().TrimEnd([| '['; ']' |])
@@ -209,10 +209,10 @@ module ModelParser =
         | true  -> Some (t.MakeNoneCase())
 
     and getValueForComplexType (cultureInfo: CultureInfo option)
-                              (data       : IDictionary<string, StringValues>)
-                              (strict     : bool)
-                              (prop       : PropertyInfo)
-                             : obj option =
+                              (data     : IDictionary<string, StringValues>)
+                              (strict   : bool)
+                              (prop     : PropertyInfo)
+                           : obj option =
         let lowerCasedPropName    = prop.Name.ToLowerInvariant()
         let isMaybeComplexType    = data.Keys |> Seq.exists (_.StartsWith(lowerCasedPropName + "."))
         let isRecordType          = FSharpType.IsRecord prop.PropertyType
@@ -254,10 +254,10 @@ module ModelParser =
             None
 
     and getValueForArrayOfGenericType (cultureInfo: CultureInfo option)
-                                      (data       : IDictionary<string, StringValues>)
-                                      (strict     : bool)
-                                      (prop       : PropertyInfo)
-                                     : obj option =
+                                      (data     : IDictionary<string, StringValues>)
+                                      (strict   : bool)
+                                      (prop     : PropertyInfo)
+                                   : obj option =
 
         if prop.PropertyType.IsArray then
             let lowerCasedPropName = prop.Name.ToLowerInvariant()
