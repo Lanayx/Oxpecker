@@ -12,6 +12,7 @@
         <Compile Include="ModelParser.fs" />
         <Compile Include="HttpContextExtensions.fs" />
         <Compile Include="Core.fs" />
+        <Compile Include="ResponseCaching.fs" />
         <Compile Include="Auth.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="Middleware.fs" />

@@ -58,7 +58,7 @@ let inline (>>=>++) left right x y z = compose_opImpl Unchecked.defaultof<Compos
 /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
 /// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
-/// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+/// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
 let bindJson<'T> (f: 'T -> EndpointHandler): EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
@@ -72,7 +72,7 @@ let bindJson<'T> (f: 'T -> EndpointHandler): EndpointHandler =
 /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
 /// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
-/// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+/// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
 let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
     fun (ctx : HttpContext) ->
         task {
@@ -86,7 +86,7 @@ let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
 /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="HttpHandler"/> function.</param>
 /// <param name="ctx"></param>
 /// <typeparam name="'T"></typeparam>
-/// <returns>A Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+/// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
 let bindQuery<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
     fun (ctx : HttpContext) ->
         task {
@@ -99,7 +99,7 @@ let bindQuery<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
 /// </summary>
 /// <param name="str">The string value to be send back to the client.</param>
 /// <param name="ctx">HttpContext</param>
-/// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+/// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
 let text (str: string): EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteText str
@@ -112,7 +112,7 @@ let text (str: string): EndpointHandler =
 /// <param name="dataObj">The object to be send back to the client.</param>
 /// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
-/// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+/// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
 let json<'T> (dataObj: 'T) : EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteJson dataObj

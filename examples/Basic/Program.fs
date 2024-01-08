@@ -5,6 +5,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open Microsoft.Net.Http.Headers
 open Oxpecker
 open Oxpecker.Routing
 
@@ -58,6 +59,10 @@ let handler9 (test1: string) (test2: string) (a: MyModel) (b: MyModel): Endpoint
     fun (ctx: HttpContext) ->
         ctx.WriteJson {| a with Name = b.Name + "!"; Test = test1 + test2 |}
 
+let handler10: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteText(string DateTime.Now)
+
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
@@ -68,6 +73,10 @@ let authHandler: EndpointHandler =
 
 let MY_AUTH = applyBefore authHandler
 let MY_HEADER endpoint = applyBefore (setHeaderMw "my" "header") endpoint
+let NO_RESPONSE_CACHE = applyBefore noResponseCaching
+let RESPONSE_CACHE =
+    let cacheDirective = CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true) |> Cache
+    applyBefore <| responseCaching cacheDirective None None
 
 let endpoints =
     [
@@ -108,6 +117,9 @@ let endpoints =
                 route "/closed" handler1 |> addMetadata (RequiresAuditAttribute())
             ]
         )
+
+        route "/time" handler10 |> NO_RESPONSE_CACHE
+        route "/time-cached" handler10 |> RESPONSE_CACHE
     ]
 
 let notFoundHandler (ctx: HttpContext) =
