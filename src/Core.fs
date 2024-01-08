@@ -84,7 +84,7 @@ let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
 /// Parses a HTTP query string into an instance of type 'T.
 /// </summary>
 /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
-/// <param name="ctx"></param>
+/// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
 /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
 let bindQuery<'T> (f: 'T -> EndpointHandler): EndpointHandler =
@@ -93,6 +93,18 @@ let bindQuery<'T> (f: 'T -> EndpointHandler): EndpointHandler =
             let model = ctx.BindQuery<'T>()
             return! f model ctx
         }
+
+/// <summary>
+/// Redirects to a different location with a `302` or `301` (when permanent) HTTP status code.
+/// </summary>
+/// <param name="location">The URL to redirect the client to.</param>
+/// <param name="permanent">If true the redirect is permanent (301), otherwise temporary (302).</param>
+/// <param name="ctx">HttpContext</param>
+/// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+let redirectTo (location: string) (permanent: bool): EndpointHandler  =
+    fun (ctx: HttpContext) ->
+        ctx.Response.Redirect(location, permanent)
+        Task.CompletedTask
 
 /// <summary>
 /// Writes an UTF-8 encoded string to the body of the HTTP response and sets the HTTP Content-Length header accordingly, as well as the Content-Type header to text/plain.

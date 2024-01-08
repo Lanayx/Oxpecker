@@ -120,6 +120,7 @@ let endpoints =
 
         route "/time" handler10 |> NO_RESPONSE_CACHE
         route "/time-cached" handler10 |> RESPONSE_CACHE
+        route "/redirect" (redirectTo "/time" false)
     ]
 
 let notFoundHandler (ctx: HttpContext) =
