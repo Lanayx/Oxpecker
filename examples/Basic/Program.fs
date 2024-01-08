@@ -106,9 +106,9 @@ let endpoints =
                     MY_HEADER <| route "/test" handler1
                 ]
             ]
-            POST [
+            MY_AUTH <| POST [
                 route "/sub2/test" handler1
-            ] |> MY_AUTH
+            ]
         ]
         MY_AUTH <| route "/auth/x" (text "Not closed")
         MY_AUTH <| MY_HEADER (

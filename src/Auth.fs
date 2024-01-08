@@ -63,7 +63,10 @@ module Auth =
     /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
     let requiresAuthentication (authFailedHandler: EndpointHandler): EndpointMiddleware =
         authorizeUser
-            (fun user -> isNotNull user && user.Identity.IsAuthenticated)
+            (fun user ->
+                isNotNull user
+                         && isNotNull user.Identity
+                         && user.Identity.IsAuthenticated)
             authFailedHandler
 
     /// <summary>

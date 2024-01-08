@@ -58,8 +58,8 @@ module ModelParser =
             let arrArgType  = t.GetElementType()
             let arrLen      = rawValues.Count
             let arr         = Array.CreateInstance(arrArgType, arrLen)
-            if arrLen = 0
-            then Ok (arr :> obj)
+            if arrLen = 0 then
+                Ok (arr :> obj)
             else
                 let items, _, error =
                     Array.fold(
@@ -78,11 +78,11 @@ module ModelParser =
                 match error with
                 | Some err -> Error err
                 | None     -> Ok (items :> obj)
-        else if isList then
+        elif isList then
             let cases = FSharpType.GetUnionCases t
             let emptyList = FSharpValue.MakeUnion(cases[0], [||])
-            if rawValues.Count = 0
-            then Ok emptyList
+            if rawValues.Count = 0 then
+                Ok emptyList
             else
                 let consCase = cases[1]
                 let items, error =
@@ -111,31 +111,30 @@ module ModelParser =
                     | true  -> t.MakeNoneCase()
                     | false -> t.MakeSomeCase(value)
                     |> Ok
-        else if FSharpType.IsUnion t then
+        elif FSharpType.IsUnion t then
             let unionName = rawValues.ToString()
             let cases = FSharpType.GetUnionCases t
             if String.IsNullOrWhiteSpace unionName
-            then Error (sprintf "Cannot parse an empty value to type %s." (t.ToString()))
+            then Error $"Cannot parse an empty value to type %s{t.ToString()}."
             else
                 cases
-                |> Array.tryFind (fun c -> c.Name.Equals(unionName, StringComparison.OrdinalIgnoreCase))
+                |> Array.tryFind (_.Name.Equals(unionName, StringComparison.OrdinalIgnoreCase))
                 |> function
                    | Some case -> Ok (FSharpValue.MakeUnion(case, [||]))
-                   | None ->
-                    sprintf "The value '%s' is not a valid case for type %s." unionName (t.ToString())
-                    |> Error
+                   | None -> Error $"The value '%s{unionName}' is not a valid case for type %s{t.ToString()}."
         else
             let converter =
-                if t.GetTypeInfo().IsValueType
-                then typedefof<Nullable<_>>.MakeGenericType([| t |])
-                else t
+                if t.GetTypeInfo().IsValueType then
+                    typedefof<Nullable<_>>.MakeGenericType([| t |])
+                else
+                    t
                 |> TypeDescriptor.GetConverter
             let rawValue = rawValues.ToString()
             try
                 converter.ConvertFromString(null, culture, rawValue)
                 |> Ok
             with _ ->
-                sprintf "Could not parse value '%s' to type %s." rawValue (t.ToString())
+                $"Could not parse value '%s{rawValue}' to type %s{t.ToString()}."
                 |> Error
 
     let rec private parseModel<'T> (model    : 'T)
@@ -158,7 +157,7 @@ module ModelParser =
             // Iterate through all properties of the model
             model.GetType().GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
             |> Seq.toList
-            |> List.filter (fun p -> p.CanWrite)
+            |> List.filter _.CanWrite
             |> List.fold(
                 fun (error: string option) (prop: PropertyInfo) ->
                     // If model binding is set to strict and a previous property
@@ -180,7 +179,7 @@ module ModelParser =
                                     | None   ->
                                         match getValueForMissingProperty prop.PropertyType with
                                         | Some v -> Ok v
-                                        | None   -> Error (sprintf "Missing value for required property %s." prop.Name)
+                                        | None   -> Error $"Missing value for required property %s{prop.Name}."
                             | true , rawValue -> parseValue prop.PropertyType rawValue culture
 
                         // Check if a value was able to get successfully parsed.
@@ -211,8 +210,7 @@ module ModelParser =
     and getValueForComplexType (cultureInfo: CultureInfo option)
                               (data     : IDictionary<string, StringValues>)
                               (strict   : bool)
-                              (prop     : PropertyInfo)
-                           : obj option =
+                              (prop     : PropertyInfo): obj option =
         let lowerCasedPropName    = prop.Name.ToLowerInvariant()
         let isMaybeComplexType    = data.Keys |> Seq.exists (_.StartsWith(lowerCasedPropName + "."))
         let isRecordType          = FSharpType.IsRecord prop.PropertyType
@@ -220,19 +218,19 @@ module ModelParser =
         let tryResolveComplexType = isMaybeComplexType && (isRecordType || isGenericType)
 
         if tryResolveComplexType then
-            let pattern = lowerCasedPropName |> Regex.Escape |> sprintf @"%s\.(\w+)"
+            let regex = lowerCasedPropName |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
 
             let dictData =
                 data
-                |> Seq.filter (fun item -> Regex.IsMatch(item.Key, pattern))
+                |> Seq.filter (fun item -> regex.IsMatch item.Key)
                 |> Seq.map (fun item ->
-                    let matchedData = Regex.Match(item.Key, pattern)
+                    let matchedData = regex.Match item.Key
                     let key = matchedData.Groups[1].Value
                     let value = item.Value
                     key, value
                 )
-                |> Seq.fold(fun (state: Map<string, StringValues>) (key, value) ->
-                    state.Add(key, value)
+                |> Seq.fold(fun (state: Map<string, StringValues>) ->
+                    state.Add
                 ) Map.empty
 
             match prop.PropertyType.IsFSharpOption() with
@@ -256,29 +254,26 @@ module ModelParser =
     and getValueForArrayOfGenericType (cultureInfo: CultureInfo option)
                                       (data     : IDictionary<string, StringValues>)
                                       (strict   : bool)
-                                      (prop     : PropertyInfo)
-                                   : obj option =
+                                      (prop     : PropertyInfo): obj option =
 
         if prop.PropertyType.IsArray then
             let lowerCasedPropName = prop.Name.ToLowerInvariant()
-            let pattern = lowerCasedPropName |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)"
+            let regex = lowerCasedPropName |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
 
             let innerType = prop.PropertyType.GetElementType()
 
             let seqOfObjects =
                 data
-                |> Seq.filter (fun item -> Regex.IsMatch(item.Key, pattern))
+                |> Seq.filter (fun item -> regex.IsMatch item.Key)
                 |> Seq.map (fun item ->
-                    let matchedData = Regex.Match(item.Key, pattern)
-
+                    let matchedData = regex.Match item.Key
                     let index = matchedData.Groups[1].Value
                     let key = matchedData.Groups[2].Value
                     let value = item.Value
-
                     index, key, value
                 )
                 |> Seq.groupBy (fun (index, _, _) -> index |> int)
-                |> Seq.sortBy (fun (index, _) -> index)
+                |> Seq.sortBy fst
                 |> Seq.choose (fun (index, values) ->
                     let dictData =
                         values
