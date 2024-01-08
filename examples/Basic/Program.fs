@@ -10,7 +10,7 @@ open Oxpecker.Routing
 
 type RequiresAuditAttribute() = inherit Attribute()
 
-let setHttpHeaderMw key value: EndpointMiddleware =
+let setHeaderMw key value: EndpointMiddleware =
     fun (next: EndpointHandler) (ctx: HttpContext) ->
         ctx.SetHttpHeader(key, value)
         task {
@@ -66,42 +66,44 @@ let authHandler: EndpointHandler =
         else
             Task.CompletedTask
 
-let MY_AUTH = applyBefore authHandler |> Seq.map
+let MY_AUTH = applyBefore authHandler
+let MY_HEADER endpoint = applyBefore (setHeaderMw "my" "header") endpoint
 
 let endpoints =
     [
         GET [
             route "/" (text "Hello World")
-            routef "/{%s}" (setHttpHeaderMw "foo" "moo" >>=> handler0)
-            routef "/{%s}/{%i}" (setHttpHeaderMw "foo" "var" >>=>+ handler2)
+            routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
+            routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
             route "/x" (bindQuery handler4)
             routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
-            routef "/xx/{%s}" (setHttpHeaderMw "foo" "xx" >>=> bindQuery << handler6)
-            routef "/xx/{%s}/{%s}" (setHttpHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
+            routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
+            routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
         ]
         POST [
             route "/x" (bindJson handler4)
             route "/y" (bindQuery (bindJson << handler7))
             routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
-            routef "/y/{%s}/{%s}" (setHttpHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
+            routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
             route "/abc" (json {| X = "Y" |})
         ]
         // Not specifying a http verb means it will listen to all verbs
-        route "/foo" (setHttpHeaderMw "foo" "bar" >=> text "Bar")
+        route "/foo" (setHeaderMw "foo" "bar" >=> text "Bar")
+
         subRoute "/sub1" [
             GET [
                 subRoute "/sub2" [
-                    route "/test" handler1
+                    MY_HEADER <| route "/test" handler1
                 ]
             ]
-            POST (MY_AUTH [
+            POST [
                 route "/sub2/test" handler1
-            ])
+            ] |> MY_AUTH
         ]
-
-        subRoute "/auth" (
-            MY_AUTH [
+        MY_AUTH <| route "/auth/x" (text "Not closed")
+        MY_AUTH <| MY_HEADER (
+            subRoute "/auth" [
                 route "/open" handler1
                 route "/closed" handler1 |> addMetadata (RequiresAuditAttribute())
             ]

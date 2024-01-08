@@ -216,13 +216,25 @@ module Routers =
         (endpoints: Endpoint seq): Endpoint =
         NestedEndpoint (path, endpoints, Seq.empty)
 
-    let rec applyBefore
-        (beforeHandler: EndpointHandler)
+    type ApplyBefore =
+        static member Compose
+            (beforeHandler: EndpointHandler, endpoint: Endpoint) =
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeHandler >=> handler, metadata)
+            | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeHandler,e)) endpoints, metadata)
+            | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeHandler,e)) endpoints)
+
+        static member Compose
+            (beforeMiddleware: EndpointMiddleware, endpoint: Endpoint) =
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeMiddleware >=> handler, metadata)
+            | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware,e)) endpoints, metadata)
+            | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware,e)) endpoints)
+
+    let inline applyBefore
+        (beforeHandler: 'T)
         (endpoint: Endpoint) =
-        match endpoint with
-        | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeHandler >=> handler, metadata)
-        | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (applyBefore beforeHandler) endpoints, metadata)
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyBefore beforeHandler) endpoints)
+        compose_opImpl Unchecked.defaultof<ApplyBefore> beforeHandler endpoint
 
     let rec applyAfter
         (afterHandler: EndpointHandler)
