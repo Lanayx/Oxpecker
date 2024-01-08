@@ -2,12 +2,34 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <PackageId>Oxpecker</PackageId>
+        <Title>Oxpecker</Title>
+        <RootNamespace>Oxpecker</RootNamespace>
+        <AssemblyName>Oxpecker</AssemblyName>
+        <Version>0.1.0</Version>
+        <Company>F# community</Company>
+        <Description>F# wrapper of ASP.NET Core framework</Description>
+        <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
+        <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Functional;Http;Web;Framework;Micro;Service</PackageTags>
+        <Authors>Vladimir Shchur, F# community</Authors>
+        <PackageVersion>0.1.0</PackageVersion>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    </PropertyGroup>
+    <PropertyGroup>
+        <WarningLevel>3</WarningLevel>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <NoWarn>3186;40</NoWarn>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
     <ItemGroup>
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
         <Compile Include="Json.fs" />
         <Compile Include="ModelParser.fs" />
         <Compile Include="HttpContextExtensions.fs" />
