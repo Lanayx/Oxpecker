@@ -10,60 +10,6 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 
-[<AutoOpen>]
-module Helpers =
-
-    /// <summary>
-    /// Checks if an object is not null.
-    /// </summary>
-    /// <param name="x">The object to validate against `null`.</param>
-    /// <returns>Returns true if the object is not null otherwise false.</returns>
-    let inline isNotNull x = not (isNull x)
-
-    let inline (<<+) func2 func1 x y = func2 (func1 x y)
-
-    let inline (<<++) func2 func1 x y z = func2 (func1 x y z)
-
-    /// <summary>
-    /// Utility function for matching 1xx HTTP status codes.
-    /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>Returns true if the status code is between 100 and 199.</returns>
-    let is1xxStatusCode (statusCode: int) =
-        100 <= statusCode && statusCode <= 199
-
-    /// <summary>
-    /// Utility function for matching 2xx HTTP status codes.
-    /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>Returns true if the status code is between 200 and 299.</returns>
-    let is2xxStatusCode (statusCode: int) =
-        200 <= statusCode && statusCode <= 299
-
-    /// <summary>
-    /// Utility function for matching 3xx HTTP status codes.
-    /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>Returns true if the status code is between 300 and 399.</returns>
-    let is3xxStatusCode (statusCode: int) =
-        300 <= statusCode && statusCode <= 399
-
-    /// <summary>
-    /// Utility function for matching 4xx HTTP status codes.
-    /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>Returns true if the status code is between 400 and 499.</returns>
-    let is4xxStatusCode (statusCode: int) =
-        400 <= statusCode && statusCode <= 499
-
-    /// <summary>
-    /// Utility function for matching 5xx HTTP status codes.
-    /// </summary>
-    /// <param name="statusCode">The HTTP status code.</param>
-    /// <returns>Returns true if the status code is between 500 and 599.</returns>
-    let is5xxStatusCode (statusCode: int) =
-        500 <= statusCode && statusCode <= 599
-
 type MissingDependencyException(dependencyName: string) =
     inherit Exception $"Could not retrieve object of type '%s{dependencyName}' from ASP.NET Core's dependency container."
 
@@ -248,11 +194,23 @@ type HttpContextExtensions() =
     /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="dataObj">The object to be send back to the client.</param>
+    /// <param name="value">The object to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteJson<'T> (ctx: HttpContext, dataObj: 'T) =
-        ctx.SetContentType "application/json; charset=utf-8"
+    static member WriteJson<'T> (ctx: HttpContext, value: 'T) =
         let serializer = ctx.GetJsonSerializer()
-        serializer.Serialize(dataObj, ctx)
+        serializer.Serialize(value, ctx, false)
 
+
+    /// <summary>
+    /// Serializes an object to JSON and writes the output to the body of the HTTP response using chunked transfer encoding.
+    /// It also sets the HTTP Content-Type header to application/json and sets the Transfer-Encoding header to chunked.
+    /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="value">The object to be send back to the client.</param>
+    /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
+    [<Extension>]
+    static member WriteJsonChunked<'T> (ctx: HttpContext, value: 'T) =
+        let serializer = ctx.GetJsonSerializer()
+        serializer.Serialize(value, ctx, true)

@@ -121,10 +121,22 @@ let text (str: string): EndpointHandler =
 /// It also sets the HTTP Content-Type header to application/json and sets the Content-Length header accordingly.
 /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>.
 /// </summary>
-/// <param name="dataObj">The object to be send back to the client.</param>
+/// <param name="value">The object to be send back to the client.</param>
 /// <param name="ctx">HttpContext</param>
 /// <typeparam name="'T"></typeparam>
 /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-let json<'T> (dataObj: 'T): EndpointHandler =
+let json<'T> (value: 'T): EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson dataObj
+        ctx.WriteJson(value)
+
+/// <summary>
+/// Serializes an object to JSON and writes the output to the body of the HTTP response using chunked transfer encoding.
+/// It also sets the HTTP Content-Type header to application/json and sets the Transfer-Encoding header to chunked.
+/// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>.
+/// </summary>
+/// <param name="value">The object to be send back to the client.</param>
+/// <param name="ctx"></param>
+/// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+let jsonChunked<'T> (value: 'T): EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteJsonChunked(value)

@@ -37,7 +37,7 @@ type MyModel = {
 }
 let handler4 (a: MyModel): EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson { a with Name = a.Name + "!" }
+        ctx.WriteJsonChunked { a with Name = a.Name + "!" }
 
 let handler5 (test1: string) (test2: string) (a: MyModel): EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -89,13 +89,13 @@ let endpoints =
             routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
             routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
             routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
+            route "/abc" (json {| X = "Y" |})
         ]
         POST [
             route "/x" (bindJson handler4)
             route "/y" (bindQuery (bindJson << handler7))
             routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
             routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
-            route "/abc" (json {| X = "Y" |})
         ]
         // Not specifying a http verb means it will listen to all verbs
         route "/foo" (setHeaderMw "foo" "bar" >=> text "Bar")
