@@ -1,12 +1,10 @@
 ﻿namespace Oxpecker
 
 open System.IO
-open System.Runtime.InteropServices
 open Microsoft.AspNetCore.Http
 open System.Text
 open System.Text.Json
 open System.Threading.Tasks
-open Microsoft.Net.Http.Headers
 
 [<RequireQualifiedAccess>]
 module Json =
@@ -44,7 +42,7 @@ module SystemTextJson =
                         use stream = recyclableMemoryStreamManager.Value.GetStream()
                         JsonSerializer.Serialize(stream, value, options)
                         ctx.Response.ContentType <- "application/json; charset=utf-8"
-                        ctx.Response.Headers[HeaderNames.ContentLength] <- string stream.Length
+                        ctx.Response.Headers.ContentLength <- stream.Length
                         stream.Seek(0, SeekOrigin.Begin) |> ignore
                         return! stream.CopyToAsync(ctx.Response.Body)
                     }

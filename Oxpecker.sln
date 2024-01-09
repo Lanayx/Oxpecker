@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{A1
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Basic", "examples\Basic\Basic.fsproj", "{60E2245C-332D-488E-8D2A-95A88A058762}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Tests", "tests\Oxpecker.Tests\Oxpecker.Tests.fsproj", "{A6BA2B5E-0D57-4817-B157-BAD2FDDB9C9F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,9 +26,14 @@ Global
 		{60E2245C-332D-488E-8D2A-95A88A058762}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60E2245C-332D-488E-8D2A-95A88A058762}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60E2245C-332D-488E-8D2A-95A88A058762}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6BA2B5E-0D57-4817-B157-BAD2FDDB9C9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6BA2B5E-0D57-4817-B157-BAD2FDDB9C9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6BA2B5E-0D57-4817-B157-BAD2FDDB9C9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6BA2B5E-0D57-4817-B157-BAD2FDDB9C9F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{625D9E19-8077-40D5-B208-23AFAC2B5F75} = {9EDF9D3C-DA11-44A2-A20C-4B466FEB7E06}
 		{60E2245C-332D-488E-8D2A-95A88A058762} = {A1BC9EB1-C6D9-470C-B0F6-323814A0D0AC}
+		{A6BA2B5E-0D57-4817-B157-BAD2FDDB9C9F} = {40C4900E-D46D-450F-9A93-A2CE2E4EF5CA}
 	EndGlobalSection
 EndGlobal

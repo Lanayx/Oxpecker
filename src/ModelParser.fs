@@ -99,7 +99,7 @@ module ModelParser =
                 match error with
                 | Some err -> Error err
                 | None     -> Ok items
-        else if isGeneric then
+        elif isGeneric then
             let result = parseValue genArgType rawValues culture
             match result with
             | Error err -> Error err

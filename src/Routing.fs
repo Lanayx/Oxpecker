@@ -9,7 +9,6 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Builder
 open Microsoft.FSharp.Core
-open Microsoft.FSharp.Core.OptimizedClosures
 open Oxpecker
 
 module private RouteTemplateBuilder =

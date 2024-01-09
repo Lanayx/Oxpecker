@@ -47,14 +47,14 @@ module ResponseCaching =
 
             match directive with
             | NoCache ->
-                tHeaders.CacheControl          <- noCacheHeader
-                headers[ HeaderNames.Pragma ]  <- "no-cache"
-                headers[ HeaderNames.Expires ] <- "-1"
+                tHeaders.CacheControl <- noCacheHeader
+                headers.Pragma  <- "no-cache"
+                headers.Expires <- "-1"
             | Cache control  ->
                 tHeaders.CacheControl <- control
 
             if vary.IsSome then
-                headers[HeaderNames.Vary] <- vary.Value
+                headers.Vary <- vary.Value
 
             if varyByQueryKeys.IsSome then
                 let responseCachingFeature = ctx.Features.Get<IResponseCachingFeature>()
