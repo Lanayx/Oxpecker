@@ -13,6 +13,7 @@
         <Compile Include="HttpContextExtensions.Tests.fs" />
         <Compile Include="DateTimeExtensions.Tests.fs" />
         <Compile Include="Core.Tests.fs" />
+        <Compile Include="ResponseCaching.Tests.fs" />
     </ItemGroup>
 
     <ItemGroup>

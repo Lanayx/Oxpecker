@@ -75,7 +75,7 @@ let MY_AUTH = applyBefore authHandler
 let MY_HEADER endpoint = applyBefore (setHeaderMw "my" "header") endpoint
 let NO_RESPONSE_CACHE = applyBefore noResponseCaching
 let RESPONSE_CACHE =
-    let cacheDirective = CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true) |> Cache
+    let cacheDirective = CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true) |> Some
     applyBefore <| responseCaching cacheDirective None None
 
 let endpoints =
