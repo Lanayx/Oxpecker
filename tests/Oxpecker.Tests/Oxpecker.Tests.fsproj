@@ -7,6 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Content Include="TestFiles\streaming.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="TestFiles\streaming2.txt">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Compile Include="Helpers.Tests.fs" />
         <Compile Include="Json.Tests.fs" />
         <Compile Include="ModelParser.Tests.fs" />
@@ -15,12 +21,7 @@
         <Compile Include="Core.Tests.fs" />
         <Compile Include="ResponseCaching.Tests.fs" />
         <Compile Include="Preconditional.Tests.fs" />
-        <Content Include="TestFiles\streaming.txt">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-        <Content Include="TestFiles\streaming2.txt">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
+        <Compile Include="Streaming.Tests.fs" />
     </ItemGroup>
 
     <ItemGroup>
