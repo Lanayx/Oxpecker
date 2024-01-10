@@ -11,6 +11,50 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.FSharp.Core
 open Oxpecker
 
+[<AutoOpen>]
+module RoutingTypes =
+    type HttpVerb =
+        | GET | POST | PUT | PATCH | DELETE | HEAD | OPTIONS | TRACE | CONNECT
+        | Any
+
+        override this.ToString() =
+            match this with
+            | GET        -> "GET"
+            | POST       -> "POST"
+            | PUT        -> "PUT"
+            | PATCH      -> "PATCH"
+            | DELETE     -> "DELETE"
+            | HEAD       -> "HEAD"
+            | OPTIONS    -> "OPTIONS"
+            | TRACE      -> "TRACE"
+            | CONNECT    -> "CONNECT"
+            | _          -> ""
+
+    type RouteTemplate = string
+    type Metadata = obj seq
+
+    type Endpoint =
+        | SimpleEndpoint   of HttpVerb * RouteTemplate * EndpointHandler * Metadata
+        | NestedEndpoint   of RouteTemplate * Endpoint seq  * Metadata
+        | MultiEndpoint    of Endpoint seq
+
+
+module RoutingInternal =
+    type ApplyBefore =
+        static member Compose
+            (beforeHandler: EndpointHandler, endpoint: Endpoint) =
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeHandler >=> handler, metadata)
+            | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeHandler,e)) endpoints, metadata)
+            | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeHandler,e)) endpoints)
+
+        static member Compose
+            (beforeMiddleware: EndpointMiddleware, endpoint: Endpoint) =
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeMiddleware >=> handler, metadata)
+            | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware,e)) endpoints, metadata)
+            | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware,e)) endpoints)
+
 module private RouteTemplateBuilder =
 
     let convertToRouteTemplate (pathValue: string) =
@@ -67,31 +111,8 @@ module private RequestDelegateBuilder =
 
 [<AutoOpen>]
 module Routers =
-
-    type HttpVerb =
-        | GET | POST | PUT | PATCH | DELETE | HEAD | OPTIONS | TRACE | CONNECT
-        | Any
-
-        override this.ToString() =
-            match this with
-            | GET        -> "GET"
-            | POST       -> "POST"
-            | PUT        -> "PUT"
-            | PATCH      -> "PATCH"
-            | DELETE     -> "DELETE"
-            | HEAD       -> "HEAD"
-            | OPTIONS    -> "OPTIONS"
-            | TRACE      -> "TRACE"
-            | CONNECT    -> "CONNECT"
-            | _          -> ""
-
-    type RouteTemplate = string
-    type Metadata = obj seq
-
-    type Endpoint =
-        | SimpleEndpoint   of HttpVerb * RouteTemplate * EndpointHandler * Metadata
-        | NestedEndpoint   of RouteTemplate * Endpoint seq  * Metadata
-        | MultiEndpoint    of Endpoint seq
+    open CoreInternal
+    open RoutingInternal
 
     let rec private applyHttpVerbToEndpoint
         (verb: HttpVerb)
@@ -215,20 +236,7 @@ module Routers =
         (endpoints: Endpoint seq): Endpoint =
         NestedEndpoint (path, endpoints, Seq.empty)
 
-    type ApplyBefore =
-        static member Compose
-            (beforeHandler: EndpointHandler, endpoint: Endpoint) =
-            match endpoint with
-            | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeHandler >=> handler, metadata)
-            | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeHandler,e)) endpoints, metadata)
-            | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeHandler,e)) endpoints)
 
-        static member Compose
-            (beforeMiddleware: EndpointMiddleware, endpoint: Endpoint) =
-            match endpoint with
-            | SimpleEndpoint(verb, template, handler, metadata) -> SimpleEndpoint(verb, template, beforeMiddleware >=> handler, metadata)
-            | NestedEndpoint(template, endpoints, metadata) -> NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware,e)) endpoints, metadata)
-            | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware,e)) endpoints)
 
     let inline applyBefore
         (beforeHandler: 'T)
