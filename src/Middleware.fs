@@ -5,7 +5,6 @@ open System.Runtime.CompilerServices
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.DependencyInjection.Extensions
-open Oxpecker.Routing
 
 [<Extension>]
 type ApplicationBuilderExtensions() =

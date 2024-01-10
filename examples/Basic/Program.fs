@@ -7,7 +7,6 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker
-open Oxpecker.Routing
 
 type RequiresAuditAttribute() = inherit Attribute()
 

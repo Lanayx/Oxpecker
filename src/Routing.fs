@@ -1,4 +1,4 @@
-namespace Oxpecker.Routing
+namespace Oxpecker
 
 open System
 open System.Net

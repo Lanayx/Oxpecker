@@ -16,16 +16,23 @@ type Precondition =
     | ConditionFailed
     | AllConditionsMet
 
-type EntityTagHeaderValue with
+[<AutoOpen>]
+module EntityTagHelper =
     /// <summary>
     /// Creates an object of type <see cref="EntityTagHeaderValue"/>.
     /// </summary>
     /// <param name="isWeak">The difference between a regular (strong) ETag and a weak ETag is that a matching strong ETag guarantees the file is byte-for-byte identical, whereas a matching weak ETag indicates that the content is semantically the same. So if the content of the file changes, the weak ETag should change as well.</param>
     /// <param name="eTag">The entity tag value (without quotes or the W/ prefix).</param>
     /// <returns>Returns an object of <see cref="EntityTagHeaderValue"/>.</returns>
-    static member FromString (isWeak: bool) (eTag: string) =
+    let private fromString (isWeak: bool) (eTag: string) =
         let eTagValue = $"\"%s{eTag}\""
         EntityTagHeaderValue(StringSegment(eTagValue), isWeak)
+
+    let createETag (eTag : string) =
+        fromString false eTag
+
+    let createWeakETag (eTag : string) =
+        fromString true eTag
 
 type HttpContext with
 
@@ -183,7 +190,7 @@ type PreconditionExtensions() =
         ctx.SetStatusCode StatusCodes.Status412PreconditionFailed
 
 // ---------------------------
-// HttpHandler functions
+// EndpointHandler functions
 // ---------------------------
 
 /// <summary>
