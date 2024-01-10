@@ -12,6 +12,7 @@
         <Compile Include="ModelParser.Tests.fs" />
         <Compile Include="HttpContextExtensions.Tests.fs" />
         <Compile Include="DateTimeExtensions.Tests.fs" />
+        <Compile Include="Core.Tests.fs" />
     </ItemGroup>
 
     <ItemGroup>

@@ -15,8 +15,10 @@ module Helpers =
     /// <returns>Returns true if the object is not null otherwise false.</returns>
     let inline isNotNull x = not (isNull x)
 
+    /// Same as << but with two arguments
     let inline (<<+) func2 func1 x y = func2 (func1 x y)
 
+    /// Same as << but with three arguments
     let inline (<<++) func2 func1 x y z = func2 (func1 x y z)
 
     /// <summary>
