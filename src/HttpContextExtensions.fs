@@ -7,6 +7,7 @@ open System.Text
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Http.Extensions
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 
@@ -21,6 +22,14 @@ type ModelBindException (message: string, ex) =
 
 [<Extension>]
 type HttpContextExtensions() =
+
+    /// <summary>
+    /// Returns the entire request URL in a fully escaped form, which is suitable for use in HTTP headers and other operations.
+    /// </summary>
+    /// <returns>Returns a <see cref="System.String"/> URL.</returns>
+    [<Extension>]
+    static member GetRequestUrl(ctx: HttpContext) =
+        ctx.Request.GetEncodedUrl()
 
     /// <summary>
     /// Gets an instance of `'T` from the request's service container.
@@ -97,6 +106,30 @@ type HttpContextExtensions() =
 
 
     /// <summary>
+    /// Tries to get the <see cref="System.String"/> value of a HTTP header from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the HTTP header.</param>
+    /// <returns> Returns Some string if the HTTP header was present in the request, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetRequestHeader (ctx: HttpContext, key: string) =
+        match ctx.Request.Headers.TryGetValue key with
+        | true, value -> Some (string value)
+        | _           -> None
+
+    /// <summary>
+    ///  Tries to get the <see cref="System.String"/> value of a query string parameter from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the query string parameter.</param>
+    /// <returns>Returns Some string if the parameter was present in the request's query string, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetQueryStringValue (ctx : HttpContext, key : string) =
+        match ctx.Request.Query.TryGetValue key with
+        | true, value -> Some (value.ToString())
+        | _           -> None
+
+    /// <summary>
     /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
     /// </summary>
     /// <typeparam name="'T"></typeparam>
@@ -128,7 +161,7 @@ type HttpContextExtensions() =
                 |> dict
                 |> ModelParser.parse<'T> cultureInfo false
                 |> function
-                    | Ok objData -> objData
+                    | Ok value -> value
                     | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
         }
 

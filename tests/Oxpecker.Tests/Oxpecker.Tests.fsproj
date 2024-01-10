@@ -10,6 +10,8 @@
         <Compile Include="Helpers.Tests.fs" />
         <Compile Include="Json.Tests.fs" />
         <Compile Include="ModelParser.Tests.fs" />
+        <Compile Include="HttpContextExtensions.Tests.fs" />
+        <Compile Include="DateTimeExtensions.Tests.fs" />
     </ItemGroup>
 
     <ItemGroup>
