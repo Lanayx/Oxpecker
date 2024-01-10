@@ -166,7 +166,7 @@ type HttpContextExtensions() =
         let canIncludeContentLengthHeader =
             match ctx.Response.StatusCode, ctx.Request.Method with
             | statusCode, _ when statusCode |> is1xxStatusCode || statusCode = 204 -> false
-            | statusCode, method when method = "CONNECT" && statusCode |> is2xxStatusCode -> false
+            | statusCode, method when method = HttpMethods.Connect && statusCode |> is2xxStatusCode -> false
             | _ -> true
         let is205StatusCode = ctx.Response.StatusCode = 205
         if canIncludeContentLengthHeader then

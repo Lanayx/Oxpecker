@@ -9,6 +9,7 @@
     <ItemGroup>
         <Compile Include="Helpers.Tests.fs" />
         <Compile Include="Json.Tests.fs" />
+        <Compile Include="ModelParser.Tests.fs" />
     </ItemGroup>
 
     <ItemGroup>
