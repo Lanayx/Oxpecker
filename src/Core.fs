@@ -2,6 +2,7 @@ namespace Oxpecker
 
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Primitives
 
 [<AutoOpen>]
 module CoreTypes =
@@ -155,3 +156,48 @@ module Core =
     let jsonChunked<'T> (value: 'T): EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.WriteJsonChunked(value)
+
+    /// <summary>
+    /// Clears the current <see cref="Microsoft.AspNetCore.Http.HttpResponse"/> object.
+    /// This can be useful if a <see cref="HttpHandler"/> function needs to overwrite the response of all previous <see cref="HttpHandler"/> functions with its own response (most commonly used by an <see cref="ErrorHandler"/> function).
+    /// </summary>
+    /// <param name="ctx"></param>
+    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    let clearResponse: EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.Response.Clear()
+            Task.CompletedTask
+
+    /// <summary>
+    /// Sets the Content-Type HTTP header in the response.
+    /// </summary>
+    /// <param name="contentType">The mime type of the response (e.g.: application/json or text/html).</param>
+    /// <param name="ctx"></param>
+    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    let setContentType (contentType: string): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.SetContentType contentType
+            Task.CompletedTask
+
+    /// <summary>
+    /// Sets the HTTP status code of the response.
+    /// </summary>
+    /// <param name="statusCode">The status code to be set in the response. For convenience you can use the static <see cref="Microsoft.AspNetCore.Http.StatusCodes"/> class for passing in named status codes instead of using pure int values.</param>
+    /// <param name="ctx"></param>
+    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    let setStatusCode (statusCode: int): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.SetStatusCode statusCode
+            Task.CompletedTask
+
+    ///   <summary>
+    /// Adds or sets a HTTP header in the response.
+    /// </summary>
+    /// <param name="key">The HTTP header name. For convenience you can use the static <see cref="Microsoft.Net.Http.Headers.HeaderNames"/> class for passing in strongly typed header names instead of using pure string values.</param>
+    /// <param name="value">The value to be set. Non string values will be converted to a string using the object's ToString() method.</param>
+    /// <param name="ctx"></param>
+    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    let setHttpHeader (key: string) (value: string): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.SetHttpHeader(key, value)
+            Task.CompletedTask

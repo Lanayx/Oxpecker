@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
 open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
 type MissingDependencyException(dependencyName: string) =

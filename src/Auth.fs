@@ -11,29 +11,21 @@ module Auth =
     /// Challenges a client to authenticate via a specific authScheme.
     /// </summary>
     /// <param name="authScheme">The name of an authentication scheme from your application.</param>
-    /// <param name="next">Next handler</param>
     /// <param name="ctx">Http context</param>
-    /// <returns>An Oxpecker <see cref="EndpointMiddleware"/> function which can be composed into a bigger web application.</returns>
-    let challenge (authScheme: string): EndpointMiddleware =
-        fun (next: EndpointHandler) (ctx: HttpContext) ->
-            task {
-                do! ctx.ChallengeAsync authScheme
-                return! next ctx
-            }
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+    let challenge (authScheme: string): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.ChallengeAsync authScheme
 
     /// <summary>
     /// Signs out the currently logged in user via the provided authScheme.
     /// </summary>
     /// <param name="authScheme">The name of an authentication scheme from your application.</param>
-    /// <param name="next">Next handler</param>
     /// <param name="ctx">Http context</param>
-    /// <returns>An Oxpecker <see cref="EndpointMiddleware"/> function which can be composed into a bigger web application.</returns>
-    let signOut (authScheme: string): EndpointMiddleware =
-        fun (next: EndpointHandler) (ctx: HttpContext) ->
-            task {
-                do! ctx.SignOutAsync authScheme
-                return! next ctx
-            }
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+    let signOut (authScheme: string): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.SignOutAsync authScheme
 
     /// <summary>
     /// Validates if a <see cref="Microsoft.AspNetCore.Http.HttpContext"/> satisfies a certain condition. If the policy returns true then it will continue with the next function otherwise it will short circuit and execute the authFailedHandler.
