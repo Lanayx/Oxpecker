@@ -89,6 +89,7 @@ let endpoints =
             routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
             routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
             route "/abc" (json {| X = "Y" |})
+            route "/cbd/{**x}" (json {| X = "Z" |})
         ]
         POST [
             route "/x" (bindJson handler4)

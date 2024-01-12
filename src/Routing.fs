@@ -92,8 +92,10 @@ module private RequestDelegateBuilder =
     let charParse (s: string) = char s[0] |> box
     let int64Parse (s: string) = int64 s |> box
     let floatParse (s: string) = float s |> box
+    let uint64Parse (s: string) = uint64 s |> box
+    let guidParse (s: string) = Guid.Parse s |> box
 
-    let tryGetParser (c: char) =
+    let tryGetParser (c: char) (endpoint: RouteEndpoint) (placeholderName: string) =
         match c with
         | 's' -> Some stringParse
         | 'i' -> Some intParse
@@ -101,6 +103,14 @@ module private RequestDelegateBuilder =
         | 'c' -> Some charParse
         | 'd' -> Some int64Parse
         | 'f' -> Some floatParse
+        | 'u' -> Some uint64Parse
+        | 'O' ->
+            match endpoint.RoutePattern.ParameterPolicies.TryGetValue(placeholderName) with
+            | true, policyReference ->
+                match policyReference[0].Content with
+                | "guid" -> Some guidParse
+                | _ -> None
+            | _ -> None
         | _   -> None
 
     let private handleResult (result: HttpContext option) (ctx: HttpContext) =
@@ -192,12 +202,14 @@ module Routers =
         SimpleEndpoint (HttpVerb.Any, path, handler, Seq.empty)
 
 
-    let private invokeHandler<'T> (ctx: HttpContext) (methodInfo: MethodInfo) (handler: 'T) (mappings: (string*char) array) (routeData: RouteData) =
+    let private invokeHandler<'T> (ctx: HttpContext) (methodInfo: MethodInfo) (handler: 'T) (mappings: (string*char) array) =
+        let routeData = ctx.GetRouteData()
+        let endpointData = ctx.GetEndpoint() :?> RouteEndpoint
         let mappingArguments = seq {
             for mapping in mappings do
                 let placeholderName, formatChar = mapping
                 let routeValue = routeData.Values[placeholderName] |> string
-                match RequestDelegateBuilder.tryGetParser formatChar with
+                match RequestDelegateBuilder.tryGetParser formatChar endpointData placeholderName with
                 | Some parseFn ->
                     try
                         parseFn routeValue
@@ -226,8 +238,7 @@ module Routers =
 
         let requestDelegate =
             fun (ctx: HttpContext) ->
-                let routeData = ctx.GetRouteData()
-                invokeHandler<'T> ctx handlerMethod routeHandler arrMappings routeData
+                invokeHandler<'T> ctx handlerMethod routeHandler arrMappings
 
         SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
 
@@ -235,7 +246,6 @@ module Routers =
         (path: string)
         (endpoints: Endpoint seq): Endpoint =
         NestedEndpoint (path, endpoints, Seq.empty)
-
 
 
     let inline applyBefore

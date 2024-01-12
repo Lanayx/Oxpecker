@@ -23,6 +23,7 @@
         <Compile Include="Preconditional.Tests.fs" />
         <Compile Include="Streaming.Tests.fs" />
         <Compile Include="Auth.Tests.fs" />
+        <Compile Include="Routing.Tests.fs" />
     </ItemGroup>
 
     <ItemGroup>
