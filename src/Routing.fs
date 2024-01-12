@@ -247,6 +247,25 @@ module Routers =
         (endpoints: Endpoint seq): Endpoint =
         NestedEndpoint (path, endpoints, Seq.empty)
 
+    let subRoutef
+        (path: PrintfFormat<'T,unit,unit, EndpointHandler>)
+        (routeHandlers: seq<'T>): Endpoint =
+
+        let handlerType = routeHandlers.GetType().GenericTypeArguments[0]
+        let handlerMethod = handlerType.GetMethods()[0]
+        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
+        let arrMappings = mappings |> List.toArray
+
+        let endpoints =
+            seq {
+                for routeHandler in routeHandlers do
+                    let requestDelegate = fun (ctx: HttpContext) ->
+                        invokeHandler<'T> ctx handlerMethod routeHandler arrMappings
+                    SimpleEndpoint (HttpVerb.Any, template, requestDelegate, Seq.empty)
+            }
+
+        NestedEndpoint (path.Value, endpoints, Seq.empty)
+
 
     let inline applyBefore
         (beforeHandler: 'T)

@@ -465,21 +465,30 @@ let ``subRoute: routef inside subRoute`` () =
         resultString |> shouldEqual "yadayada"
     }
 
-// // ---------------------------------
-// // subRoutef Tests
-// // ---------------------------------
-//
-// [<Fact>]
-// let ``routef: Validation`` () =
-//     Assert.Throws( fun () ->
-//         GET >=> choose [
-//             route   "/"       >=> text "Hello World"
-//             route   "/foo"    >=> text "bar"
-//             routef "/foo/%s/%d" (fun (name, age) -> text (sprintf "Name: %s, Age: %d" name age))
-//             setStatusCode 404 >=> text "Not found" ]
-//         |> ignore
-//     ) |> ignore
-//
+// ---------------------------------
+// subRoutef Tests
+// ---------------------------------
+
+[<Fact>]
+let ``subRoutef: initial`` () =
+    task {
+        let endpoints = [
+            GET [
+                subRoutef "/v{%i}" [
+                    route "/test" (fun v -> text $"version: ${v}")
+                ]
+            ]
+        ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! result = client.GetAsync("/v1/test")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        resultString |> shouldEqual "version: 1"
+    }
+
 // [<Fact>]
 // let ``subRoutef: GET "/" returns "Not found"`` () =
 //     let ctx = Substitute.For<HttpContext>()

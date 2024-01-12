@@ -62,6 +62,14 @@ let handler10: EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteText(string DateTime.Now)
 
+let handler11 version: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteText($"api version is %d{version}")
+
+let handler12 version1 version2: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.WriteText($"api version is %d{version1} %d{version2}")
+
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
@@ -121,6 +129,10 @@ let endpoints =
         route "/time" handler10 |> NO_RESPONSE_CACHE
         route "/time-cached" handler10 |> RESPONSE_CACHE
         route "/redirect" (redirectTo "/time" false)
+
+        subRoutef "/v{%i}" [
+            route "/test" << handler11
+        ]
     ]
 
 let notFoundHandler (ctx: HttpContext) =
