@@ -131,7 +131,7 @@ let endpoints =
         route "/redirect" (redirectTo "/time" false)
 
         subRoutef "/v{%i}" [
-            route "/test" << handler11
+            "/test", handler11
         ]
     ]
 

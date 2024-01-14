@@ -475,7 +475,7 @@ let ``subRoutef: initial`` () =
         let endpoints = [
             GET [
                 subRoutef "/v{%i}" [
-                    route "/test" (fun v -> text $"version: ${v}")
+                    "/test", (fun v -> text $"version: {v}")
                 ]
             ]
         ]
