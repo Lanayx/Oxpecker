@@ -62,6 +62,11 @@ let handler10: EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteText(string DateTime.Now)
 
+let handler11: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let lang = ctx.Request.RouteValues["lang"] :?> string
+        ctx.WriteText($"lang={lang}")
+
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
@@ -121,6 +126,9 @@ let endpoints =
         route "/time" handler10 |> NO_RESPONSE_CACHE
         route "/time-cached" handler10 |> RESPONSE_CACHE
         route "/redirect" (redirectTo "/time" false)
+        subRoute "/auth/{lang}" [
+            route "/" handler11
+        ]
     ]
 
 let notFoundHandler (ctx: HttpContext) =
