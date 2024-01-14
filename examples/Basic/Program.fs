@@ -130,15 +130,15 @@ let endpoints =
         route "/time-cached" handler10 |> RESPONSE_CACHE
         route "/redirect" (redirectTo "/time" false)
 
-        GenericRouters.subRoutef "/v{%i}" [
-            GenericRouters.route "/test" handler11
-            GenericRouters.routef "/z{%s}" handler12
-            GenericRouters.GET [
-                GenericRouters.route "/test2" handler11
+        subRoutef "/v{%i}" [
+            SRF.route "/test" handler11
+            SRF.routef "/z{%s}" handler12
+            SRF.GET [
+                SRF.route "/test2" handler11
             ]
-            GenericRouters.subRoute "/nested" [
-                GenericRouters.route "/test3" handler11
-                GenericRouters.routef "/test4/{%s}" handler12
+            SRF.subRoute "/nested" [
+                SRF.route "/test3" handler11
+                SRF.routef "/test4/{%s}" handler12
             ]
         ]
     ]

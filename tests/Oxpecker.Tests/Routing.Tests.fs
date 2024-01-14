@@ -474,8 +474,8 @@ let ``subRoutef: initial`` () =
     task {
         let endpoints = [
             GET [
-                GenericRouters.subRoutef "/v{%i}" [
-                    GenericRouters.route "/test" (fun v -> text $"version: {v}")
+                subRoutef "/v{%i}" [
+                    SRF.route "/test" (fun v -> text $"version: {v}")
                 ]
             ]
         ]
