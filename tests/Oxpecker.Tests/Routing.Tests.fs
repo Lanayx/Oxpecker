@@ -475,7 +475,7 @@ let ``subRoutef: initial`` () =
         let endpoints = [
             GET [
                 subRoutef "/v{%i}" [
-                    "/test", (fun v -> text $"version: {v}")
+                    SimpleEndpointF(HttpVerb.GET, "/test", (fun v -> text $"version: {v}"))
                 ]
             ]
         ]

@@ -87,8 +87,8 @@ let RESPONSE_CACHE =
 
 let endpoints =
     [
+        route "/" (text "Hello World")
         GET [
-            route "/" (text "Hello World")
             routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
             routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
             routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
@@ -131,7 +131,13 @@ let endpoints =
         route "/redirect" (redirectTo "/time" false)
 
         subRoutef "/v{%i}" [
-            "/test", handler11
+            SimpleEndpointF(HttpVerb.GET, "/test", handler11)
+            MultiEndpointF([
+                SimpleEndpointF(HttpVerb.GET, "/test2", handler11)
+            ])
+            NestedEndpointF("/nested", [
+                SimpleEndpointF(HttpVerb.GET, "/test3", setHeaderMw "foo" "moo" >>=> handler11)
+            ])
         ]
     ]
 

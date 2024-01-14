@@ -38,6 +38,10 @@ module RoutingTypes =
         | NestedEndpoint   of RouteTemplate * Endpoint seq  * Metadata
         | MultiEndpoint    of Endpoint seq
 
+    type EndpointF<'T> =
+        | SimpleEndpointF   of HttpVerb * RouteTemplate * 'T
+        | NestedEndpointF   of RouteTemplate * EndpointF<'T> seq
+        | MultiEndpointF    of EndpointF<'T> seq
 
 module RoutingInternal =
     type ApplyBefore =
@@ -249,20 +253,30 @@ module Routers =
 
     let subRoutef
         (path: PrintfFormat<'T,unit,unit, EndpointHandler>)
-        (routeHandlers: seq<string*'T>): Endpoint =
+        (routeHandlers: seq<EndpointF<'T>>): Endpoint =
 
-        let handlerType = routeHandlers.GetType().GenericTypeArguments[0].GenericTypeArguments[1]
+        let handlerType = routeHandlers.GetType().GenericTypeArguments[0].GenericTypeArguments[0]
         let handlerMethod = handlerType.GetMethods()[0]
         let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
         let arrMappings = mappings |> List.toArray
 
+
+        let rec matchEndpointF endpointf =
+            match endpointf with
+            | SimpleEndpointF (verb, path, routeHandler) ->
+                let requestDelegate =
+                    fun (ctx: HttpContext) ->
+                        invokeHandler<'T> ctx handlerMethod routeHandler arrMappings
+                SimpleEndpoint (verb, path, requestDelegate, Seq.empty)
+            | MultiEndpointF efs ->
+                MultiEndpoint (efs |> Seq.map matchEndpointF)
+            | NestedEndpointF (path, efs) ->
+                NestedEndpoint (path, efs |> Seq.map matchEndpointF, Seq.empty)
+
         let endpoints =
             seq {
-                for path, routeHandler in routeHandlers do
-                    let requestDelegate =
-                        fun (ctx: HttpContext) ->
-                            invokeHandler<'T> ctx handlerMethod routeHandler arrMappings
-                    SimpleEndpoint (HttpVerb.Any, path, requestDelegate, Seq.empty)
+                for endpointf in routeHandlers do
+                    matchEndpointF endpointf
             }
 
         NestedEndpoint (template, endpoints, Seq.empty)
