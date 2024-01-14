@@ -418,8 +418,8 @@ module Routers =
         | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (addMetadata newMetadata) endpoints)
 
     let subRoutef
-        (path: PrintfFormat<'T -> EndpointHandler,unit,unit, EndpointHandler>)
-        (routeHandlers: seq<SRF.Endpoint<'T -> EndpointHandler>>): Endpoint =
+        (path: PrintfFormat<'T,unit,unit, EndpointHandler>)
+        (routeHandlers: seq<SRF.Endpoint<'T>>): Endpoint =
 
         let handlerType = routeHandlers.GetType().GenericTypeArguments[0].GenericTypeArguments[0]
         let handlerMethod = handlerType.GetMethods()[0]
@@ -431,7 +431,7 @@ module Routers =
             | SRF.SimpleEndpoint (verb, path, routeHandler, metadata) ->
                 let requestDelegate =
                     fun (ctx: HttpContext) ->
-                        invokeHandler<'T -> EndpointHandler> ctx handlerMethod routeHandler mappings
+                        invokeHandler<'T> ctx handlerMethod routeHandler mappings
                 SimpleEndpoint (verb, path, requestDelegate, metadata)
             | SRF.MultiEndpoint efs ->
                 MultiEndpoint (efs |> Seq.map matchEndpointF)
