@@ -474,8 +474,8 @@ let ``subRoutef: initial`` () =
     task {
         let endpoints = [
             GET [
-                subRoutef "/v{%i}" [
-                    SimpleEndpointF(HttpVerb.GET, "/test", (fun v -> text $"version: {v}"))
+                GenericRouters.subRoutef "/v{%i}" [
+                    GenericRouters.route "/test" (fun v -> text $"version: {v}")
                 ]
             ]
         ]

@@ -66,9 +66,9 @@ let handler11 version: EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.WriteText($"api version is %d{version}")
 
-let handler12 version1 version2: EndpointHandler =
+let handler12 version1 version2 =
     fun (ctx: HttpContext) ->
-        ctx.WriteText($"api version is %d{version1} %d{version2}")
+        ctx.WriteText($"api version is %d{version1} %s{version2}")
 
 let authHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -130,14 +130,16 @@ let endpoints =
         route "/time-cached" handler10 |> RESPONSE_CACHE
         route "/redirect" (redirectTo "/time" false)
 
-        subRoutef "/v{%i}" [
-            SimpleEndpointF(HttpVerb.GET, "/test", handler11)
-            MultiEndpointF([
-                SimpleEndpointF(HttpVerb.GET, "/test2", handler11)
-            ])
-            NestedEndpointF("/nested", [
-                SimpleEndpointF(HttpVerb.GET, "/test3", setHeaderMw "foo" "moo" >>=> handler11)
-            ])
+        GenericRouters.subRoutef "/v{%i}" [
+            GenericRouters.route "/test" handler11
+            GenericRouters.routef "/z{%s}" handler12
+            GenericRouters.GET [
+                GenericRouters.route "/test2" handler11
+            ]
+            GenericRouters.subRoute "/nested" [
+                GenericRouters.route "/test3" handler11
+                GenericRouters.routef "/test4/{%s}" handler12
+            ]
         ]
     ]
 
