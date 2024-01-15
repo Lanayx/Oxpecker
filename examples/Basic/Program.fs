@@ -64,7 +64,7 @@ let handler10: EndpointHandler =
 
 let handler11: EndpointHandler =
     fun (ctx: HttpContext) ->
-        let lang = ctx.Request.RouteValues["lang"] :?> string
+        let lang = ctx.TryGetRouteValue("lang") |> Option.defaultValue ""
         ctx.WriteText($"lang={lang}")
 
 let authHandler: EndpointHandler =

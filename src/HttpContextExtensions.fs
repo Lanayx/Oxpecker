@@ -9,7 +9,6 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
 open Microsoft.Extensions.Logging
-open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
 type MissingDependencyException(dependencyName: string) =
@@ -27,10 +26,46 @@ type HttpContextExtensions() =
     /// <summary>
     /// Returns the entire request URL in a fully escaped form, which is suitable for use in HTTP headers and other operations.
     /// </summary>
-    /// <returns>Returns a <see cref="System.String"/> URL.</returns>
+    /// <returns>Returns an instance of `'T`.</returns>
     [<Extension>]
     static member GetRequestUrl(ctx: HttpContext) =
         ctx.Request.GetEncodedUrl()
+
+    /// <summary>
+    /// Tries to get the value from the route values collection and cast it to `'T`.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the HTTP header.</param>
+    /// <returns>Returns a <see cref="System.String"/> URL.</returns>
+    [<Extension>]
+    static member TryGetRouteValue<'T>(ctx: HttpContext, key: string) =
+        match ctx.Request.RouteValues.TryGetValue key with
+        | true, value -> Some (value :?> 'T)
+        | _           -> None
+
+    /// <summary>
+    /// Tries to get the <see cref="System.String"/> value of a HTTP header from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the HTTP header.</param>
+    /// <returns> Returns Some string if the HTTP header was present in the request, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetRequestHeader (ctx: HttpContext, key: string) =
+        match ctx.Request.Headers.TryGetValue key with
+        | true, value -> Some (string value)
+        | _           -> None
+
+    /// <summary>
+    ///  Tries to get the <see cref="System.String"/> value of a query string parameter from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the query string parameter.</param>
+    /// <returns>Returns Some string if the parameter was present in the request's query string, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetQueryStringValue (ctx: HttpContext, key: string) =
+        match ctx.Request.Query.TryGetValue key with
+        | true, value -> Some (value.ToString())
+        | _           -> None
 
     /// <summary>
     /// Gets an instance of `'T` from the request's service container.
@@ -105,84 +140,6 @@ type HttpContextExtensions() =
     static member SetContentType (ctx: HttpContext, contentType: string) =
         ctx.SetHttpHeader(HeaderNames.ContentType, contentType)
 
-
-    /// <summary>
-    /// Tries to get the <see cref="System.String"/> value of a HTTP header from the request.
-    /// </summary>
-    /// <param name="ctx">The current http context object.</param>
-    /// <param name="key">The name of the HTTP header.</param>
-    /// <returns> Returns Some string if the HTTP header was present in the request, otherwise returns None.</returns>
-    [<Extension>]
-    static member TryGetRequestHeader (ctx: HttpContext, key: string) =
-        match ctx.Request.Headers.TryGetValue key with
-        | true, value -> Some (string value)
-        | _           -> None
-
-    /// <summary>
-    ///  Tries to get the <see cref="System.String"/> value of a query string parameter from the request.
-    /// </summary>
-    /// <param name="ctx">The current http context object.</param>
-    /// <param name="key">The name of the query string parameter.</param>
-    /// <returns>Returns Some string if the parameter was present in the request's query string, otherwise returns None.</returns>
-    [<Extension>]
-    static member TryGetQueryStringValue (ctx : HttpContext, key : string) =
-        match ctx.Request.Query.TryGetValue key with
-        | true, value -> Some (value.ToString())
-        | _           -> None
-
-    /// <summary>
-    /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
-    /// </summary>
-    /// <typeparam name="'T"></typeparam>
-    /// <returns>Retruns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
-    [<Extension>]
-    static member BindJson<'T>(ctx: HttpContext) =
-        let serializer = ctx.GetJsonSerializer()
-        task {
-            try
-                return! serializer.Deserialize<'T>(ctx)
-            with ex ->
-                return raise <| ModelBindException("Unable to deserialize model", ex)
-        }
-
-    /// <summary>
-    /// Parses all input elements from an HTML form into an object of type 'T.
-    /// </summary>
-    /// <param name="ctx">The current http context object.</param>
-    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
-    /// <typeparam name="'T"></typeparam>
-    /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
-    [<Extension>]
-    static member BindForm<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
-        task {
-            let! form = ctx.Request.ReadFormAsync()
-            return
-                form
-                |> Seq.map (fun i -> i.Key, i.Value)
-                |> dict
-                |> ModelParser.parse<'T> cultureInfo false
-                |> function
-                    | Ok value -> value
-                    | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
-        }
-
-    /// <summary>
-    /// Parses all parameters of a request's query string into an object of type 'T.
-    /// </summary>
-    /// <param name="ctx">The current http context object.</param>
-    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
-    /// <typeparam name="'T"></typeparam>
-    /// <returns>Returns an instance of type 'T</returns>
-    [<Extension>]
-    static member BindQuery<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
-        ctx.Request.Query
-        |> Seq.map (fun i -> i.Key, i.Value)
-        |> dict
-        |> ModelParser.parse<'T> cultureInfo false
-        |> function
-            | Ok objData -> objData
-            | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
-
     /// <summary>
     /// Writes a byte array to the body of the HTTP response and sets the HTTP Content-Length header accordingly.<br />
     /// <br />
@@ -248,3 +205,56 @@ type HttpContextExtensions() =
     static member WriteJsonChunked<'T> (ctx: HttpContext, value: 'T) =
         let serializer = ctx.GetJsonSerializer()
         serializer.Serialize(value, ctx, true)
+
+    /// <summary>
+    /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
+    /// </summary>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>Retruns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
+    [<Extension>]
+    static member BindJson<'T>(ctx: HttpContext) =
+        let serializer = ctx.GetJsonSerializer()
+        task {
+            try
+                return! serializer.Deserialize<'T>(ctx)
+            with ex ->
+                return raise <| ModelBindException("Unable to deserialize model", ex)
+        }
+
+    /// <summary>
+    /// Parses all input elements from an HTML form into an object of type 'T.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
+    [<Extension>]
+    static member BindForm<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
+        task {
+            let! form = ctx.Request.ReadFormAsync()
+            return
+                form
+                |> Seq.map (fun i -> i.Key, i.Value)
+                |> dict
+                |> ModelParser.parse<'T> cultureInfo false
+                |> function
+                    | Ok value -> value
+                    | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
+        }
+
+    /// <summary>
+    /// Parses all parameters of a request's query string into an object of type 'T.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>Returns an instance of type 'T</returns>
+    [<Extension>]
+    static member BindQuery<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
+        ctx.Request.Query
+        |> Seq.map (fun i -> i.Key, i.Value)
+        |> dict
+        |> ModelParser.parse<'T> cultureInfo false
+        |> function
+            | Ok objData -> objData
+            | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)

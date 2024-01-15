@@ -6,19 +6,19 @@
         <Title>Oxpecker</Title>
         <RootNamespace>Oxpecker</RootNamespace>
         <AssemblyName>Oxpecker</AssemblyName>
-        <Version>0.1.0</Version>
         <Company>F# community</Company>
-        <Description>F# wrapper of ASP.NET Core framework</Description>
+        <Description>F# web framework built on top of ASP.NET Core</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
-        <PackageReleaseNotes>Initial release</PackageReleaseNotes>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Lanayx/Oxpecker</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Functional;Http;Web;Framework;Micro;Service</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
-        <PackageVersion>0.1.0</PackageVersion>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <Version>0.2.0</Version>
+        <PackageVersion>0.2.0</PackageVersion>
+        <PackageReleaseNotes>Added TryGetRouteValue extension method</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
@@ -37,6 +37,7 @@
         <Compile Include="HttpContextExtensions.fs" />
         <Compile Include="DateTimeExtensions.fs" />
         <Compile Include="Core.fs" />
+        <Compile Include="Handlers.fs" />
         <Compile Include="ResponseCaching.fs" />
         <Compile Include="Preconditional.fs" />
         <Compile Include="Streaming.fs" />
