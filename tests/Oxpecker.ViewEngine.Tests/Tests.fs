@@ -17,4 +17,4 @@ let ``My test`` () =
                 div(id = "4")
             }
         }
-    result.Render() |> shouldEqual "<html><div id=1></div><div id=2><div id=3></div><br/><br/><div id=4></div></div></html>"
+    result.Render().ToString() |> shouldEqual """<html><div id="1"></div><div id="2"><div id="3"></div><br><br><div id="4"></div></div></html>"""
