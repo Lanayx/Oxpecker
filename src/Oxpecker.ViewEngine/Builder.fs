@@ -7,19 +7,19 @@ module Builder =
 
     type HtmlElementFun = HtmlElement -> unit
 
-    and HtmlElement(tagName: string) =
+    and HtmlElement(tagName: string, singleTag: bool) =
         let childElements = ResizeArray<HtmlElement>()
         let properties = ResizeArray<struct(string*string)>()
-        let addProperty (name: string) (value: string) =
-            if not (isNull value) then
-                properties.Add(name, value)
 
+        new(tagName: string) = HtmlElement(tagName, false)
 
         // general attributes
-        member this.id with set value = addProperty "id" value
-        member this.class' with set value = addProperty "class" value
-        member this.style with set value = addProperty "style" value
-        member this.data with set (name, value) = addProperty $"data-{name}" value
+        member this.id with set value = this.AddProperty "id" value
+        member this.class' with set value = this.AddProperty "class" value
+        member this.style with set value = this.AddProperty "style" value
+        member this.data with set (name, value) = this.AddProperty $"data-{name}" value
+        member this.lang with set value = this.AddProperty "lang" value
+        member this.dir with set value = this.AddProperty "dir" value
 
         abstract member Render : unit -> StringBuilder
         default this.Render() =
@@ -27,12 +27,19 @@ module Builder =
             for name, value in properties do
                 sb.Append(' ').Append(name).Append("=\"").Append(value).Append("\"") |> ignore
             sb.Append('>') |> ignore
-            for child in childElements do
-                sb.Append(child.Render()) |> ignore
-            sb.Append("</").Append(tagName).Append('>')
+            if not singleTag then
+                for child in childElements do
+                    sb.Append(child.Render()) |> ignore
+                sb.Append("</").Append(tagName).Append('>')
+            else
+                sb
 
         member this.AddChild(element: HtmlElement) =
             childElements.Add(element)
+
+        member this.AddProperty (name: string) (value: string) =
+            if not (isNull value) then
+                properties.Add(name, value)
 
         // builder methods
         member inline  _.Combine([<InlineIfLambda>]first: HtmlElementFun, [<InlineIfLambda>]second: HtmlElementFun) : HtmlElementFun =
