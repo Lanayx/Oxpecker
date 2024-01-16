@@ -10,11 +10,15 @@ module Builder =
     and HtmlElement(tagName: string) =
         let childElements = ResizeArray<HtmlElement>()
         let properties = ResizeArray<struct(string*string)>()
+        let addProperty (name: string) (value: string) =
+            if not (isNull value) then
+                properties.Add(name, value)
+
 
         // general attributes
-        member this.id with set value = properties.Add("id", value)
-        member this.class' with set value = properties.Add("class", value)
-        member this.style with set value = properties.Add("style", value)
+        member this.id with set value = addProperty "id" value
+        member this.class' with set value = addProperty "class" value
+        member this.style with set value = addProperty "style" value
 
         abstract member Render : unit -> StringBuilder
         default this.Render() =
