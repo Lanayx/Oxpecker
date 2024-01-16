@@ -19,6 +19,7 @@ module Builder =
         member this.id with set value = addProperty "id" value
         member this.class' with set value = addProperty "class" value
         member this.style with set value = addProperty "style" value
+        member this.data with set (name, value) = addProperty $"data-{name}" value
 
         abstract member Render : unit -> StringBuilder
         default this.Render() =
