@@ -12,8 +12,9 @@ module Builder =
         let properties = ResizeArray<struct(string*string)>()
 
         // general attributes
-        member this.id with set value =
-            properties.Add("id", value)
+        member this.id with set value = properties.Add("id", value)
+        member this.class' with set value = properties.Add("class", value)
+        member this.style with set value = properties.Add("style", value)
 
         abstract member Render : unit -> StringBuilder
         default this.Render() =
@@ -36,10 +37,8 @@ module Builder =
 
         member inline _.Zero() : HtmlElementFun = ignore
 
-        member inline _.Delay([<InlineIfLambda>]delay: unit -> HtmlElementFun) =
-            fun (builder) -> (delay())(builder)
-            // Note, not "f()()" - the F# compiler optimizer likes arguments to match lambdas in order to preserve
-            // argument evaluation order, so for "(f())()" the optimizer reduces one lambda then another, while "f()()" doesn't
+        member inline _.Delay([<InlineIfLambda>]delay: unit -> HtmlElementFun) : HtmlElementFun =
+            delay()
 
         member inline _.For(values: 'T seq, [<InlineIfLambda>]body: 'T -> HtmlElementFun) : HtmlElementFun =
             fun builder ->
