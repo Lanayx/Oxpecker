@@ -34,5 +34,8 @@ let ``Optional attribute`` () =
 
 [<Fact>]
 let ``Data attribute`` () =
-    let result = div(data=("my-value","sdf"))
-    result.Render().ToString() |> shouldEqual """<div data-my-value="sdf"></div>"""
+    let result =
+        div()
+            .AddAttribute("data-my-value", "sdf")
+            .AddAttribute("data-my-value2", "abc")
+    result.Render().ToString() |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc"></div>"""

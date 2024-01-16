@@ -44,175 +44,175 @@ module Tags =
 
     type a() =
         inherit HtmlElement("a")
-        member this.href with set value = this.AddProperty "href" value
-        member this.rel with set value = this.AddProperty "rel" value
-        member this.target with set value = this.AddProperty "target" value
+        member this.href with set value = this.AddAttribute("href", value) |> ignore
+        member this.rel with set value = this.AddAttribute("rel", value) |> ignore
+        member this.target with set value = this.AddAttribute("target", value) |> ignore
 
     type img() =
         inherit HtmlElement("img", true)
-        member this.src with set value = this.AddProperty "src" value
-        member this.alt with set value = this.AddProperty "alt" value
-        member this.width with set value = this.AddProperty "width" value
-        member this.height with set value = this.AddProperty "height" value
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.alt with set value = this.AddAttribute("alt", value) |> ignore
+        member this.width with set value = this.AddAttribute("width", value) |> ignore
+        member this.height with set value = this.AddAttribute("height", value) |> ignore
 
     type form() =
         inherit HtmlElement("form")
-        member this.action with set value = this.AddProperty "action" value
-        member this.method with set value = this.AddProperty "method" value
-        member this.enctype with set value = this.AddProperty "enctype" value
-        member this.target with set value = this.AddProperty "target" value
+        member this.action with set value = this.AddAttribute("action", value) |> ignore
+        member this.method with set value = this.AddAttribute("method", value) |> ignore
+        member this.enctype with set value = this.AddAttribute("enctype", value) |> ignore
+        member this.target with set value = this.AddAttribute("target", value) |> ignore
 
     type script() =
         inherit HtmlElement("script")
-        member this.src with set value = this.AddProperty "src" value
-        member this.type' with set value = this.AddProperty "type" value
-        member this.async with set value = this.AddProperty "async" value
-        member this.defer with set value = this.AddProperty "defer" value
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.async with set value = this.AddAttribute("async", value) |> ignore
+        member this.defer with set value = this.AddAttribute("defer", value) |> ignore
 
     type link() =
         inherit HtmlElement("link", true)
-        member this.rel with set value = this.AddProperty "rel" value
-        member this.href with set value = this.AddProperty "href" value
-        member this.type' with set value = this.AddProperty "type" value
-        member this.media with set value = this.AddProperty "media" value
+        member this.rel with set value = this.AddAttribute("rel", value) |> ignore
+        member this.href with set value = this.AddAttribute("href", value) |> ignore
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.media with set value = this.AddAttribute("media", value) |> ignore
 
     type html() =
         inherit HtmlElement("html")
-        member this.xmlns with set value = this.AddProperty "xmlns" value
+        member this.xmlns with set value = this.AddAttribute("xmlns", value) |> ignore
 
     type meta() =
         inherit HtmlElement("meta", true)
-        member this.name with set value = this.AddProperty "name" value
-        member this.content with set value = this.AddProperty "content" value
-        member this.charset with set value = this.AddProperty "charset" value
-        member this.httpEquiv with set value = this.AddProperty "http-equiv" value
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.content with set value = this.AddAttribute("content", value) |> ignore
+        member this.charset with set value = this.AddAttribute("charset", value) |> ignore
+        member this.httpEquiv with set value = this.AddAttribute("http-equiv", value) |> ignore
 
     type input() =
         inherit HtmlElement("input", true)
-        member this.type' with set value = this.AddProperty "type" value
-        member this.name with set value = this.AddProperty "name" value
-        member this.value with set value = this.AddProperty "value" value
-        member this.placeholder with set value = this.AddProperty "placeholder" value
-        member this.required with set value = this.AddProperty "required" value
-        member this.autofocus with set value = this.AddProperty "autofocus" value
-        member this.autocomplete with set value = this.AddProperty "autocomplete" value
-        member this.min with set value = this.AddProperty "min" value
-        member this.max with set value = this.AddProperty "max" value
-        member this.step with set value = this.AddProperty "step" value
-        member this.pattern with set value = this.AddProperty "pattern" value
-        member this.readonly with set value = this.AddProperty "readonly" value
-        member this.disabled with set value = this.AddProperty "disabled" value
-        member this.multiple with set value = this.AddProperty "multiple" value
-        member this.accept with set value = this.AddProperty "accept" value
-        member this.list with set value = this.AddProperty "list" value
-        member this.maxlength with set value = this.AddProperty "maxlength" value
-        member this.minlength with set value = this.AddProperty "minlength" value
-        member this.size with set value = this.AddProperty "size" value
-        member this.src with set value = this.AddProperty "src" value
-        member this.height with set value = this.AddProperty "height" value
-        member this.width with set value = this.AddProperty "width" value
-        member this.alt with set value = this.AddProperty "alt" value
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.value with set value = this.AddAttribute("value", value) |> ignore
+        member this.placeholder with set value = this.AddAttribute("placeholder", value) |> ignore
+        member this.required with set value = this.AddAttribute("required", value) |> ignore
+        member this.autofocus with set value = this.AddAttribute("autofocus", value) |> ignore
+        member this.autocomplete with set value = this.AddAttribute("autocomplete", value) |> ignore
+        member this.min with set value = this.AddAttribute("min", value) |> ignore
+        member this.max with set value = this.AddAttribute("max", value) |> ignore
+        member this.step with set value = this.AddAttribute("step", value) |> ignore
+        member this.pattern with set value = this.AddAttribute("pattern", value) |> ignore
+        member this.readonly with set value = this.AddAttribute("readonly", value) |> ignore
+        member this.disabled with set value = this.AddAttribute("disabled", value) |> ignore
+        member this.multiple with set value = this.AddAttribute("multiple", value) |> ignore
+        member this.accept with set value = this.AddAttribute("accept", value) |> ignore
+        member this.list with set value = this.AddAttribute("list", value) |> ignore
+        member this.maxlength with set value = this.AddAttribute("maxlength", value) |> ignore
+        member this.minlength with set value = this.AddAttribute("minlength", value) |> ignore
+        member this.size with set value = this.AddAttribute("size", value) |> ignore
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.height with set value = this.AddAttribute("height", value) |> ignore
+        member this.width with set value = this.AddAttribute("width", value) |> ignore
+        member this.alt with set value = this.AddAttribute("alt", value) |> ignore
 
     type textarea() =
         inherit HtmlElement("textarea")
-        member this.name with set value = this.AddProperty "name" value
-        member this.placeholder with set value = this.AddProperty "placeholder" value
-        member this.required with set value = this.AddProperty "required" value
-        member this.autofocus with set value = this.AddProperty "autofocus" value
-        member this.readonly with set value = this.AddProperty "readonly" value
-        member this.disabled with set value = this.AddProperty "disabled" value
-        member this.rows with set value = this.AddProperty "rows" value
-        member this.cols with set value = this.AddProperty "cols" value
-        member this.wrap with set value = this.AddProperty "wrap" value
-        member this.maxlength with set value = this.AddProperty "maxlength" value
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.placeholder with set value = this.AddAttribute("placeholder", value) |> ignore
+        member this.required with set value = this.AddAttribute("required", value) |> ignore
+        member this.autofocus with set value = this.AddAttribute("autofocus", value) |> ignore
+        member this.readonly with set value = this.AddAttribute("readonly", value) |> ignore
+        member this.disabled with set value = this.AddAttribute("disabled", value) |> ignore
+        member this.rows with set value = this.AddAttribute("rows", value) |> ignore
+        member this.cols with set value = this.AddAttribute("cols", value) |> ignore
+        member this.wrap with set value = this.AddAttribute("wrap", value) |> ignore
+        member this.maxlength with set value = this.AddAttribute("maxlength", value) |> ignore
 
     type button() =
         inherit HtmlElement("button")
-        member this.type' with set value = this.AddProperty "type" value
-        member this.name with set value = this.AddProperty "name" value
-        member this.value with set value = this.AddProperty "value" value
-        member this.disabled with set value = this.AddProperty "disabled" value
-        member this.autofocus with set value = this.AddProperty "autofocus" value
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.value with set value = this.AddAttribute("value", value) |> ignore
+        member this.disabled with set value = this.AddAttribute("disabled", value) |> ignore
+        member this.autofocus with set value = this.AddAttribute("autofocus", value) |> ignore
 
     type select() =
         inherit HtmlElement("select")
-        member this.name with set value = this.AddProperty "name" value
-        member this.required with set value = this.AddProperty "required" value
-        member this.autofocus with set value = this.AddProperty "autofocus" value
-        member this.disabled with set value = this.AddProperty "disabled" value
-        member this.multiple with set value = this.AddProperty "multiple" value
-        member this.size with set value = this.AddProperty "size" value
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.required with set value = this.AddAttribute("required", value) |> ignore
+        member this.autofocus with set value = this.AddAttribute("autofocus", value) |> ignore
+        member this.disabled with set value = this.AddAttribute("disabled", value) |> ignore
+        member this.multiple with set value = this.AddAttribute("multiple", value) |> ignore
+        member this.size with set value = this.AddAttribute("size", value) |> ignore
 
     type option() =
         inherit HtmlElement("option")
-        member this.value with set value = this.AddProperty "value" value
-        member this.selected with set value = this.AddProperty "selected" value
-        member this.disabled with set value = this.AddProperty "disabled" value
+        member this.value with set value = this.AddAttribute("value", value) |> ignore
+        member this.selected with set value = this.AddAttribute("selected", value) |> ignore
+        member this.disabled with set value = this.AddAttribute("disabled", value) |> ignore
 
     type label() =
         inherit HtmlElement("label")
-        member this.for' with set value = this.AddProperty "for" value
+        member this.for' with set value = this.AddAttribute("for", value) |> ignore
 
     type style() =
         inherit HtmlElement("style")
-        member this.type' with set value = this.AddProperty "type" value
-        member this.media with set value = this.AddProperty "media" value
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.media with set value = this.AddAttribute("media", value) |> ignore
 
     type iframe() =
         inherit HtmlElement("iframe")
-        member this.src with set value = this.AddProperty "src" value
-        member this.name with set value = this.AddProperty "name" value
-        member this.sandbox with set value = this.AddProperty "sandbox" value
-        member this.width with set value = this.AddProperty "width" value
-        member this.height with set value = this.AddProperty "height" value
-        member this.allowfullscreen with set value = this.AddProperty "allowfullscreen" value
-        member this.allowpaymentrequest with set value = this.AddProperty "allowpaymentrequest" value
-        member this.loading with set value = this.AddProperty "loading" value
-        member this.referrerpolicy with set value = this.AddProperty "referrerpolicy" value
-        member this.srcdoc with set value = this.AddProperty "srcdoc" value
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.sandbox with set value = this.AddAttribute("sandbox", value) |> ignore
+        member this.width with set value = this.AddAttribute("width", value) |> ignore
+        member this.height with set value = this.AddAttribute("height", value) |> ignore
+        member this.allowfullscreen with set value = this.AddAttribute("allowfullscreen", value) |> ignore
+        member this.allowpaymentrequest with set value = this.AddAttribute("allowpaymentrequest", value) |> ignore
+        member this.loading with set value = this.AddAttribute("loading", value) |> ignore
+        member this.referrerpolicy with set value = this.AddAttribute("referrerpolicy", value) |> ignore
+        member this.srcdoc with set value = this.AddAttribute("srcdoc", value) |> ignore
 
     type video() =
         inherit HtmlElement("video")
-        member this.src with set value = this.AddProperty "src" value
-        member this.poster with set value = this.AddProperty "poster" value
-        member this.autoplay with set value = this.AddProperty "autoplay" value
-        member this.controls with set value = this.AddProperty "controls" value
-        member this.loop with set value = this.AddProperty "loop" value
-        member this.muted with set value = this.AddProperty "muted" value
-        member this.width with set value = this.AddProperty "width" value
-        member this.height with set value = this.AddProperty "height" value
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.poster with set value = this.AddAttribute("poster", value) |> ignore
+        member this.autoplay with set value = this.AddAttribute("autoplay", value) |> ignore
+        member this.controls with set value = this.AddAttribute("controls", value) |> ignore
+        member this.loop with set value = this.AddAttribute("loop", value) |> ignore
+        member this.muted with set value = this.AddAttribute("muted", value) |> ignore
+        member this.width with set value = this.AddAttribute("width", value) |> ignore
+        member this.height with set value = this.AddAttribute("height", value) |> ignore
 
     type audio() =
         inherit HtmlElement("audio")
-        member this.src with set value = this.AddProperty "src" value
-        member this.autoplay with set value = this.AddProperty "autoplay" value
-        member this.controls with set value = this.AddProperty "controls" value
-        member this.loop with set value = this.AddProperty "loop" value
-        member this.muted with set value = this.AddProperty "muted" value
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.autoplay with set value = this.AddAttribute("autoplay", value) |> ignore
+        member this.controls with set value = this.AddAttribute("controls", value) |> ignore
+        member this.loop with set value = this.AddAttribute("loop", value) |> ignore
+        member this.muted with set value = this.AddAttribute("muted", value) |> ignore
 
     type source() =
         inherit HtmlElement("source", true)
-        member this.src with set value = this.AddProperty "src" value
-        member this.type' with set value = this.AddProperty "type" value
-        member this.media with set value = this.AddProperty "media" value
-        member this.sizes with set value = this.AddProperty "sizes" value
-        member this.srcset with set value = this.AddProperty "srcset" value
+        member this.src with set value = this.AddAttribute("src", value) |> ignore
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.media with set value = this.AddAttribute("media", value) |> ignore
+        member this.sizes with set value = this.AddAttribute("sizes", value) |> ignore
+        member this.srcset with set value = this.AddAttribute("srcset", value) |> ignore
 
     type canvas() =
         inherit HtmlElement("canvas")
-        member this.width with set value = this.AddProperty "width" value
-        member this.height with set value = this.AddProperty "height" value
+        member this.width with set value = this.AddAttribute("width", value) |> ignore
+        member this.height with set value = this.AddAttribute("height", value) |> ignore
 
     type object'() =
         inherit HtmlElement("object")
-        member this.data with set value = this.AddProperty "data" value
-        member this.type' with set value = this.AddProperty "type" value
-        member this.width with set value = this.AddProperty "width" value
-        member this.height with set value = this.AddProperty "height" value
+        member this.data with set value = this.AddAttribute("data", value) |> ignore
+        member this.type' with set value = this.AddAttribute("type", value) |> ignore
+        member this.width with set value = this.AddAttribute("width", value) |> ignore
+        member this.height with set value = this.AddAttribute("height", value) |> ignore
 
     type param() =
         inherit HtmlElement("param", true)
-        member this.name with set value = this.AddProperty "name" value
-        member this.value with set value = this.AddProperty "value" value
+        member this.name with set value = this.AddAttribute("name", value) |> ignore
+        member this.value with set value = this.AddAttribute("value", value) |> ignore
 
 

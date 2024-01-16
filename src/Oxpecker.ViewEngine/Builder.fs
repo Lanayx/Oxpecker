@@ -5,27 +5,33 @@ module Builder =
 
     open System.Text
 
+    [<Struct>]
+    type HtmlAttribute =
+        {
+            Name: string
+            Value: string
+        }
+
     type HtmlElementFun = HtmlElement -> unit
 
     and HtmlElement(tagName: string, singleTag: bool) =
         let childElements = ResizeArray<HtmlElement>()
-        let properties = ResizeArray<struct(string*string)>()
+        let attributes = ResizeArray<HtmlAttribute>()
 
         new(tagName: string) = HtmlElement(tagName, false)
 
         // general attributes
-        member this.id with set value = this.AddProperty "id" value
-        member this.class' with set value = this.AddProperty "class" value
-        member this.style with set value = this.AddProperty "style" value
-        member this.data with set (name, value) = this.AddProperty $"data-{name}" value
-        member this.lang with set value = this.AddProperty "lang" value
-        member this.dir with set value = this.AddProperty "dir" value
+        member this.id with set value = this.AddAttribute("id", value) |> ignore
+        member this.class' with set value = this.AddAttribute("class", value) |> ignore
+        member this.style with set value = this.AddAttribute("style", value) |> ignore
+        member this.lang with set value = this.AddAttribute("lang", value) |> ignore
+        member this.dir with set value = this.AddAttribute("dir", value) |> ignore
 
         abstract member Render : unit -> StringBuilder
         default this.Render() =
             let sb = StringBuilder().Append('<').Append(tagName)
-            for name, value in properties do
-                sb.Append(' ').Append(name).Append("=\"").Append(value).Append("\"") |> ignore
+            for attribute in attributes do
+                sb.Append(' ').Append(attribute.Name).Append("=\"").Append(attribute.Value).Append("\"") |> ignore
             sb.Append('>') |> ignore
             if not singleTag then
                 for child in childElements do
@@ -36,10 +42,15 @@ module Builder =
 
         member this.AddChild(element: HtmlElement) =
             childElements.Add(element)
+            this
 
-        member this.AddProperty (name: string) (value: string) =
+        member this.AddAttribute(name: string, value: string) =
             if not (isNull value) then
-                properties.Add(name, value)
+                attributes.Add({ Name = name; Value = value })
+            this
+
+        member this.Children = childElements
+        member this.Attributes = attributes
 
         // builder methods
         member inline  _.Combine([<InlineIfLambda>]first: HtmlElementFun, [<InlineIfLambda>]second: HtmlElementFun) : HtmlElementFun =
@@ -58,7 +69,8 @@ module Builder =
                     body value builder
 
         member inline _.Yield(element: HtmlElement) : HtmlElementFun =
-            _.AddChild(element)
+            fun builder ->
+                builder.AddChild(element) |> ignore
 
         member inline this.Run([<InlineIfLambda>]runExpr: HtmlElementFun) =
             runExpr this
