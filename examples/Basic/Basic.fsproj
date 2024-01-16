@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Oxpecker.fsproj" />
+      <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
     </ItemGroup>
 
 </Project>
