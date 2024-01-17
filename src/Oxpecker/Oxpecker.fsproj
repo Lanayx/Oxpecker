@@ -45,5 +45,8 @@
         <Compile Include="Routing.fs" />
         <Compile Include="Middleware.fs" />
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
+    </ItemGroup>
 
 </Project>

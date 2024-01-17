@@ -7,6 +7,7 @@
     <ItemGroup>
         <Compile Include="Builder.fs" />
         <Compile Include="Tags.fs" />
+        <Compile Include="Render.fs" />
     </ItemGroup>
 
 </Project>

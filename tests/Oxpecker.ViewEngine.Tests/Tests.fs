@@ -5,7 +5,7 @@ open Xunit
 open FsUnitTyped
 
 [<Fact>]
-let ``My test`` () =
+let ``Basic test`` () =
     let result =
         html() {
             div(id = "1")
@@ -17,7 +17,7 @@ let ``My test`` () =
                 div(id = "4")
             }
         }
-    result.Render().ToString() |> shouldEqual """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
+    result |> Render.toString |> shouldEqual """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
 
 
 [<Fact>]
@@ -29,7 +29,7 @@ let ``Optional attribute`` () =
                 br()
             }
         }
-    result.Render().ToString() |> shouldEqual """<div><div id="myid"><br></div></div>"""
+    result |> Render.toString |> shouldEqual """<div><div id="myid"><br></div></div>"""
 
 
 [<Fact>]
@@ -38,6 +38,6 @@ let ``Data attribute`` () =
         div()
             .attr("data-my-value", "sdf")
             .attr("data-my-value2", "abc"){
-                br()
+                "Some text"
             }
-    result.Render().ToString() |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc"><br></div>"""
+    result |> Render.toString |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc">Some text</div>"""

@@ -5,6 +5,7 @@ open System.IO
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.WebUtilities
 open Microsoft.Extensions.DependencyInjection
+open Oxpecker.ViewEngine
 open Xunit
 open FsUnitTyped
 open Oxpecker
@@ -161,4 +162,25 @@ let ``WriteJsonChunked should add json to the context`` () =
         ctx.Response.Headers.ContentType |> shouldEqual "application/json; charset=utf-8"
         ctx.Response.Headers.ContentLength |> shouldEqual (Nullable())
         result |> shouldEqual """{"hello":"World"}"""
+    }
+
+[<Fact>]
+let ``WriteHtmlViewAsync should add html to the context`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+        let htmlDoc =
+            html() {
+                head()
+                body() {
+                    h1() { "Hello world" }
+                }
+            }
+        do! ctx.WriteHtmlView(htmlDoc)
+
+        ctx.Response.Body.Seek(0, SeekOrigin.Begin) |> ignore
+        use reader = new StreamReader(ctx.Response.Body)
+        let result = reader.ReadToEnd()
+
+        result |> shouldEqual $"<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1>Hello world</h1></body></html>"
     }

@@ -12,13 +12,18 @@ module Builder =
             Value: string
         }
 
+    type HtmlElementType =
+        | DoubleTag = 0uy
+        | SingleTag = 1uy
+        | TextNode = 2uy
+
     type HtmlElementFun = HtmlElement -> unit
 
-    and HtmlElement(tagName: string, singleTag: bool) =
+    and HtmlElement(tagName: string, elemType: HtmlElementType) =
         let children = ResizeArray<HtmlElement>()
         let attributes = ResizeArray<HtmlAttribute>()
 
-        new(tagName: string) = HtmlElement(tagName, false)
+        new(tagName: string) = HtmlElement(tagName, HtmlElementType.DoubleTag)
 
         // global attributes
         member this.id with set value = this.attr("id", value) |> ignore
@@ -27,17 +32,25 @@ module Builder =
         member this.lang with set value = this.attr("lang", value) |> ignore
         member this.dir with set value = this.attr("dir", value) |> ignore
 
-        member this.Render(): StringBuilder =
-            let sb = StringBuilder().Append('<').Append(tagName)
-            for attribute in attributes do
-                sb.Append(' ').Append(attribute.Name).Append("=\"").Append(attribute.Value).Append('"') |> ignore
-            sb.Append('>') |> ignore
-            if not singleTag then
+        member this.Render(sb: StringBuilder): unit =
+            let inline handleSingleTag() =
+                sb.Append('<').Append(tagName) |> ignore
+                for attribute in attributes do
+                    sb.Append(' ').Append(attribute.Name).Append("=\"").Append(attribute.Value).Append('"') |> ignore
+                sb.Append('>') |> ignore
+
+            match elemType with
+            | HtmlElementType.TextNode ->
+                sb.Append(tagName) |> ignore
+            | HtmlElementType.SingleTag ->
+                handleSingleTag()
+            | HtmlElementType.DoubleTag ->
+                handleSingleTag()
                 for child in children do
-                    sb.Append(child.Render()) |> ignore
-                sb.Append("</").Append(tagName).Append('>')
-            else
-                sb
+                    child.Render(sb)
+                sb.Append("</").Append(tagName).Append('>') |> ignore
+            | _ ->
+                failwith "Unknown element type"
 
         member this.AddChild(element: HtmlElement) =
             children.Add(element)
@@ -71,6 +84,12 @@ module Builder =
             fun builder ->
                 builder.AddChild(element) |> ignore
 
+        member inline _.Yield(text: string) : HtmlElementFun =
+            fun builder ->
+                builder.AddChild(TextNode text) |> ignore
+
         member inline this.Run([<InlineIfLambda>]runExpr: HtmlElementFun) =
             runExpr this
             this
+
+    and TextNode(text: string) = inherit HtmlElement(text, HtmlElementType.TextNode)

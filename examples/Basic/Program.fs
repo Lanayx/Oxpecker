@@ -7,6 +7,7 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker
+open Oxpecker.ViewEngine
 
 type RequiresAuditAttribute() = inherit Attribute()
 
@@ -131,11 +132,20 @@ let endpoints =
         ]
     ]
 
+
+let errorView errorCode (errorText: string) =
+    html(){
+        body(style = "width: 800px; margin: 0 auto") {
+            h1(style="text-align: center; color: red") { $"Error %d{errorCode}" }
+            p() { errorText }
+        }
+    }
+
 let notFoundHandler (ctx: HttpContext) =
     let logger = ctx.GetLogger()
     logger.LogWarning("Unhandled 404 error")
     ctx.SetStatusCode 404
-    ctx.WriteText "Page not found!"
+    ctx.WriteHtmlView(errorView 404 "Page not found!")
 
 let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
     task {
@@ -147,12 +157,12 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
             let logger = ctx.GetLogger()
             logger.LogWarning(ex, "Unhandled 400 error")
             ctx.SetStatusCode StatusCodes.Status400BadRequest
-            return! ctx.WriteText <| string ex
+            return! ctx.WriteHtmlView(errorView 400 (string ex))
         | ex ->
             let logger = ctx.GetLogger()
             logger.LogError(ex, "Unhandled 500 error")
             ctx.SetStatusCode StatusCodes.Status500InternalServerError
-            return! ctx.WriteText <| string ex
+            return! ctx.WriteHtmlView(errorView 500 (string ex))
     } :> Task
 
 let configureApp (appBuilder: IApplicationBuilder) =
