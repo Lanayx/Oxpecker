@@ -227,9 +227,7 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteHtmlView (ctx: HttpContext, htmlView: HtmlElement) =
-        let str = htmlView |> Render.toHtmlDocument
-        ctx.SetContentType "text/html; charset=utf-8"
-        ctx.WriteBytes(Encoding.UTF8.GetBytes str)
+        htmlView |> Render.toResponseStream ctx
 
     /// <summary>
     /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
