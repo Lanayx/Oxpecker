@@ -38,6 +38,7 @@ module GiraffeView =
             ]
         ]
 
+[<MemoryDiagnoser>]
 type ViewEngine() =
 
 // BenchmarkDotNet v0.13.12, Windows 10
@@ -46,11 +47,10 @@ type ViewEngine() =
 //   [Host]     : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2 DEBUG
 //   DefaultJob : .NET 8.0.1 (8.0.123.58001), X64 RyuJI
 
-// | Method             | Mean     | Error     | StdDev    |
-// |------------------- |---------:|----------:|----------:|
-// | RenderOxpeckerView | 3.952 us | 0.0340 us | 0.0318 us |
-// | RenderGiraffeView  | 3.570 us | 0.0274 us | 0.0256 us |
-
+// | Method             | Mean     | Error     | StdDev    | Gen0   | Allocated |
+// |------------------- |---------:|----------:|----------:|-------:|----------:|
+// | RenderOxpeckerView | 4.108 us | 0.0819 us | 0.1174 us | 3.0518 |  12.49 KB |
+// | RenderGiraffeView  | 3.745 us | 0.0727 us | 0.1452 us | 3.9940 |  16.35 KB |
 
     [<Benchmark>]
     member this.RenderOxpeckerView () =
