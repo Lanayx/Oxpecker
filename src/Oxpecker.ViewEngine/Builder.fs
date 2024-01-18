@@ -1,5 +1,7 @@
 ﻿namespace Oxpecker.ViewEngine
 
+open System.Collections.Generic
+
 [<AutoOpen>]
 module Builder =
 
@@ -12,18 +14,19 @@ module Builder =
             Value: string
         }
 
+    [<Struct>]
     type HtmlElementType =
-        | DoubleTag = 0uy
-        | SingleTag = 1uy
-        | TextNode = 2uy
+        | DoubleTag of dt: string
+        | SingleTag of st: string
+        | TextNode of text:string
 
     type HtmlElementFun = HtmlElement -> unit
 
-    and HtmlElement(tagName: string, elemType: HtmlElementType) =
+    and HtmlElement(elemType: HtmlElementType) =
         let children = ResizeArray<HtmlElement>()
         let attributes = ResizeArray<HtmlAttribute>()
 
-        new(tagName: string) = HtmlElement(tagName, HtmlElementType.DoubleTag)
+        new(tagName: string) = HtmlElement(HtmlElementType.DoubleTag(tagName))
 
         // global attributes
         member this.id with set value = this.attr("id", value) |> ignore
@@ -33,24 +36,24 @@ module Builder =
         member this.dir with set value = this.attr("dir", value) |> ignore
 
         member this.Render(sb: StringBuilder): unit =
-            let inline handleSingleTag() =
+            let inline handleSingleTag (tagName: string) =
                 sb.Append('<').Append(tagName) |> ignore
-                for attribute in attributes do
-                    sb.Append(' ').Append(attribute.Name).Append("=\"").Append(attribute.Value).Append('"') |> ignore
+                for i in 0..attributes.Count-1 do
+                    let attr = attributes[i]
+                    sb.Append(' ').Append(attr.Name).Append("=\"").Append(attr.Value).Append('"') |> ignore
                 sb.Append('>') |> ignore
 
             match elemType with
-            | HtmlElementType.TextNode ->
-                sb.Append(tagName) |> ignore
-            | HtmlElementType.SingleTag ->
-                handleSingleTag()
-            | HtmlElementType.DoubleTag ->
-                handleSingleTag()
-                for child in children do
-                    child.Render(sb)
+            | HtmlElementType.TextNode content ->
+                sb.Append(content) |> ignore
+            | HtmlElementType.SingleTag tagName ->
+                handleSingleTag(tagName)
+            | HtmlElementType.DoubleTag tagName ->
+                handleSingleTag(tagName)
+                for i in 0..children.Count-1 do
+                    children[i].Render(sb)
                 sb.Append("</").Append(tagName).Append('>') |> ignore
-            | _ ->
-                failwith "Unknown element type"
+
 
         member this.AddChild(element: HtmlElement) =
             children.Add(element)
@@ -92,4 +95,4 @@ module Builder =
             runExpr this
             this
 
-    and TextNode(text: string) = inherit HtmlElement(text, HtmlElementType.TextNode)
+    and TextNode(text: string) = inherit HtmlElement(HtmlElementType.TextNode text)

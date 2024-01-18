@@ -49,8 +49,9 @@ type ViewEngine() =
 
 // | Method             | Mean     | Error     | StdDev    | Gen0   | Allocated |
 // |------------------- |---------:|----------:|----------:|-------:|----------:|
-// | RenderOxpeckerView | 4.108 us | 0.0819 us | 0.1174 us | 3.0518 |  12.49 KB |
-// | RenderGiraffeView  | 3.745 us | 0.0727 us | 0.1452 us | 3.9940 |  16.35 KB |
+// | RenderOxpeckerView | 3.763 us | 0.0481 us | 0.0427 us | 3.1967 |  13.07 KB |
+// | RenderGiraffeView  | 3.510 us | 0.0411 us | 0.0364 us | 3.9940 |  16.35 KB |
+
 
     [<Benchmark>]
     member this.RenderOxpeckerView () =

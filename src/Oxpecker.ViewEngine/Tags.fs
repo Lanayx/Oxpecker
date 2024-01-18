@@ -39,8 +39,8 @@ module Tags =
     type u() = inherit HtmlElement("u")
     type s() = inherit HtmlElement("s")
 
-    type br() = inherit HtmlElement("br", HtmlElementType.SingleTag)
-    type hr() = inherit HtmlElement("hr", HtmlElementType.SingleTag)
+    type br() = inherit HtmlElement(HtmlElementType.SingleTag "br")
+    type hr() = inherit HtmlElement(HtmlElementType.SingleTag "hr")
 
     type a() =
         inherit HtmlElement("a")
@@ -49,7 +49,7 @@ module Tags =
         member this.target with set value = this.attr("target", value) |> ignore
 
     type img() =
-        inherit HtmlElement("img", HtmlElementType.SingleTag)
+        inherit HtmlElement(HtmlElementType.SingleTag "img")
         member this.src with set value = this.attr("src", value) |> ignore
         member this.alt with set value = this.attr("alt", value) |> ignore
         member this.width with set value = this.attr("width", value) |> ignore
@@ -70,7 +70,7 @@ module Tags =
         member this.defer with set value = this.attr("defer", value) |> ignore
 
     type link() =
-        inherit HtmlElement("link", HtmlElementType.SingleTag)
+        inherit HtmlElement(HtmlElementType.SingleTag "link")
         member this.rel with set value = this.attr("rel", value) |> ignore
         member this.href with set value = this.attr("href", value) |> ignore
         member this.type' with set value = this.attr("type", value) |> ignore
@@ -81,14 +81,14 @@ module Tags =
         member this.xmlns with set value = this.attr("xmlns", value) |> ignore
 
     type meta() =
-        inherit HtmlElement("meta", HtmlElementType.SingleTag)
+        inherit HtmlElement(HtmlElementType.SingleTag "meta")
         member this.name with set value = this.attr("name", value) |> ignore
         member this.content with set value = this.attr("content", value) |> ignore
         member this.charset with set value = this.attr("charset", value) |> ignore
         member this.httpEquiv with set value = this.attr("http-equiv", value) |> ignore
 
     type input() =
-        inherit HtmlElement("input", HtmlElementType.SingleTag)
+        inherit HtmlElement(HtmlElementType.SingleTag "input")
         member this.type' with set value = this.attr("type", value) |> ignore
         member this.name with set value = this.attr("name", value) |> ignore
         member this.value with set value = this.attr("value", value) |> ignore
@@ -191,7 +191,7 @@ module Tags =
         member this.muted with set value = this.attr("muted", value) |> ignore
 
     type source() =
-        inherit HtmlElement("source", HtmlElementType.SingleTag)
+        inherit HtmlElement(HtmlElementType.SingleTag "source")
         member this.src with set value = this.attr("src", value) |> ignore
         member this.type' with set value = this.attr("type", value) |> ignore
         member this.media with set value = this.attr("media", value) |> ignore
@@ -211,7 +211,7 @@ module Tags =
         member this.height with set value = this.attr("height", value) |> ignore
 
     type param() =
-        inherit HtmlElement("param", HtmlElementType.SingleTag)
+        inherit HtmlElement(HtmlElementType.SingleTag "param")
         member this.name with set value = this.attr("name", value) |> ignore
         member this.value with set value = this.attr("value", value) |> ignore
 
