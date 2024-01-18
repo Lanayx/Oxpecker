@@ -6,7 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="ViewEngine.fs" />
+        <Compile Include="ViewEngineBuild.fs" />
+        <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 

@@ -3,5 +3,5 @@ open PerfTest
 
 [<EntryPoint>]
 let main args =
-    let summary = BenchmarkRunner.Run<ViewEngine>()
+    let summary = BenchmarkRunner.Run<ViewEngineBuild>()
     0
