@@ -10,8 +10,4 @@
         <Compile Include="Tags.fs" />
         <Compile Include="Render.fs" />
     </ItemGroup>
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-
 </Project>

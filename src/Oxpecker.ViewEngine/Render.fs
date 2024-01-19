@@ -1,18 +1,34 @@
 ﻿module Oxpecker.ViewEngine.Render
 
+open System.Buffers
 open System.Text
-open Microsoft.AspNetCore.Http
 
-let toString (view: HtmlElement) =
+let inline private toStringBuilder (view: HtmlElement) =
     let sb = StringBuilder()
     view.Render sb
-    sb.ToString()
+    sb
 
-let toResponseStream (ctx: HttpContext) (view: HtmlElement) =
+let inline private toHtmlDocStringBuilder (view: HtmlElement) =
     let sb = StringBuilder()
     sb.AppendLine("<!DOCTYPE html>") |> view.Render
-    let str = sb.ToString()
-    let bytes = Encoding.UTF8.GetBytes(str)
-    ctx.Response.ContentType <- "text/html; charset=utf-8"
-    ctx.Response.ContentLength <- bytes.LongLength
-    ctx.Response.Body.WriteAsync(bytes).AsTask()
+    sb
+
+let toString (view: HtmlElement) =
+    let sb = toStringBuilder view
+    sb.ToString()
+
+let toBytes (view: HtmlElement) =
+    let sb = toStringBuilder view
+    let chArray = ArrayPool<char>.Shared.Rent(sb.Length)
+    sb.CopyTo(0, chArray, 0, sb.Length)
+    let bytes = Encoding.UTF8.GetBytes(chArray, 0, sb.Length)
+    ArrayPool<char>.Shared.Return(chArray)
+    bytes
+
+let toHtmlDocBytes (view: HtmlElement) =
+    let sb = toHtmlDocStringBuilder view
+    let chArray = ArrayPool<char>.Shared.Rent(sb.Length)
+    sb.CopyTo(0, chArray, 0, sb.Length)
+    let bytes = Encoding.UTF8.GetBytes(chArray, 0, sb.Length)
+    ArrayPool<char>.Shared.Return(chArray)
+    bytes

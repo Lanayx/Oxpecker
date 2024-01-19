@@ -1,8 +1,6 @@
 ﻿namespace PerfTest
 
-open System.IO
 open BenchmarkDotNet.Attributes
-open Microsoft.AspNetCore.Http
 
 module OxpeckerViewRender =
     open Oxpecker.ViewEngine
@@ -49,22 +47,14 @@ type ViewEngineRender() =
 
 // | Method             | Mean       | Error    | StdDev   | Gen0   | Allocated |
 // |------------------- |-----------:|---------:|---------:|-------:|----------:|
-// | RenderOxpeckerView |   658.5 ns | 12.66 ns | 13.55 ns | 0.4740 |   1.94 KB |
-// | RenderGiraffeView  | 1,872.5 ns | 24.32 ns | 22.75 ns | 2.9659 |  12.13 KB |
-
+// | RenderOxpeckerView |   140.4 ns |  2.67 ns |  2.62 ns | 0.0629 |     264 B |
+// | RenderGiraffeView  | 1,224.8 ns | 21.66 ns | 19.20 ns | 2.5234 |   10552 B |
 
 
     [<Benchmark>]
     member this.RenderOxpeckerView () =
-        let ctx = DefaultHttpContext()
-        ctx.Response.Body <- new MemoryStream()
-        OxpeckerViewRender.staticHtml |> Oxpecker.ViewEngine.Render.toResponseStream ctx
+        OxpeckerViewRender.staticHtml |> Oxpecker.ViewEngine.Render.toHtmlDocBytes
 
     [<Benchmark>]
     member this.RenderGiraffeView () =
-        let ctx = DefaultHttpContext()
-        ctx.Response.Body <- new MemoryStream()
-        let bytes = GiraffeViewRender.staticHtml |> Giraffe.ViewEngine.RenderView.AsBytes.htmlDocument
-        ctx.Response.ContentType <- "text/html; charset=utf-8"
-        ctx.Response.ContentLength <- bytes.LongLength
-        ctx.Response.Body.WriteAsync(bytes).AsTask()
+        GiraffeViewRender.staticHtml |> Giraffe.ViewEngine.RenderView.AsBytes.htmlDocument
