@@ -49,8 +49,9 @@ type ViewEngineBuild() =
 
 // | Method            | Mean     | Error     | StdDev    | Gen0   | Allocated |
 // |------------------ |---------:|----------:|----------:|-------:|----------:|
-// | BuildOxpeckerView | 2.184 us | 0.0270 us | 0.0226 us | 2.0676 |   8.45 KB |
-// | BuildGiraffeView  | 1.651 us | 0.0079 us | 0.0066 us | 1.0338 |   4.23 KB |
+// | BuildOxpeckerView | 1.512 us | 0.0254 us | 0.0225 us | 1.5049 |   6.15 KB |
+// | BuildGiraffeView  | 1.651 us | 0.0146 us | 0.0137 us | 1.0338 |   4.23 KB |
+
 
 
     [<Benchmark>]

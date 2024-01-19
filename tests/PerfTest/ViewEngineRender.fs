@@ -47,10 +47,11 @@ type ViewEngineRender() =
 //   [Host]     : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2 DEBUG
 //   DefaultJob : .NET 8.0.1 (8.0.123.58001), X64 RyuJI
 
-// | Method             | Mean     | Error     | StdDev    | Gen0   | Allocated |
-// |------------------- |---------:|----------:|----------:|-------:|----------:|
-// | RenderOxpeckerView | 1.484 us | 0.0231 us | 0.0205 us | 1.1292 |   4.62 KB |
-// | RenderGiraffeView  | 1.861 us | 0.0344 us | 0.0305 us | 2.9659 |  12.13 KB |
+// | Method             | Mean       | Error    | StdDev   | Gen0   | Allocated |
+// |------------------- |-----------:|---------:|---------:|-------:|----------:|
+// | RenderOxpeckerView |   658.5 ns | 12.66 ns | 13.55 ns | 0.4740 |   1.94 KB |
+// | RenderGiraffeView  | 1,872.5 ns | 24.32 ns | 22.75 ns | 2.9659 |  12.13 KB |
+
 
 
     [<Benchmark>]

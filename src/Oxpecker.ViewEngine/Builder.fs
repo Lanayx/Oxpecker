@@ -1,11 +1,10 @@
 ﻿namespace Oxpecker.ViewEngine
 
-open System.Collections.Generic
-
 [<AutoOpen>]
 module Builder =
 
     open System.Text
+    open Tools
 
     [<Struct>]
     type HtmlAttribute =
@@ -23,8 +22,8 @@ module Builder =
     type HtmlElementFun = HtmlElement -> unit
 
     and HtmlElement(elemType: HtmlElementType) =
-        let children = ResizeArray<HtmlElement>()
-        let attributes = ResizeArray<HtmlAttribute>()
+        let mutable children: CustomQueue<HtmlElement> = CustomQueue(null, null)
+        let mutable attributes: CustomQueue<HtmlAttribute> = CustomQueue(null, null)
 
         new(tagName: string) = HtmlElement(HtmlElementType.DoubleTag(tagName))
 
@@ -38,8 +37,8 @@ module Builder =
         member this.Render(sb: StringBuilder): unit =
             let inline handleSingleTag (tagName: string) =
                 sb.Append('<').Append(tagName) |> ignore
-                for i in 0..attributes.Count-1 do
-                    let attr = attributes[i]
+                while isNotNull attributes.Head do
+                    let attr = attributes.Dequeue()
                     sb.Append(' ').Append(attr.Name).Append("=\"").Append(attr.Value).Append('"') |> ignore
                 sb.Append('>') |> ignore
 
@@ -50,18 +49,19 @@ module Builder =
                 handleSingleTag(tagName)
             | HtmlElementType.DoubleTag tagName ->
                 handleSingleTag(tagName)
-                for i in 0..children.Count-1 do
-                    children[i].Render(sb)
+                while isNotNull children.Head do
+                    let child = children.Dequeue()
+                    child.Render(sb)
                 sb.Append("</").Append(tagName).Append('>') |> ignore
 
 
         member this.AddChild(element: HtmlElement) =
-            children.Add(element)
+            children.Enqueue(element)
             this
 
         member this.attr(name: string, value: string) =
-            if not (isNull value) then
-                attributes.Add({ Name = name; Value = value })
+            if isNotNull value then
+                attributes.Enqueue({ Name = name; Value = value })
             this
 
         member this.Children = children
