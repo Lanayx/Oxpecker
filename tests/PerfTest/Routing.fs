@@ -99,12 +99,13 @@ type Routing() =
 //
 // | Method            | Mean     | Error    | StdDev   | Median   | Gen0   | Allocated |
 // |------------------ |---------:|---------:|---------:|---------:|-------:|----------:|
-// | GetOxpeckerRoute  | 15.00 us | 0.649 us | 1.863 us | 14.37 us | 1.9531 |    8.1 KB |
-// | GetOxpeckerRoutef | 21.52 us | 0.414 us | 0.808 us | 21.37 us | 2.1973 |   9.35 KB |
-// | GetOxpeckerJson   | 17.00 us | 0.359 us | 1.014 us | 16.75 us | 2.0752 |   8.77 KB |
-// | GetGiraffeRoute   | 16.98 us | 0.338 us | 0.883 us | 16.90 us | 2.4414 |  10.23 KB |
-// | GetGiraffeRoutef  | 24.32 us | 0.481 us | 1.207 us | 24.21 us | 3.0518 |  12.81 KB |
-// | GetGiraffeJson    | 18.13 us | 0.361 us | 0.918 us | 18.01 us | 2.0752 |   8.77 KB |
+// | GetOxpeckerRoute  | 12.10 us | 0.311 us | 0.871 us | 11.98 us | 1.9531 |   8.09 KB |
+// | GetOxpeckerRoutef | 21.05 us | 0.418 us | 0.764 us | 20.85 us | 2.1973 |   9.34 KB |
+// | GetOxpeckerJson   | 18.11 us | 0.361 us | 0.971 us | 18.09 us | 2.0752 |   8.77 KB |
+// | GetGiraffeRoute   | 15.22 us | 0.379 us | 1.082 us | 15.06 us | 2.3193 |    9.5 KB |
+// | GetGiraffeRoutef  | 23.17 us | 0.548 us | 1.553 us | 22.71 us | 2.9297 |  12.02 KB |
+// | GetGiraffeJson    | 21.60 us | 0.975 us | 2.874 us | 20.52 us | 2.0752 |   8.78 KB |
+
 
     let oxpeckerServer = OxpeckerRouting.webApp()
     let giraffeServer = GiraffeRouting.webApp()

@@ -15,7 +15,7 @@
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
       <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
-      <PackageReference Include="Giraffe" Version="5.0.0-alpha-1" />
+      <PackageReference Include="Giraffe" Version="6.2.0" />
       <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1"/>
     </ItemGroup>
 
