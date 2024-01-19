@@ -3,6 +3,7 @@ namespace Oxpecker
 
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
+open Oxpecker.ViewEngine
 
 [<AutoOpen>]
 module RequestHandlers =
@@ -99,11 +100,33 @@ module ResponseHandlers =
             ctx.WriteJsonChunked(value)
 
     /// <summary>
+    /// Writes a HTML string to the body of the HTTP response.
+    /// It also sets the HTTP header Content-Type to text/html and sets the Content-Length header accordingly.
+    /// </summary>
+    /// <param name="html">The HTML string to be send back to the client.</param>
+    /// <param name="ctx"></param>
+    /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+    let htmlString (html: string): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.WriteHtmlString html
+
+    /// <summary>
+    /// <para>Compiles a `Oxpecker.OxpeckerViewEngine.Builder.HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
+    /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
+    /// </summary>
+    /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
+    /// <param name="ctx"></param>
+    /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+    let htmlView (htmlView: HtmlElement): EndpointHandler =
+        fun (ctx: HttpContext) ->
+            ctx.WriteHtmlView htmlView
+
+    /// <summary>
     /// Clears the current <see cref="Microsoft.AspNetCore.Http.HttpResponse"/> object.
     /// This can be useful if a <see cref="HttpHandler"/> function needs to overwrite the response of all previous <see cref="HttpHandler"/> functions with its own response (most commonly used by an <see cref="ErrorHandler"/> function).
     /// </summary>
     /// <param name="ctx"></param>
-    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
     let clearResponse: EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.Response.Clear()
@@ -114,7 +137,7 @@ module ResponseHandlers =
     /// </summary>
     /// <param name="contentType">The mime type of the response (e.g.: application/json or text/html).</param>
     /// <param name="ctx"></param>
-    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
     let setContentType (contentType: string): EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.SetContentType contentType
@@ -125,7 +148,7 @@ module ResponseHandlers =
     /// </summary>
     /// <param name="statusCode">The status code to be set in the response. For convenience you can use the static <see cref="Microsoft.AspNetCore.Http.StatusCodes"/> class for passing in named status codes instead of using pure int values.</param>
     /// <param name="ctx"></param>
-    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
     let setStatusCode (statusCode: int): EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.SetStatusCode statusCode
@@ -137,7 +160,7 @@ module ResponseHandlers =
     /// <param name="key">The HTTP header name. For convenience you can use the static <see cref="Microsoft.Net.Http.Headers.HeaderNames"/> class for passing in strongly typed header names instead of using pure string values.</param>
     /// <param name="value">The value to be set. Non string values will be converted to a string using the object's ToString() method.</param>
     /// <param name="ctx"></param>
-    /// <returns>A Giraffe <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
+    /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
     let setHttpHeader (key: string) (value: string): EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.SetHttpHeader(key, value)

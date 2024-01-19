@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="ViewEngineBuild.fs" />
+        <Compile Include="ViewEngineRender.fs" />
+        <Compile Include="Routing.fs" />
+        <Compile Include="Program.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+      <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
+      <PackageReference Include="Giraffe" Version="6.2.0" />
+      <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1"/>
+      <PackageReference Include="Oxpecker" Version="0.3.0" />
+    </ItemGroup>
+
+</Project>

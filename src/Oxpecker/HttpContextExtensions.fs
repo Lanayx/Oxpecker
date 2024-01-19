@@ -10,6 +10,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
+open Oxpecker.ViewEngine
 
 type MissingDependencyException(dependencyName: string) =
     inherit Exception $"Could not retrieve object of type '%s{dependencyName}' from ASP.NET Core's dependency container."
@@ -180,6 +181,17 @@ type HttpContextExtensions() =
         ctx.WriteBytes(Encoding.UTF8.GetBytes str)
 
     /// <summary>
+    /// Writes an UTF-8 encoded string to the body of the HTTP response and sets the HTTP `Content-Length` header accordingly, as well as the `Content-Type` header to `text/plain`.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="html">The string html value to be send back to the client.</param>
+    /// <returns>Task of writing to the body of the response.</returns>
+    [<Extension>]
+    static member WriteHtmlString (ctx: HttpContext, html: string) =
+        ctx.SetContentType "text/html; charset=utf-8"
+        ctx.WriteBytes(Encoding.UTF8.GetBytes html)
+
+    /// <summary>
     /// Serializes an object to JSON and writes the output to the body of the HTTP response.
     /// It also sets the HTTP Content-Type header to application/json and sets the Content-Length header accordingly.
     /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>
@@ -192,7 +204,6 @@ type HttpContextExtensions() =
         let serializer = ctx.GetJsonSerializer()
         serializer.Serialize(value, ctx, false)
 
-
     /// <summary>
     /// Serializes an object to JSON and writes the output to the body of the HTTP response using chunked transfer encoding.
     /// It also sets the HTTP Content-Type header to application/json and sets the Transfer-Encoding header to chunked.
@@ -200,11 +211,26 @@ type HttpContextExtensions() =
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="value">The object to be send back to the client.</param>
-    /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
+    /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteJsonChunked<'T> (ctx: HttpContext, value: 'T) =
         let serializer = ctx.GetJsonSerializer()
         serializer.Serialize(value, ctx, true)
+
+
+    /// <summary>
+    /// <para>Compiles a `Oxpecker.OxpeckerViewEngine.Builder.HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
+    /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
+    /// <returns>Task of writing to the body of the response.</returns>
+    [<Extension>]
+    static member WriteHtmlView (ctx: HttpContext, htmlView: HtmlElement) =
+        let bytes = Render.toHtmlDocBytes htmlView
+        ctx.Response.ContentType <- "text/html; charset=utf-8"
+        ctx.Response.ContentLength <- bytes.LongLength
+        ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
 
     /// <summary>
     /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
