@@ -5,7 +5,7 @@
 /// </summary>
 /// <param name="x">The object to validate against `null`.</param>
 /// <returns>Returns true if the object is not null otherwise false.</returns>
-let inline isNotNull x = not (isNull x)
+let inline isNotNull x = not(isNull x)
 
 [<AllowNullLiteral>]
 type CustomQueueItem<'T>(value: 'T) =
@@ -16,7 +16,7 @@ type CustomQueueItem<'T>(value: 'T) =
 type CustomQueue<'T> =
     val mutable Head: CustomQueueItem<'T>
     val mutable Tail: CustomQueueItem<'T>
-    new (h, t) = { Head = h; Tail = t }
+    new(h, t) = { Head = h; Tail = t }
     member this.Enqueue(value: 'T) =
         let item = CustomQueueItem(value)
         if isNull this.Head then

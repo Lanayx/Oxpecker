@@ -12,7 +12,7 @@ let ``Test isNotNull`` () =
     null |> isNotNull |> shouldEqual false
 
 [<Fact>]
-let ``Test composition plus``() =
+let ``Test composition plus`` () =
     let f x = x + 1
     let g x y = x * y
     let h x y = x / y
@@ -20,7 +20,7 @@ let ``Test composition plus``() =
     (f <<+ h) 4 2 |> shouldEqual 3
 
 [<Fact>]
-let ``Test composition plus plus``() =
+let ``Test composition plus plus`` () =
     let f x = x + 1
     let g x y z = x * y * z
     let h x y z = x / y / z

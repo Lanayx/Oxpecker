@@ -21,14 +21,8 @@ module WebApp =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
-                .Configure(fun app ->
-                    app
-                        .UseRouting()
-                        .UseOxpecker(endpoints)
-                        .Run(notFoundHandler)
-                ).ConfigureServices(fun services ->
-                    services.AddRouting() |> ignore
-                )
+                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints).Run(notFoundHandler))
+                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
         new TestServer(builder)
 
 // ---------------------------------
@@ -38,12 +32,7 @@ module WebApp =
 [<Fact>]
 let ``route: GET "/" returns "Hello World"`` () =
     task {
-        let endpoints = [
-            GET [
-                route "/"    <| text "Hello World"
-                route "/foo" <| text "bar"
-            ]
-        ]
+        let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo" <| text "bar" ] ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
@@ -57,12 +46,7 @@ let ``route: GET "/" returns "Hello World"`` () =
 [<Fact>]
 let ``route: GET "/foo" returns "bar"`` () =
     task {
-        let endpoints = [
-            GET [
-                route "/"    <| text "Hello World"
-                route "/foo" <| text "bar"
-            ]
-        ]
+        let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo" <| text "bar" ] ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
@@ -82,12 +66,7 @@ let ``route: GET "/foo" returns "bar"`` () =
 [<Fact>]
 let ``routex: GET "/foo///" returns "bar"`` () =
     task {
-        let endpoints = [
-            GET [
-                route "/"    <| text "Hello World"
-                route "/foo/{**path}" <| text "bar"
-            ]
-        ]
+        let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo/{**path}" <| text "bar" ] ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
@@ -101,12 +80,7 @@ let ``routex: GET "/foo///" returns "bar"`` () =
 [<Fact>]
 let ``routex: GET "/foo2" returns "bar"`` () =
     task {
-        let endpoints = [
-            GET [
-                route "/"    <| text "Hello World"
-                route "/foo2/{*path}" <| text "bar"
-            ]
-        ]
+        let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo2/{*path}" <| text "bar" ] ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
@@ -128,7 +102,7 @@ let ``routef: GET "/foo/blah blah/bar" returns "blah blah"`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 routef "/foo/{%s}/bar" text
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
@@ -149,7 +123,7 @@ let ``routef: GET "/foo/johndoe/59" returns "Name: johndoe, Age: 59"`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 routef "/foo/{%s}/bar" text
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
@@ -170,7 +144,7 @@ let ``routef: GET "/foo/b%2Fc/bar" returns "b%2Fc"`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 routef "/foo/{%s}/bar" text
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
@@ -191,7 +165,7 @@ let ``routef: GET "/foo/a%2Fb%2Bc.d%2Ce/bar" returns "a/b+c.d,e"`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 routef "/foo/{%s}/bar" text
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
@@ -213,11 +187,12 @@ let ``routef: GET "/foo/%O/bar/%O" returns "Guid1: ..., Guid2: ..."`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 routef "/foo/{%s}/bar" text
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
-                routef "/foo/{%O:guid}/bar/{%O:guid}" (fun (guid1: Guid) (guid2: Guid) -> text $"Guid1: %O{guid1}, Guid2: %O{guid2}")
+                routef "/foo/{%O:guid}/bar/{%O:guid}" (fun (guid1: Guid) (guid2: Guid) ->
+                    text $"Guid1: %O{guid1}, Guid2: %O{guid2}")
             ]
         ]
         let server = WebApp.webApp endpoints
@@ -227,7 +202,8 @@ let ``routef: GET "/foo/%O/bar/%O" returns "Guid1: ..., Guid2: ..."`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        resultString |> shouldEqual "Guid1: 4ec87f06-4d1e-41b4-9342-ab1aead1f99d, Guid2: 2a6c9185-95d9-4d8c-80a6-575f99c2a716"
+        resultString
+        |> shouldEqual "Guid1: 4ec87f06-4d1e-41b4-9342-ab1aead1f99d, Guid2: 2a6c9185-95d9-4d8c-80a6-575f99c2a716"
     }
 
 [<Fact>]
@@ -235,11 +211,11 @@ let ``routef: GET "/foo/%u/bar/%u" returns "Id1: ..., Id2: ..."`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 routef "/foo/{%s}/bar" text
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
-                routef "/foo/{%u}/bar/{%u}" (fun (id1: uint64) (id2 : uint64) -> text $"Id1: %u{id1}, Id2: %u{id2}")
+                routef "/foo/{%u}/bar/{%u}" (fun (id1: uint64) (id2: uint64) -> text $"Id1: %u{id1}, Id2: %u{id2}")
             ]
         ]
         let server = WebApp.webApp endpoints
@@ -249,17 +225,14 @@ let ``routef: GET "/foo/%u/bar/%u" returns "Id1: ..., Id2: ..."`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        resultString |> shouldEqual "Id1: 12635000945053400782, Id2: 16547050693006839099"
+        resultString
+        |> shouldEqual "Id1: 12635000945053400782, Id2: 16547050693006839099"
     }
 
 [<Fact>]
 let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
     task {
-        let endpoints = [
-            GET [
-                routef "/foo/%s/%s" (fun s1 s2 -> text $"%s{s1},%s{s2}")
-            ]
-        ]
+        let endpoints = [ GET [ routef "/foo/%s/%s" (fun s1 s2 -> text $"%s{s1},%s{s2}") ] ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
@@ -279,10 +252,10 @@ let ``subRoute: Route with empty route`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 subRoute "/api" [
-                    route ""       <| text "api root"
+                    route "" <| text "api root"
                     route "/admin" <| text "admin"
                     route "/users" <| text "users"
                 ]
@@ -304,10 +277,10 @@ let ``subRoute: Normal nested route after subRoute`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 subRoute "/api" [
-                    route ""       <| text "api root"
+                    route "" <| text "api root"
                     route "/admin" <| text "admin"
                     route "/users" <| text "users"
                 ]
@@ -329,10 +302,10 @@ let ``subRoute: Route after subRoute has same beginning of path`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 subRoute "/api" [
-                    route ""       <| text "api root"
+                    route "" <| text "api root"
                     route "/admin" <| text "admin"
                     route "/users" <| text "users"
                 ]
@@ -354,14 +327,14 @@ let ``subRoute: Nested sub routes`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 subRoute "/api" [
-                    route ""       <| text "api root"
+                    route "" <| text "api root"
                     route "/admin" <| text "admin"
                     route "/users" <| text "users"
                     subRoute "/v2" [
-                        route ""       <| text "api root v2"
+                        route "" <| text "api root v2"
                         route "/admin" <| text "admin v2"
                         route "/users" <| text "users v2"
                     ]
@@ -384,17 +357,12 @@ let ``subRoute: Multiple nested sub routes`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 subRoute "/api" [
                     route "/users" <| text "users"
-                    subRoute "/v2" [
-                        route "/admin" <| text "admin v2"
-                        route "/users" <| text "users v2"
-                    ]
-                    subRoute "/v2" [
-                        route "/admin2" <| text "correct admin2"
-                    ]
+                    subRoute "/v2" [ route "/admin" <| text "admin v2"; route "/users" <| text "users v2" ]
+                    subRoute "/v2" [ route "/admin2" <| text "correct admin2" ]
                 ]
                 route "/api/test" <| text "test"
             ]
@@ -414,20 +382,20 @@ let ``subRoute: Route after nested sub routes has same beginning of path`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
                 subRoute "/api" [
-                    route ""       <| text "api root"
+                    route "" <| text "api root"
                     route "/admin" <| text "admin"
                     route "/users" <| text "users"
                     subRoute "/v2" [
-                        route ""       <| text "api root v2"
+                        route "" <| text "api root v2"
                         route "/admin" <| text "admin v2"
                         route "/users" <| text "users v2"
                     ]
                     route "/yada" <| text "yada"
                 ]
-                route "/api/test"    <| text "test"
+                route "/api/test" <| text "test"
                 route "/api/v2/else" <| text "else"
             ]
         ]
@@ -446,12 +414,9 @@ let ``subRoute: routef inside subRoute`` () =
     task {
         let endpoints = [
             GET [
-                route "/"    <| text "Hello World"
+                route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
-                subRoute "/api" [
-                    route "" <| text "api root"
-                    routef "/foo/bar/{%s}" text
-                ]
+                subRoute "/api" [ route "" <| text "api root"; routef "/foo/bar/{%s}" text ]
                 route "/api/test" <| text "test"
             ]
         ]

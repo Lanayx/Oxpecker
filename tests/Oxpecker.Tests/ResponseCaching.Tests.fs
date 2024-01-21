@@ -33,7 +33,8 @@ let ``ResponseCaching should cache responses with a max age and a shared max age
 
         do! responseCaching (Some controlHeader) None None ctx
 
-        ctx.Response.Headers.CacheControl |> shouldEqual "public, max-age=10, s-maxage=20"
+        ctx.Response.Headers.CacheControl
+        |> shouldEqual "public, max-age=10, s-maxage=20"
     }
 
 [<Fact>]
@@ -55,7 +56,7 @@ let ``ResponseCaching should vary by query string`` () =
         ctx.Features.Set<IResponseCachingFeature>(feature)
         let controlHeader = CacheControlHeaderValue()
 
-        do! responseCaching (Some controlHeader) None (Some [|"foo"|]) ctx
+        do! responseCaching (Some controlHeader) None (Some [| "foo" |]) ctx
 
-        feature.VaryByQueryKeys |> shouldEqual [|"foo"|]
+        feature.VaryByQueryKeys |> shouldEqual [| "foo" |]
     }

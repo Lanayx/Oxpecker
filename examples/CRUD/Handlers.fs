@@ -13,7 +13,7 @@ open FSharp.UMX
 
 type OperationEnv(env: Env) =
     interface IGetOrders with
-        member this.GetOrders () = OrderRepository.getOrders env
+        member this.GetOrders() = OrderRepository.getOrders env
     interface IGetOrder with
         member this.GetOrder id = OrderRepository.getOrder env id
     interface IGetProduct with
@@ -25,12 +25,11 @@ type OperationEnv(env: Env) =
     interface IDeleteOrder with
         member this.DeleteOrder id = OrderRepository.deleteOrder env id
 
-type OrderDTO =
-    {
-        ProductId: Guid
-        Amount: uint
-        Description: string
-    }
+type OrderDTO = {
+    ProductId: Guid
+    Amount: uint
+    Description: string
+}
 
 
 let getOrders env (ctx: HttpContext) =
@@ -38,27 +37,28 @@ let getOrders env (ctx: HttpContext) =
         let operationEnv = OperationEnv(env)
         let! result = OrderService.getOrders operationEnv
         return! ctx.WriteJson(result)
-    } :> Task
+    }
+    :> Task
 
 let getOrderDetails env id (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
         let! result = OrderService.getOrder operationEnv id
         match result with
-        | Ok order ->
-            return! ctx.WriteJson(order)
+        | Ok order -> return! ctx.WriteJson(order)
         | Error error ->
             env.Logger.LogError(error)
             ctx.SetStatusCode(StatusCodes.Status404NotFound)
             return! ctx.WriteText(error)
-    } :> Task
+    }
+    :> Task
 
 let createOrder env (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
         let! dto = ctx.BindJson<OrderDTO>()
         let order = {
-            OrderId = %Guid.NewGuid()
+            OrderId = % Guid.NewGuid()
             ProductId = %dto.ProductId
             Amount = dto.Amount
             CreatedAt = DateTime.UtcNow
@@ -66,13 +66,13 @@ let createOrder env (ctx: HttpContext) =
         }
         let! result = OrderService.createOrder operationEnv order
         match result with
-        | Ok _ ->
-            ctx.SetStatusCode(StatusCodes.Status201Created)
+        | Ok _ -> ctx.SetStatusCode(StatusCodes.Status201Created)
         | Error error ->
             env.Logger.LogError(error)
             ctx.SetStatusCode(StatusCodes.Status400BadRequest)
             return! ctx.WriteText(error)
-    } :> Task
+    }
+    :> Task
 
 let updateOrder env (id: Guid) (ctx: HttpContext) =
     task {
@@ -87,24 +87,24 @@ let updateOrder env (id: Guid) (ctx: HttpContext) =
         }
         let! result = OrderService.updateOrder operationEnv order
         match result with
-        | Ok _ ->
-            ctx.SetStatusCode(StatusCodes.Status204NoContent)
+        | Ok _ -> ctx.SetStatusCode(StatusCodes.Status204NoContent)
         | Error error ->
             env.Logger.LogError(error)
             ctx.SetStatusCode(StatusCodes.Status400BadRequest)
             return! ctx.WriteText(error)
 
-    } :> Task
+    }
+    :> Task
 
 let deleteOrder env id (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
         let! result = OrderService.deleteOrder operationEnv id
         match result with
-        | Ok _ ->
-            ctx.SetStatusCode(StatusCodes.Status204NoContent)
+        | Ok _ -> ctx.SetStatusCode(StatusCodes.Status204NoContent)
         | Error error ->
             env.Logger.LogError(error)
             ctx.SetStatusCode(StatusCodes.Status404NotFound)
             return! ctx.WriteText(error)
-    } :> Task
+    }
+    :> Task

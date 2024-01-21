@@ -11,7 +11,7 @@ open FsUnitTyped
 #nowarn "3391"
 
 [<Fact>]
-let ``Test not chunked serializer``() =
+let ``Test not chunked serializer`` () =
     task {
         let serializer: Json.ISerializer = SystemTextJson.Serializer()
         let httpContext = DefaultHttpContext()
@@ -23,12 +23,13 @@ let ``Test not chunked serializer``() =
         use streamReader = new StreamReader(stream)
         let json = streamReader.ReadToEnd()
         json |> shouldEqual """{"name":"Oxpecker"}"""
-        httpContext.Response.Headers.ContentType |> shouldEqual "application/json; charset=utf-8"
+        httpContext.Response.Headers.ContentType
+        |> shouldEqual "application/json; charset=utf-8"
         httpContext.Response.Headers.ContentLength |> shouldEqual 19L
     }
 
 [<Fact>]
-let ``Test chunked serializer``() =
+let ``Test chunked serializer`` () =
     task {
         let serializer: Json.ISerializer = SystemTextJson.Serializer()
         let httpContext = DefaultHttpContext()
@@ -40,12 +41,13 @@ let ``Test chunked serializer``() =
         use streamReader = new StreamReader(stream)
         let json = streamReader.ReadToEnd()
         json |> shouldEqual """{"name":"Oxpecker"}"""
-        httpContext.Response.Headers.ContentType |> shouldEqual "application/json; charset=utf-8"
-        httpContext.Response.Headers.ContentLength |> shouldEqual (Nullable())
+        httpContext.Response.Headers.ContentType
+        |> shouldEqual "application/json; charset=utf-8"
+        httpContext.Response.Headers.ContentLength |> shouldEqual(Nullable())
     }
 
 [<Fact>]
-let ``Test default deserializer``() =
+let ``Test default deserializer`` () =
     task {
         let serializer: Json.ISerializer = SystemTextJson.Serializer()
         let httpContext = DefaultHttpContext()

@@ -17,27 +17,26 @@ let ``Basic test`` () =
                 div(id = "4")
             }
         }
-    result |> Render.toString |> shouldEqual """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
+    result
+    |> Render.toString
+    |> shouldEqual
+        """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
 
 
 [<Fact>]
 let ``Optional attribute`` () =
     let value = true
     let result =
-        div(id = if value then null else "abc") {
-            div(id = if value then "myid" else null) {
-                br()
-            }
-        }
-    result |> Render.toString |> shouldEqual """<div><div id="myid"><br></div></div>"""
+        div(id = if value then null else "abc") { div(id = if value then "myid" else null) { br() } }
+    result
+    |> Render.toString
+    |> shouldEqual """<div><div id="myid"><br></div></div>"""
 
 
 [<Fact>]
 let ``Data attribute`` () =
     let result =
-        div()
-            .attr("data-my-value", "sdf")
-            .attr("data-my-value2", "abc"){
-                "Some text"
-            }
-    result |> Render.toString |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc">Some text</div>"""
+        div().attr("data-my-value", "sdf").attr("data-my-value2", "abc") { "Some text" }
+    result
+    |> Render.toString
+    |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc">Some text</div>"""

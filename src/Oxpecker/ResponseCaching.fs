@@ -12,9 +12,7 @@ module ResponseCaching =
     let private noCacheHeader = CacheControlHeaderValue(NoCache = true, NoStore = true)
 
     let inline private cacheHeader isPublic duration =
-        CacheControlHeaderValue(
-            Public = isPublic,
-            MaxAge = Nullable duration)
+        CacheControlHeaderValue(Public = isPublic, MaxAge = Nullable duration)
 
     /// <summary>
     /// Enables (or suppresses) response caching by clients and proxy servers.
@@ -27,21 +25,22 @@ module ResponseCaching =
     /// <param name="varyByQueryKeys">An optional list of query keys which will be used by the ASP.NET Core response caching middleware to vary (potentially) cached responses. If this parameter is used then the ASP.NET Core response caching middleware has to be enabled. For more information check the official [VaryByQueryKeys](https://docs.microsoft.com/en-us/aspnet/core/performance/caching/middleware?view=aspnetcore-2.1#varybyquerykeys) documentation.</param>
     /// <param name="ctx"></param>
     /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-    let responseCaching (cacheControl: CacheControlHeaderValue option)
-                        (vary: string option)
-                        (varyByQueryKeys: string[] option): EndpointHandler =
+    let responseCaching
+        (cacheControl: CacheControlHeaderValue option)
+        (vary: string option)
+        (varyByQueryKeys: string[] option)
+        : EndpointHandler =
         fun (ctx: HttpContext) ->
 
             let tHeaders = ctx.Response.GetTypedHeaders()
-            let headers  = ctx.Response.Headers
+            let headers = ctx.Response.Headers
 
             match cacheControl with
             | None ->
                 tHeaders.CacheControl <- noCacheHeader
                 headers.Pragma <- "no-cache"
                 headers.Expires <- "-1"
-            | Some control  ->
-                tHeaders.CacheControl <- control
+            | Some control -> tHeaders.CacheControl <- control
 
             if vary.IsSome then
                 headers.Vary <- vary.Value

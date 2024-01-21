@@ -36,19 +36,20 @@ let ``TryGetRequestHeader during HTTP GET request with returns correct result`` 
 
     let result = ctx.TryGetRequestHeader "X-Test"
 
-    result |> shouldEqual (Some "It works!")
+    result |> shouldEqual(Some "It works!")
 
 [<Fact>]
 let ``TryGetQueryStringValue during HTTP GET request with query string returns correct result`` () =
     let ctx = DefaultHttpContext()
     ctx.TryGetQueryStringValue "BirthDate" |> shouldEqual None
-    let queryStr = "?Name=John%20Doe&IsVip=true&BirthDate=1990-04-20&Balance=150000.5&LoyaltyPoints=137"
+    let queryStr =
+        "?Name=John%20Doe&IsVip=true&BirthDate=1990-04-20&Balance=150000.5&LoyaltyPoints=137"
     let query = QueryHelpers.ParseQuery queryStr
     ctx.Request.Query <- QueryCollection(query)
 
     let result = ctx.TryGetQueryStringValue "BirthDate"
 
-    result |> shouldEqual (Some "1990-04-20")
+    result |> shouldEqual(Some "1990-04-20")
 
 [<Fact>]
 let ``WriteText with HTTP GET should return text in body`` () =
@@ -87,7 +88,7 @@ let ``WriteBytes should not return Content-Length in header on 100`` () =
 
         do! ctx.WriteBytes [| 0uy |]
 
-        ctx.Response.Headers.ContentLength |> shouldEqual (Nullable())
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
     }
 
 [<Fact>]
@@ -99,7 +100,7 @@ let ``WriteBytesAsync should not return Content-Length in header on 204`` () =
 
         do! ctx.WriteBytes [| 0uy |]
 
-        ctx.Response.Headers.ContentLength |> shouldEqual (Nullable())
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
     }
 
 [<Fact>]
@@ -111,7 +112,7 @@ let ``WriteBytesAsync with HTTP CONNECT should not return Content-Length in head
 
         do! ctx.WriteBytes [| 0uy |]
 
-        ctx.Response.Headers.ContentLength |> shouldEqual (Nullable())
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
     }
 
 [<Fact>]
@@ -123,7 +124,7 @@ let ``WriteBytesAsync should return Content-Length 0 in header on 205`` () =
 
         do! ctx.WriteBytes [| 0uy |]
 
-        ctx.Response.Headers.ContentLength |> shouldEqual (Nullable(0L))
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable(0L))
     }
 
 [<Fact>]
@@ -132,7 +133,8 @@ let ``WriteJson should add json to the context`` () =
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let services = ServiceCollection()
-        services.AddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer() :> Json.ISerializer) |> ignore
+        services.AddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer() :> Json.ISerializer)
+        |> ignore
         ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
 
         do! ctx.WriteJson({| Hello = "World" |})
@@ -140,7 +142,8 @@ let ``WriteJson should add json to the context`` () =
         ctx.Response.Body.Seek(0, SeekOrigin.Begin) |> ignore
         use reader = new StreamReader(ctx.Response.Body)
         let result = reader.ReadToEnd()
-        ctx.Response.Headers.ContentType |> shouldEqual "application/json; charset=utf-8"
+        ctx.Response.Headers.ContentType
+        |> shouldEqual "application/json; charset=utf-8"
         ctx.Response.Headers.ContentLength |> shouldEqual 17L
         result |> shouldEqual """{"hello":"World"}"""
     }
@@ -151,7 +154,8 @@ let ``WriteJsonChunked should add json to the context`` () =
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let services = ServiceCollection()
-        services.AddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer() :> Json.ISerializer) |> ignore
+        services.AddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer() :> Json.ISerializer)
+        |> ignore
         ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
 
         do! ctx.WriteJsonChunked {| Hello = "World" |}
@@ -159,8 +163,9 @@ let ``WriteJsonChunked should add json to the context`` () =
         ctx.Response.Body.Seek(0, SeekOrigin.Begin) |> ignore
         use reader = new StreamReader(ctx.Response.Body)
         let result = reader.ReadToEnd()
-        ctx.Response.Headers.ContentType |> shouldEqual "application/json; charset=utf-8"
-        ctx.Response.Headers.ContentLength |> shouldEqual (Nullable())
+        ctx.Response.Headers.ContentType
+        |> shouldEqual "application/json; charset=utf-8"
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
         result |> shouldEqual """{"hello":"World"}"""
     }
 
@@ -172,9 +177,7 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
         let htmlDoc =
             html() {
                 head()
-                body() {
-                    h1() { "Hello world" }
-                }
+                body() { h1() { "Hello world" } }
             }
         do! ctx.WriteHtmlView(htmlDoc)
 
@@ -182,5 +185,7 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
         use reader = new StreamReader(ctx.Response.Body)
         let result = reader.ReadToEnd()
 
-        result |> shouldEqual $"<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1>Hello world</h1></body></html>"
+        result
+        |> shouldEqual
+            $"<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1>Hello world</h1></body></html>"
     }

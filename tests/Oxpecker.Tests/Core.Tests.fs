@@ -13,7 +13,7 @@ type StartedHttpResponse() =
     override this.get_HasStarted() = true
 
 [<Fact>]
-let ``Compose two handlers, both executed``() =
+let ``Compose two handlers, both executed`` () =
     task {
         let ctx = DefaultHttpContext()
         let mutable x = 0
@@ -26,13 +26,13 @@ let ``Compose two handlers, both executed``() =
     }
 
 [<Fact>]
-let ``Compose two handlers, none executed``() =
+let ``Compose two handlers, none executed`` () =
     task {
         let ctx = DefaultHttpContext()
         ctx.Features.Set<IHttpResponseFeature>(StartedHttpResponse())
         ctx.Response.Body <- new MemoryStream()
         let mutable x = 0
-        let handler1: EndpointHandler = fun _ -> task { x <- x + 1; }
+        let handler1: EndpointHandler = fun _ -> task { x <- x + 1 }
         let handler2: EndpointHandler = fun _ -> task { x <- x + 2 }
 
         do! (handler1 >=> handler2) ctx
@@ -41,12 +41,17 @@ let ``Compose two handlers, none executed``() =
     }
 
 [<Fact>]
-let ``Compose two handlers, only first executed``() =
+let ``Compose two handlers, only first executed`` () =
     task {
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let mutable x = 0
-        let handler1: EndpointHandler = fun _ -> task { x <- x + 1; ctx.Features.Set<IHttpResponseFeature>(StartedHttpResponse()) }
+        let handler1: EndpointHandler =
+            fun _ ->
+                task {
+                    x <- x + 1
+                    ctx.Features.Set<IHttpResponseFeature>(StartedHttpResponse())
+                }
         let handler2: EndpointHandler = fun _ -> task { x <- x + 2 }
 
         do! (handler1 >=> handler2) ctx
@@ -55,11 +60,16 @@ let ``Compose two handlers, only first executed``() =
     }
 
 [<Fact>]
-let ``Compose middleware and handler, both executed``() =
+let ``Compose middleware and handler, both executed`` () =
     task {
         let ctx = DefaultHttpContext()
         let mutable x = 0
-        let middleware: EndpointMiddleware = fun next c -> task { x <- x + 1; do! next c }
+        let middleware: EndpointMiddleware =
+            fun next c ->
+                task {
+                    x <- x + 1
+                    do! next c
+                }
         let handler: EndpointHandler = fun _ -> task { x <- x + 2 }
 
         do! (middleware >=> handler) ctx
@@ -68,13 +78,18 @@ let ``Compose middleware and handler, both executed``() =
     }
 
 [<Fact>]
-let ``Compose middleware and handler, none executed``() =
+let ``Compose middleware and handler, none executed`` () =
     task {
         let ctx = DefaultHttpContext()
         ctx.Features.Set<IHttpResponseFeature>(StartedHttpResponse())
         ctx.Response.Body <- new MemoryStream()
         let mutable x = 0
-        let middleware: EndpointMiddleware = fun next c -> task { x <- x + 1; do! next c }
+        let middleware: EndpointMiddleware =
+            fun next c ->
+                task {
+                    x <- x + 1
+                    do! next c
+                }
         let handler: EndpointHandler = fun _ -> task { x <- x + 2 }
 
         do! (middleware >=> handler) ctx
@@ -83,12 +98,12 @@ let ``Compose middleware and handler, none executed``() =
     }
 
 [<Fact>]
-let ``Compose middleware and handler, only first executed``() =
+let ``Compose middleware and handler, only first executed`` () =
     task {
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let mutable x = 0
-        let middleware: EndpointMiddleware = fun _ _ -> task { x <- x + 1; }
+        let middleware: EndpointMiddleware = fun _ _ -> task { x <- x + 1 }
         let handler: EndpointHandler = fun _ -> task { x <- x + 2 }
 
         do! (middleware >=> handler) ctx
@@ -96,12 +111,22 @@ let ``Compose middleware and handler, only first executed``() =
     }
 
 [<Fact>]
-let ``Compose two middlewares, both executed``() =
+let ``Compose two middlewares, both executed`` () =
     task {
         let ctx = DefaultHttpContext()
         let mutable x = 0
-        let middlware1: EndpointMiddleware = fun next ctx -> task { x <- x + 1; return! next ctx }
-        let middlware2: EndpointMiddleware = fun next ctx -> task { x <- x + 2; return! next ctx }
+        let middlware1: EndpointMiddleware =
+            fun next ctx ->
+                task {
+                    x <- x + 1
+                    return! next ctx
+                }
+        let middlware2: EndpointMiddleware =
+            fun next ctx ->
+                task {
+                    x <- x + 2
+                    return! next ctx
+                }
         let handler: EndpointHandler = fun _ -> Task.CompletedTask
 
         do! (middlware1 >=> middlware2 >=> handler) ctx
@@ -110,14 +135,24 @@ let ``Compose two middlewares, both executed``() =
     }
 
 [<Fact>]
-let ``Compose two middlewares, none executed``() =
+let ``Compose two middlewares, none executed`` () =
     task {
         let ctx = DefaultHttpContext()
         ctx.Features.Set<IHttpResponseFeature>(StartedHttpResponse())
         ctx.Response.Body <- new MemoryStream()
         let mutable x = 0
-        let middlware1: EndpointMiddleware = fun next ctx -> task { x <- x + 1; return! next ctx }
-        let middlware2: EndpointMiddleware = fun next ctx -> task { x <- x + 2; return! next ctx }
+        let middlware1: EndpointMiddleware =
+            fun next ctx ->
+                task {
+                    x <- x + 1
+                    return! next ctx
+                }
+        let middlware2: EndpointMiddleware =
+            fun next ctx ->
+                task {
+                    x <- x + 2
+                    return! next ctx
+                }
         let handler: EndpointHandler = fun _ -> Task.CompletedTask
 
         do! (middlware1 >=> middlware2 >=> handler) ctx
@@ -126,13 +161,18 @@ let ``Compose two middlewares, none executed``() =
     }
 
 [<Fact>]
-let ``Compose two middlewares, only first executed``() =
+let ``Compose two middlewares, only first executed`` () =
     task {
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let mutable x = 0
-        let middlware1: EndpointMiddleware = fun next ctx -> task { x <- x + 1; }
-        let middlware2: EndpointMiddleware = fun next ctx -> task { x <- x + 2; return! next ctx }
+        let middlware1: EndpointMiddleware = fun next ctx -> task { x <- x + 1 }
+        let middlware2: EndpointMiddleware =
+            fun next ctx ->
+                task {
+                    x <- x + 2
+                    return! next ctx
+                }
         let handler: EndpointHandler = fun _ -> Task.CompletedTask
 
         do! (middlware1 >=> middlware2 >=> handler) ctx

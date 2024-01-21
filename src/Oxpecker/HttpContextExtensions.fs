@@ -13,12 +13,13 @@ open Microsoft.Net.Http.Headers
 open Oxpecker.ViewEngine
 
 type MissingDependencyException(dependencyName: string) =
-    inherit Exception $"Could not retrieve object of type '%s{dependencyName}' from ASP.NET Core's dependency container."
+    inherit
+        Exception $"Could not retrieve object of type '%s{dependencyName}' from ASP.NET Core's dependency container."
 
-type RouteParseException (message: string, ex) =
+type RouteParseException(message: string, ex) =
     inherit Exception(message, ex)
 
-type ModelBindException (message: string, ex) =
+type ModelBindException(message: string, ex) =
     inherit Exception(message, ex)
 
 [<Extension>]
@@ -29,8 +30,7 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns>Returns an instance of `'T`.</returns>
     [<Extension>]
-    static member GetRequestUrl(ctx: HttpContext) =
-        ctx.Request.GetEncodedUrl()
+    static member GetRequestUrl(ctx: HttpContext) = ctx.Request.GetEncodedUrl()
 
     /// <summary>
     /// Tries to get the value from the route values collection and cast it to `'T`.
@@ -41,8 +41,8 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetRouteValue<'T>(ctx: HttpContext, key: string) =
         match ctx.Request.RouteValues.TryGetValue key with
-        | true, value -> Some (value :?> 'T)
-        | _           -> None
+        | true, value -> Some(value :?> 'T)
+        | _ -> None
 
     /// <summary>
     /// Tries to get the <see cref="System.String"/> value of a HTTP header from the request.
@@ -51,10 +51,10 @@ type HttpContextExtensions() =
     /// <param name="key">The name of the HTTP header.</param>
     /// <returns> Returns Some string if the HTTP header was present in the request, otherwise returns None.</returns>
     [<Extension>]
-    static member TryGetRequestHeader (ctx: HttpContext, key: string) =
+    static member TryGetRequestHeader(ctx: HttpContext, key: string) =
         match ctx.Request.Headers.TryGetValue key with
-        | true, value -> Some (string value)
-        | _           -> None
+        | true, value -> Some(string value)
+        | _ -> None
 
     /// <summary>
     ///  Tries to get the <see cref="System.String"/> value of a query string parameter from the request.
@@ -63,10 +63,10 @@ type HttpContextExtensions() =
     /// <param name="key">The name of the query string parameter.</param>
     /// <returns>Returns Some string if the parameter was present in the request's query string, otherwise returns None.</returns>
     [<Extension>]
-    static member TryGetQueryStringValue (ctx: HttpContext, key: string) =
+    static member TryGetQueryStringValue(ctx: HttpContext, key: string) =
         match ctx.Request.Query.TryGetValue key with
-        | true, value -> Some (value.ToString())
-        | _           -> None
+        | true, value -> Some(value.ToString())
+        | _ -> None
 
     /// <summary>
     /// Gets an instance of `'T` from the request's service container.
@@ -76,7 +76,7 @@ type HttpContextExtensions() =
     static member GetService<'T>(ctx: HttpContext) =
         let t = typeof<'T>
         match ctx.RequestServices.GetService t with
-        | null    -> raise <| MissingDependencyException t.Name
+        | null -> raise <| MissingDependencyException t.Name
         | service -> service :?> 'T
 
     /// <summary>
@@ -86,32 +86,28 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns> Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger{T}" />.</returns>
     [<Extension>]
-    static member GetLogger<'T>(ctx: HttpContext) =
-        ctx.GetService<ILogger<'T>>()
+    static member GetLogger<'T>(ctx: HttpContext) = ctx.GetService<ILogger<'T>>()
 
     /// <summary>
     /// Gets an instance of <see cref="Microsoft.Extensions.Logging.ILogger" /> from the request's service container.    ///
     /// </summary>
     /// <returns> Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger" />.</returns>
     [<Extension>]
-    static member GetLogger(ctx: HttpContext) =
-        ctx.GetService<ILogger>()
+    static member GetLogger(ctx: HttpContext) = ctx.GetService<ILogger>()
 
     /// <summary>
     /// Gets an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/> from the request's service container.
     /// </summary>
     /// <returns>Returns an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/>.</returns>
     [<Extension>]
-    static member GetHostingEnvironment(ctx: HttpContext) =
-        ctx.GetService<IWebHostEnvironment>()
+    static member GetHostingEnvironment(ctx: HttpContext) = ctx.GetService<IWebHostEnvironment>()
 
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.Json.ISerializer"/> from the request's service container.
     /// </summary>
     /// <returns>Returns an instance of <see cref="Oxpecker.Json.ISerializer"/>.</returns>
     [<Extension>]
-    static member GetJsonSerializer(ctx: HttpContext): Json.ISerializer =
-        ctx.GetService<Json.ISerializer>()
+    static member GetJsonSerializer(ctx: HttpContext) : Json.ISerializer = ctx.GetService<Json.ISerializer>()
 
     /// <summary>
     /// Sets the HTTP status code of the response.
@@ -119,7 +115,7 @@ type HttpContextExtensions() =
     /// <param name="ctx">The current http context object.</param>
     /// <param name="httpStatusCode">The status code to be set in the response. For convenience you can use the static <see cref="Microsoft.AspNetCore.Http.StatusCodes"/> class for passing in named status codes instead of using pure int values.</param>
     [<Extension>]
-    static member SetStatusCode (ctx: HttpContext, httpStatusCode: int) =
+    static member SetStatusCode(ctx: HttpContext, httpStatusCode: int) =
         ctx.Response.StatusCode <- httpStatusCode
 
     /// <summary>
@@ -129,8 +125,7 @@ type HttpContextExtensions() =
     /// <param name="key">The HTTP header name. For convenience you can use the static <see cref="Microsoft.Net.Http.Headers.HeaderNames"/> class for passing in strongly typed header names instead of using pure `string` values.</param>
     /// <param name="value">The value to be set. Non string values will be converted to a string using the object's ToString() method.</param>
     [<Extension>]
-    static member SetHttpHeader (ctx: HttpContext, key: string, value: string) =
-        ctx.Response.Headers[key] <- value
+    static member SetHttpHeader(ctx: HttpContext, key: string, value: string) = ctx.Response.Headers[key] <- value
 
     /// <summary>
     /// Sets the Content-Type HTTP header in the response.
@@ -138,7 +133,7 @@ type HttpContextExtensions() =
     /// <param name="ctx">The current http context object.</param>
     /// <param name="contentType">The mime type of the response (e.g.: application/json or text/html).</param>
     [<Extension>]
-    static member SetContentType (ctx: HttpContext, contentType: string) =
+    static member SetContentType(ctx: HttpContext, contentType: string) =
         ctx.SetHttpHeader(HeaderNames.ContentType, contentType)
 
     /// <summary>
@@ -176,7 +171,7 @@ type HttpContextExtensions() =
     /// <param name="str">The string value to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteText (ctx: HttpContext, str: string) =
+    static member WriteText(ctx: HttpContext, str: string) =
         ctx.SetContentType "text/plain; charset=utf-8"
         ctx.WriteBytes(Encoding.UTF8.GetBytes str)
 
@@ -187,7 +182,7 @@ type HttpContextExtensions() =
     /// <param name="html">The string html value to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlString (ctx: HttpContext, html: string) =
+    static member WriteHtmlString(ctx: HttpContext, html: string) =
         ctx.SetContentType "text/html; charset=utf-8"
         ctx.WriteBytes(Encoding.UTF8.GetBytes html)
 
@@ -200,7 +195,7 @@ type HttpContextExtensions() =
     /// <param name="value">The object to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteJson<'T> (ctx: HttpContext, value: 'T) =
+    static member WriteJson<'T>(ctx: HttpContext, value: 'T) =
         let serializer = ctx.GetJsonSerializer()
         serializer.Serialize(value, ctx, false)
 
@@ -213,7 +208,7 @@ type HttpContextExtensions() =
     /// <param name="value">The object to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteJsonChunked<'T> (ctx: HttpContext, value: 'T) =
+    static member WriteJsonChunked<'T>(ctx: HttpContext, value: 'T) =
         let serializer = ctx.GetJsonSerializer()
         serializer.Serialize(value, ctx, true)
 
@@ -226,7 +221,7 @@ type HttpContextExtensions() =
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlView (ctx: HttpContext, htmlView: HtmlElement) =
+    static member WriteHtmlView(ctx: HttpContext, htmlView: HtmlElement) =
         let bytes = Render.toHtmlDocBytes htmlView
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         ctx.Response.ContentLength <- bytes.LongLength
@@ -255,17 +250,19 @@ type HttpContextExtensions() =
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
     [<Extension>]
-    static member BindForm<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
+    static member BindForm<'T>(ctx: HttpContext, ?cultureInfo: CultureInfo) =
         task {
             let! form = ctx.Request.ReadFormAsync()
             return
                 form
-                |> Seq.map (fun i -> i.Key, i.Value)
+                |> Seq.map(fun i -> i.Key, i.Value)
                 |> dict
                 |> ModelParser.parse<'T> cultureInfo false
                 |> function
                     | Ok value -> value
-                    | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
+                    | Error msg ->
+                        raise
+                        <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
         }
 
     /// <summary>
@@ -276,11 +273,13 @@ type HttpContextExtensions() =
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns an instance of type 'T</returns>
     [<Extension>]
-    static member BindQuery<'T> (ctx: HttpContext, ?cultureInfo: CultureInfo) =
+    static member BindQuery<'T>(ctx: HttpContext, ?cultureInfo: CultureInfo) =
         ctx.Request.Query
-        |> Seq.map (fun i -> i.Key, i.Value)
+        |> Seq.map(fun i -> i.Key, i.Value)
         |> dict
         |> ModelParser.parse<'T> cultureInfo false
         |> function
             | Ok objData -> objData
-            | Error msg -> raise <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
+            | Error msg ->
+                raise
+                <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)

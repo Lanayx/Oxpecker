@@ -28,81 +28,75 @@ module EntityTagHelper =
         let eTagValue = $"\"%s{eTag}\""
         EntityTagHeaderValue(StringSegment(eTagValue), isWeak)
 
-    let createETag (eTag : string) =
-        fromString false eTag
+    let createETag (eTag: string) = fromString false eTag
 
-    let createWeakETag (eTag : string) =
-        fromString true eTag
+    let createWeakETag (eTag: string) = fromString true eTag
 
 type HttpContext with
 
     member private this.IsHeadOrGetRequest() =
         HttpMethods.IsHead this.Request.Method || HttpMethods.IsGet this.Request.Method
 
-    member private this.ValidateIfMatch
-        (eTag: EntityTagHeaderValue option)
-        (requestHeaders: RequestHeaders) =
-        match isNotNull requestHeaders.IfMatch
-            && requestHeaders.IfMatch.Any() with
+    member private this.ValidateIfMatch (eTag: EntityTagHeaderValue option) (requestHeaders: RequestHeaders) =
+        match isNotNull requestHeaders.IfMatch && requestHeaders.IfMatch.Any() with
         | false -> NoConditionsSpecified
-        | true  ->
+        | true ->
             match eTag with
-            | None      -> ConditionFailed
+            | None -> ConditionFailed
             | Some eTag ->
                 requestHeaders.IfMatch
                 |> Seq.exists _.Compare(eTag, true)
                 |> function
-                    | true  -> AllConditionsMet
+                    | true -> AllConditionsMet
                     | false -> ConditionFailed
 
     member private this.ValidateIfUnmodifiedSince
         (lastModified: DateTimeOffset option)
-        (requestHeaders: RequestHeaders) =
+        (requestHeaders: RequestHeaders)
+        =
         match requestHeaders.IfUnmodifiedSince.HasValue with
         | false -> NoConditionsSpecified
-        | true  ->
+        | true ->
             match lastModified with
-            | None              -> AllConditionsMet
+            | None -> AllConditionsMet
             | Some lastModified ->
                 let lastModified = lastModified.CutOffMs()
-                match  requestHeaders.IfUnmodifiedSince.Value > DateTimeOffset.UtcNow.CutOffMs()
-                    || requestHeaders.IfUnmodifiedSince.Value >= lastModified with
-                | true  -> AllConditionsMet
+                match
+                    requestHeaders.IfUnmodifiedSince.Value > DateTimeOffset.UtcNow.CutOffMs()
+                    || requestHeaders.IfUnmodifiedSince.Value >= lastModified
+                with
+                | true -> AllConditionsMet
                 | false -> ConditionFailed
 
-    member private this.ValidateIfNoneMatch
-        (eTag: EntityTagHeaderValue option)
-        (requestHeaders: RequestHeaders) =
-        match  isNotNull requestHeaders.IfNoneMatch
-            && requestHeaders.IfNoneMatch.Any() with
+    member private this.ValidateIfNoneMatch (eTag: EntityTagHeaderValue option) (requestHeaders: RequestHeaders) =
+        match isNotNull requestHeaders.IfNoneMatch && requestHeaders.IfNoneMatch.Any() with
         | false -> NoConditionsSpecified
-        | true  ->
+        | true ->
             match eTag with
-            | None      -> AllConditionsMet
+            | None -> AllConditionsMet
             | Some eTag ->
                 requestHeaders.IfNoneMatch
                 |> Seq.exists _.Compare(eTag, false)
                 |> function
                     | false -> AllConditionsMet
-                    | true  ->
+                    | true ->
                         match this.IsHeadOrGetRequest() with
-                        | true  -> ResourceNotModified
+                        | true -> ResourceNotModified
                         | false -> ConditionFailed
 
-    member private this.ValidateIfModifiedSince
-        (lastModified: DateTimeOffset option)
-        (requestHeaders: RequestHeaders) =
-        match  requestHeaders.IfModifiedSince.HasValue
-            && this.IsHeadOrGetRequest() with
+    member private this.ValidateIfModifiedSince (lastModified: DateTimeOffset option) (requestHeaders: RequestHeaders) =
+        match requestHeaders.IfModifiedSince.HasValue && this.IsHeadOrGetRequest() with
         | false -> NoConditionsSpecified
-        | true  ->
+        | true ->
             match lastModified with
-            | None              -> AllConditionsMet
+            | None -> AllConditionsMet
             | Some lastModified ->
                 let lastModified = lastModified.CutOffMs()
-                match  requestHeaders.IfModifiedSince.Value <= DateTimeOffset.UtcNow.CutOffMs()
-                    && requestHeaders.IfModifiedSince.Value < lastModified with
-                | true  -> AllConditionsMet
+                match
+                    requestHeaders.IfModifiedSince.Value <= DateTimeOffset.UtcNow.CutOffMs()
+                    && requestHeaders.IfModifiedSince.Value < lastModified
+                with
+                | true -> AllConditionsMet
                 | false -> ResourceNotModified
 
 [<Extension>]
@@ -134,44 +128,48 @@ type PreconditionExtensions() =
     /// </returns>
     [<Extension>]
     static member ValidatePreconditions
-        (ctx          : HttpContext,
-         eTag         : EntityTagHeaderValue option,
-         lastModified : DateTimeOffset option) =
+        (
+            ctx: HttpContext,
+            eTag: EntityTagHeaderValue option,
+            lastModified: DateTimeOffset option
+        ) =
         // Parse headers
         let responseHeaders = ctx.Response.GetTypedHeaders()
-        let requestHeaders  = ctx.Request.GetTypedHeaders()
+        let requestHeaders = ctx.Request.GetTypedHeaders()
 
         // Helper bind functions to chain validation functions
         let bind (result: RequestHeaders -> Precondition) =
             function
             | NoConditionsSpecified -> result requestHeaders
-            | AllConditionsMet      ->
+            | AllConditionsMet ->
                 match result requestHeaders with
                 | NoConditionsSpecified -> AllConditionsMet
-                | AllConditionsMet      -> AllConditionsMet
-                | ConditionFailed       -> ConditionFailed
-                | ResourceNotModified   -> ResourceNotModified
-            | ConditionFailed       -> ConditionFailed
-            | ResourceNotModified   -> ResourceNotModified
+                | AllConditionsMet -> AllConditionsMet
+                | ConditionFailed -> ConditionFailed
+                | ResourceNotModified -> ResourceNotModified
+            | ConditionFailed -> ConditionFailed
+            | ResourceNotModified -> ResourceNotModified
 
         let ifNotSpecified (result: RequestHeaders -> Precondition) =
             function
             | NoConditionsSpecified -> result requestHeaders
-            | AllConditionsMet      -> AllConditionsMet
-            | ConditionFailed       -> ConditionFailed
-            | ResourceNotModified   -> ResourceNotModified
+            | AllConditionsMet -> AllConditionsMet
+            | ConditionFailed -> ConditionFailed
+            | ResourceNotModified -> ResourceNotModified
 
         // Set ETag and Last-Modified in the response
-        if eTag.IsSome         then responseHeaders.ETag         <- eTag.Value
-        if lastModified.IsSome then responseHeaders.LastModified <- Nullable(lastModified.Value.CutOffMs())
+        if eTag.IsSome then
+            responseHeaders.ETag <- eTag.Value
+        if lastModified.IsSome then
+            responseHeaders.LastModified <- Nullable(lastModified.Value.CutOffMs())
 
         // Validate headers in correct precedence
         // RFC: https://tools.ietf.org/html/rfc7232#section-6
         requestHeaders
         |> ctx.ValidateIfMatch eTag
-        |> ifNotSpecified (ctx.ValidateIfUnmodifiedSince lastModified)
-        |> bind (ctx.ValidateIfNoneMatch eTag)
-        |> ifNotSpecified (ctx.ValidateIfModifiedSince lastModified)
+        |> ifNotSpecified(ctx.ValidateIfUnmodifiedSince lastModified)
+        |> bind(ctx.ValidateIfNoneMatch eTag)
+        |> ifNotSpecified(ctx.ValidateIfModifiedSince lastModified)
 
     /// <summary>
     /// Sends a default HTTP 304 Not Modified response to the client.
@@ -211,14 +209,11 @@ type PreconditionExtensions() =
 /// <param name="lastModified">Optional <see cref="System.DateTimeOffset"/> object denoting the last modified date.</param>
 /// <param name="ctx"></param>
 /// <returns>An Oxpecker <see cref="HttpHandler" /> function which can be composed into a bigger web application.</returns>
-let validatePreconditions (eTag         : EntityTagHeaderValue option)
-                          (lastModified : DateTimeOffset option): EndpointHandler =
+let validatePreconditions (eTag: EntityTagHeaderValue option) (lastModified: DateTimeOffset option) : EndpointHandler =
     fun (ctx: HttpContext) ->
         match ctx.ValidatePreconditions(eTag, lastModified) with
-        | ConditionFailed       ->
-            ctx.PreconditionFailedResponse()
-        | ResourceNotModified   ->
-            ctx.NotModifiedResponse()
-        | AllConditionsMet | NoConditionsSpecified ->
-            ()
+        | ConditionFailed -> ctx.PreconditionFailedResponse()
+        | ResourceNotModified -> ctx.NotModifiedResponse()
+        | AllConditionsMet
+        | NoConditionsSpecified -> ()
         Task.CompletedTask
