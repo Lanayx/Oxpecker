@@ -96,6 +96,17 @@ type HttpContextExtensions() =
     static member GetLogger(ctx: HttpContext) = ctx.GetService<ILogger>()
 
     /// <summary>
+    /// Gets an instance of <see cref="Microsoft.Extensions.Logging.ILogger"/> from the request's service container.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="categoryName">The category name for messages produced by this logger.</param>
+    /// <returns>Returns an instance of <see cref="Microsoft.Extensions.Logging.ILogger"/>.</returns>
+    [<Extension>]
+    static member GetLogger(ctx: HttpContext, categoryName: string) =
+        let loggerFactory = ctx.GetService<ILoggerFactory>()
+        loggerFactory.CreateLogger categoryName
+
+    /// <summary>
     /// Gets an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/> from the request's service container.
     /// </summary>
     /// <returns>Returns an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/>.</returns>
