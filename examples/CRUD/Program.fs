@@ -9,18 +9,17 @@ open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Oxpecker
 
-let getEndpoints env =
-    [
-        subRoute "/order" [
-            GET [
-                route "/" <| Handlers.getOrders env
-                routef "/{%O:guid}" <| Handlers.getOrderDetails env
-            ]
-            POST   [ route "/" <| Handlers.createOrder env ]
-            PUT    [ routef "/{%O:guid}" <| Handlers.updateOrder env ]
-            DELETE [ routef "/{%O:guid}" <| Handlers.deleteOrder env ]
+let getEndpoints env = [
+    subRoute "/order" [
+        GET [
+            route "/" <| Handlers.getOrders env
+            routef "/{%O:guid}" <| Handlers.getOrderDetails env
         ]
+        POST [ route "/" <| Handlers.createOrder env ]
+        PUT [ routef "/{%O:guid}" <| Handlers.updateOrder env ]
+        DELETE [ routef "/{%O:guid}" <| Handlers.deleteOrder env ]
     ]
+]
 
 let notFoundHandler (ctx: HttpContext) =
     let logger = ctx.GetLogger()
@@ -44,7 +43,8 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
             logger.LogError(ex, "Unhandled 500 error")
             ctx.SetStatusCode StatusCodes.Status500InternalServerError
             return! ctx.WriteText <| string ex
-    } :> Task
+    }
+    :> Task
 
 let configureApp (appBuilder: IApplicationBuilder) =
     let env = {
@@ -61,8 +61,7 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddSingleton<ILogger>(fun sp ->
-            sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.CRUD"))
+        .AddSingleton<ILogger>(fun sp -> sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.CRUD"))
     |> ignore
 
 [<EntryPoint>]

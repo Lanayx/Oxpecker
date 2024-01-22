@@ -1,0 +1,2 @@
+#ignore preconditional tests with long arrays
+tests/Oxpecker.Tests/Preconditional.Tests.fs

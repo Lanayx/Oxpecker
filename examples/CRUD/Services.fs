@@ -22,8 +22,7 @@ type IDeleteOrder =
     abstract member DeleteOrder: Id -> Task<unit>
 
 module OrderService =
-    let getOrders (env: #IGetOrders) =
-        env.GetOrders()
+    let getOrders (env: #IGetOrders) = env.GetOrders()
 
     let getOrder (env: #IGetOrder & #IGetProduct) id =
         task {
@@ -32,17 +31,16 @@ module OrderService =
                 let! product = env.GetProduct o.ProductId
                 match product with
                 | Some p ->
-                    return Ok {
-                        OrderDetails.OrderId = o.OrderId
-                        Amount = o.Amount
-                        Description = o.Description
-                        CreatedAt = o.CreatedAt
-                        ProductName = p.Name
-                    }
-                | _ ->
-                    return Error "No product found"
-            | None ->
-                return Error "No order found"
+                    return
+                        Ok {
+                            OrderDetails.OrderId = o.OrderId
+                            Amount = o.Amount
+                            Description = o.Description
+                            CreatedAt = o.CreatedAt
+                            ProductName = p.Name
+                        }
+                | _ -> return Error "No product found"
+            | None -> return Error "No order found"
         }
 
     let createOrder (env: #ICreateOrder & #IGetProduct) (order: Order) =
@@ -55,8 +53,7 @@ module OrderService =
                 else
                     let! result = env.CreateOrder order
                     return Ok result
-            | _ ->
-                return Error "No product found"
+            | _ -> return Error "No product found"
         }
 
     let updateOrder (env: #IUpdateOrder & #IGetOrder & #IGetProduct) (order: Order) =
@@ -70,8 +67,7 @@ module OrderService =
                 else
                     let! result = env.UpdateOrder order
                     return Ok result
-            | _ ->
-                return Error "No order or product found"
+            | _ -> return Error "No order or product found"
         }
 
     let deleteOrder (env: #IDeleteOrder & #IGetOrder) id =
@@ -81,6 +77,5 @@ module OrderService =
             | Some _ ->
                 let! result = env.DeleteOrder id
                 return Ok result
-            | _ ->
-                return Error "No order found"
+            | _ -> return Error "No order found"
         }

@@ -15,8 +15,8 @@ module Json =
     /// </summary>
     [<AllowNullLiteral>]
     type ISerializer =
-        abstract member Serialize<'T> : value:'T * ctx:HttpContext * chunked:bool -> Task
-        abstract member Deserialize<'T> : ctx:HttpContext -> Task<'T>
+        abstract member Serialize<'T> : value: 'T * ctx: HttpContext * chunked: bool -> Task
+        abstract member Deserialize<'T> : ctx: HttpContext -> Task<'T>
 
 
 [<RequireQualifiedAccess>]
@@ -30,8 +30,9 @@ module SystemTextJson =
     /// For support of F# unions and records, look at https://github.com/Tarmil/FSharp.SystemTextJson
     /// which plugs into this serializer.
     /// </summary>
-    type Serializer (?options: JsonSerializerOptions) =
-        let options = defaultArg options <| JsonSerializerOptions(JsonSerializerDefaults.Web)
+    type Serializer(?options: JsonSerializerOptions) =
+        let options =
+            defaultArg options <| JsonSerializerOptions(JsonSerializerDefaults.Web)
 
         interface Json.ISerializer with
             member this.Serialize(value, ctx, chunked) =

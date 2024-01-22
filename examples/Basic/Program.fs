@@ -9,59 +9,73 @@ open Microsoft.Net.Http.Headers
 open Oxpecker
 open Oxpecker.ViewEngine
 
-type RequiresAuditAttribute() = inherit Attribute()
+type RequiresAuditAttribute() =
+    inherit Attribute()
 
-let setHeaderMw key value: EndpointMiddleware =
+let setHeaderMw key value : EndpointMiddleware =
     fun (next: EndpointHandler) (ctx: HttpContext) ->
         ctx.SetHttpHeader(key, value)
         task {
             do! next ctx
             Console.WriteLine($"Header {key} set")
         }
-let handler0 (name: string) : EndpointHandler =
-    _.WriteText(sprintf "Hello %s" name)
+let handler0 (name: string) : EndpointHandler = _.WriteText(sprintf "Hello %s" name)
 
-let handler1: EndpointHandler =
-    fun ctx -> ctx.WriteText "Hello World"
+let handler1: EndpointHandler = fun ctx -> ctx.WriteText "Hello World"
 
-let handler2 (name: string) (age: int): EndpointHandler =
+let handler2 (name: string) (age: int) : EndpointHandler =
     _.WriteText(sprintf "Hello %s, you are %i years old." name age)
 
-let handler3 (a: string) (b: string) (c: string) (d: int): EndpointHandler =
+let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
     _.WriteText(sprintf "Hello %s %s %s %i" a b c d)
 
 [<CLIMutable>]
-type MyModel = {
-    Name: string
-    Age: int
-}
-let handler4 (a: MyModel): EndpointHandler =
-    fun (ctx: HttpContext) ->
-        ctx.WriteJsonChunked { a with Name = a.Name + "!" }
+type MyModel = { Name: string; Age: int }
+let handler4 (a: MyModel) : EndpointHandler =
+    fun (ctx: HttpContext) -> ctx.WriteJsonChunked { a with Name = a.Name + "!" }
 
-let handler5 (test1: string) (test2: string) (a: MyModel): EndpointHandler =
+let handler5 (test1: string) (test2: string) (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson {| a with Name = a.Name + "!"; Test = test1 + test2 |}
+        ctx.WriteJson {|
+            a with
+                Name = a.Name + "!"
+                Test = test1 + test2
+        |}
 
-let handler6 (test: string) (a: MyModel): EndpointHandler =
+let handler6 (test: string) (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson {| a with Name = a.Name + "!"; Test = test |}
+        ctx.WriteJson {|
+            a with
+                Name = a.Name + "!"
+                Test = test
+        |}
 
-let handler7 (a: MyModel) (b: MyModel): EndpointHandler =
+let handler7 (a: MyModel) (b: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson {| a with Name = b.Name + "!"; Test = b.Name |}
+        ctx.WriteJson {|
+            a with
+                Name = b.Name + "!"
+                Test = b.Name
+        |}
 
-let handler8 (test: string) (a: MyModel) (b: MyModel): EndpointHandler =
+let handler8 (test: string) (a: MyModel) (b: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson {| a with Name = b.Name + "!"; Test = test |}
+        ctx.WriteJson {|
+            a with
+                Name = b.Name + "!"
+                Test = test
+        |}
 
-let handler9 (test1: string) (test2: string) (a: MyModel) (b: MyModel): EndpointHandler =
+let handler9 (test1: string) (test2: string) (a: MyModel) (b: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.WriteJson {| a with Name = b.Name + "!"; Test = test1 + test2 |}
+        ctx.WriteJson {|
+            a with
+                Name = b.Name + "!"
+                Test = test1 + test2
+        |}
 
 let handler10: EndpointHandler =
-    fun (ctx: HttpContext) ->
-        ctx.WriteText(string DateTime.Now)
+    fun (ctx: HttpContext) -> ctx.WriteText(string DateTime.Now)
 
 let handler11: EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -77,66 +91,61 @@ let authHandler: EndpointHandler =
             Task.CompletedTask
 
 let MY_AUTH = applyBefore authHandler
-let MY_HEADER endpoint = applyBefore (setHeaderMw "my" "header") endpoint
+let MY_HEADER endpoint =
+    applyBefore (setHeaderMw "my" "header") endpoint
 let NO_RESPONSE_CACHE = applyBefore noResponseCaching
 let RESPONSE_CACHE =
-    let cacheDirective = CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true) |> Some
+    let cacheDirective =
+        CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true)
+        |> Some
     applyBefore <| responseCaching cacheDirective None None
 
-let endpoints =
-    [
-        GET [
-            route "/" (text "Hello World")
-            routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
-            routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
-            routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
-            route "/x" (bindQuery handler4)
-            routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
-            routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
-            routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
-            route "/abc" (json {| X = "Y" |})
-            route "/cbd/{**x}" (json {| X = "Z" |})
-        ]
-        POST [
-            route "/x" (bindJson handler4)
-            route "/y" (bindQuery (bindJson << handler7))
-            routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
-            routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
-        ]
-        // Not specifying a http verb means it will listen to all verbs
-        route "/foo" (setHeaderMw "foo" "bar" >=> text "Bar")
-
-        subRoute "/sub1" [
-            GET [
-                subRoute "/sub2" [
-                    MY_HEADER <| route "/test" handler1
-                ]
-            ]
-            MY_AUTH <| POST [
-                route "/sub2/test" handler1
-            ]
-        ]
-        MY_AUTH <| route "/auth/x" (text "Not closed")
-        MY_AUTH <| MY_HEADER (
-            subRoute "/auth" [
-                route "/open" handler1
-                route "/closed" handler1 |> addMetadata (RequiresAuditAttribute())
-            ]
-        )
-
-        route "/time" handler10 |> NO_RESPONSE_CACHE
-        route "/time-cached" handler10 |> RESPONSE_CACHE
-        route "/redirect" (redirectTo "/time" false)
-        subRoute "/auth/{lang}" [
-            route "/" handler11
-        ]
+let endpoints = [
+    GET [
+        route "/" (text "Hello World")
+        routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
+        routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
+        routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
+        route "/x" (bindQuery handler4)
+        routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
+        routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
+        routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
+        route "/abc" (json {| X = "Y" |})
+        route "/cbd/{**x}" (json {| X = "Z" |})
     ]
+    POST [
+        route "/x" (bindJson handler4)
+        route "/y" (bindQuery(bindJson << handler7))
+        routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
+        routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
+    ]
+    // Not specifying a http verb means it will listen to all verbs
+    route "/foo" (setHeaderMw "foo" "bar" >=> text "Bar")
+
+    subRoute "/sub1" [
+        GET [ subRoute "/sub2" [ MY_HEADER <| route "/test" handler1 ] ]
+        MY_AUTH <| POST [ route "/sub2/test" handler1 ]
+    ]
+    MY_AUTH <| route "/auth/x" (text "Not closed")
+    MY_AUTH
+    <| MY_HEADER(
+        subRoute "/auth" [
+            route "/open" handler1
+            route "/closed" handler1 |> addMetadata(RequiresAuditAttribute())
+        ]
+    )
+
+    route "/time" handler10 |> NO_RESPONSE_CACHE
+    route "/time-cached" handler10 |> RESPONSE_CACHE
+    route "/redirect" (redirectTo "/time" false)
+    subRoute "/auth/{lang}" [ route "/" handler11 ]
+]
 
 
 let errorView errorCode (errorText: string) =
-    html(){
+    html() {
         body(style = "width: 800px; margin: 0 auto") {
-            h1(style="text-align: center; color: red") { $"Error %d{errorCode}" }
+            h1(style = "text-align: center; color: red") { $"Error %d{errorCode}" }
             p() { errorText }
         }
     }
@@ -163,7 +172,8 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
             logger.LogError(ex, "Unhandled 500 error")
             ctx.SetStatusCode StatusCodes.Status500InternalServerError
             return! ctx.WriteHtmlView(errorView 500 (string ex))
-    } :> Task
+    }
+    :> Task
 
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder

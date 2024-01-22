@@ -14,7 +14,7 @@ module RequestHandlers =
     /// <param name="ctx">HttpContext</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-    let bindJson<'T> (f: 'T -> EndpointHandler): EndpointHandler =
+    let bindJson<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
         fun (ctx: HttpContext) ->
             task {
                 let! model = ctx.BindJson<'T>()
@@ -28,7 +28,7 @@ module RequestHandlers =
     /// <param name="ctx">HttpContext</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-    let bindForm<'T> (f: 'T -> EndpointHandler): EndpointHandler =
+    let bindForm<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
         fun (ctx: HttpContext) ->
             task {
                 let! model = ctx.BindForm<'T>()
@@ -42,7 +42,7 @@ module RequestHandlers =
     /// <param name="ctx">HttpContext</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-    let bindQuery<'T> (f: 'T -> EndpointHandler): EndpointHandler =
+    let bindQuery<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
         fun (ctx: HttpContext) ->
             task {
                 let model = ctx.BindQuery<'T>()
@@ -59,7 +59,7 @@ module ResponseHandlers =
     /// <param name="permanent">If true the redirect is permanent (301), otherwise temporary (302).</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let redirectTo (location: string) (permanent: bool): EndpointHandler  =
+    let redirectTo (location: string) (permanent: bool) : EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.Response.Redirect(location, permanent)
             Task.CompletedTask
@@ -70,9 +70,8 @@ module ResponseHandlers =
     /// <param name="str">The string value to be send back to the client.</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let text (str: string): EndpointHandler =
-        fun (ctx: HttpContext) ->
-            ctx.WriteText str
+    let text (str: string) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteText str
 
     /// <summary>
     /// Serializes an object to JSON and writes the output to the body of the HTTP response.
@@ -83,9 +82,8 @@ module ResponseHandlers =
     /// <param name="ctx">HttpContext</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let json<'T> (value: 'T): EndpointHandler =
-        fun (ctx: HttpContext) ->
-            ctx.WriteJson(value)
+    let json<'T> (value: 'T) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteJson(value)
 
     /// <summary>
     /// Serializes an object to JSON and writes the output to the body of the HTTP response using chunked transfer encoding.
@@ -95,9 +93,8 @@ module ResponseHandlers =
     /// <param name="value">The object to be send back to the client.</param>
     /// <param name="ctx"></param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let jsonChunked<'T> (value: 'T): EndpointHandler =
-        fun (ctx: HttpContext) ->
-            ctx.WriteJsonChunked(value)
+    let jsonChunked<'T> (value: 'T) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteJsonChunked(value)
 
     /// <summary>
     /// Writes a HTML string to the body of the HTTP response.
@@ -106,9 +103,8 @@ module ResponseHandlers =
     /// <param name="html">The HTML string to be send back to the client.</param>
     /// <param name="ctx"></param>
     /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let htmlString (html: string): EndpointHandler =
-        fun (ctx: HttpContext) ->
-            ctx.WriteHtmlString html
+    let htmlString (html: string) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteHtmlString html
 
     /// <summary>
     /// <para>Compiles a `Oxpecker.OxpeckerViewEngine.Builder.HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
@@ -117,9 +113,8 @@ module ResponseHandlers =
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
     /// <param name="ctx"></param>
     /// <returns>A Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let htmlView (htmlView: HtmlElement): EndpointHandler =
-        fun (ctx: HttpContext) ->
-            ctx.WriteHtmlView htmlView
+    let htmlView (htmlView: HtmlElement) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteHtmlView htmlView
 
     /// <summary>
     /// Clears the current <see cref="Microsoft.AspNetCore.Http.HttpResponse"/> object.
@@ -138,7 +133,7 @@ module ResponseHandlers =
     /// <param name="contentType">The mime type of the response (e.g.: application/json or text/html).</param>
     /// <param name="ctx"></param>
     /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
-    let setContentType (contentType: string): EndpointHandler =
+    let setContentType (contentType: string) : EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.SetContentType contentType
             Task.CompletedTask
@@ -149,7 +144,7 @@ module ResponseHandlers =
     /// <param name="statusCode">The status code to be set in the response. For convenience you can use the static <see cref="Microsoft.AspNetCore.Http.StatusCodes"/> class for passing in named status codes instead of using pure int values.</param>
     /// <param name="ctx"></param>
     /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
-    let setStatusCode (statusCode: int): EndpointHandler =
+    let setStatusCode (statusCode: int) : EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.SetStatusCode statusCode
             Task.CompletedTask
@@ -161,8 +156,7 @@ module ResponseHandlers =
     /// <param name="value">The value to be set. Non string values will be converted to a string using the object's ToString() method.</param>
     /// <param name="ctx"></param>
     /// <returns>A Oxpecker <see cref="HttpHandler"/> function which can be composed into a bigger web application.</returns>
-    let setHttpHeader (key: string) (value: string): EndpointHandler =
+    let setHttpHeader (key: string) (value: string) : EndpointHandler =
         fun (ctx: HttpContext) ->
             ctx.SetHttpHeader(key, value)
             Task.CompletedTask
-
