@@ -2,9 +2,9 @@
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker)
 
-Examples can be found [here](https://github.com/Lanayx/Oxpecker/tree/main/examples)
+Examples can be found [here](https://github.com/Lanayx/Oxpecker/tree/develop/examples)
 
-Performance tests reside [here](https://github.com/Lanayx/Oxpecker/tree/main/tests/PerfTest)
+Performance tests reside [here](https://github.com/Lanayx/Oxpecker/tree/develop/tests/PerfTest)
 
 ## Documentation:
 
@@ -16,6 +16,6 @@ TBD, for now you can use [Giraffe documentation](https://giraffe.wiki/docs), wit
 - Case insensitive functions (`*Ci`) are dropped, since everything is case insensitive by default
 - Some other route functions are dropped
 - `JSON.ISerializer` only requires one method implemented
-- Model binding will throw exceptions to be caught in common middleware (see [examples/Basic](https://github.com/Lanayx/Oxpecker/tree/main/examples/Basic))
+- Model binding will throw exceptions to be caught in common middleware (see [examples/Basic](https://github.com/Lanayx/Oxpecker/tree/develop/examples/Basic))
 - .NET 8 minimal target
 - CE-based strongly typed ViewEngine built on class inheritance

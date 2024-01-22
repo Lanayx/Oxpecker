@@ -28,5 +28,5 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 
 ## Documentation:
 
-* [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
-* [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
+* [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker/README.md)
+* [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker/README.md)
