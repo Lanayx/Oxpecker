@@ -8,6 +8,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker
 open Oxpecker.ViewEngine
+open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
     inherit Attribute()
@@ -102,7 +103,9 @@ let RESPONSE_CACHE =
 
 let endpoints = [
     GET [
-        route "/" (text "Hello World")
+        route "/" <| text "Hello World"
+        route "/iresult" <| %Ok {| Text = "Hello World" |}
+        route "/ibadResult" <| % BadRequest()
         routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
         routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
@@ -120,7 +123,7 @@ let endpoints = [
         routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
     ]
     // Not specifying a http verb means it will listen to all verbs
-    route "/foo" (setHeaderMw "foo" "bar" >=> text "Bar")
+    route "/foo" (setHeaderMw "foo" "bar" >=> %Ok {| Text = "Bar" |})
 
     subRoute "/sub1" [
         GET [ subRoute "/sub2" [ MY_HEADER <| route "/test" handler1 ] ]

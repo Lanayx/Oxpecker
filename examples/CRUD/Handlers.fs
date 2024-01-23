@@ -10,6 +10,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
 open Oxpecker
 open FSharp.UMX
+open type Microsoft.AspNetCore.Http.TypedResults
 
 type OperationEnv(env: Env) =
     interface IGetOrders with
@@ -36,7 +37,7 @@ let getOrders env (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
         let! result = OrderService.getOrders operationEnv
-        return! ctx.WriteJson(result)
+        return! ctx.Write <| Ok result
     }
     :> Task
 
@@ -45,11 +46,8 @@ let getOrderDetails env id (ctx: HttpContext) =
         let operationEnv = OperationEnv(env)
         let! result = OrderService.getOrder operationEnv id
         match result with
-        | Ok order -> return! ctx.WriteJson(order)
-        | Error error ->
-            env.Logger.LogError(error)
-            ctx.SetStatusCode(StatusCodes.Status404NotFound)
-            return! ctx.WriteText(error)
+        | Ok order -> return! ctx.Write <| Ok order
+        | Error error -> return! ctx.Write <| NotFound {| Error = error |}
     }
     :> Task
 
@@ -66,11 +64,10 @@ let createOrder env (ctx: HttpContext) =
         }
         let! result = OrderService.createOrder operationEnv order
         match result with
-        | Ok _ -> ctx.SetStatusCode(StatusCodes.Status201Created)
+        | Ok _ -> return! ctx.Write <| Created()
         | Error error ->
             env.Logger.LogError(error)
-            ctx.SetStatusCode(StatusCodes.Status400BadRequest)
-            return! ctx.WriteText(error)
+            return! ctx.Write <| BadRequest {| Error = error |}
     }
     :> Task
 
@@ -87,12 +84,10 @@ let updateOrder env (id: Guid) (ctx: HttpContext) =
         }
         let! result = OrderService.updateOrder operationEnv order
         match result with
-        | Ok _ -> ctx.SetStatusCode(StatusCodes.Status204NoContent)
+        | Ok _ -> return! ctx.Write <| NoContent()
         | Error error ->
             env.Logger.LogError(error)
-            ctx.SetStatusCode(StatusCodes.Status400BadRequest)
-            return! ctx.WriteText(error)
-
+            return! ctx.Write <| BadRequest {| Error = error |}
     }
     :> Task
 
@@ -101,10 +96,9 @@ let deleteOrder env id (ctx: HttpContext) =
         let operationEnv = OperationEnv(env)
         let! result = OrderService.deleteOrder operationEnv id
         match result with
-        | Ok _ -> ctx.SetStatusCode(StatusCodes.Status204NoContent)
+        | Ok _ -> return! ctx.Write <| NoContent()
         | Error error ->
             env.Logger.LogError(error)
-            ctx.SetStatusCode(StatusCodes.Status404NotFound)
-            return! ctx.WriteText(error)
+            return! ctx.Write <| NotFound {| Error = error |}
     }
     :> Task

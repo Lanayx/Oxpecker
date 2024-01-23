@@ -67,3 +67,6 @@ module Core =
     /// Same as >=>, but with three arguments
     let inline (>>=>++) left right x y z =
         compose_opImpl Unchecked.defaultof<Composition> left (right x y z)
+
+    /// Implicit conversion from IResult to EndpointHandler
+    let inline (~%) (x: IResult) : EndpointHandler = x.ExecuteAsync

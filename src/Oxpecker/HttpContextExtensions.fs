@@ -238,6 +238,13 @@ type HttpContextExtensions() =
         ctx.Response.ContentLength <- bytes.LongLength
         ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
 
+
+    /// <summary>
+    /// Executes and ASP.NET Core IResult. Note that in most cases the response will be chunked.
+    /// </summary>
+    [<Extension>]
+    static member Write(ctx: HttpContext, result: IResult) = result.ExecuteAsync(ctx)
+
     /// <summary>
     /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
     /// </summary>
