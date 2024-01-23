@@ -2,7 +2,6 @@ namespace Oxpecker
 
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.Primitives
 
 [<AutoOpen>]
 module CoreTypes =
@@ -69,4 +68,5 @@ module Core =
         compose_opImpl Unchecked.defaultof<Composition> left (right x y z)
 
     /// Implicit conversion from IResult to EndpointHandler
-    let inline (~%) (x: IResult) : EndpointHandler = x.ExecuteAsync
+    let inline (~%) (result: IResult) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.Write result

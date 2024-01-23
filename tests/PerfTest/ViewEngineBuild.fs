@@ -1,8 +1,6 @@
 ﻿namespace PerfTest
 
-open System.IO
 open BenchmarkDotNet.Attributes
-open Microsoft.AspNetCore.Http
 
 module OxpeckerViewBuild =
     open Oxpecker.ViewEngine
