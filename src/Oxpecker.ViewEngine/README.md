@@ -14,7 +14,9 @@ let staticHtml =
             p() { "Some long error text" }
             ul() {
                 for i in 1..10 do
-                    li() { span() { $"Test %d{i}" } }
+                    li().attr("onclick", $"alert('Test {i}')") {
+                        span(id= $"span{i}", class'="test") { $"Test {i}" }
+                    }
             }
         }
     }

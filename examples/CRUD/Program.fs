@@ -8,6 +8,7 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Oxpecker
+open type Microsoft.AspNetCore.Http.TypedResults
 
 let getEndpoints env = [
     subRoute "/order" [
@@ -24,8 +25,7 @@ let getEndpoints env = [
 let notFoundHandler (ctx: HttpContext) =
     let logger = ctx.GetLogger()
     logger.LogWarning("Unhandled 404 error")
-    ctx.SetStatusCode 404
-    ctx.WriteText "Resource was not found"
+    ctx.Write <| NotFound {| Error = "Resource was not found" |}
 
 let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
     task {
@@ -36,8 +36,7 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
         | :? RouteParseException as ex ->
             let logger = ctx.GetLogger()
             logger.LogWarning(ex, "Unhandled 400 error")
-            ctx.SetStatusCode StatusCodes.Status400BadRequest
-            return! ctx.WriteText <| string ex
+            return! ctx.Write <| BadRequest {| Error = ex.Message |}
         | ex ->
             let logger = ctx.GetLogger()
             logger.LogError(ex, "Unhandled 500 error")

@@ -2,7 +2,6 @@ namespace Oxpecker
 
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
-open Microsoft.Extensions.Primitives
 
 [<AutoOpen>]
 module CoreTypes =
@@ -67,3 +66,7 @@ module Core =
     /// Same as >=>, but with three arguments
     let inline (>>=>++) left right x y z =
         compose_opImpl Unchecked.defaultof<Composition> left (right x y z)
+
+    /// Implicit conversion from IResult to EndpointHandler
+    let inline (~%) (result: IResult) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.Write result

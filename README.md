@@ -24,9 +24,10 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - Streaming
 - Authorization
 - eTag support
+- IResult support
 - Many useful **HttpContext** extensions
 
 ## Documentation:
 
 * [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
-* [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
+* [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.ViewEngine/README.md)
