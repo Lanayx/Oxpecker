@@ -40,3 +40,15 @@ let ``Data attribute`` () =
     result
     |> Render.toString
     |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc">Some text</div>"""
+
+[<Fact>]
+let ``Encode test`` () =
+    let result =
+        p(id="<br>") {
+            raw "<hr>"
+            span(){ "<hr>" }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual
+        """<p id="&lt;br&gt;"><hr><span>&lt;hr&gt;</span></p>"""
