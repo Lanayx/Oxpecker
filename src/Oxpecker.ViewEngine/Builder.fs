@@ -1,5 +1,8 @@
 ﻿namespace Oxpecker.ViewEngine
 
+open System.IO
+open System.Text.Encodings.Web
+
 [<AutoOpen>]
 module Builder =
 
@@ -7,21 +10,29 @@ module Builder =
     open Tools
 
     [<Struct>]
+    type RawText = { Text: string }
+
+    let raw text = { Text = text }
+
+    [<Struct>]
     type HtmlAttribute = { Name: string; Value: string }
 
     [<Struct>]
     type HtmlElementType =
-        | DoubleTag of dt: string
-        | SingleTag of st: string
-        | TextNode of text: string
+        | NormalNode of dt: string
+        | VoidNode of st: string
+        | TextNode of text: TextNodeType
+    and [<Struct>] TextNodeType =
+        | RegularTextNode of reg: string
+        | RawTextNode of raw: string
 
     type HtmlElementFun = HtmlElement -> unit
 
     and HtmlElement(elemType: HtmlElementType) =
-        let mutable children: CustomQueue<HtmlElement> = CustomQueue(null, null)
-        let mutable attributes: CustomQueue<HtmlAttribute> = CustomQueue(null, null)
+        let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
+        let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
 
-        new(tagName: string) = HtmlElement(HtmlElementType.DoubleTag(tagName))
+        new(tagName: string) = HtmlElement(HtmlElementType.NormalNode(tagName))
 
         // global attributes
         member this.id
@@ -35,25 +46,33 @@ module Builder =
         member this.dir
             with set value = this.attr("dir", value) |> ignore
 
-        member this.Render(sb: StringBuilder) : unit =
+        member this.Render(tw: TextWriter) : unit =
             let inline handleSingleTag (tagName: string) =
-                sb.Append('<').Append(tagName) |> ignore
+                tw.Write('<')
+                tw.Write(tagName)
                 while isNotNull attributes.Head do
                     let attr = attributes.Dequeue()
-                    sb.Append(' ').Append(attr.Name).Append("=\"").Append(attr.Value).Append('"')
-                    |> ignore
-                sb.Append('>') |> ignore
+                    tw.Write(' ')
+                    tw.Write(attr.Name)
+                    tw.Write("=\"")
+                    HtmlEncoder.Default.Encode(tw, attr.Value)
+                    tw.Write('"')
+                tw.Write('>')
 
             match elemType with
-            | HtmlElementType.TextNode content -> sb.Append(content) |> ignore
-            | HtmlElementType.SingleTag tagName -> handleSingleTag(tagName)
-            | HtmlElementType.DoubleTag tagName ->
+            | HtmlElementType.TextNode textNodeType ->
+                match textNodeType with
+                | RawTextNode content -> tw.Write(content)
+                | RegularTextNode content -> HtmlEncoder.Default.Encode(tw, content)
+            | HtmlElementType.VoidNode tagName -> handleSingleTag(tagName)
+            | HtmlElementType.NormalNode tagName ->
                 handleSingleTag(tagName)
                 while isNotNull children.Head do
                     let child = children.Dequeue()
-                    child.Render(sb)
-                sb.Append("</").Append(tagName).Append('>') |> ignore
-
+                    child.Render(tw)
+                tw.Write("</")
+                tw.Write(tagName)
+                tw.Write('>')
 
         member this.AddChild(element: HtmlElement) =
             children.Enqueue(element)
@@ -90,11 +109,14 @@ module Builder =
             fun builder -> builder.AddChild(element) |> ignore
 
         member inline _.Yield(text: string) : HtmlElementFun =
-            fun builder -> builder.AddChild(TextNode text) |> ignore
+            fun builder -> builder.AddChild(TextNode(RegularTextNode text)) |> ignore
+
+        member inline _.Yield(text: RawText) : HtmlElementFun =
+            fun builder -> builder.AddChild(TextNode(RawTextNode text.Text)) |> ignore
 
         member inline this.Run([<InlineIfLambda>] runExpr: HtmlElementFun) =
             runExpr this
             this
 
-    and TextNode(text: string) =
+    and TextNode(text: TextNodeType) =
         inherit HtmlElement(HtmlElementType.TextNode text)

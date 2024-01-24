@@ -10,6 +10,7 @@ module OxpeckerViewRender =
             body(style = "width: 800px; margin: 0 auto") {
                 h1(style = "text-align: center; color: red") { "Error" }
                 p() { "Some long error text" }
+                p() { raw "<h2>Raw HTML</h2>" }
                 ul() {
                     for i in 1..10 do
                         li() { span() { $"Test %d{i}" } }
@@ -24,7 +25,8 @@ module GiraffeViewRender =
         html [] [
             body [ _style "width: 800px; margin: 0 auto" ] [
                 h1 [ _style "text-align: center; color: red" ] [ str "Error" ]
-                p [] [ str "Some long error text" ]
+                p [] [ str "Some long raw text" ]
+                p [] [ rawText "<h2>Raw HTML</h2>" ]
                 ul [] [
                     for i in 1..10 do
                         li [] [ span [] [ str $"Test %d{i}" ] ]
@@ -41,10 +43,11 @@ type ViewEngineRender() =
     //   [Host]     : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2 DEBUG
     //   DefaultJob : .NET 8.0.1 (8.0.123.58001), X64 RyuJI
 
-    // | Method             | Mean       | Error    | StdDev   | Gen0   | Allocated |
-    // |------------------- |-----------:|---------:|---------:|-------:|----------:|
-    // | RenderOxpeckerView |   140.4 ns |  2.67 ns |  2.62 ns | 0.0629 |     264 B |
-    // | RenderGiraffeView  | 1,224.8 ns | 21.66 ns | 19.20 ns | 2.5234 |   10552 B |
+    // | Method             | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
+    // |------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
+    // | RenderOxpeckerView |   141.9 ns |  0.98 ns |  0.87 ns | 0.0763 |      - |     320 B |
+    // | RenderGiraffeView  | 1,217.4 ns | 14.39 ns | 12.76 ns | 2.5234 | 0.0019 |   10568 B |
+
 
 
     [<Benchmark>]

@@ -148,7 +148,7 @@ let endpoints = [
 let errorView errorCode (errorText: string) =
     html() {
         body(style = "width: 800px; margin: 0 auto") {
-            h1(style = "text-align: center; color: red") { $"Error %d{errorCode}" }
+            h1(style = "text-align: center; color: red") { raw $"Error <i>%d{errorCode}</i>" }
             p() { errorText }
         }
     }

@@ -16,7 +16,6 @@ type CustomQueueItem<'T>(value: 'T) =
 type CustomQueue<'T> =
     val mutable Head: CustomQueueItem<'T>
     val mutable Tail: CustomQueueItem<'T>
-    new(h, t) = { Head = h; Tail = t }
     member this.Enqueue(value: 'T) =
         let item = CustomQueueItem(value)
         if isNull this.Head then

@@ -1,2 +1,3 @@
 #ignore preconditional tests with long arrays
 tests/Oxpecker.Tests/Preconditional.Tests.fs
+tests/Oxpecker.Tests/Streaming.Tests.fs
