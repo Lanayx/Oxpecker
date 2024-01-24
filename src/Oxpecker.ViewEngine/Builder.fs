@@ -18,8 +18,8 @@ module Builder =
     type HtmlElementFun = HtmlElement -> unit
 
     and HtmlElement(elemType: HtmlElementType) =
-        let mutable children: CustomQueue<HtmlElement> = CustomQueue(null, null)
-        let mutable attributes: CustomQueue<HtmlAttribute> = CustomQueue(null, null)
+        let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
+        let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
 
         new(tagName: string) = HtmlElement(HtmlElementType.DoubleTag(tagName))
 
