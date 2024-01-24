@@ -44,11 +44,10 @@ let ``Data attribute`` () =
 [<Fact>]
 let ``Encode test`` () =
     let result =
-        p(id="<br>") {
+        p(id = "<br>") {
             raw "<hr>"
-            span(){ "<hr>" }
+            span() { "<hr>" }
         }
     result
     |> Render.toString
-    |> shouldEqual
-        """<p id="&lt;br&gt;"><hr><span>&lt;hr&gt;</span></p>"""
+    |> shouldEqual """<p id="&lt;br&gt;"><hr><span>&lt;hr&gt;</span></p>"""

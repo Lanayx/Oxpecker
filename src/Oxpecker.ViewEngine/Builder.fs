@@ -22,9 +22,9 @@ module Builder =
         | NormalNode of dt: string
         | VoidNode of st: string
         | TextNode of text: TextNodeType
-    and [<Struct>]TextNodeType =
-        | RegularTextNode of reg:string
-        | RawTextNode of raw:string
+    and [<Struct>] TextNodeType =
+        | RegularTextNode of reg: string
+        | RawTextNode of raw: string
 
     type HtmlElementFun = HtmlElement -> unit
 
@@ -62,10 +62,8 @@ module Builder =
             match elemType with
             | HtmlElementType.TextNode textNodeType ->
                 match textNodeType with
-                | RawTextNode content ->
-                    tw.Write(content)
-                | RegularTextNode content ->
-                    HtmlEncoder.Default.Encode(tw, content)
+                | RawTextNode content -> tw.Write(content)
+                | RegularTextNode content -> HtmlEncoder.Default.Encode(tw, content)
             | HtmlElementType.VoidNode tagName -> handleSingleTag(tagName)
             | HtmlElementType.NormalNode tagName ->
                 handleSingleTag(tagName)
@@ -111,12 +109,10 @@ module Builder =
             fun builder -> builder.AddChild(element) |> ignore
 
         member inline _.Yield(text: string) : HtmlElementFun =
-            fun builder ->
-                builder.AddChild(TextNode (RegularTextNode text)) |> ignore
+            fun builder -> builder.AddChild(TextNode(RegularTextNode text)) |> ignore
 
         member inline _.Yield(text: RawText) : HtmlElementFun =
-            fun builder ->
-                builder.AddChild(TextNode (RawTextNode text.Text)) |> ignore
+            fun builder -> builder.AddChild(TextNode(RawTextNode text.Text)) |> ignore
 
         member inline this.Run([<InlineIfLambda>] runExpr: HtmlElementFun) =
             runExpr this
