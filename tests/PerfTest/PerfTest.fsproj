@@ -18,7 +18,7 @@
       <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
       <PackageReference Include="Giraffe" Version="6.2.0" />
       <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1"/>
-      <PackageReference Include="Oxpecker" Version="0.5.0" />
+      <PackageReference Include="Oxpecker" Version="0.5.1" />
       <PackageReference Include="Oxpecker.ViewEngine" Version="0.2.0" />
     </ItemGroup>
 
