@@ -13,7 +13,11 @@ open Oxpecker
 
 [<AutoOpen>]
 module RoutingTypes =
-    type HttpVerb =
+    type HttpVerbs =
+        | Verbs of HttpVerb seq
+        | Any
+
+    and HttpVerb =
         | GET
         | POST
         | PUT
@@ -23,7 +27,6 @@ module RoutingTypes =
         | OPTIONS
         | TRACE
         | CONNECT
-        | Any
 
         override this.ToString() =
             match this with
@@ -36,13 +39,12 @@ module RoutingTypes =
             | OPTIONS -> "OPTIONS"
             | TRACE -> "TRACE"
             | CONNECT -> "CONNECT"
-            | _ -> ""
 
     type RouteTemplate = string
     type Metadata = obj seq
 
     type Endpoint =
-        | SimpleEndpoint of HttpVerb * RouteTemplate * EndpointHandler * Metadata
+        | SimpleEndpoint of HttpVerbs * RouteTemplate * EndpointHandler * Metadata
         | NestedEndpoint of RouteTemplate * Endpoint seq * Metadata
         | MultiEndpoint of Endpoint seq
 
@@ -139,55 +141,40 @@ module Routers =
     open CoreInternal
     open RoutingInternal
 
-    let rec private applyHttpVerbToEndpoint (verb: HttpVerb) (endpoint: Endpoint) : Endpoint =
+    let rec private applyHttpVerbsToEndpoint (verbs: HttpVerbs) (endpoint: Endpoint) : Endpoint =
         match endpoint with
-        | SimpleEndpoint(_, template, handler, metadata) -> SimpleEndpoint(verb, template, handler, metadata)
+        | SimpleEndpoint(_, template, handler, metadata) -> SimpleEndpoint(verbs, template, handler, metadata)
         | NestedEndpoint(handler, endpoints, metadata) ->
-            NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbToEndpoint verb), metadata)
-        | MultiEndpoint endpoints -> endpoints |> Seq.map(applyHttpVerbToEndpoint verb) |> MultiEndpoint
+            NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), metadata)
+        | MultiEndpoint endpoints -> endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs) |> MultiEndpoint
 
-    let rec private applyHttpVerbToEndpoints (verb: HttpVerb) (endpoints: Endpoint seq) : Endpoint =
-        endpoints
-        |> Seq.map(fun endpoint ->
-            match endpoint with
-            | SimpleEndpoint(_, template, handler, metadata) -> SimpleEndpoint(verb, template, handler, metadata)
-            | NestedEndpoint(template, endpoints, metadata) ->
-                NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbToEndpoint verb), metadata)
-            | MultiEndpoint endpoints -> applyHttpVerbToEndpoints verb endpoints)
-        |> MultiEndpoint
 
-    let rec private applyHttpVerbsToEndpoints (verbs: HttpVerb seq) (endpoints: Endpoint seq) : Endpoint =
+
+    let rec private applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
         |> Seq.map (function
             | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
-                verbs
-                |> Seq.map(fun verb -> SimpleEndpoint(verb, routeTemplate, requestDelegate, metadata))
-                |> MultiEndpoint
+                SimpleEndpoint(verbs, routeTemplate, requestDelegate, metadata)
             | NestedEndpoint(template, endpoints, metadata) ->
-                verbs
-                |> Seq.map(fun verb ->
-                    NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbToEndpoint verb), metadata))
-                |> MultiEndpoint
-            | MultiEndpoint endpoints ->
-                verbs
-                |> Seq.map(fun verb -> applyHttpVerbToEndpoints verb endpoints)
-                |> MultiEndpoint)
+                NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), metadata)
+            | MultiEndpoint endpoints -> MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs)))
         |> MultiEndpoint
 
-    let GET_HEAD: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints [ GET; HEAD ]
+    let GET_HEAD: Endpoint seq -> Endpoint =
+        applyHttpVerbsToEndpoints(Verbs [ GET; HEAD ])
 
-    let GET: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints GET
-    let POST: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints POST
-    let PUT: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints PUT
-    let PATCH: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints PATCH
-    let DELETE: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints DELETE
-    let HEAD: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints HEAD
-    let OPTIONS: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints OPTIONS
-    let TRACE: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints TRACE
-    let CONNECT: Endpoint seq -> Endpoint = applyHttpVerbToEndpoints CONNECT
+    let GET: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ GET ])
+    let POST: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ POST ])
+    let PUT: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ PUT ])
+    let PATCH: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ PATCH ])
+    let DELETE: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ DELETE ])
+    let HEAD: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ HEAD ])
+    let OPTIONS: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ OPTIONS ])
+    let TRACE: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ TRACE ])
+    let CONNECT: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ CONNECT ])
 
     let route (path: string) (handler: EndpointHandler) : Endpoint =
-        SimpleEndpoint(HttpVerb.Any, path, handler, Seq.empty)
+        SimpleEndpoint(HttpVerbs.Any, path, handler, Seq.empty)
 
 
     let private invokeHandler<'T>
@@ -231,7 +218,7 @@ module Routers =
         let requestDelegate =
             fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler arrMappings
 
-        SimpleEndpoint(HttpVerb.Any, template, requestDelegate, Seq.empty)
+        SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, Seq.empty)
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint =
         NestedEndpoint(path, endpoints, Seq.empty)
@@ -277,17 +264,20 @@ type EndpointRouteBuilderExtensions() =
     static member private MapSingleEndpoint
         (
             builder: IEndpointRouteBuilder,
-            verb: HttpVerb,
+            verb: HttpVerbs,
             routeTemplate: RouteTemplate,
             requestDelegate: RequestDelegate,
             metadata: Metadata
         ) =
         match verb with
-        | Any -> builder.Map(routeTemplate, requestDelegate).WithMetadata(metadata)
-        | _ ->
+        | Any ->
             builder
-                .MapMethods(routeTemplate, [| verb.ToString() |], requestDelegate)
-                .WithMetadata(metadata)
+                .Map(routeTemplate, requestDelegate)
+                .WithMetadata(metadata |> Seq.toArray)
+        | Verbs verbs ->
+            builder
+                .MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
+                .WithMetadata(metadata |> Seq.toArray)
         |> ignore
 
     [<Extension>]
