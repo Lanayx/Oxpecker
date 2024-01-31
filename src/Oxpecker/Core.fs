@@ -57,15 +57,15 @@ module Core =
 
     /// Same as >=>, but with additional argument
     let inline (>>=>) left right x =
-        compose_opImpl Unchecked.defaultof<Composition> left (right x)
+        left >=> (right x)
 
     /// Same as >=>, but with two arguments
     let inline (>>=>+) left right x y =
-        compose_opImpl Unchecked.defaultof<Composition> left (right x y)
+        left >=> (right x y)
 
     /// Same as >=>, but with three arguments
     let inline (>>=>++) left right x y z =
-        compose_opImpl Unchecked.defaultof<Composition> left (right x y z)
+        left >=> (right x y z)
 
     /// Implicit conversion from IResult to EndpointHandler
     let inline (~%) (result: IResult) : EndpointHandler =

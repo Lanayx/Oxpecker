@@ -8,14 +8,269 @@ Performance tests reside [here](https://github.com/Lanayx/Oxpecker/tree/develop/
 
 ## Documentation:
 
-TBD, for now you can use [Giraffe documentation](https://giraffe.wiki/docs), with the following differences:
+An in depth functional reference to all of Oxpecker's default features.
 
-- `routef` parameters should be surrounded with curly braces `{}`, this allows using [Route constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-8.0#route-constraints)
-- `routef` handler arguments are now curried, not tuplified
-- `HttpHandler` concept is separated into `EndpointHandler` and `EndpointMiddlware`. The difference is that the former doesn't accept `next` parameter, while the latter does.
-- Case insensitive functions (`*Ci`) are dropped, since everything is case insensitive by default
-- Some other route functions are dropped
-- `JSON.ISerializer` only requires one method implemented
-- Model binding will throw exceptions to be caught in common middleware (see [examples/Basic](https://github.com/Lanayx/Oxpecker/tree/develop/examples/Basic))
-- .NET 8 minimal target
-- CE-based strongly typed ViewEngine built on class inheritance
+## Table of contents
+
+- [Fundamentals](#fundamentals)
+    - [Endpoint Routing](#endpointrouting)
+    - [EndpointHandler](#endpointhandler)
+    - [EndpointMiddleware](#endpointmiddleware)
+    - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
+    - [Creating new EndpointHandler and EndpointMiddlware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
+    - [Composition](#composition)
+      - [Handler composition](#handler-composition)
+      - [Bind composition](#bind-composition)
+    - [Continue vs. Return](#continue-vs-return)
+
+## Fundamentals
+
+### EndpointRouting
+
+Oxpecker is built on top of the ASP.NET Core [Endpoint Routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) and provides some convenient DSL for F# users.
+
+When using Oxpecker, make sure you are familiar with ASP.NET Core and it's concepts, since it reuses a lot of it's functionality.
+
+### EndpointHandler
+
+The main building block in Oxpecker is an `EndpointHandler`:
+
+```fsharp
+type EndpointHandler = HttpContext -> Task
+```
+
+an `EndpointHandler` is a function which takes `HttpContext`, and returns a `Task` when finished.
+
+`EndpointHandler` function has full control of the incoming `HttpRequest` and the resulting `HttpResponse`. It closely follows [RequestDelegate](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.requestdelegate) signature, but in F# style.
+
+`EndpointHandler` normally should be regarded as a _terminal_ handler, meaning that it should write some result in response (but not necessary).
+
+### EndpointMiddleware
+
+```fsharp
+type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
+```
+`EndpointMiddleware` is similar to `EndpointHandler`, but accepts the _next_ `EndpointHandler` as first parameter.
+
+Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuit the execution by returning the `Task` itself.
+
+### Oxpecker pipeline vs. ASP.NET Core pipeline
+
+The Oxpecker pipeline is a (sort of) functional equivalent of the (object oriented) [ASP.NET Core pipeline](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware). The ASP.NET Core pipeline is defined by middlewares, and `EndpointMiddleware` is similar to regular middleware and `EndpointHandler` is similar to _terminal_ middleware.
+
+If the Oxpecker pipeline didn't process an incoming `HttpRequest` (because no route was matched) then other ASP.NET Core middleware can still process the request (e.g. static file middleware or another web framework plugged in after Oxpecker).
+
+This architecture allows F# developers to build rich web applications through a functional composition of `EndpointMiddleware` and `EndpointHandler` functions while at the same time benefiting from the wider ASP.NET Core eco system by making use of already existing ASP.NET Core middleware.
+
+The Oxpecker pipeline is plugged into the wider ASP.NET Core pipeline through the `OxpeckerMiddleware` itself and therefore an addition to it rather than a replacement.
+
+### Ways of creating a new EndpointHandler and EndpointMiddleware
+
+There's multiple ways how one can create a new `EndpointHandler` in Oxpecker.
+
+The easiest way is to re-use an existing `EndpointHandler` function:
+
+```fsharp
+let sayHelloWorld : EndpointHandler = text "Hello World, from Oxpecker"
+```
+
+You can also add additional parameters before returning an existing `EndpointHandler` function:
+
+```fsharp
+let sayHelloWorld (name: string) : EndpointHandler =
+    let greeting = sprintf "Hello World, from %s" name
+    text greeting
+```
+
+If you need to access the `HttpContext` object then you'll have to explicitly return an `EndpointHandler` function which accepts an `HttpContext` object and returns a `Task`:
+
+```fsharp
+let sayHelloWorld : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let name =
+            ctx.TryGetQueryStringValue "name"
+            |> Option.defaultValue "Oxpecker"
+        let greeting = sprintf "Hello World, from %s" name
+        text greeting ctx
+```
+
+The most verbose version of defining a new `EndpointHandler` function is by explicitly returning a `Task`. This is useful when an async operation needs to be called from within an `EndpointHandler` function:
+
+```fsharp
+type Person = { Name : string }
+
+let sayHelloWorld : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            let! person = ctx.BindJsonAsync<Person>()
+            let greeting = sprintf "Hello World, from %s" person.Name
+            return! text greeting ctx
+        }
+```
+
+`EndpointMiddleware` is constructed very similarly to `EndpointHandler`, but it accepts an additional `EndpointHandler` as the first parameter:
+
+```fsharp
+let tryCatchMW : EndpointMiddleware =
+    fun (next: EndpointHandler) (ctx: HttpContext) ->
+        task {
+            try
+                return! next ctx
+            with
+            | ex ->
+                ctx.Response.StatusCode <- 500
+                return! text (sprintf "An error occurred: %s" ex.Message) ctx
+        }
+```
+
+
+#### Deferred execution of Tasks
+
+Please be also aware that a `Task<'T>` in .NET is just a promise of `'T` when a task eventually finishes asynchronously. Unless you define an `EndpointHandler` function in the most verbose way (with the `task {}` CE) and actively await a nested result with either `let!` or `return!` then the handler will not wait for the task to complete before returning to the `OxpeckerMiddleware`.
+
+This has important implications if you want to execute code in an `EndpointHandler` after returned task completes, such as cleaning up resources with the `use` keyword. For example, in the code below, the `IDisposable` will get disposed **before** the actual response is returned. This is because a `EndpointHandler` is a `HttpContext -> Task` and therefore `text "Hello" ctx` only returns a `Task` which hasn't been completed yet:
+
+```fsharp
+let doSomething : EndpointHandler =
+    fun ctx ->
+        use __ = somethingToBeDisposedAtTheEndOfTheRequest
+        text "Hello" ctx
+```
+
+However, by explicitly invoking the `text` from within a `task {}` CE one can ensure that the `text` gets executed before the `IDisposable` gets disposed:
+
+```fsharp
+let doSomething : HttpHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            use __ = somethingToBeDisposedAtTheEndOfTheRequest
+            return! text "Hello" ctx
+        }
+```
+
+
+
+### Composition
+
+#### Handler composition
+
+The fish operator (>=>) combines two functions into one.
+
+It can compose
+
+- `EndpointMiddleware` and `EndpointMiddleware`
+- `EndpointMiddleware` and `EndpointHandler`
+- `EndpointHandler` and `EndpointHandler`
+
+It is an important combinator in Oxpecker which allows composing many smaller functions into a bigger web application:
+
+There is no limit to how many functions can be chained with the fish operator:
+
+```fsharp
+let app =
+    route "/" (
+        setHttpHeader "X-Foo" "Bar"
+        >=> setStatusCode 200
+        >=> text "Hello World"
+    )
+```
+The idea is that every function can decide: short-circuit pipeline or proceed. For `EndpointMiddleware` it's choice whether to call next or not, and for `EndpointHandler` it's to start writing a response or not.
+
+If you would like to learn more about the origins of the `>=>` (fish) operator then please check out [Scott Wlaschin's blog post on Railway oriented programming](http://fsharpforfunandprofit.com/posts/recipe-part2/).
+
+`routef` function doesn't work with fish operator directly, so additional operators where added for route readability
+
+```fsharp
+routef "/{%s}" (setStatusCode 200 >>=> handler)
+routef "/{%s}/{%s}" (setStatusCode 200 >>=>+ handler)
+routef "/{%s}/{%s}/{%s}" (setStatusCode 200 >>=>++ handler)
+```
+#### Bind composition
+
+`bindQuery`, `bindForm`, `bindJson` helpers can be composed with handlers
+
+```fsharp
+route "/test" (bindQuery handler)
+```
+`routef` requires additional operators for composition with bind* functions as well
+```fsharp
+routef "/{%s}" (bindQuery << handler)
+routef "/{%s}/{%s}" (bindForm <<+ handler)
+routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
+```
+
+
+### Continue vs. Return
+
+In Oxpecker there are two scenarios which a given `EndpointMiddleware` or `EndpointHandler` can use:
+
+- Continue with next handler
+- Return early
+
+#### Continue
+
+
+An example is a hypothetical middleware, which sets a given HTTP header and afterwards always calls into the `next` http handler:
+
+```fsharp
+let setHttpHeader key value : EndpointMiddleware =
+    fun (next: HttpFunc) (ctx: HttpContext) ->
+        ctx.SetHttpHeader key value
+        next ctx
+```
+A middleware performs some actions on the `HttpRequest` and/or `HttpResponse` object and then invokes the `next` handler to **continue** with the pipeline.
+
+It can also be implemented as an `EndpointHandler`:
+
+```fsharp
+let setHttpHeader key value : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.SetHttpHeader key value
+        Task.CompletedTask
+```
+If such a handler is used in **the middle** of the pipeline, the next handler will be invoked, because the `ctx.Response.HasStarted` will return false.
+If it will reside in **the end** of the pipeline, then the response will start anyway, since there's no next handler to be invoked.
+
+#### Return early
+
+Sometimes an `EndpointHandler` or `EndpointMiddleware` wants to return early and not continue with the remaining pipeline.
+
+A typical example would be an authentication or authorization handler, which would not continue with the remaining pipeline if a user wasn't authenticated. Instead it might want to return a `401 Unauthorized` response:
+
+```fsharp
+let checkUserIsLoggedIn : EndpointMiddleware =
+    fun (next: EndpointHandler) (ctx: HttpContext) ->
+        if isNotNull ctx.User && ctx.User.Identity.IsAuthenticated then
+            next ctx
+        else
+            setStatusCode 401 ctx
+            Task.CompletedTask
+```
+
+In the `else` clause the `checkUserIsLoggedIn` handler returns a `401 Unauthorized` HTTP response and skips the remaining `HttpHandler` pipeline by not invoking `next` but an already completed task.
+
+If you were to have an `EndpointMiddleware` defined with the `task {}` CE then you could rewrite it in the following way:
+
+```fsharp
+let checkUserIsLoggedIn : EndpointMiddleware =
+    fun (next: EndpointHandler) (ctx: HttpContext) ->
+        task {
+            if isNotNull ctx.User && ctx.User.Identity.IsAuthenticated then
+                return! next ctx
+            else
+                return ctx.SetStatusCode 401
+        }
+```
+
+It is also possible to implement this using `EndpointHandler`, however the response has to be explicitly started:
+
+```fsharp
+let checkUserIsLoggedIn : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        if isNotNull ctx.User && ctx.User.Identity.IsAuthenticated then
+            Task.CompletedTask
+        else
+            ctx.SetStatusCode 401
+            text "Unauthorized" ctx // start response
+```
+
