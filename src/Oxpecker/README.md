@@ -19,9 +19,13 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
     - [Creating new EndpointHandler and EndpointMiddlware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
     - [Composition](#composition)
-      - [Handler composition](#handler-composition)
-      - [Bind composition](#bind-composition)
     - [Continue vs. Return](#continue-vs-return)
+- [Basics](#basics)
+  - [Plugging Oxpecker into ASP.NET Core](#plugging-oxpecker-into-aspnet-core)
+  - [Dependency Management](#dependency-management)
+  - [Multiple Environments and Configuration](#multiple-environments-and-configuration)
+  - [Logging](#logging)
+  - [Error and NotFound handling](#error-handling)
 
 ## Fundamentals
 
@@ -29,7 +33,7 @@ An in depth functional reference to all of Oxpecker's default features.
 
 Oxpecker is built on top of the ASP.NET Core [Endpoint Routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) and provides some convenient DSL for F# users.
 
-When using Oxpecker, make sure you are familiar with ASP.NET Core and it's concepts, since it reuses a lot of it's functionality.
+When using Oxpecker, make sure you are familiar with ASP.NET Core and it's concepts, since Oxpecker reuses a lot of built-in functionality.
 
 ### EndpointHandler
 
@@ -43,7 +47,7 @@ an `EndpointHandler` is a function which takes `HttpContext`, and returns a `Tas
 
 `EndpointHandler` function has full control of the incoming `HttpRequest` and the resulting `HttpResponse`. It closely follows [RequestDelegate](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.requestdelegate) signature, but in F# style.
 
-`EndpointHandler` normally should be regarded as a _terminal_ handler, meaning that it should write some result in response (but not necessary).
+`EndpointHandler` normally should be regarded as a _terminal_ handler, meaning that it should write some result in response (but not necessary, as described in composition section).
 
 ### EndpointMiddleware
 
@@ -140,15 +144,13 @@ let doSomething : EndpointHandler =
 However, by explicitly invoking the `text` from within a `task {}` CE one can ensure that the `text` gets executed before the `IDisposable` gets disposed:
 
 ```fsharp
-let doSomething : HttpHandler =
+let doSomething : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             use __ = somethingToBeDisposedAtTheEndOfTheRequest
             return! text "Hello" ctx
         }
 ```
-
-
 
 ### Composition
 
@@ -247,7 +249,7 @@ let checkUserIsLoggedIn : EndpointMiddleware =
             Task.CompletedTask
 ```
 
-In the `else` clause the `checkUserIsLoggedIn` handler returns a `401 Unauthorized` HTTP response and skips the remaining `HttpHandler` pipeline by not invoking `next` but an already completed task.
+In the `else` clause the `checkUserIsLoggedIn` handler returns a `401 Unauthorized` HTTP response and skips the remaining `EndpointHandler` pipeline by not invoking `next` but an already completed task.
 
 If you were to have an `EndpointMiddleware` defined with the `task {}` CE then you could rewrite it in the following way:
 
@@ -274,3 +276,192 @@ let checkUserIsLoggedIn : EndpointHandler =
             text "Unauthorized" ctx // start response
 ```
 
+## Basics
+
+### Plugging Oxpecker into ASP.NET Core
+
+Install the [Oxpecker](https://www.nuget.org/packages/Oxpecker) NuGet package:
+
+```
+PM> Install-Package Oxpecker
+```
+
+Create a web application and plug it into the ASP.NET Core middleware:
+
+```fsharp
+open Oxpecker
+
+let webApp = [
+    route "/ping"   <| text "pong"
+]
+
+let configureApp (appBuilder: IApplicationBuilder) =
+    appBuilder
+        .UseRouting()
+        .UseOxpecker(webApp) // Add Oxpecker to the ASP.NET Core pipeline, should go after UseRouting
+    |> ignore
+
+let configureServices (services: IServiceCollection) =
+    services
+        .AddRouting()
+        .AddOxpecker() // Register default Oxpecker dependencies
+    |> ignore
+
+[<EntryPoint>]
+let main _ =
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+    let app = builder.Build()
+    configureApp app
+    app.Run()
+    0
+```
+### Dependency Management
+
+ASP.NET Core has built in [dependency management](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) which works out of the box with Oxpecker.
+
+#### Registering Services
+
+[Registering services](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection#registering-services) is done the same way as it is done for any other ASP.NET Core web application:
+
+```fsharp
+let configureServices (services : IServiceCollection) =
+    // Add default Oxpecker dependencies
+    services.AddOxpecker() |> ignore
+
+    // Add other dependencies
+    // ...
+
+```
+
+#### Retrieving Services
+
+Retrieving registered services from within a Oxpecker `EndpointHandler` function can be done through the built in service locator (`RequestServices`) which comes with an `HttpContext` object:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let fooBar =
+            ctx.RequestServices.GetService(typeof<IFooBar>)
+            :?> IFooBar
+        // Do something with `fooBar`...
+        // Return a Task
+```
+
+Oxpecker has an additional `HttpContext` extension method called `GetService<'T>` to make the code less cumbersome:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx : HttpContext) ->
+        let fooBar = ctx.GetService<IFooBar>()
+        // Do something with `fooBar`...
+        // Return a Task
+```
+
+There's a handful more extension methods available to retrieve a few default dependencies like an `IWebHostEnvironment` or `ILogger` object which are covered in the respective sections of this document.
+
+
+#### Functional DI
+However, if you prefer to use a more functional approach to dependency injection, you shouldn't use container based approach, but rather follow the _Env_ strategy.
+
+The approach is described in the article https://bartoszsypytkowski.com/dealing-with-complex-dependency-injection-in-f/ , and to see how it looks in practice, you can refer to the [CRUD example in the repository.](https://github.com/Lanayx/Oxpecker/tree/develop/examples/CRUD)
+
+
+
+### Multiple Environments and Configuration
+
+ASP.NET Core has built in support for [working with multiple environments](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/environments) and [configuration management](https://docs.microsoft.com/en-gb/aspnet/core/fundamentals/configuration), which both work out of the box with Oxpecker.
+
+Additionally Oxpecker exposes a `GetHostingEnvironment()` extension method which can be used to easier retrieve an `IWebHostEnvironment` object from within an `EndpointHandler` function:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let env = ctx.GetHostingEnvironment()
+        // Do something with `env`...
+        // Return a Task
+```
+
+Configuration options can be retrieved via the `GetService<'T>` extension method:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let settings = ctx.GetService<IOptions<MySettings>>()
+        // Do something with `settings`...
+        // Return a Task
+```
+
+If you need to access the configuration when configuring services, you can access it like this:
+
+```fsharp
+let configureServices (services: IServiceCollection) =
+    let serviceProvider = services.BuildServiceProvider()
+    let settings = serviceProvider.GetService<IConfiguration>()
+    // Configure services using the `settings`...
+    services.AddOxpecker() |> ignore
+```
+### Logging
+
+ASP.NET Core has a built in [Logging API](https://docs.microsoft.com/en-gb/aspnet/core/fundamentals/logging) which works out of the box with Oxpecker.
+
+
+#### Logging from within an EndpointHandler function
+
+You can retrieve an `ILogger` object (which can be used for logging) through the `GetLogger<'T>()` or `GetLogger (categoryName : string)` extension methods:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        // Retrieve an ILogger through one of the extension methods
+        let loggerA = ctx.GetLogger<ModuleName>()
+        let loggerB = ctx.GetLogger("someHttpHandler")
+
+        // Log some data
+        loggerA.LogCritical("Something critical")
+        loggerB.LogInformation("Logging some random info")
+        // etc.
+
+        // Return a Task
+```
+
+### Error Handling
+
+Oxpecker doesn't have a built in error handling or not found handling mechanisms, since it can be easily implemented using following functions that should be registered before and after the Oxpecker middleware:
+
+```fsharp
+// error handling middleware
+let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
+    task {
+        try
+            return! next.Invoke(ctx)
+        with
+        | :? ModelBindException
+        | :? RouteParseException as ex ->
+            let logger = ctx.GetLogger()
+            logger.LogWarning(ex, "Unhandled 400 error")
+            ctx.SetStatusCode StatusCodes.Status400BadRequest
+            return! ctx.WriteHtmlView(errorView 400 (string ex))
+        | ex ->
+            let logger = ctx.GetLogger()
+            logger.LogError(ex, "Unhandled 500 error")
+            ctx.SetStatusCode StatusCodes.Status500InternalServerError
+            return! ctx.WriteHtmlView(errorView 500 (string ex))
+    } :> Task
+
+// not found terminal middleware
+let notFoundHandler (ctx: HttpContext) =
+    let logger = ctx.GetLogger()
+    logger.LogWarning("Unhandled 404 error")
+    ctx.SetStatusCode 404
+    ctx.WriteHtmlView(errorView 404 "Page not found!")
+
+///...
+
+let configureApp (appBuilder: IApplicationBuilder) =
+    appBuilder
+        .UseRouting()
+        .Use(errorHandler) // Add error handling middleware BEFORE Oxpecker
+        .UseOxpecker(endpoints)
+        .Run(notFoundHandler) // Add not found middleware AFTER Oxpecker
+```
