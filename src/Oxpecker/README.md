@@ -26,6 +26,12 @@ An in depth functional reference to all of Oxpecker's default features.
   - [Multiple Environments and Configuration](#multiple-environments-and-configuration)
   - [Logging](#logging)
   - [Error and NotFound handling](#error-handling)
+- [Web Request Processing](#web-request-processing)
+    - [HTTP Headers](#http-headers)
+    - [HTTP Verbs](#http-verbs)
+    - [HTTP Status Codes](#http-status-codes)
+    - [IResult Integration](#iresult-integration)
+    - [Routing](#routing)
 
 ## Fundamentals
 
@@ -200,7 +206,22 @@ routef "/{%s}" (bindQuery << handler)
 routef "/{%s}/{%s}" (bindForm <<+ handler)
 routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
+#### Multi-route composition
 
+Sometimes you want to compose some generic handler or middleware not only with one route, buth with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
+
+```fsharp
+
+let MY_HEADER = applyBefore (setHttpHeader "my" "header")
+
+let webApp = [
+    MY_HEADER <| subRoute "/auth" [
+        route "/open" handler1
+        route "/closed" handler2
+    ]
+]
+
+```
 
 ### Continue vs. Return
 
@@ -465,3 +486,220 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseOxpecker(endpoints)
         .Run(notFoundHandler) // Add not found middleware AFTER Oxpecker
 ```
+
+## Web Request Processing
+
+Oxpecker comes with a large set of default `HttpContext` extension methods as well as default `EndpointHandler` functions which can be used to build rich web applications.
+
+### HTTP Headers
+
+Working with HTTP headers in Oxpecker is plain simple. The `TryGetRequestHeader (key: string)` extension method tries to retrieve the value of a given HTTP header and then returns either `Some string` or `None`:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let someValue =
+            match ctx.TryGetRequestHeader "X-MyOwnHeader" with
+            | None -> "default value"
+            | Some headerValue -> headerValue
+
+        // Do something with `someValue`...
+        // Return a Task
+```
+
+Setting an HTTP header in the response can be done via the `SetHttpHeader (key: string) (value: obj)` extension method:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.SetHttpHeader "X-CustomHeader" "some-value"
+        // Do other stuff...
+        // Return a Task
+```
+
+You can also set an HTTP header via the `setHttpHeader` http handler:
+
+```fsharp
+let customHeader : EndpointHandler =
+    setHttpHeader "X-CustomHeader" "Some value"
+
+let webApp =
+    [
+        route "/foo" (customHeader >=> text "Foo")
+    ]
+```
+
+Please note that these are additional Oxpecker functions which complement already existing HTTP header functionality in the ASP.NET Core framework. ASP.NET Core offers higher level HTTP header functionality through the `ctx.Request.GetTypedHeaders()` method.
+
+### HTTP Verbs
+
+Oxpecker exposes a set of functions which can filter a request based on the request's HTTP verb:
+
+- `GET`
+- `POST`
+- `PUT`
+- `PATCH`
+- `DELETE`
+- `HEAD`
+- `OPTIONS`
+- `TRACE`
+- `CONNECT`
+
+There is an additional `GET_HEAD` handler which can filter an HTTP `GET` and `HEAD` request at the same time.
+
+Filtering requests based on their HTTP verb can be useful when implementing a route which should behave differently based on the verb (e.g. `GET` vs. `POST`):
+
+```fsharp
+let submitFooHandler : EndpointHandler =
+    // Do something
+
+let submitBarHandler : EndpointHandler =
+    // Do something
+
+let webApp =
+    [
+        // Filters for GET requests
+        GET  [
+            route "/foo" <| text "Foo"
+            route "/bar" <| text "Bar"
+        ]
+        // Filters for POST requests
+        POST [
+            route "/foo" <| submitFooHandler
+            route "/bar" <| submitBarHandler
+        ]
+    ]
+```
+
+If you need to check the request's HTTP verb from within an `HttpHandler` function then you can use the default ASP.NET Core `HttpMethods` class:
+
+```fsharp
+open Microsoft.AspNetCore.Http
+
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        if HttpMethods.IsPut ctx.Request.Method then
+            // Do something
+        else
+            // Do something else
+        // Return a Task
+```
+
+The `GET_HEAD` is a special function which can be used to enable `GET` and `HEAD` requests on a resource at the same time. This can be very useful when caching is enabled and clients might want to send `HEAD` requests to check the `ETag` or `Last-Modified` HTTP headers before issuing a `GET`.
+
+### HTTP Status Codes
+
+Setting the HTTP status code of a response can be done either via the `SetStatusCode (httpStatusCode: int)` extension method or with the `setStatusCode (statusCode: int)` function:
+
+```fsharp
+let someHttpHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.SetStatusCode 200
+        // Return a Task<HttpContext option>
+
+// or...
+
+let someHttpHandler : EndpointHandler =
+    setStatusCode 200
+    >=> text "Hello World"
+```
+
+### IResult integration
+
+If you only use JSON for communication and like what ASP.NET core IResult offers, you might be please to know that Oxpecker supports that as well. You can simplify returning responses together with status codes using `Microsoft.AspNetCore.Http.TypedResults`:
+
+```fsharp
+open Oxpecker
+open type Microsoft.AspNetCore.Http.TypedResults
+
+[<CLIMutable>]
+type Person = {
+    FirstName: string
+    LastName: string
+}
+
+let johnDoe = {
+    FirstName = "John"
+    LastName  = "Doe"
+}
+
+let app = [
+    route `/`     <| text "Hello World"
+    route `/john` <| %Ok johnDoe // returns 200 OK with JSON body
+    route "/bad"  <| %BadRequest()
+]
+```
+The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also do conversion inside EndpointHandler using `.Write` extension method:
+
+```fsharp
+let myHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.Write <| %Ok johnDoe
+```
+### Routing
+
+Oxpecker offers several routing functions to accommodate the majority of use cases. Note, that Oxpecker routing is sitting on the top of ASP.NET Core endpoint routing, so all routes are case insensitive.
+
+#### route
+
+The simplest form of routing can be done with the `route` http handler:
+
+```fsharp
+let webApp =
+    [
+        route "/foo" <| text "Foo"
+        route "/bar" <| text "Bar"
+    ]
+```
+
+#### routef
+
+If a route contains user defined parameters then the `routef` http handler can be handy:
+
+```fsharp
+let fooHandler first last age : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        (sprintf "First: %s, Last: %s, Age: %i" first last age
+        |> text) ctx
+
+let webApp =
+    choose [
+        routef "/foo/{%s}/{%s}/{%i}" fooHandler
+        routef "/bar/{%O:guid}" (fun (guid: Guid) -> text (string guid))
+    ]
+```
+
+The `routef` http handler takes two parameters - a format string and an `HttpHandler` function.
+
+The format string supports the following format chars:
+
+| Format Char | Type                            |
+| ----------- |---------------------------------|
+| `%b` | `bool`                          |
+| `%c` | `char`                          |
+| `%s` | `string`                        |
+| `%i` | `int`                           |
+| `%d` | `int64`                         |
+| `%f` | `float`/`double`                |
+| `%u` | `uint64`                        |
+| `%O` | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+
+#### subRoute
+
+It lets you categorise routes without having to repeat already pre-filtered parts of the route:
+
+```fsharp
+let webApp =
+    subRoute "/api" [
+        subRoute "/v1" [
+            route "/foo" <| text "Foo 1"
+            route "/bar" <| text "Bar 1"
+        ]
+        subRoute "/v2" [
+            route "/foo" <| text "Foo 2"
+            route "/bar" <| text "Bar 2"
+        ]
+    ]
+```
+
+In this example the final URL to retrieve "Bar 2" would be `http[s]://your-domain.com/api/v2/bar`.
