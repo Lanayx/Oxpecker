@@ -843,7 +843,8 @@ let webApp = [
         route "ping" <| text "pong"
     ]
     POST [
-        route "/car" (bindFormC<Car> british (fun model -> %Ok model))
+        route "/car" (bindForm<Car> (fun model -> %Ok model))
+        route "/britishCar" (bindFormC<Car> british (fun model -> %Ok model))
     ]
 ]
 ```
@@ -903,7 +904,8 @@ let webApp = [
         route "ping" <| text "pong"
     ]
     POST [
-        route "/car" (bindQueryC<Car> british (fun model -> %Ok model))
+        route "/car" (bindQuery<Car> (fun model -> %Ok model))
+        route "/britishCar" (bindQueryC<Car> british (fun model -> %Ok model))
     ]
 ]
 ```
