@@ -137,11 +137,9 @@ module ModelParser =
         (model: 'T)
         (cultureInfo: CultureInfo option)
         (data: IDictionary<string, StringValues>)
-        (strict: bool)
         : Result<'T, string> =
         // Normalize data
-        let normalizeKey (key: string) =
-            key.ToLowerInvariant().TrimEnd([| '['; ']' |])
+        let normalizeKey (key: string) = key.TrimEnd([| '['; ']' |])
         let data = data |> Seq.map(fun i -> normalizeKey i.Key, i.Value) |> dict
 
         // Create culture and model objects
@@ -154,9 +152,8 @@ module ModelParser =
             |> List.filter _.CanWrite
             |> List.fold
                 (fun (error: string option) (prop: PropertyInfo) ->
-                    // If model binding is set to strict and a previous property
-                    // failed to parse then short circuit the parsing and return the error.
-                    if strict && error.IsSome then
+                    // If previous property failed to parse then short circuit the parsing and return the error.
+                    if error.IsSome then
                         error
                     else
                         let parsingResult =
@@ -164,37 +161,35 @@ module ModelParser =
                             // current property name. If no entry can be found, then try to
                             // generate a value without any data (will only work for an option type).
                             // If there was an entry then try to parse the raw value.
-                            match data.TryGetValue(prop.Name.ToLowerInvariant()) with
+                            match data.TryGetValue(prop.Name) with
                             | false, _ ->
-                                match getValueForArrayOfGenericType cultureInfo data strict prop with
+                                match getValueForArrayOfGenericType cultureInfo data prop with
                                 | Some v -> Ok v
                                 | None ->
-                                    match getValueForComplexType cultureInfo data strict prop with
+                                    match getValueForComplexType cultureInfo data prop with
                                     | Some v -> Ok v
                                     | None ->
                                         match getValueForMissingProperty prop.PropertyType with
                                         | Some v -> Ok v
-                                        | None -> Error $"Missing value for required property %s{prop.Name}."
+                                        | None -> Ok null
                             | true, rawValue -> parseValue prop.PropertyType rawValue culture
 
                         // Check if a value was able to get successfully parsed.
-                        // If parsing is set to strict and there was an error then return the error.
-                        // If parsing is not set to strict and there was an error, then skip setting a value
+                        // If there was an error then return the error.
+                        // If no corresponding data was found then skip setting a value
                         // but don't return an error so that the parsing of other properties can continue.
                         // If a value was successfully parsed, then set the value on the property of the model.
-                        match strict, parsingResult with
-                        | true, Error err -> Some err
-                        | false, Error _ -> None
-                        | _, Ok value ->
+                        match parsingResult with
+                        | Error err -> Some err
+                        | Ok null -> None
+                        | Ok value ->
                             prop.SetValue(model, value, null)
                             None)
                 None
         // Only return the model if all properties were successfully
-        // parsed, or when model binding is not set to strict.
-        // (strict means to return a model even when partially parsed)
-        match strict, error with
-        | true, Some err -> Error err
-        | _, _ -> Ok model
+        match error with
+        | Some err -> Error err
+        | _ -> Ok model
 
     /// Returns a value (the None union case) if the type is `Option<'T>` otherwise `None`.
     and getValueForMissingProperty (t: Type) =
@@ -205,10 +200,9 @@ module ModelParser =
     and getValueForComplexType
         (cultureInfo: CultureInfo option)
         (data: IDictionary<string, StringValues>)
-        (strict: bool)
         (prop: PropertyInfo)
         : obj option =
-        let lowerCasedPropName = prop.Name.ToLowerInvariant()
+        let lowerCasedPropName = prop.Name
         let isMaybeComplexType =
             data.Keys |> Seq.exists(_.StartsWith(lowerCasedPropName + "."))
         let isRecordType = FSharpType.IsRecord prop.PropertyType
@@ -231,14 +225,14 @@ module ModelParser =
             match prop.PropertyType.IsFSharpOption() with
             | false ->
                 let model = Activator.CreateInstance(prop.PropertyType)
-                let res = parseModel model cultureInfo dictData strict
+                let res = parseModel model cultureInfo dictData
                 match res with
                 | Ok o -> o |> box |> Some
                 | Error _ -> None
             | true ->
                 let genericType = prop.PropertyType.GetGenericType()
                 let model = Activator.CreateInstance(genericType)
-                let res = parseModel model cultureInfo dictData strict
+                let res = parseModel model cultureInfo dictData
                 match res with
                 | Ok o -> prop.PropertyType.MakeSomeCase(o) |> box |> Some
                 | Error _ -> None
@@ -249,12 +243,11 @@ module ModelParser =
     and getValueForArrayOfGenericType
         (cultureInfo: CultureInfo option)
         (data: IDictionary<string, StringValues>)
-        (strict: bool)
         (prop: PropertyInfo)
         : obj option =
 
         if prop.PropertyType.IsArray then
-            let lowerCasedPropName = prop.Name.ToLowerInvariant()
+            let lowerCasedPropName = prop.Name
             let regex =
                 lowerCasedPropName |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
 
@@ -279,7 +272,7 @@ module ModelParser =
                             Map.empty
 
                     let model = Activator.CreateInstance(innerType)
-                    let res = parseModel model cultureInfo dictData strict
+                    let res = parseModel model cultureInfo dictData
 
                     match res with
                     | Ok o -> Some(index, o)
@@ -307,9 +300,8 @@ module ModelParser =
     /// </summary>
     /// <param name="culture">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
     /// <param name="data">A key-value dictionary of values for each property of type 'T. Only optional properties can be omitted from the dictionary.</param>
-    /// <param name="strict">Whether parsing is strict</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>If all properties were able to successfully parse then Some 'T will be returned, otherwise None.</returns>
-    let parse<'T> (culture: CultureInfo option) (strict: bool) (data: IDictionary<string, StringValues>) =
+    let parse<'T> (culture: CultureInfo option) (data: IDictionary<string, StringValues>) =
         let model = Activator.CreateInstance<'T>()
-        parseModel<'T> model culture data strict
+        parseModel<'T> model culture data
