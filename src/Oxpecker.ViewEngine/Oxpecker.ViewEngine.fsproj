@@ -10,7 +10,7 @@
         <Description>View engine for building strongly-typed HTML in F#</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.ViewEngine</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.ViewEngine/README.md</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;Render</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>

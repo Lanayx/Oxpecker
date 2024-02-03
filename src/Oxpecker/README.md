@@ -524,10 +524,9 @@ You can also set an HTTP header via the `setHttpHeader` http handler:
 let customHeader : EndpointHandler =
     setHttpHeader "X-CustomHeader" "Some value"
 
-let webApp =
-    [
-        route "/foo" (customHeader >=> text "Foo")
-    ]
+let webApp = [
+    route "/foo" (customHeader >=> text "Foo")
+]
 ```
 
 Please note that these are additional Oxpecker functions which complement already existing HTTP header functionality in the ASP.NET Core framework. ASP.NET Core offers higher level HTTP header functionality through the `ctx.Request.GetTypedHeaders()` method.
@@ -625,8 +624,8 @@ let johnDoe = {
 }
 
 let app = [
-    route `/`     <| text "Hello World"
-    route `/john` <| %Ok johnDoe // returns 200 OK with JSON body
+    route "/"     <| text "Hello World"
+    route "/john" <| %Ok johnDoe // returns 200 OK with JSON body
     route "/bad"  <| %BadRequest()
 ]
 ```
@@ -772,16 +771,15 @@ type Car = {
     Built  : DateTime
 }
 
-let webApp =
-    choose [
-        GET [
-            route "/"    <| text "index"
-            route "ping" <| text "pong"
-        ]
-        POST [
-            route "/car" (bindJson<Car> (fun car -> %Ok car))
-        ]
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
     ]
+    POST [
+        route "/car" (bindJson<Car> (fun car -> %Ok car))
+    ]
+]
 ```
 
 Both, the `HttpContext` extension method as well as the `EndpointHandler` function will try to create an instance of type `'T` regardless if the submitted payload contained a complete representation of `'T` or not. The parsed object might only contain partial data (where some properties might be `null`) and additional `null` checks might be required before further processing.
@@ -839,16 +837,15 @@ type Car = {
 
 let british = CultureInfo.CreateSpecificCulture("en-GB")
 
-let webApp =
-    choose [
-        GET [
-            route "/"    <| text "index"
-            route "ping" <| text "pong"
-        ]
-        POST [
-            route "/car" (bindFormC<Car> british (fun model -> %Ok model))
-        ]
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
     ]
+    POST [
+        route "/car" (bindFormC<Car> british (fun model -> %Ok model))
+    ]
+]
 ```
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
