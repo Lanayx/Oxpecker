@@ -1,6 +1,7 @@
 ﻿// built-in endpoint handlers
 namespace Oxpecker
 
+open System.Globalization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
@@ -36,6 +37,21 @@ module RequestHandlers =
             }
 
     /// <summary>
+    /// Parses a HTTP form payload into an instance of type 'T.
+    /// </summary>
+    /// <param name="culture"><see cref="System.Globalization.CultureInfo"/> to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
+    /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
+    /// <param name="ctx">HttpContext</param>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+    let bindFormC<'T> (culture: CultureInfo) (f: 'T -> EndpointHandler) : EndpointHandler =
+        fun (ctx: HttpContext) ->
+            task {
+                let! model = ctx.BindForm<'T> culture
+                return! f model ctx
+            }
+
+    /// <summary>
     /// Parses a HTTP query string into an instance of type 'T.
     /// </summary>
     /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
@@ -44,10 +60,21 @@ module RequestHandlers =
     /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
     let bindQuery<'T> (f: 'T -> EndpointHandler) : EndpointHandler =
         fun (ctx: HttpContext) ->
-            task {
-                let model = ctx.BindQuery<'T>()
-                return! f model ctx
-            }
+            let model = ctx.BindQuery<'T>()
+            f model ctx
+
+    /// <summary>
+    /// Parses a HTTP query string into an instance of type 'T.
+    /// </summary>
+    /// <param name="culture"><see cref="System.Globalization.CultureInfo"/> to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
+    /// <param name="f">A function which accepts an object of type 'T and returns a <see cref="EndpointHandler"/> function.</param>
+    /// <param name="ctx">HttpContext</param>
+    /// <typeparam name="'T"></typeparam>
+    /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
+    let bindQueryC<'T> (culture: CultureInfo) (f: 'T -> EndpointHandler) : EndpointHandler =
+        fun (ctx: HttpContext) ->
+            let model = ctx.BindQuery<'T> culture
+            f model ctx
 
 [<AutoOpen>]
 module ResponseHandlers =

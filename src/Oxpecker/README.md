@@ -21,17 +21,18 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Composition](#composition)
     - [Continue vs. Return](#continue-vs-return)
 - [Basics](#basics)
-  - [Plugging Oxpecker into ASP.NET Core](#plugging-oxpecker-into-aspnet-core)
-  - [Dependency Management](#dependency-management)
-  - [Multiple Environments and Configuration](#multiple-environments-and-configuration)
-  - [Logging](#logging)
-  - [Error and NotFound handling](#error-handling)
+    - [Plugging Oxpecker into ASP.NET Core](#plugging-oxpecker-into-aspnet-core)
+    - [Dependency Management](#dependency-management)
+    - [Multiple Environments and Configuration](#multiple-environments-and-configuration)
+    - [Logging](#logging)
+    - [Error and NotFound handling](#error-handling)
 - [Web Request Processing](#web-request-processing)
     - [HTTP Headers](#http-headers)
     - [HTTP Verbs](#http-verbs)
     - [HTTP Status Codes](#http-status-codes)
     - [IResult Integration](#iresult-integration)
     - [Routing](#routing)
+    - [Model Binding](#model-binding)
 
 ## Fundamentals
 
@@ -360,7 +361,7 @@ let configureServices (services : IServiceCollection) =
 Retrieving registered services from within a Oxpecker `EndpointHandler` function can be done through the built in service locator (`RequestServices`) which comes with an `HttpContext` object:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         let fooBar =
             ctx.RequestServices.GetService(typeof<IFooBar>)
@@ -372,8 +373,8 @@ let someHttpHandler : EndpointHandler =
 Oxpecker has an additional `HttpContext` extension method called `GetService<'T>` to make the code less cumbersome:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
-    fun (ctx : HttpContext) ->
+let someHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
         let fooBar = ctx.GetService<IFooBar>()
         // Do something with `fooBar`...
         // Return a Task
@@ -396,7 +397,7 @@ ASP.NET Core has built in support for [working with multiple environments](https
 Additionally Oxpecker exposes a `GetHostingEnvironment()` extension method which can be used to easier retrieve an `IWebHostEnvironment` object from within an `EndpointHandler` function:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         let env = ctx.GetHostingEnvironment()
         // Do something with `env`...
@@ -406,7 +407,7 @@ let someHttpHandler : EndpointHandler =
 Configuration options can be retrieved via the `GetService<'T>` extension method:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         let settings = ctx.GetService<IOptions<MySettings>>()
         // Do something with `settings`...
@@ -432,11 +433,11 @@ ASP.NET Core has a built in [Logging API](https://docs.microsoft.com/en-gb/aspne
 You can retrieve an `ILogger` object (which can be used for logging) through the `GetLogger<'T>()` or `GetLogger (categoryName : string)` extension methods:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         // Retrieve an ILogger through one of the extension methods
         let loggerA = ctx.GetLogger<ModuleName>()
-        let loggerB = ctx.GetLogger("someHttpHandler")
+        let loggerB = ctx.GetLogger("someHandler")
 
         // Log some data
         loggerA.LogCritical("Something critical")
@@ -496,7 +497,7 @@ Oxpecker comes with a large set of default `HttpContext` extension methods as we
 Working with HTTP headers in Oxpecker is plain simple. The `TryGetRequestHeader (key: string)` extension method tries to retrieve the value of a given HTTP header and then returns either `Some string` or `None`:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         let someValue =
             match ctx.TryGetRequestHeader "X-MyOwnHeader" with
@@ -510,7 +511,7 @@ let someHttpHandler : EndpointHandler =
 Setting an HTTP header in the response can be done via the `SetHttpHeader (key: string) (value: obj)` extension method:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.SetHttpHeader "X-CustomHeader" "some-value"
         // Do other stuff...
@@ -571,12 +572,12 @@ let webApp =
     ]
 ```
 
-If you need to check the request's HTTP verb from within an `HttpHandler` function then you can use the default ASP.NET Core `HttpMethods` class:
+If you need to check the request's HTTP verb from within an `EndpointHandler` function then you can use the default ASP.NET Core `HttpMethods` class:
 
 ```fsharp
 open Microsoft.AspNetCore.Http
 
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         if HttpMethods.IsPut ctx.Request.Method then
             // Do something
@@ -592,14 +593,14 @@ The `GET_HEAD` is a special function which can be used to enable `GET` and `HEAD
 Setting the HTTP status code of a response can be done either via the `SetStatusCode (httpStatusCode: int)` extension method or with the `setStatusCode (statusCode: int)` function:
 
 ```fsharp
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.SetStatusCode 200
-        // Return a Task<HttpContext option>
+        // Return a Task
 
 // or...
 
-let someHttpHandler : EndpointHandler =
+let someHandler : EndpointHandler =
     setStatusCode 200
     >=> text "Hello World"
 ```
@@ -645,11 +646,10 @@ Oxpecker offers several routing functions to accommodate the majority of use cas
 The simplest form of routing can be done with the `route` http handler:
 
 ```fsharp
-let webApp =
-    [
-        route "/foo" <| text "Foo"
-        route "/bar" <| text "Bar"
-    ]
+let webApp = [
+    route "/foo" <| text "Foo"
+    route "/bar" <| text "Bar"
+]
 ```
 
 #### routef
@@ -662,14 +662,13 @@ let fooHandler first last age : EndpointHandler =
         (sprintf "First: %s, Last: %s, Age: %i" first last age
         |> text) ctx
 
-let webApp =
-    choose [
-        routef "/foo/{%s}/{%s}/{%i}" fooHandler
-        routef "/bar/{%O:guid}" (fun (guid: Guid) -> text (string guid))
-    ]
+let webApp = [
+    routef "/foo/{%s}/{%s}/{%i}" fooHandler
+    routef "/bar/{%O:guid}" (fun (guid: Guid) -> text (string guid))
+]
 ```
 
-The `routef` http handler takes two parameters - a format string and an `HttpHandler` function.
+The `routef` http handler takes two parameters - a format string and an `EndpointHandler` function.
 
 The format string supports the following format chars:
 
@@ -703,3 +702,213 @@ let webApp =
 ```
 
 In this example the final URL to retrieve "Bar 2" would be `http[s]://your-domain.com/api/v2/bar`.
+
+### Query Strings
+
+Working with query strings is very similar to working with HTTP headers in Oxpecker. The `TryGetQueryStringValue (key : string)` extension method tries to retrieve the value of a given query string parameter and then returns either `Some string` or `None`:
+
+```fsharp
+let someHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let someValue =
+            match ctx.TryGetQueryStringValue "q" with
+            | None   -> "default value"
+            | Some q -> q
+
+        // Do something with `someValue`...
+        // Return a Task
+```
+
+You can also access the query string through the `ctx.Request.Query` object which returns an `IQueryCollection` object which allows you to perform more actions on it.
+
+Last but not least there is also an `HttpContext` extension method called `BindQuery<'T>` which lets you bind an entire query string to an object of type `'T` (see [Binding Query Strings](#binding-query-strings)).
+
+### Model Binding
+
+Oxpecker offers out of the box a few default `HttpContext` extension methods and equivalent `EndpointHandler` functions which make it possible to bind the payload or query string of an HTTP request to a custom object.
+
+#### Binding JSON
+
+The `BindJson<'T>()` extension method can be used to bind a JSON payload to an object of type `'T`:
+
+```fsharp
+[<CLIMutable>]
+type Car = {
+    Name   : string
+    Make   : string
+    Wheels : int
+    Built  : DateTime
+}
+
+let submitCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Binds a JSON payload to a Car object
+            let! car = ctx.BindJson<Car>()
+
+            // Sends the object back to the client
+            return! ctx.Write <| Successful.OK car
+        }
+
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
+    ]
+    POST [
+        route "/car" submitCar
+    ]
+]
+```
+
+Alternatively you can also use the `bindJson<'T>` http handler:
+
+```fsharp
+[<CLIMutable>]
+type Car = {
+    Name   : string
+    Make   : string
+    Wheels : int
+    Built  : DateTime
+}
+
+let webApp =
+    choose [
+        GET [
+            route "/"    <| text "index"
+            route "ping" <| text "pong"
+        ]
+        POST [
+            route "/car" (bindJson<Car> (fun car -> %Ok car))
+        ]
+    ]
+```
+
+Both, the `HttpContext` extension method as well as the `EndpointHandler` function will try to create an instance of type `'T` regardless if the submitted payload contained a complete representation of `'T` or not. The parsed object might only contain partial data (where some properties might be `null`) and additional `null` checks might be required before further processing.
+
+Please note that in order for the model binding to work the record type must be decorated with the `[<CLIMutable>]` attribute, which will make sure that the type will have a parameterless constructor.
+
+The underlying JSON serializer can be configured as a dependency during application startup (see [JSON](#json)).
+
+#### Binding Forms
+
+The `BindForm<'T> (?cultureInfo : CultureInfo)` extension method binds form data to an object of type `'T`. You can also specify an optional `CultureInfo` object for parsing culture specific data such as `DateTime` objects or floating point numbers:
+
+```fsharp
+[<CLIMutable>]
+type Car = {
+    Name   : string
+    Make   : string
+    Wheels : int
+    Built  : DateTime
+}
+
+let submitCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Binds a form payload to a Car object
+            let! car = ctx.BindForm<Car>()
+
+            // or with a CultureInfo:
+            let british = CultureInfo.CreateSpecificCulture("en-GB")
+            let! car2 = ctx.BindForm<Car>(british)
+
+            // Sends the object back to the client
+            return! ctx.Write <| Ok car
+        }
+
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
+    ]
+    POST [ route "/car" submitCar ]
+]
+```
+
+Alternatively you can use the `bindForm<'T>` and `bindFormC<'T>`(additional culture parameter) http handlers:
+
+```fsharp
+[<CLIMutable>]
+type Car = {
+    Name   : string
+    Make   : string
+    Wheels : int
+    Built  : DateTime
+}
+
+let british = CultureInfo.CreateSpecificCulture("en-GB")
+
+let webApp =
+    choose [
+        GET [
+            route "/"    <| text "index"
+            route "ping" <| text "pong"
+        ]
+        POST [
+            route "/car" (bindFormC<Car> british (fun model -> %Ok model))
+        ]
+    ]
+```
+
+Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
+
+#### Binding Query Strings
+
+The `BindQuery<'T> (?cultureInfo: CultureInfo)` extension method binds query string parameters to an object of type `'T`. An optional `CultureInfo` object can be specified for parsing culture specific data such as `DateTime` objects and floating point numbers:
+
+```fsharp
+[<CLIMutable>]
+type Car = {
+    Name   : string
+    Make   : string
+    Wheels : int
+    Built  : DateTime
+}
+
+let submitCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        // Binds the query string to a Car object
+        let car = ctx.BindQuery<Car>()
+
+        // or with a CultureInfo:
+        let british = CultureInfo.CreateSpecificCulture("en-GB")
+        let car2 = ctx.BindQuery<Car>(british)
+
+        // Sends the object back to the client
+        ctx.Write <| Ok car
+
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
+        route "/car" <| submitCar
+    ]
+]
+```
+
+Alternatively you can use the `bindQuery<'T>` and `bindQueryC<'T>`(additional culture parameter) http handlers:
+
+```fsharp
+[<CLIMutable>]
+type Car = {
+    Name   : string
+    Make   : string
+    Wheels : int
+    Built  : DateTime
+}
+
+let british = CultureInfo.CreateSpecificCulture("en-GB")
+
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
+    ]
+    POST [
+        route "/car" (bindQueryC<Car> british (fun model -> %Ok model))
+    ]
+]
+```
+
+Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.

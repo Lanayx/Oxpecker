@@ -275,7 +275,7 @@ type HttpContextExtensions() =
                 form
                 |> Seq.map(fun i -> i.Key, i.Value)
                 |> dict
-                |> ModelParser.parse<'T> cultureInfo false
+                |> ModelParser.parse<'T> cultureInfo
                 |> function
                     | Ok value -> value
                     | Error msg ->
@@ -295,7 +295,7 @@ type HttpContextExtensions() =
         ctx.Request.Query
         |> Seq.map(fun i -> i.Key, i.Value)
         |> dict
-        |> ModelParser.parse<'T> cultureInfo false
+        |> ModelParser.parse<'T> cultureInfo
         |> function
             | Ok objData -> objData
             | Error msg ->
