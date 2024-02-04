@@ -34,6 +34,7 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Routing](#routing)
     - [Model Binding](#model-binding)
     - [File Upload](#file-upload)
+    - [Authentication and Authorization](#authentication-and-authorization)
 
 ## Fundamentals
 
@@ -635,7 +636,7 @@ The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also
 ```fsharp
 let myHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.Write <| %Ok johnDoe
+        ctx.Write <| TypedResults.Ok johnDoe
 ```
 ### Routing
 
@@ -747,7 +748,7 @@ let submitCar : EndpointHandler =
             let! car = ctx.BindJson<Car>()
 
             // Sends the object back to the client
-            return! ctx.Write <| Successful.OK car
+            return! ctx.Write <| TypedResults.Ok car
         }
 
 let webApp = [
@@ -778,7 +779,7 @@ let webApp = [
         route "ping" <| text "pong"
     ]
     POST [
-        route "/car" (bindJson<Car> (fun car -> %Ok car))
+        route "/car" (bindJson<Car> (fun car -> %TypedResults.Ok car))
     ]
 ]
 ```
@@ -953,3 +954,185 @@ let webApp = [ route "/upload" fileUploadHandler ]
 For large file uploads it is recommended to [stream the file](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads#upload-large-files-with-streaming) in order to prevent resource exhaustion.
 
 See also [large file uploads in ASP.NET Core](https://stackoverflow.com/questions/36437282/dealing-with-large-file-uploads-on-asp-net-core-1-0) on StackOverflow.
+
+### Authentication and Authorization
+
+ASP.NET Core has a wealth of [Authentication](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/index) and [Authorization](https://docs.microsoft.com/en-us/aspnet/core/security/authorization/index) options which work out of the box with Oxpecker.
+
+Additionally Oxpecker offers a few `EndpointMiddleware` functions which make it easier to work with ASP.NET Core's authentication and authorization APIs in a functional way.
+
+Note, that the functions below are simple helpers and you can always write your own Auth `EndpointMiddleware` or `EndpointHandler` with few lines  of code if needed.
+
+#### requiresAuthentication
+
+The `requiresAuthentication (authFailedHandler: EndpointHandler)` endpoint middleware validates if a user has been authenticated by one of ASP.NET Core's authentication middleware. If the identity of a user could not be established then the `authFailedHandler` will be executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let AUTH = applyBefore <| requiresAuthentication notLoggedIn
+
+let webApp = [
+    route "/" <| text "Hello World"
+    AUTH <|
+        subRoute "/user" [
+            GET  [ route "" readUserHandler ]
+            POST [ route "" submitUserHandler ]
+        ]
+]
+```
+
+#### requiresRole
+
+The `requiresRole (role: string) (authFailedHandler : EndpointHandler)` endpoint middleware checks if an authenticated user is part of a given `role`. If a user fails to be in a certain role then the `authFailedHandler` will be executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let notAdmin: EndpointHandler =
+    %TypedResults.Forbid()
+
+let AUTH = applyBefore <| requiresAuthentication notLoggedIn
+let ADMIN = applyBefore <| requiresRole "Admin" notAdmin
+
+let webApp = [
+    route "/" <| text "Hello World"
+    (AUTH >> ADMIN) <|
+        subRoute "/user" [
+            POST   [ routef "/%s/edit"   editUserHandler ]
+            DELETE [ routef "/%s/delete" deleteUserHandler ]
+        ]
+]
+```
+
+#### requiresRoleOf
+
+The `requiresRoleOf (roles: string seq) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user is part of a list of given `roles`. If a user fails to be in at least one of the `roles` then the `authFailedHandler` will be executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let notProUserOrAdmin: EndpointHandler =
+    %TypedResults.Forbid()
+
+let AUTH = applyBefore <| requiresAuthentication notLoggedIn
+
+let PRO_OR_ADMIN = applyBefore <|
+    requiresRoleOf [ "ProUser"; "Admin" ] notProUserOrAdmin
+
+let webApp = [
+    route "/" <| text "Hello World"
+    (AUTH >> PRO_OR_ADMIN) <|
+        subRoute "/user" [
+            POST   [ routef "/%s/edit"   editUserHandler ]
+            DELETE [ routef "/%s/delete" deleteUserHandler ]
+        ]
+]
+```
+
+#### authorizeRequest
+
+The `authorizeRequest (predicate: HttpContext -> bool) (authFailedHandler: EndpointHandler)` endpoint middleware validates a request based on a given predicate. If the predicate returns false then the `authFailedHandler` will get executed:
+
+```fsharp
+let apiKey = "some-secret-key-1234"
+
+let validateApiKey (ctx: HttpContext) =
+    match ctx.TryGetRequestHeader "X-API-Key" with
+    | Some key -> apiKey.Equals key
+    | None     -> false
+
+let accessDenied = setStatusCode 401 >=> text "Access Denied"
+let requiresApiKey =
+    authorizeRequest validateApiKey accessDenied
+
+let webApp = [
+    route "/" <| text "Hello World"
+    route "/private" (requiresApiKey >=> protectedHandler)
+]
+```
+
+#### authorizeUser
+
+The `authorizeUser (policy: ClaimsPrincipal -> bool) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given user policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let accessDenied = setStatusCode 401 >=> text "Access Denied"
+
+let mustBeLoggedIn = requiresAuthentication notLoggedIn
+
+let mustBeJohn =
+    authorizeUser (fun u -> u.HasClaim (ClaimTypes.Name, "John")) accessDenied
+
+let webApp = [
+    route "/" (text "Hello World")
+    route "/john-only" (
+        mustBeLoggedIn >=> mustBeJohn >=> userHandler
+    )
+]
+```
+
+#### authorizeByPolicyName
+
+The `authorizeByPolicyName (policyName: string) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given authorization policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let accessDenied = setStatusCode 401 >=> text "Access Denied"
+
+let mustBeLoggedIn = requiresAuthentication notLoggedIn
+
+let mustBeOver21 =
+    authorizeByPolicyName "MustBeOver21" accessDenied
+
+let webApp =[
+    route "/" (text "Hello World")
+    route "/adults-only" (
+        mustBeLoggedIn >=> mustBeOver21 >=> userHandler
+    )
+]
+```
+
+#### authorizeByPolicy
+
+The `authorizeByPolicy (policy: AuthorizationPolicy) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given authorization policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed.
+
+See [authorizeByPolicyName](#authorizebypolicyname) for more information.
+
+#### challenge
+
+The `challenge (authScheme: string)` endpoint handler will challenge the client to authenticate with a specific `authScheme`. This function is often used in combination with the `requiresAuthentication` endpoint handler:
+
+```fsharp
+let AUTH = applyBefore <| requiresAuthentication (challenge "Cookie")
+
+let webApp =[
+    route "/" (text "Hello World")
+    AUTH <|
+        subRoute "/user" [
+            GET  [ route "" readUserHandler ]
+            POST [ route "" submitUserHandler ]
+        ]
+]
+```
+
+In this example the client will be challenged to authenticate with a scheme called "Cookie". The scheme name must match one of the registered authentication schemes from the configuration of the ASP.NET Core auth middleware.
+
+#### signOut
+
+The `signOut (authScheme: string)` endpoint handler will sign a user out from a given `authScheme`:
+
+```fsharp
+let webApp = [
+    route "/" (text "Hello World")
+    route "/signout" (signOut "Cookie" >=> redirectTo "/" false)
+]
+```
