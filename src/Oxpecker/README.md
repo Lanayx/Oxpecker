@@ -33,6 +33,7 @@ An in depth functional reference to all of Oxpecker's default features.
     - [IResult Integration](#iresult-integration)
     - [Routing](#routing)
     - [Model Binding](#model-binding)
+    - [File Upload](#file-upload)
 
 ## Fundamentals
 
@@ -911,3 +912,44 @@ let webApp = [
 ```
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
+
+### File Upload
+
+ASP.NET Core makes it really easy to process uploaded files.
+
+The `HttpContext.Request.Form.Files` collection can be used to process one or many small files which have been sent by a client:
+
+```fsharp
+let fileUploadHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        match ctx.Request.HasFormContentType with
+        | false ->
+            ctx.Write <| BadRequest()
+        | true  ->
+            ctx.Request.Form.Files
+            |> Seq.fold (fun acc file -> $"{acc}\n{file.FileName}") ""
+            |> ctx.WriteText
+
+let webApp = [ route "/upload" fileUploadHandler ]
+```
+
+You can also read uploaded files by utilizing the `IFormFeature` and the `ReadFormAsync` method:
+
+```fsharp
+let fileUploadHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            let formFeature = ctx.Features.Get<IFormFeature>()
+            let! form = formFeature.ReadFormAsync CancellationToken.None
+            return!
+                form.Files
+                |> Seq.fold (fun acc file -> $"{acc}\n{file.FileName}") ""
+                |> ctx.WriteText
+        }
+
+let webApp = [ route "/upload" fileUploadHandler ]
+```
+
+For large file uploads it is recommended to [stream the file](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads#upload-large-files-with-streaming) in order to prevent resource exhaustion.
+
+See also [large file uploads in ASP.NET Core](https://stackoverflow.com/questions/36437282/dealing-with-large-file-uploads-on-asp-net-core-1-0) on StackOverflow.
