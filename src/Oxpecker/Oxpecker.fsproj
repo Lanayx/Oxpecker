@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net7.0</TargetFramework>
         <PackageId>Oxpecker</PackageId>
         <Title>Oxpecker</Title>
         <RootNamespace>Oxpecker</RootNamespace>
