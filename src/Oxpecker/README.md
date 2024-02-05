@@ -13,9 +13,7 @@ An in depth functional reference to all of Oxpecker's default features.
 ## Table of contents
 
 - [Fundamentals](#fundamentals)
-    - [Endpoint Routing](#endpointrouting)
-    - [EndpointHandler](#endpointhandler)
-    - [EndpointMiddleware](#endpointmiddleware)
+    - [Core concepts](#core-concepts)
     - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
     - [Creating new EndpointHandler and EndpointMiddlware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
     - [Composition](#composition)
@@ -35,16 +33,17 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Model Binding](#model-binding)
     - [File Upload](#file-upload)
     - [Authentication and Authorization](#authentication-and-authorization)
+    - [Conditional Requests](#conditional-requests)
 
 ## Fundamentals
 
-### EndpointRouting
+### Core concepts
 
 Oxpecker is built on top of the ASP.NET Core [Endpoint Routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) and provides some convenient DSL for F# users.
 
 When using Oxpecker, make sure you are familiar with ASP.NET Core and it's concepts, since Oxpecker reuses a lot of built-in functionality.
 
-### EndpointHandler
+#### EndpointHandler
 
 The main building block in Oxpecker is an `EndpointHandler`:
 
@@ -58,7 +57,7 @@ an `EndpointHandler` is a function which takes `HttpContext`, and returns a `Tas
 
 `EndpointHandler` normally should be regarded as a _terminal_ handler, meaning that it should write some result in response (but not necessary, as described in composition section).
 
-### EndpointMiddleware
+#### EndpointMiddleware
 
 ```fsharp
 type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
@@ -66,6 +65,13 @@ type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
 `EndpointMiddleware` is similar to `EndpointHandler`, but accepts the _next_ `EndpointHandler` as first parameter.
 
 Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuit the execution by returning the `Task` itself.
+
+##### EndpointHandler vs EndpointMiddleware
+
+So, when should you define one or another? The answer lies in the responsibility of your handler:
+ - If you want to **conditionally** _return response_  or _proceed_ further in pipeline use `EndpointMiddleware`. Good example are [Auth endpoint middlewares](#authentication-and-authorization) and [Preconditional endpoint middleware](#conditional-requests)
+ - If you want to execute some logic **after** the _next_ handler completes - use `EndpointMiddleware`
+ - In other cases use `EndpointHandler`
 
 ### Oxpecker pipeline vs. ASP.NET Core pipeline
 
@@ -1150,7 +1156,7 @@ let someHandler (eTag         : string)
     validatePreconditions eTagHeader (Some lastModified) >=> text content
 ```
 
-The `validatePreconditions` middleware takes in two optional parameters - an `eTag` and a `lastMofified` date time value - which will be used to validate a conditional HTTP request. If all conditions can be met, or if no conditions have been submitted, then the `next` http handler (of the Giraffe pipeline) will get invoked. Otherwise, if one of the pre-conditions fails or if the resource hasn't changed since the last check, then a `412 Precondition Failed` or a `304 Not Modified` response will get returned.
+The `validatePreconditions` middleware takes in two optional parameters - an `eTag` and a `lastMofified` date time value - which will be used to validate a conditional HTTP request. If all conditions can be met, or if no conditions have been submitted, then the `next` http handler (of the Oxpecker pipeline) will get invoked. Otherwise, if one of the pre-conditions fails or if the resource hasn't changed since the last check, then a `412 Precondition Failed` or a `304 Not Modified` response will get returned.
 
 The [ETag (Entity Tag)](https://tools.ietf.org/html/rfc7232#section-2.3) value is an opaque identifier assigned by a web server to a specific version of a resource found at a URL. The [Last-Modified](https://tools.ietf.org/html/rfc7232#section-2.2) value provides a timestamp indicating the date and time at which the origin server believes the selected representation was last modified.
 
@@ -1161,9 +1167,9 @@ Oxpecker's `validatePreconditions` endpoint middleware validates the following c
 - `If-Modified-Since`
 - `If-Unmodified-Since`
 
-The `If-Range` HTTP header will not get validated as part the `validatePreconditions` http handler, because it is a streaming specific check which gets handled by Giraffe's [Streaming](#streaming) functionality.
+The `If-Range` HTTP header will not get validated as part the `validatePreconditions` http handler, because it is a streaming specific check which gets handled by Oxpecker's [Streaming](#streaming) functionality.
 
-Alternatively Oxpecker exposes the `HttpContext` extension method `ValidatePreconditions(eTag, lastModified)` which can be used to create a custom conditional http handler. The `ValidatePreconditions` method takes the same two optional parameters and returns a result of type `Precondition`.
+Alternatively Oxpecker exposes the `HttpContext` extension method `ValidatePreconditions(eTag, lastModified)` which can be used to create a custom conditional endpoint middleware. The `ValidatePreconditions` method takes the same two optional parameters and returns a result of type `Precondition`.
 
 The `Precondition` union type contains the following cases:
 
