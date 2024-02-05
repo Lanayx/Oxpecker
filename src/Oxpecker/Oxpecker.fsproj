@@ -16,9 +16,9 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.6.0</Version>
-        <PackageVersion>0.6.0</PackageVersion>
-        <PackageReleaseNotes>Changed model binding to correspond to json binding</PackageReleaseNotes>
+        <Version>0.6.1</Version>
+        <PackageVersion>0.6.1</PackageVersion>
+        <PackageReleaseNotes>Changed preconditional handler to middleware</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
