@@ -33,6 +33,8 @@ An in depth functional reference to all of Oxpecker's default features.
     - [IResult Integration](#iresult-integration)
     - [Routing](#routing)
     - [Model Binding](#model-binding)
+    - [File Upload](#file-upload)
+    - [Authentication and Authorization](#authentication-and-authorization)
 
 ## Fundamentals
 
@@ -524,10 +526,9 @@ You can also set an HTTP header via the `setHttpHeader` http handler:
 let customHeader : EndpointHandler =
     setHttpHeader "X-CustomHeader" "Some value"
 
-let webApp =
-    [
-        route "/foo" (customHeader >=> text "Foo")
-    ]
+let webApp = [
+    route "/foo" (customHeader >=> text "Foo")
+]
 ```
 
 Please note that these are additional Oxpecker functions which complement already existing HTTP header functionality in the ASP.NET Core framework. ASP.NET Core offers higher level HTTP header functionality through the `ctx.Request.GetTypedHeaders()` method.
@@ -560,7 +561,7 @@ let submitBarHandler : EndpointHandler =
 let webApp =
     [
         // Filters for GET requests
-        GET  [
+        GET [
             route "/foo" <| text "Foo"
             route "/bar" <| text "Bar"
         ]
@@ -625,8 +626,8 @@ let johnDoe = {
 }
 
 let app = [
-    route `/`     <| text "Hello World"
-    route `/john` <| %Ok johnDoe // returns 200 OK with JSON body
+    route "/"     <| text "Hello World"
+    route "/john" <| %Ok johnDoe // returns 200 OK with JSON body
     route "/bad"  <| %BadRequest()
 ]
 ```
@@ -635,7 +636,7 @@ The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also
 ```fsharp
 let myHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
-        ctx.Write <| %Ok johnDoe
+        ctx.Write <| TypedResults.Ok johnDoe
 ```
 ### Routing
 
@@ -747,7 +748,7 @@ let submitCar : EndpointHandler =
             let! car = ctx.BindJson<Car>()
 
             // Sends the object back to the client
-            return! ctx.Write <| Successful.OK car
+            return! ctx.Write <| TypedResults.Ok car
         }
 
 let webApp = [
@@ -772,16 +773,15 @@ type Car = {
     Built  : DateTime
 }
 
-let webApp =
-    choose [
-        GET [
-            route "/"    <| text "index"
-            route "ping" <| text "pong"
-        ]
-        POST [
-            route "/car" (bindJson<Car> (fun car -> %Ok car))
-        ]
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
     ]
+    POST [
+        route "/car" (bindJson<Car> (fun car -> %TypedResults.Ok car))
+    ]
+]
 ```
 
 Both, the `HttpContext` extension method as well as the `EndpointHandler` function will try to create an instance of type `'T` regardless if the submitted payload contained a complete representation of `'T` or not. The parsed object might only contain partial data (where some properties might be `null`) and additional `null` checks might be required before further processing.
@@ -839,16 +839,16 @@ type Car = {
 
 let british = CultureInfo.CreateSpecificCulture("en-GB")
 
-let webApp =
-    choose [
-        GET [
-            route "/"    <| text "index"
-            route "ping" <| text "pong"
-        ]
-        POST [
-            route "/car" (bindFormC<Car> british (fun model -> %Ok model))
-        ]
+let webApp = [
+    GET [
+        route "/"    <| text "index"
+        route "ping" <| text "pong"
     ]
+    POST [
+        route "/car" (bindForm<Car> (fun model -> %Ok model))
+        route "/britishCar" (bindFormC<Car> british (fun model -> %Ok model))
+    ]
+]
 ```
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
@@ -906,9 +906,295 @@ let webApp = [
         route "ping" <| text "pong"
     ]
     POST [
-        route "/car" (bindQueryC<Car> british (fun model -> %Ok model))
+        route "/car" (bindQuery<Car> (fun model -> %Ok model))
+        route "/britishCar" (bindQueryC<Car> british (fun model -> %Ok model))
     ]
 ]
 ```
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
+
+### File Upload
+
+ASP.NET Core makes it really easy to process uploaded files.
+
+The `HttpContext.Request.Form.Files` collection can be used to process one or many small files which have been sent by a client:
+
+```fsharp
+let fileUploadHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        match ctx.Request.HasFormContentType with
+        | false ->
+            ctx.Write <| BadRequest()
+        | true  ->
+            ctx.Request.Form.Files
+            |> Seq.fold (fun acc file -> $"{acc}\n{file.FileName}") ""
+            |> ctx.WriteText
+
+let webApp = [ route "/upload" fileUploadHandler ]
+```
+
+You can also read uploaded files by utilizing the `IFormFeature` and the `ReadFormAsync` method:
+
+```fsharp
+let fileUploadHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            let formFeature = ctx.Features.Get<IFormFeature>()
+            let! form = formFeature.ReadFormAsync CancellationToken.None
+            return!
+                form.Files
+                |> Seq.fold (fun acc file -> $"{acc}\n{file.FileName}") ""
+                |> ctx.WriteText
+        }
+
+let webApp = [ route "/upload" fileUploadHandler ]
+```
+
+For large file uploads it is recommended to [stream the file](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads#upload-large-files-with-streaming) in order to prevent resource exhaustion.
+
+See also [large file uploads in ASP.NET Core](https://stackoverflow.com/questions/36437282/dealing-with-large-file-uploads-on-asp-net-core-1-0) on StackOverflow.
+
+### Authentication and Authorization
+
+ASP.NET Core has a wealth of [Authentication](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/index) and [Authorization](https://docs.microsoft.com/en-us/aspnet/core/security/authorization/index) options which work out of the box with Oxpecker.
+
+Additionally Oxpecker offers a few `EndpointMiddleware` functions which make it easier to work with ASP.NET Core's authentication and authorization APIs in a functional way.
+
+Note, that the functions below are simple helpers and you can always write your own Auth `EndpointMiddleware` or `EndpointHandler` with few lines  of code if needed.
+
+#### requiresAuthentication
+
+The `requiresAuthentication (authFailedHandler: EndpointHandler)` endpoint middleware validates if a user has been authenticated by one of ASP.NET Core's authentication middleware. If the identity of a user could not be established then the `authFailedHandler` will be executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let AUTH = applyBefore <| requiresAuthentication notLoggedIn
+
+let webApp = [
+    route "/" <| text "Hello World"
+    AUTH <|
+        subRoute "/user" [
+            GET  [ route "" readUserHandler ]
+            POST [ route "" submitUserHandler ]
+        ]
+]
+```
+
+#### requiresRole
+
+The `requiresRole (role: string) (authFailedHandler : EndpointHandler)` endpoint middleware checks if an authenticated user is part of a given `role`. If a user fails to be in a certain role then the `authFailedHandler` will be executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let notAdmin: EndpointHandler =
+    %TypedResults.Forbid()
+
+let AUTH = applyBefore <| requiresAuthentication notLoggedIn
+let ADMIN = applyBefore <| requiresRole "Admin" notAdmin
+
+let webApp = [
+    route "/" <| text "Hello World"
+    (AUTH >> ADMIN) <|
+        subRoute "/user" [
+            POST   [ routef "/%s/edit"   editUserHandler ]
+            DELETE [ routef "/%s/delete" deleteUserHandler ]
+        ]
+]
+```
+
+#### requiresRoleOf
+
+The `requiresRoleOf (roles: string seq) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user is part of a list of given `roles`. If a user fails to be in at least one of the `roles` then the `authFailedHandler` will be executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let notProUserOrAdmin: EndpointHandler =
+    %TypedResults.Forbid()
+
+let AUTH = applyBefore <| requiresAuthentication notLoggedIn
+
+let PRO_OR_ADMIN = applyBefore <|
+    requiresRoleOf [ "ProUser"; "Admin" ] notProUserOrAdmin
+
+let webApp = [
+    route "/" <| text "Hello World"
+    (AUTH >> PRO_OR_ADMIN) <|
+        subRoute "/user" [
+            POST   [ routef "/%s/edit"   editUserHandler ]
+            DELETE [ routef "/%s/delete" deleteUserHandler ]
+        ]
+]
+```
+
+#### authorizeRequest
+
+The `authorizeRequest (predicate: HttpContext -> bool) (authFailedHandler: EndpointHandler)` endpoint middleware validates a request based on a given predicate. If the predicate returns false then the `authFailedHandler` will get executed:
+
+```fsharp
+let apiKey = "some-secret-key-1234"
+
+let validateApiKey (ctx: HttpContext) =
+    match ctx.TryGetRequestHeader "X-API-Key" with
+    | Some key -> apiKey.Equals key
+    | None     -> false
+
+let accessDenied = setStatusCode 401 >=> text "Access Denied"
+let requiresApiKey =
+    authorizeRequest validateApiKey accessDenied
+
+let webApp = [
+    route "/" <| text "Hello World"
+    route "/private" (requiresApiKey >=> protectedHandler)
+]
+```
+
+#### authorizeUser
+
+The `authorizeUser (policy: ClaimsPrincipal -> bool) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given user policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let accessDenied = setStatusCode 401 >=> text "Access Denied"
+
+let mustBeLoggedIn = requiresAuthentication notLoggedIn
+
+let mustBeJohn =
+    authorizeUser (fun u -> u.HasClaim (ClaimTypes.Name, "John")) accessDenied
+
+let webApp = [
+    route "/" (text "Hello World")
+    route "/john-only" (
+        mustBeLoggedIn >=> mustBeJohn >=> userHandler
+    )
+]
+```
+
+#### authorizeByPolicyName
+
+The `authorizeByPolicyName (policyName: string) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given authorization policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed:
+
+```fsharp
+let notLoggedIn: EndpointHandler =
+    %TypedResults.Unauthorized()
+
+let accessDenied = setStatusCode 401 >=> text "Access Denied"
+
+let mustBeLoggedIn = requiresAuthentication notLoggedIn
+
+let mustBeOver21 =
+    authorizeByPolicyName "MustBeOver21" accessDenied
+
+let webApp =[
+    route "/" (text "Hello World")
+    route "/adults-only" (
+        mustBeLoggedIn >=> mustBeOver21 >=> userHandler
+    )
+]
+```
+
+#### authorizeByPolicy
+
+The `authorizeByPolicy (policy: AuthorizationPolicy) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given authorization policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed.
+
+See [authorizeByPolicyName](#authorizebypolicyname) for more information.
+
+#### challenge
+
+The `challenge (authScheme: string)` endpoint handler will challenge the client to authenticate with a specific `authScheme`. This function is often used in combination with the `requiresAuthentication` endpoint handler:
+
+```fsharp
+let AUTH = applyBefore <| requiresAuthentication (challenge "Cookie")
+
+let webApp =[
+    route "/" (text "Hello World")
+    AUTH <|
+        subRoute "/user" [
+            GET  [ route "" readUserHandler ]
+            POST [ route "" submitUserHandler ]
+        ]
+]
+```
+
+In this example the client will be challenged to authenticate with a scheme called "Cookie". The scheme name must match one of the registered authentication schemes from the configuration of the ASP.NET Core auth middleware.
+
+#### signOut
+
+The `signOut (authScheme: string)` endpoint handler will sign a user out from a given `authScheme`:
+
+```fsharp
+let webApp = [
+    route "/" (text "Hello World")
+    route "/signout" (signOut "Cookie" >=> redirectTo "/" false)
+]
+```
+### Conditional Requests
+
+Conditional HTTP headers (e.g. `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.
+
+Oxpecker offers the `validatePreconditions` endpoint handler which can be used to run HTTP pre-validation checks against a given `ETag` and/or `Last-Modified` value of an incoming HTTP request:
+
+```fsharp
+let someHandler (eTag         : string)
+                (lastModified : DateTimeOffset)
+                (content      : string) =
+    let eTagHeader = Some (EntityTagHelper.createETag eTag)
+    validatePreconditions eTagHeader (Some lastModified) >=> text content
+```
+
+The `validatePreconditions` middleware takes in two optional parameters - an `eTag` and a `lastMofified` date time value - which will be used to validate a conditional HTTP request. If all conditions can be met, or if no conditions have been submitted, then the `next` http handler (of the Giraffe pipeline) will get invoked. Otherwise, if one of the pre-conditions fails or if the resource hasn't changed since the last check, then a `412 Precondition Failed` or a `304 Not Modified` response will get returned.
+
+The [ETag (Entity Tag)](https://tools.ietf.org/html/rfc7232#section-2.3) value is an opaque identifier assigned by a web server to a specific version of a resource found at a URL. The [Last-Modified](https://tools.ietf.org/html/rfc7232#section-2.2) value provides a timestamp indicating the date and time at which the origin server believes the selected representation was last modified.
+
+Oxpecker's `validatePreconditions` endpoint middleware validates the following conditional HTTP headers:
+
+- `If-Match`
+- `If-None-Match`
+- `If-Modified-Since`
+- `If-Unmodified-Since`
+
+The `If-Range` HTTP header will not get validated as part the `validatePreconditions` http handler, because it is a streaming specific check which gets handled by Giraffe's [Streaming](#streaming) functionality.
+
+Alternatively Oxpecker exposes the `HttpContext` extension method `ValidatePreconditions(eTag, lastModified)` which can be used to create a custom conditional http handler. The `ValidatePreconditions` method takes the same two optional parameters and returns a result of type `Precondition`.
+
+The `Precondition` union type contains the following cases:
+
+| Case | Description and Recommended Action |
+| ---- | ---------------------------------- |
+| `NoConditionsSpecified` | No validation has taken place, because the client didn't send any conditional HTTP headers. Proceed with web request as normal. |
+| `ConditionFailed` | At least one condition couldn't be satisfied. It is advised to return a `412` status code back to the client (you can use the `HttpContext.PreconditionFailedResponse()` method for that purpose). |
+| `ResourceNotModified` | The resource hasn't changed since the last visit. The server can skip processing this request and return a `304` status code back to the client (you can use the `HttpContext.NotModifiedResponse()` method for that purpose). |
+| `AllConditionsMet` | All pre-conditions were satisfied. The server should continue processing the request as normal. |
+
+The `validatePreconditions` http handler as well as the `ValidatePreconditions` extension method will not only validate all conditional HTTP headers, but also set the required `ETag` and/or `Last-Modified` HTTP response headers according to the HTTP spec.
+
+Both functions follow latest HTTP guidelines and validate all conditional headers in the correct precedence as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616).
+
+Example of `HttpContext.ValidatePreconditions`:
+
+```fsharp
+// Pass an optional eTag and lastModified timestamp into the handler, because generating an eTag might require to load the entire resource into memory and therefore this is not something which should be done on every request.
+let someHttpHandler eTag lastModified : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match ctx.ValidatePreconditions(eTag, lastModified) with
+            | ConditionFailed     -> return ctx.PreconditionFailedResponse()
+            | ResourceNotModified -> return ctx.NotModifiedResponse()
+            | AllConditionsMet | NoConditionsSpecified ->
+                // Continue as normal
+                // Do stuff
+        }
+
+let webApp = [
+    route "/"    <| text "Hello World"
+    route "/foo" <| someHttpHandler None None
+]
+```
