@@ -207,13 +207,15 @@ type PreconditionExtensions() =
 /// </summary>
 /// <param name="eTag">Optional ETag. You can use the static EntityTagHeaderValue.FromString helper method to generate a valid <see cref="EntityTagHeaderValue"/> object.</param>
 /// <param name="lastModified">Optional <see cref="System.DateTimeOffset"/> object denoting the last modified date.</param>
+/// <param name="next"></param>
 /// <param name="ctx"></param>
 /// <returns>An Oxpecker <see cref="HttpHandler" /> function which can be composed into a bigger web application.</returns>
-let validatePreconditions (eTag: EntityTagHeaderValue option) (lastModified: DateTimeOffset option) : EndpointHandler =
-    fun (ctx: HttpContext) ->
-        match ctx.ValidatePreconditions(eTag, lastModified) with
-        | ConditionFailed -> ctx.PreconditionFailedResponse()
-        | ResourceNotModified -> ctx.NotModifiedResponse()
-        | AllConditionsMet
-        | NoConditionsSpecified -> ()
-        Task.CompletedTask
+let validatePreconditions (eTag: EntityTagHeaderValue option) (lastModified: DateTimeOffset option) : EndpointMiddleware =
+    fun (next: EndpointHandler) (ctx: HttpContext) ->
+        task {
+            match ctx.ValidatePreconditions(eTag, lastModified) with
+            | ConditionFailed -> return ctx.PreconditionFailedResponse()
+            | ResourceNotModified -> return ctx.NotModifiedResponse()
+            | AllConditionsMet
+            | NoConditionsSpecified -> return! next ctx
+        }

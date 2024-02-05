@@ -561,7 +561,7 @@ let submitBarHandler : EndpointHandler =
 let webApp =
     [
         // Filters for GET requests
-        GET  [
+        GET [
             route "/foo" <| text "Foo"
             route "/bar" <| text "Bar"
         ]
@@ -1134,5 +1134,67 @@ The `signOut (authScheme: string)` endpoint handler will sign a user out from a 
 let webApp = [
     route "/" (text "Hello World")
     route "/signout" (signOut "Cookie" >=> redirectTo "/" false)
+]
+```
+### Conditional Requests
+
+Conditional HTTP headers (e.g. `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.
+
+Oxpecker offers the `validatePreconditions` endpoint handler which can be used to run HTTP pre-validation checks against a given `ETag` and/or `Last-Modified` value of an incoming HTTP request:
+
+```fsharp
+let someHandler (eTag         : string)
+                (lastModified : DateTimeOffset)
+                (content      : string) =
+    let eTagHeader = Some (EntityTagHelper.createETag eTag)
+    validatePreconditions eTagHeader (Some lastModified) >=> text content
+```
+
+The `validatePreconditions` middleware takes in two optional parameters - an `eTag` and a `lastMofified` date time value - which will be used to validate a conditional HTTP request. If all conditions can be met, or if no conditions have been submitted, then the `next` http handler (of the Giraffe pipeline) will get invoked. Otherwise, if one of the pre-conditions fails or if the resource hasn't changed since the last check, then a `412 Precondition Failed` or a `304 Not Modified` response will get returned.
+
+The [ETag (Entity Tag)](https://tools.ietf.org/html/rfc7232#section-2.3) value is an opaque identifier assigned by a web server to a specific version of a resource found at a URL. The [Last-Modified](https://tools.ietf.org/html/rfc7232#section-2.2) value provides a timestamp indicating the date and time at which the origin server believes the selected representation was last modified.
+
+Oxpecker's `validatePreconditions` endpoint middleware validates the following conditional HTTP headers:
+
+- `If-Match`
+- `If-None-Match`
+- `If-Modified-Since`
+- `If-Unmodified-Since`
+
+The `If-Range` HTTP header will not get validated as part the `validatePreconditions` http handler, because it is a streaming specific check which gets handled by Giraffe's [Streaming](#streaming) functionality.
+
+Alternatively Oxpecker exposes the `HttpContext` extension method `ValidatePreconditions(eTag, lastModified)` which can be used to create a custom conditional http handler. The `ValidatePreconditions` method takes the same two optional parameters and returns a result of type `Precondition`.
+
+The `Precondition` union type contains the following cases:
+
+| Case | Description and Recommended Action |
+| ---- | ---------------------------------- |
+| `NoConditionsSpecified` | No validation has taken place, because the client didn't send any conditional HTTP headers. Proceed with web request as normal. |
+| `ConditionFailed` | At least one condition couldn't be satisfied. It is advised to return a `412` status code back to the client (you can use the `HttpContext.PreconditionFailedResponse()` method for that purpose). |
+| `ResourceNotModified` | The resource hasn't changed since the last visit. The server can skip processing this request and return a `304` status code back to the client (you can use the `HttpContext.NotModifiedResponse()` method for that purpose). |
+| `AllConditionsMet` | All pre-conditions were satisfied. The server should continue processing the request as normal. |
+
+The `validatePreconditions` http handler as well as the `ValidatePreconditions` extension method will not only validate all conditional HTTP headers, but also set the required `ETag` and/or `Last-Modified` HTTP response headers according to the HTTP spec.
+
+Both functions follow latest HTTP guidelines and validate all conditional headers in the correct precedence as defined in [RFC 2616](https://tools.ietf.org/html/rfc2616).
+
+Example of `HttpContext.ValidatePreconditions`:
+
+```fsharp
+// Pass an optional eTag and lastModified timestamp into the handler, because generating an eTag might require to load the entire resource into memory and therefore this is not something which should be done on every request.
+let someHttpHandler eTag lastModified : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match ctx.ValidatePreconditions(eTag, lastModified) with
+            | ConditionFailed     -> return ctx.PreconditionFailedResponse()
+            | ResourceNotModified -> return ctx.NotModifiedResponse()
+            | AllConditionsMet | NoConditionsSpecified ->
+                // Continue as normal
+                // Do stuff
+        }
+
+let webApp = [
+    route "/"    <| text "Hello World"
+    route "/foo" <| someHttpHandler None None
 ]
 ```
