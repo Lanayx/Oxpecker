@@ -13,7 +13,7 @@ open FsUnitTyped
 [<Fact>]
 let ``Test not chunked serializer`` () =
     task {
-        let serializer: Json.ISerializer = SystemTextJson.Serializer()
+        let serializer: Serializers.IJsonSerializer = SystemTextJson.Serializer()
         let httpContext = DefaultHttpContext()
         httpContext.Response.Body <- new MemoryStream()
         let value = {| Name = "Oxpecker" |}
@@ -31,7 +31,7 @@ let ``Test not chunked serializer`` () =
 [<Fact>]
 let ``Test chunked serializer`` () =
     task {
-        let serializer: Json.ISerializer = SystemTextJson.Serializer()
+        let serializer: Serializers.IJsonSerializer = SystemTextJson.Serializer()
         let httpContext = DefaultHttpContext()
         httpContext.Response.Body <- new MemoryStream()
         let value = {| Name = "Oxpecker" |}
@@ -49,7 +49,7 @@ let ``Test chunked serializer`` () =
 [<Fact>]
 let ``Test default deserializer`` () =
     task {
-        let serializer: Json.ISerializer = SystemTextJson.Serializer()
+        let serializer: Serializers.IJsonSerializer = SystemTextJson.Serializer()
         let httpContext = DefaultHttpContext()
         httpContext.Request.Body <- new MemoryStream()
         httpContext.Request.Headers[HeaderNames.ContentType] <- "application/json; charset=utf-8"

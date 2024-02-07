@@ -2,19 +2,18 @@
 
 open System.IO
 open Microsoft.AspNetCore.Http
-open System.Text
 open System.Text.Json
 open System.Threading.Tasks
 
 [<RequireQualifiedAccess>]
-module Json =
+module Serializers =
 
     /// <summary>
     /// Interface defining JSON serialization methods.
     /// Use this interface to customize JSON serialization in Oxpecker.
     /// </summary>
     [<AllowNullLiteral>]
-    type ISerializer =
+    type IJsonSerializer =
         abstract member Serialize<'T> : value: 'T * ctx: HttpContext * chunked: bool -> Task
         abstract member Deserialize<'T> : ctx: HttpContext -> Task<'T>
 
@@ -34,10 +33,15 @@ module SystemTextJson =
         let options =
             defaultArg options <| JsonSerializerOptions(JsonSerializerDefaults.Web)
 
-        interface Json.ISerializer with
+        interface Serializers.IJsonSerializer with
             member this.Serialize(value, ctx, chunked) =
                 if chunked then
-                    ctx.Response.WriteAsJsonAsync(value, options)
+                    if ctx.Request.Method <> HttpMethods.Head then
+                        ctx.Response.WriteAsJsonAsync(value, options)
+                    else
+                        ctx.Response.ContentType <- "application/json; charset=utf-8"
+                        ctx.Response.Headers.TransferEncoding <- "chunked"
+                        Task.CompletedTask
                 else
                     task {
                         use stream = recyclableMemoryStreamManager.Value.GetStream()
@@ -45,7 +49,10 @@ module SystemTextJson =
                         ctx.Response.ContentType <- "application/json; charset=utf-8"
                         ctx.Response.Headers.ContentLength <- stream.Length
                         stream.Seek(0, SeekOrigin.Begin) |> ignore
-                        return! stream.CopyToAsync(ctx.Response.Body)
+                        if ctx.Request.Method <> HttpMethods.Head then
+                            return! stream.CopyToAsync(ctx.Response.Body)
+                        else
+                            return ()
                     }
 
             member this.Deserialize(ctx) =
