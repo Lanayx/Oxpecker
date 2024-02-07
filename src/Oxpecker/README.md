@@ -28,12 +28,12 @@ An in depth functional reference to all of Oxpecker's default features.
     - [HTTP Headers](#http-headers)
     - [HTTP Verbs](#http-verbs)
     - [HTTP Status Codes](#http-status-codes)
-    - [IResult Integration](#iresult-integration)
     - [Routing](#routing)
     - [Model Binding](#model-binding)
     - [File Upload](#file-upload)
     - [Authentication and Authorization](#authentication-and-authorization)
     - [Conditional Requests](#conditional-requests)
+    - [Response Writing](#response-writing)
 
 ## Fundamentals
 
@@ -612,38 +612,6 @@ let someHandler : EndpointHandler =
     >=> text "Hello World"
 ```
 
-### IResult integration
-
-If you only use JSON for communication and like what ASP.NET core IResult offers, you might be please to know that Oxpecker supports that as well. You can simplify returning responses together with status codes using `Microsoft.AspNetCore.Http.TypedResults`:
-
-```fsharp
-open Oxpecker
-open type Microsoft.AspNetCore.Http.TypedResults
-
-[<CLIMutable>]
-type Person = {
-    FirstName: string
-    LastName: string
-}
-
-let johnDoe = {
-    FirstName = "John"
-    LastName  = "Doe"
-}
-
-let app = [
-    route "/"     <| text "Hello World"
-    route "/john" <| %Ok johnDoe // returns 200 OK with JSON body
-    route "/bad"  <| %BadRequest()
-]
-```
-The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also do conversion inside EndpointHandler using `.Write` extension method:
-
-```fsharp
-let myHandler : EndpointHandler =
-    fun (ctx: HttpContext) ->
-        ctx.Write <| TypedResults.Ok johnDoe
-```
 ### Routing
 
 Oxpecker offers several routing functions to accommodate the majority of use cases. Note, that Oxpecker routing is sitting on the top of ASP.NET Core endpoint routing, so all routes are case insensitive.
@@ -1204,3 +1172,197 @@ let webApp = [
     route "/foo" <| someHttpHandler None None
 ]
 ```
+### Response Writing
+
+Sending a response back to a client in Oxpecker can be done through a small range of `HttpContext` extension methods and their equivalent `EndpointHandler` functions.
+
+#### Writing Bytes
+
+The `WriteBytes (data: byte[])` extension method and the `bytes (data: byte[])` endpoint handler both write a `byte array` to the response stream of the HTTP request:
+
+```fsharp
+let someHandler (data: byte[]) : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteBytes data
+        }
+
+// or...
+
+let someHandler (data: byte[]) : EndpointHandler =
+    // Do stuff
+    bytes data
+```
+
+Both functions will also set the `Content-Length` HTTP header to the length of the `byte array`.
+
+The `bytes` http handler (and it's `HttpContext` extension method equivalent) is useful when you want to create your own response writing function for a specific media type which is not provided by Oxpecker yet.
+
+For example Oxpecker doesn't have any functionality for serializing and writing a YAML response back to a client. However, you can reference another third party library which can serialize an object into a YAML string and then create your own `yaml` http handler like this:
+
+```fsharp
+let yaml (x: obj) : EndpointHandler =
+    setHttpHeader "Content-Type" "text/yaml"
+    >=> bytes (x |> YamlSerializer.toYaml |> Encoding.UTF8.GetBytes)
+
+```
+
+#### Writing Text
+
+The `WriteText (str : string)` extension method and the `text (str: string)` endpoint handler will write string to response in UTF8 format and also set the `Content-Type` HTTP header to `text/plain` in the response:
+
+```fsharp
+let someHandler (str: string) : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteText str
+        }
+
+// or...
+
+let someHandler (str: string) : EndpointHandler =
+    // Do stuff
+    text str
+```
+
+#### Writing JSON
+
+The `WriteJson<'T> (dataObj : 'T)` extension method and the `json<'T> (dataObj: 'T)` endpoint handler will both serialize an object to a JSON string and write the output to the response stream of the HTTP request. They will also set the `Content-Length` HTTP header and the `Content-Type` header to `application/json` in the response:
+
+```fsharp
+let someHandler (animal: Animal) : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteJson animal
+        }
+
+// or...
+
+let someHandler (animal: Animal) : EndpointHandler =
+    // Do stuff
+    json animal
+```
+
+The `WriteJsonChunked<'T> (dataObj: 'T)` extension method and the `jsonChunked (dataObj: 'T)` endpoint handler write directly to the response stream of the HTTP request without extra buffering into a byte array. They will not set a `Content-Length` header and instead set the `Transfer-Encoding: chunked` header and `Content-Type: application/json`:
+
+```fsharp
+let someHandler (person: Person) : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteJsonChunked person
+        }
+
+// or...
+
+let someHandler (person: Person) : EndpointHandler =
+    // Do stuff
+    jsonChunked person
+```
+
+The underlying JSON serializer is configured as a dependency during application startup and defaults to `System.Text.Json` (when you write `services.AddOxpecker()`). You can implement `Serializers.IJsonSerializer` interface to plug in custom JSON serializer.
+
+```fsharp
+let configureServices (services : IServiceCollection) =
+    // First register all default Oxpecker dependencies
+    services.AddOxpecker() |> ignore
+    // Now register custom serializer
+    services.AddSingleton<Serializers.IJsonSerializer>(CustomSerializer()) |> ignore
+    // or use default STJ serializer, but with different options
+    services.AddSingleton<Serializers.IJsonSerializer>(
+            SystemTextJson.Serializer(specificOptions)) |> ignore
+```
+
+#### Writing IResult
+
+If you like what ASP.NET Core IResult offers, you might be pleased to know that Oxpecker supports it as well. You can simplify returning responses together with status codes using `Microsoft.AspNetCore.Http.TypedResults`:
+
+```fsharp
+open Oxpecker
+open type Microsoft.AspNetCore.Http.TypedResults
+
+let johnDoe = {|
+    FirstName = "John"
+    LastName  = "Doe"
+|}
+
+let app = [
+    route "/"     <| text "Hello World"
+    route "/john" <| %Ok johnDoe // returns 200 OK with JSON body
+    route "/bad"  <| %BadRequest() // returns 400 BadRequest with empty body
+]
+```
+The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also do the conversion inside EndpointHandler using `.Write` extension method:
+
+```fsharp
+let myHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        ctx.Write <| TypedResults.Ok johnDoe
+```
+
+#### Writing HTML Strings
+
+The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing strings](#writing-strings) except that they will also set the `Content-Type` header to `text/html`:
+
+```fsharp
+let someHandler (dataObj: obj) : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteHtmlString "<html><head></head><body>Hello World</body></html>"
+        }
+
+// or...
+
+let someHandler (dataObj: obj) : EndpointHandler =
+    // Do stuff
+    htmlString "<html><head></head><body>Hello World</body></html>"
+```
+
+#### Writing HTML Views
+
+Oxpecker comes with its own extremely powerful view engine for functional developers (see [Oxpecker View Engine](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.ViewEngine/README.md)). The `WriteHtmlView (htmlView : HtmlElement)` extension method and the `htmlView (htmlView : HtmlElement)` http handler will both compile a given html view into valid HTML code and write the output to the response stream of the HTTP request. Additionally they will both set the `Content-Length` HTTP header to the correct value and set the `Content-Type` header to `text/html`:
+
+```fsharp
+let indexView =
+    html() {
+        head() {
+            title() { "Oxpecker" }
+        }
+        body() {
+            h1(id="Header") { "Oxpecker" }
+            p() { "Hello World." }
+        }
+    }
+
+let someHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteHtmlView indexView
+        }
+
+// or...
+
+let someHandler : EndpointHandler =
+    // Do stuff
+    htmlView indexView
+```
+
+**Warning**: While being fast at runtime, using many long CE expressions might slow down your project compilation and IDE experience (see [the issue](https://github.com/Lanayx/Oxpecker/issues/5)), so you might decide to use a different view engine. There are multiple view engines for your choice: Giraffe.ViewEngine, Feliz.ViewEngine, Falco.Markup or you can even write your own! To plug in an external view engine you can write a simple extension:
+```fsharp
+[<Extension>]
+static member WriteMyHtmlView(ctx: HttpContext, htmlView: MyHtmlElement) =
+    let bytes = htmlView |> convertToBytes
+    ctx.Response.ContentType <- "text/html; charset=utf-8"
+    ctx.WriteBytes bytes
+
+// ...
+
+let myHtmlView (htmlView: MyHtmlElement) : EndpointHandler =
+    fun (ctx: HttpContext) -> ctx.WriteMyHtmlView htmlView
+```
+

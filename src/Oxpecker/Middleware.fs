@@ -14,7 +14,6 @@ type ApplicationBuilderExtensions() =
     /// </summary>
     [<Extension>]
     static member UseOxpecker(builder: IApplicationBuilder, endpoints: Endpoint seq) =
-
         builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoints endpoints)
 
 [<Extension>]
@@ -27,5 +26,5 @@ type ServiceCollectionExtensions() =
     /// <returns>Returns an <see cref="Microsoft.Extensions.DependencyInjection.IServiceCollection"/> builder object.</returns>
     [<Extension>]
     static member AddOxpecker(svc: IServiceCollection) =
-        svc.TryAddSingleton<Json.ISerializer>(fun sp -> SystemTextJson.Serializer() :> Json.ISerializer)
+        svc.TryAddSingleton<Serializers.IJsonSerializer>(SystemTextJson.Serializer())
         svc

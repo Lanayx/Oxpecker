@@ -210,7 +210,10 @@ type PreconditionExtensions() =
 /// <param name="next"></param>
 /// <param name="ctx"></param>
 /// <returns>An Oxpecker <see cref="HttpHandler" /> function which can be composed into a bigger web application.</returns>
-let validatePreconditions (eTag: EntityTagHeaderValue option) (lastModified: DateTimeOffset option) : EndpointMiddleware =
+let validatePreconditions
+    (eTag: EntityTagHeaderValue option)
+    (lastModified: DateTimeOffset option)
+    : EndpointMiddleware =
     fun (next: EndpointHandler) (ctx: HttpContext) ->
         task {
             match ctx.ValidatePreconditions(eTag, lastModified) with

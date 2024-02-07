@@ -114,11 +114,12 @@ type HttpContextExtensions() =
     static member GetHostingEnvironment(ctx: HttpContext) = ctx.GetService<IWebHostEnvironment>()
 
     /// <summary>
-    /// Gets an instance of <see cref="Oxpecker.Json.ISerializer"/> from the request's service container.
+    /// Gets an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/> from the request's service container.
     /// </summary>
-    /// <returns>Returns an instance of <see cref="Oxpecker.Json.ISerializer"/>.</returns>
+    /// <returns>Returns an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/>.</returns>
     [<Extension>]
-    static member GetJsonSerializer(ctx: HttpContext) : Json.ISerializer = ctx.GetService<Json.ISerializer>()
+    static member GetJsonSerializer(ctx: HttpContext) : Serializers.IJsonSerializer =
+        ctx.GetService<Serializers.IJsonSerializer>()
 
     /// <summary>
     /// Sets the HTTP status code of the response.
@@ -161,15 +162,18 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteBytes(ctx: HttpContext, bytes: byte[]) =
-        let canIncludeContentLengthHeader =
-            match ctx.Response.StatusCode, ctx.Request.Method with
-            | statusCode, _ when statusCode |> is1xxStatusCode || statusCode = 204 -> false
-            | statusCode, method when method = HttpMethods.Connect && statusCode |> is2xxStatusCode -> false
-            | _ -> true
-        let is205StatusCode = ctx.Response.StatusCode = 205
-        if canIncludeContentLengthHeader then
-            let contentLength = if is205StatusCode then 0 else bytes.Length
-            ctx.SetHttpHeader(HeaderNames.ContentLength, string contentLength)
+        let statusCode = ctx.Response.StatusCode
+        let skipContentLengthHeader =
+            is1xxStatusCode statusCode
+            || statusCode = StatusCodes.Status204NoContent
+            || (ctx.Request.Method = HttpMethods.Connect && is2xxStatusCode statusCode)
+        if not skipContentLengthHeader then
+            let contentLength =
+                if statusCode = StatusCodes.Status205ResetContent then
+                    0L
+                else
+                    bytes.LongLength
+            ctx.Response.ContentLength <- contentLength
         if ctx.Request.Method <> HttpMethods.Head then
             ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
         else
@@ -223,7 +227,6 @@ type HttpContextExtensions() =
         let serializer = ctx.GetJsonSerializer()
         serializer.Serialize(value, ctx, true)
 
-
     /// <summary>
     /// <para>Compiles a `Oxpecker.OxpeckerViewEngine.Builder.HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
@@ -235,9 +238,7 @@ type HttpContextExtensions() =
     static member WriteHtmlView(ctx: HttpContext, htmlView: HtmlElement) =
         let bytes = Render.toHtmlDocBytes htmlView
         ctx.Response.ContentType <- "text/html; charset=utf-8"
-        ctx.Response.ContentLength <- bytes.LongLength
-        ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
-
+        ctx.WriteBytes bytes
 
     /// <summary>
     /// Executes and ASP.NET Core IResult. Note that in most cases the response will be chunked.

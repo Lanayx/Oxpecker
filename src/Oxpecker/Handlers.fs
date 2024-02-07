@@ -92,6 +92,15 @@ module ResponseHandlers =
             Task.CompletedTask
 
     /// <summary>
+    /// Writes a byte array to the body of the HTTP response and sets the HTTP Content-Length header accordingly.
+    /// </summary>
+    /// <param name="data">The byte array to be send back to the client.</param>
+    /// <param name="ctx"></param>
+    /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+    let bytes (data: byte[]) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteBytes data
+
+    /// <summary>
     /// Writes an UTF-8 encoded string to the body of the HTTP response and sets the HTTP Content-Length header accordingly, as well as the Content-Type header to text/plain.
     /// </summary>
     /// <param name="str">The string value to be send back to the client.</param>
