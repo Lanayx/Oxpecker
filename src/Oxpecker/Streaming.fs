@@ -129,12 +129,7 @@ type StreamingExtensions() =
     static member internal RangeUnit(_: HttpContext) = "bytes"
 
     [<Extension>]
-    static member internal WriteStreamToBodyAsync
-        (
-            ctx: HttpContext,
-            stream: Stream,
-            rangeBoundary: RangeBoundary option
-        ) =
+    static member internal WriteStreamToBody(ctx: HttpContext, stream: Stream, rangeBoundary: RangeBoundary option) =
         task {
             try
                 use input = stream
@@ -190,7 +185,7 @@ type StreamingExtensions() =
     /// <param name="lastModified">An optional parameter denoting the last modified date time of the data.</param>
     /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteStreamAsync
+    static member WriteStream
         (
             ctx: HttpContext,
             enableRangeProcessing: bool,
@@ -207,21 +202,21 @@ type StreamingExtensions() =
             | AllConditionsMet
             | NoConditionsSpecified ->
                 if not stream.CanSeek then
-                    return! ctx.WriteStreamToBodyAsync(stream, None)
+                    return! ctx.WriteStreamToBody(stream, None)
                 elif not enableRangeProcessing then
-                    return! ctx.WriteStreamToBodyAsync(stream, None)
+                    return! ctx.WriteStreamToBody(stream, None)
                 else
                     // Set HTTP header to tell clients that Range processing is enabled
                     ctx.SetHttpHeader(HeaderNames.AcceptRanges, ctx.RangeUnit())
                     match RangeHelper.parseRange ctx.Request with
-                    | None -> return! ctx.WriteStreamToBodyAsync(stream, None)
+                    | None -> return! ctx.WriteStreamToBody(stream, None)
                     | Some ranges ->
                         // Check and validate If-Range HTTP header
                         match RangeHelper.isIfRangeValid ctx.Request eTag lastModified with
-                        | false -> return! ctx.WriteStreamToBodyAsync(stream, None)
+                        | false -> return! ctx.WriteStreamToBody(stream, None)
                         | true ->
                             match RangeHelper.validateRanges ranges stream.Length with
-                            | Ok range -> return! ctx.WriteStreamToBodyAsync(stream, Some range)
+                            | Ok range -> return! ctx.WriteStreamToBody(stream, Some range)
                             | Error _ ->
                                 // If the range header was invalid then return an error response
                                 ctx.SetHttpHeader(HeaderNames.ContentRange, $"%s{ctx.RangeUnit()} */%i{stream.Length}")
@@ -240,7 +235,7 @@ type StreamingExtensions() =
     /// <param name="lastModified">An optional parameter denoting the last modified date time of the file.</param>
     /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteFileStreamAsync
+    static member WriteFileStream
         (
             ctx: HttpContext,
             enableRangeProcessing: bool,
@@ -256,7 +251,7 @@ type StreamingExtensions() =
                     let env = ctx.GetHostingEnvironment()
                     Path.Combine(env.ContentRootPath, filePath)
             use stream = new FileStream(filePath, FileMode.Open, FileAccess.Read)
-            return! ctx.WriteStreamAsync(enableRangeProcessing, stream, eTag, lastModified)
+            return! ctx.WriteStream(enableRangeProcessing, stream, eTag, lastModified)
         }
 
 // ---------------------------
@@ -280,7 +275,7 @@ let streamData
     (eTag: EntityTagHeaderValue option)
     (lastModified: DateTimeOffset option)
     : EndpointHandler =
-    fun (ctx: HttpContext) -> ctx.WriteStreamAsync(enableRangeProcessing, stream, eTag, lastModified)
+    fun (ctx: HttpContext) -> ctx.WriteStream(enableRangeProcessing, stream, eTag, lastModified)
 
 /// <summary>
 /// Streams a file to the client.
@@ -299,4 +294,4 @@ let streamFile
     (eTag: EntityTagHeaderValue option)
     (lastModified: DateTimeOffset option)
     : EndpointHandler =
-    fun (ctx: HttpContext) -> ctx.WriteFileStreamAsync(enableRangeProcessing, filePath, eTag, lastModified)
+    fun (ctx: HttpContext) -> ctx.WriteFileStream(enableRangeProcessing, filePath, eTag, lastModified)

@@ -16,9 +16,9 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.7.0</Version>
-        <PackageVersion>0.7.0</PackageVersion>
-        <PackageReleaseNotes>Added bytes handler</PackageReleaseNotes>
+        <Version>0.7.1</Version>
+        <PackageVersion>0.7.1</PackageVersion>
+        <PackageReleaseNotes>Streaming docs and small naming change</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
