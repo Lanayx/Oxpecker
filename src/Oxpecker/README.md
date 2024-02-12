@@ -34,6 +34,7 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Authentication and Authorization](#authentication-and-authorization)
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
+    - [Streaming](#streaming)
 
 ## Fundamentals
 
@@ -121,7 +122,7 @@ type Person = { Name : string }
 let sayHelloWorld : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
-            let! person = ctx.BindJsonAsync<Person>()
+            let! person = ctx.BindJson<Person>()
             let greeting = sprintf "Hello World, from %s" person.Name
             return! text greeting ctx
         }
@@ -1365,4 +1366,71 @@ static member WriteMyHtmlView(ctx: HttpContext, htmlView: MyHtmlElement) =
 let myHtmlView (htmlView: MyHtmlElement) : EndpointHandler =
     fun (ctx: HttpContext) -> ctx.WriteMyHtmlView htmlView
 ```
+
+### Streaming
+
+Sometimes a large file or block of data has to be send to a client and in order to avoid loading the entire data into memory a Oxpecker web application can use streaming to send a response in a more efficient way.
+
+The `WriteStream` extension method and the `streamData` endpoint handler can be used to stream an object of type `Stream` to a client.
+
+Both functions accept the following parameters:
+
+- `enableRangeProcessing`: If true a client can request a sub range of data to be streamed (useful when a client wants to continue streaming after a paused download, or when internet connection has been lost, etc.)
+- `stream`: The stream object to be returned to the client.
+- `eTag`: Entity header tag used for conditional requests (see [Conditional Requests](#conditional-requests)).
+- `lastModified`: Last modified timestamp used for conditional requests (see [Conditional Requests](#conditional-requests)).
+
+If the `eTag` or `lastModified` timestamp are set then both functions will also set the `ETag` and/or `Last-Modified` HTTP headers during the response:
+
+```fsharp
+let someStream : Stream = ...
+
+let someHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteStream(
+                true, // enableRangeProcessing
+                someStream,
+                None, // eTag
+                None) // lastModified
+        }
+
+// or...
+
+let someHandler : EndpointHandler =
+    // Do stuff
+    streamData
+        true // enableRangeProcessing
+        someStream
+        None // eTag
+        None // lastModified
+```
+
+In most cases a web application will want to stream a file directly from the local file system. In this case you can use the `WriteFileStream` extension method or the `streamFile` http handler, which are both the same as `WriteStream` and `streamData` except that they accept a relative or absolute `filePath` instead of a `Stream` object:
+
+```fsharp
+let someHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteFileStream(
+                true, // enableRangeProcessing
+                "large-file.zip",
+                None, // eTag
+                None) // lastModified
+        }
+
+// or...
+
+let someHandler : EndpointHandler =
+    // Do stuff
+    streamFile
+        true // enableRangeProcessing
+        "large-file.zip"
+        None // eTag
+        None // lastModified
+```
+
+All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`.
 
