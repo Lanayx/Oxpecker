@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.7.0" />
+        <PackageReference Include="Oxpecker" Version="0.7.1" />
         <PackageReference Include="FSharp.UMX" Version="1.1.0" />
     </ItemGroup>
 
