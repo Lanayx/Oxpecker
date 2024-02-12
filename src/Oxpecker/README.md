@@ -15,7 +15,7 @@ An in depth functional reference to all of Oxpecker's default features.
 - [Fundamentals](#fundamentals)
     - [Core concepts](#core-concepts)
     - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
-    - [Creating new EndpointHandler and EndpointMiddlware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
+    - [Creating new EndpointHandler and EndpointMiddleware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
     - [Composition](#composition)
     - [Continue vs. Return](#continue-vs-return)
 - [Basics](#basics)
@@ -35,6 +35,7 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
     - [Streaming](#streaming)
+    - [Redirection](#redirection)
 
 ## Fundamentals
 
@@ -218,7 +219,7 @@ routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
 #### Multi-route composition
 
-Sometimes you want to compose some generic handler or middleware not only with one route, buth with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
+Sometimes you want to compose some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
 
 ```fsharp
 
@@ -648,16 +649,16 @@ The `routef` http handler takes two parameters - a format string and an `Endpoin
 
 The format string supports the following format chars:
 
-| Format Char | Type                            |
-| ----------- |---------------------------------|
-| `%b` | `bool`                          |
-| `%c` | `char`                          |
-| `%s` | `string`                        |
-| `%i` | `int`                           |
-| `%d` | `int64`                         |
-| `%f` | `float`/`double`                |
-| `%u` | `uint64`                        |
-| `%O` | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+| Format Char | Type                                                                                                                    |
+|-------------|-------------------------------------------------------------------------------------------------------------------------|
+| `%b`        | `bool`                                                                                                                  |
+| `%c`        | `char`                                                                                                                  |
+| `%s`        | `string`                                                                                                                |
+| `%i`        | `int`                                                                                                                   |
+| `%d`        | `int64`                                                                                                                 |
+| `%f`        | `float`/`double`                                                                                                        |
+| `%u`        | `uint64`                                                                                                                |
+| `%O`        | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
 
 #### subRoute
 
@@ -763,7 +764,7 @@ Both, the `HttpContext` extension method as well as the `EndpointHandler` functi
 
 Please note that in order for the model binding to work the record type must be decorated with the `[<CLIMutable>]` attribute, which will make sure that the type will have a parameterless constructor.
 
-The underlying JSON serializer can be configured as a dependency during application startup (see [JSON](#json)).
+The underlying JSON serializer can be configured as a dependency during application startup (see [JSON](#writing-json)).
 
 #### Binding Forms
 
@@ -1142,12 +1143,12 @@ Alternatively Oxpecker exposes the `HttpContext` extension method `ValidatePreco
 
 The `Precondition` union type contains the following cases:
 
-| Case | Description and Recommended Action |
-| ---- | ---------------------------------- |
-| `NoConditionsSpecified` | No validation has taken place, because the client didn't send any conditional HTTP headers. Proceed with web request as normal. |
-| `ConditionFailed` | At least one condition couldn't be satisfied. It is advised to return a `412` status code back to the client (you can use the `HttpContext.PreconditionFailedResponse()` method for that purpose). |
-| `ResourceNotModified` | The resource hasn't changed since the last visit. The server can skip processing this request and return a `304` status code back to the client (you can use the `HttpContext.NotModifiedResponse()` method for that purpose). |
-| `AllConditionsMet` | All pre-conditions were satisfied. The server should continue processing the request as normal. |
+| Case                    | Description and Recommended Action                                                                                                                                                                                             |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `NoConditionsSpecified` | No validation has taken place, because the client didn't send any conditional HTTP headers. Proceed with web request as normal.                                                                                                |
+| `ConditionFailed`       | At least one condition couldn't be satisfied. It is advised to return a `412` status code back to the client (you can use the `HttpContext.PreconditionFailedResponse()` method for that purpose).                             |
+| `ResourceNotModified`   | The resource hasn't changed since the last visit. The server can skip processing this request and return a `304` status code back to the client (you can use the `HttpContext.NotModifiedResponse()` method for that purpose). |
+| `AllConditionsMet`      | All pre-conditions were satisfied. The server should continue processing the request as normal.                                                                                                                                |
 
 The `validatePreconditions` http handler as well as the `ValidatePreconditions` extension method will not only validate all conditional HTTP headers, but also set the required `ETag` and/or `Last-Modified` HTTP response headers according to the HTTP spec.
 
@@ -1306,7 +1307,7 @@ let myHandler : EndpointHandler =
 
 #### Writing HTML Strings
 
-The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing strings](#writing-strings) except that they will also set the `Content-Type` header to `text/html`:
+The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing text](#writing-text) except that they set the `Content-Type` header to `text/html`:
 
 ```fsharp
 let someHandler (dataObj: obj) : EndpointHandler =
@@ -1434,3 +1435,15 @@ let someHandler : EndpointHandler =
 
 All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`.
 
+### Redirection
+
+The `redirectTo (location: string) (permanent: bool)` endpoint handler can be used to redirect a client to a different location when handling an incoming web request:
+
+```fsharp
+let webApp = [
+    route "/new" <| text "Hello World"
+    route "/old" <| redirectTo "https://myserver.com/new" true
+]
+```
+
+Please note that if the `permanent` flag is set to `true` then the Oxpecker web application will send a `301` HTTP status code to browsers which will tell them that the redirection is permanent. This often leads to browsers cache the information and not hit the deprecated URL a second time any more. If this is not desired then please set `permanent` to `false` (`302` HTTP status code) in order to guarantee that browsers will continue hitting the old URL before redirecting to the (temporary) new one.
