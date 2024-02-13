@@ -36,6 +36,7 @@ An in depth functional reference to all of Oxpecker's default features.
     - [Response Writing](#response-writing)
     - [Streaming](#streaming)
     - [Redirection](#redirection)
+- [Testing](#testing)
 
 ## Fundamentals
 
@@ -1549,3 +1550,7 @@ The third and last parameter is a `string[] option` which defines an optional li
 ### Response Compression
 
 ASP.NET Core has its own [Response Compression Middleware](https://learn.microsoft.com/en-us/aspnet/core/performance/response-compression) which works out of the box with Oxpecker. There's no additional functionality or http handlers required in order to make it work with Oxpecker web applications.
+
+## Testing
+
+Integration testing of an Oxpecker application follows the concept of [ASP.NET Core testing](https://learn.microsoft.com/en-us/aspnet/core/test/middleware). You can check out the examples of tests in this repository itself: [Oxpecker.Tests](https://github.com/Lanayx/Oxpecker/tree/develop/tests/Oxpecker.Tests)
