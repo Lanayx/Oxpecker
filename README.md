@@ -27,6 +27,10 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - IResult support
 - Many useful **HttpContext** extensions
 
+## Examples:
+- [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Basic/Program.fs)
+- [Full CRUD example with functional DI](https://github.com/Lanayx/Oxpecker/blob/develop/examples/CRUD/Program.fs)
+
 ## Documentation:
 
 * [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker/README.md)
