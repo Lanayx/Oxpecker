@@ -19,9 +19,9 @@ module Builder =
 
     [<Struct>]
     type HtmlElementType =
-        | NormalNode of dt: string
-        | VoidNode of st: string
-        | TextNode of text: TextNodeType
+        | NormalNode of nn: string
+        | VoidNode of vn: string
+        | TextNode of tn: TextNodeType
     and [<Struct>] TextNodeType =
         | RegularTextNode of reg: string
         | RawTextNode of raw: string
