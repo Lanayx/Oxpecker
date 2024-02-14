@@ -11,7 +11,7 @@ type Person = { Name: string }
 
 let subView = p() { "Have a nice day" }
 
-let renderView (model: Person) =
+let mainView (model: Person) =
     html() {
         body(style="width: 800px; margin: 0 auto") {
             h1(style="text-align: center; color: red") {
