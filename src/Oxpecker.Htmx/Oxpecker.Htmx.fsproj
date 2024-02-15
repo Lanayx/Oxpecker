@@ -6,7 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Attrubutes.fs" />
+        <Compile Include="Attributes.fs" />
         <Compile Include="Headers.fs" />
     </ItemGroup>
 
