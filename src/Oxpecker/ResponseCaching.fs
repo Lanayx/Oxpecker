@@ -11,9 +11,6 @@ module ResponseCaching =
 
     let private noCacheHeader = CacheControlHeaderValue(NoCache = true, NoStore = true)
 
-    let inline private cacheHeader isPublic duration =
-        CacheControlHeaderValue(Public = isPublic, MaxAge = Nullable duration)
-
     /// <summary>
     /// Enables (or suppresses) response caching by clients and proxy servers.
     /// This http handler integrates with ASP.NET Core's response caching middleware.

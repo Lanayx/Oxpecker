@@ -16,9 +16,9 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.2.0</Version>
-        <PackageVersion>0.2.0</PackageVersion>
-        <PackageReleaseNotes>Html encoding support</PackageReleaseNotes>
+        <Version>0.3.0</Version>
+        <PackageVersion>0.3.0</PackageVersion>
+        <PackageReleaseNotes>Aria attributes support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -26,6 +26,7 @@
         <Compile Include="Tools.fs" />
         <Compile Include="Builder.fs" />
         <Compile Include="Tags.fs" />
+        <Compile Include="Aria.fs" />
         <Compile Include="Render.fs" />
     </ItemGroup>
 </Project>

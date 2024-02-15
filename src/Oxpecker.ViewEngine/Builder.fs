@@ -19,9 +19,9 @@ module Builder =
 
     [<Struct>]
     type HtmlElementType =
-        | NormalNode of dt: string
-        | VoidNode of st: string
-        | TextNode of text: TextNodeType
+        | NormalNode of nn: string
+        | VoidNode of vn: string
+        | TextNode of tn: TextNodeType
     and [<Struct>] TextNodeType =
         | RegularTextNode of reg: string
         | RawTextNode of raw: string
@@ -45,6 +45,8 @@ module Builder =
             with set value = this.attr("lang", value) |> ignore
         member this.dir
             with set value = this.attr("dir", value) |> ignore
+        member this.tabindex
+            with set (value: int) = this.attr("tabindex", string value) |> ignore
 
         member this.Render(tw: TextWriter) : unit =
             let inline handleSingleTag (tagName: string) =

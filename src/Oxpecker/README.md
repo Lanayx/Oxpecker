@@ -15,7 +15,7 @@ An in depth functional reference to all of Oxpecker's default features.
 - [Fundamentals](#fundamentals)
     - [Core concepts](#core-concepts)
     - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
-    - [Creating new EndpointHandler and EndpointMiddlware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
+    - [Creating new EndpointHandler and EndpointMiddleware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
     - [Composition](#composition)
     - [Continue vs. Return](#continue-vs-return)
 - [Basics](#basics)
@@ -30,11 +30,22 @@ An in depth functional reference to all of Oxpecker's default features.
     - [HTTP Status Codes](#http-status-codes)
     - [Routing](#routing)
     - [Model Binding](#model-binding)
+      - [Binding JSON](#binding-json)
+      - [Binding Forms](#binding-forms)
+      - [Binding Query Strings](#binding-query-strings)
     - [File Upload](#file-upload)
     - [Authentication and Authorization](#authentication-and-authorization)
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
+      - [Writing Bytes](#writing-bytes)
+      - [Writing Text](#writing-text)
+      - [Writing JSON](#writing-json)
+      - [Writing IResult](#writing-iresult)
+      - [Writing HTML strings](#writing-html-strings)
+      - [Writing HTML views](#writing-html-views)
     - [Streaming](#streaming)
+    - [Redirection](#redirection)
+- [Testing](#testing)
 
 ## Fundamentals
 
@@ -218,7 +229,7 @@ routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
 #### Multi-route composition
 
-Sometimes you want to compose some generic handler or middleware not only with one route, buth with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
+Sometimes you want to compose some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
 
 ```fsharp
 
@@ -648,16 +659,16 @@ The `routef` http handler takes two parameters - a format string and an `Endpoin
 
 The format string supports the following format chars:
 
-| Format Char | Type                            |
-| ----------- |---------------------------------|
-| `%b` | `bool`                          |
-| `%c` | `char`                          |
-| `%s` | `string`                        |
-| `%i` | `int`                           |
-| `%d` | `int64`                         |
-| `%f` | `float`/`double`                |
-| `%u` | `uint64`                        |
-| `%O` | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+| Format Char | Type                                                                                                                    |
+|-------------|-------------------------------------------------------------------------------------------------------------------------|
+| `%b`        | `bool`                                                                                                                  |
+| `%c`        | `char`                                                                                                                  |
+| `%s`        | `string`                                                                                                                |
+| `%i`        | `int`                                                                                                                   |
+| `%d`        | `int64`                                                                                                                 |
+| `%f`        | `float`/`double`                                                                                                        |
+| `%u`        | `uint64`                                                                                                                |
+| `%O`        | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
 
 #### subRoute
 
@@ -763,7 +774,7 @@ Both, the `HttpContext` extension method as well as the `EndpointHandler` functi
 
 Please note that in order for the model binding to work the record type must be decorated with the `[<CLIMutable>]` attribute, which will make sure that the type will have a parameterless constructor.
 
-The underlying JSON serializer can be configured as a dependency during application startup (see [JSON](#json)).
+The underlying JSON serializer can be configured as a dependency during application startup (see [JSON](#writing-json)).
 
 #### Binding Forms
 
@@ -1142,12 +1153,12 @@ Alternatively Oxpecker exposes the `HttpContext` extension method `ValidatePreco
 
 The `Precondition` union type contains the following cases:
 
-| Case | Description and Recommended Action |
-| ---- | ---------------------------------- |
-| `NoConditionsSpecified` | No validation has taken place, because the client didn't send any conditional HTTP headers. Proceed with web request as normal. |
-| `ConditionFailed` | At least one condition couldn't be satisfied. It is advised to return a `412` status code back to the client (you can use the `HttpContext.PreconditionFailedResponse()` method for that purpose). |
-| `ResourceNotModified` | The resource hasn't changed since the last visit. The server can skip processing this request and return a `304` status code back to the client (you can use the `HttpContext.NotModifiedResponse()` method for that purpose). |
-| `AllConditionsMet` | All pre-conditions were satisfied. The server should continue processing the request as normal. |
+| Case                    | Description and Recommended Action                                                                                                                                                                                             |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `NoConditionsSpecified` | No validation has taken place, because the client didn't send any conditional HTTP headers. Proceed with web request as normal.                                                                                                |
+| `ConditionFailed`       | At least one condition couldn't be satisfied. It is advised to return a `412` status code back to the client (you can use the `HttpContext.PreconditionFailedResponse()` method for that purpose).                             |
+| `ResourceNotModified`   | The resource hasn't changed since the last visit. The server can skip processing this request and return a `304` status code back to the client (you can use the `HttpContext.NotModifiedResponse()` method for that purpose). |
+| `AllConditionsMet`      | All pre-conditions were satisfied. The server should continue processing the request as normal.                                                                                                                                |
 
 The `validatePreconditions` http handler as well as the `ValidatePreconditions` extension method will not only validate all conditional HTTP headers, but also set the required `ETag` and/or `Last-Modified` HTTP response headers according to the HTTP spec.
 
@@ -1306,7 +1317,7 @@ let myHandler : EndpointHandler =
 
 #### Writing HTML Strings
 
-The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing strings](#writing-strings) except that they will also set the `Content-Type` header to `text/html`:
+The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing text](#writing-text) except that they set the `Content-Type` header to `text/html`:
 
 ```fsharp
 let someHandler (dataObj: obj) : EndpointHandler =
@@ -1434,3 +1445,121 @@ let someHandler : EndpointHandler =
 
 All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`.
 
+### Redirection
+
+The `redirectTo (location: string) (permanent: bool)` endpoint handler can be used to redirect a client to a different location when handling an incoming web request:
+
+```fsharp
+let webApp = [
+    route "/new" <| text "Hello World"
+    route "/old" <| redirectTo "https://myserver.com/new" true
+]
+```
+
+Please note that if the `permanent` flag is set to `true` then the Oxpecker web application will send a `301` HTTP status code to browsers which will tell them that the redirection is permanent. This often leads to browsers cache the information and not hit the deprecated URL a second time any more. If this is not desired then please set `permanent` to `false` (`302` HTTP status code) in order to guarantee that browsers will continue hitting the old URL before redirecting to the (temporary) new one.
+
+### Response Caching
+
+ASP.NET Core comes with a standard [Response Caching Middleware](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/middleware) which works out of the box with Oxpecker.
+
+If you are not already using one of the two ASP.NET Core meta packages (`Microsoft.AspNetCore.App` or `Microsoft.AspNetCore.All`) then you will have to add an additional reference to the [Microsoft.AspNetCore.ResponseCaching](https://www.nuget.org/packages/Microsoft.AspNetCore.ResponseCaching/) NuGet package.
+
+After adding the NuGet package you need to register the response caching middleware inside your application's startup code before registering Oxpecker:
+
+```fsharp
+let configureServices (services : IServiceCollection) =
+    services
+        .AddResponseCaching() // <-- Here the order doesn't matter
+        .AddOxpecker()         // This is just registering dependencies
+    |> ignore
+
+let configureApp (app : IApplicationBuilder) =
+    app
+       .UseStaticFiles()     // Optional if you use static files
+       .UseAuthentication()  // Optional if you use authentication
+       .UseResponseCaching() // <-- Before UseOxpecker webApp
+       .UseOxpecker webApp
+```
+
+After setting up the [ASP.NET Core response caching middleware](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/middleware#configuration) you can use Oxpecker's response caching http handlers to add response caching to your routes:
+
+```fsharp
+// A test handler which generates a new GUID on every request
+let generateGuidHandler : EndpointHandler =
+    fun ctx -> ctx.WriteText(Guid.NewGuid().ToString())
+
+let cacheHeader = Some <| CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(30), Public = true)
+
+let webApp = [
+    route "/route1" (responseCaching cacheHeader None None >=> generateGuidHandler)
+    route "/route2" (noResponseCaching >=> generateGuidHandler)
+]
+```
+
+Requests to `/route1` can be cached for up to 30 seconds whilst requests to `/route2` have response caching completely disabled.
+
+*Note: if you test the above code with [Postman](https://www.getpostman.com/) then make sure you [disable the No-Cache feature](https://www.getpostman.com/docs/v6/postman/launching_postman/settings) in Postman in order to test the correct caching behaviour.*
+
+Oxpecker offers in total 2 endpoint handlers which can be used to configure response caching for an endpoint.
+
+In the above example we used the `noResponseCaching` endpoint handler to completely disable response caching on the client and on any proxy server. The `noResponseCaching` endpoint handler will send the following HTTP headers in the response:
+
+```
+Cache-Control: no-store, no-cache
+Pragma: no-cache
+Expires: -1
+```
+
+The `responseCaching` endpoint handler will enable response caching on the client and/or on proxy servers. The
+`CacheControlHeaderValue` object will control the `Cache-Control` directive.
+
+`Public = true` means that not only the client is allowed to cache a response for the given cache duration, but also any intermediary proxy server as well as the ASP.NET Core middleware. This is useful for HTTP GET/HEAD endpoints which do not hold any user specific data, authentication data or any cookies and where the response data doesn't change frequently.
+
+`Public = false` which means that only the end client is allowed to store the response for the given cache duration. Proxy servers and the ASP.NET Core response caching middleware must not cache the response.
+
+The `responseCaching` endpoint handler has two additional parameters: `vary` and `varyByQueryKeys`.
+
+#### Vary
+
+The `vary` parameter specifies which HTTP request headers must be respected to vary the cached response. For example if an endpoint returns a different response (`Content-Type`) based on the client's `Accept` header (content negotiation) then the `Accept` header must also be considered when returning a response from the cache. The same applies if the web server has response compression enabled. If a response varies based on the client's accepted compression algorithm then the cache must also respect the client's `Accept-Encoding` HTTP header when serving a response from the cache.
+
+```fsharp
+let cacheHeader = Some <| CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(30), Public = true)
+
+// Cache for 30 seconds without any vary headers
+publicResponseCaching cacheHeader None None
+
+// Cache for 30 seconds with Accept and Accept-Encoding as vary headers
+publicResponseCaching cacheHeader (Some "Accept, Accept-Encoding") None
+```
+
+#### VaryByQueryKeys
+
+The ASP.NET Core response caching middleware offers one more additional feature which is not part of the response's HTTP headers. By default, if a route is cacheable then the middleware will try to return a cached response even if the query parameters were different.
+
+For example if a request to `/foo/bar` has been cached, then the cached version will also be returned if a request is made to `/foo/bar?query1=a` or `/foo/bar?query1=a&query2=b`.
+
+Sometimes this is not desired and the `VaryByQueryKeys` feature lets the [middleware vary its cached responses based on a request's query keys](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/middleware?#varybyquerykeys).
+
+The generic `responseCaching` endpoint handler is the most basic response caching handler which can be used to configure custom response caching handlers as well as make use of the `VaryByQueryKeys` feature:
+
+```fsharp
+responseCaching
+    (Some (CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(30)))
+    (Some "Accept, Accept-Encoding")
+    (Some [| "query1"; "query2" |])
+```
+
+The first parameter is of type [CacheControlHeaderValue](https://learn.microsoft.com/en-us/dotnet/api/system.net.http.headers.cachecontrolheadervalue).
+
+The second parameter is an `string option` which defines the `vary` parameter.
+
+The third and last parameter is a `string[] option` which defines an optional list of query parameter values which must be used to vary a cached response by the ASP.NET Core response caching middleware. Please be aware that this feature only applies to the ASP.NET Core response caching middleware and will not be respected by any intermediate proxy servers.
+
+### Response Compression
+
+ASP.NET Core has its own [Response Compression Middleware](https://learn.microsoft.com/en-us/aspnet/core/performance/response-compression) which works out of the box with Oxpecker. There's no additional functionality or http handlers required in order to make it work with Oxpecker web applications.
+
+## Testing
+
+Integration testing of an Oxpecker application follows the concept of [ASP.NET Core testing](https://learn.microsoft.com/en-us/aspnet/core/test/middleware). You can check out the examples of tests in this repository itself: [Oxpecker.Tests](https://github.com/Lanayx/Oxpecker/tree/develop/tests/Oxpecker.Tests)

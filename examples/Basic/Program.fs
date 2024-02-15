@@ -8,6 +8,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker
 open Oxpecker.ViewEngine
+open Oxpecker.ViewEngine.Aria
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
@@ -33,7 +34,10 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 [<CLIMutable>]
 type MyModel = { Name: string; Age: int }
 let handler4 (a: MyModel) : EndpointHandler =
-    fun (ctx: HttpContext) -> ctx.WriteJsonChunked { a with Name = a.Name + "!" }
+    fun (ctx: HttpContext) ->
+        task {
+            return! ctx.WriteJsonChunked { a with Name = a.Name + "!" }
+        }
 
 let handler5 (test1: string) (test2: string) (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -144,12 +148,11 @@ let endpoints = [
     subRoute "/auth/{lang}" [ route "/" handler11 ]
 ]
 
-
 let errorView errorCode (errorText: string) =
     html() {
         body(style = "width: 800px; margin: 0 auto") {
             h1(style = "text-align: center; color: red") { raw $"Error <i>%d{errorCode}</i>" }
-            p() { errorText }
+            p(ariaErrorMessage = "err1") { errorText }
         }
     }
 
