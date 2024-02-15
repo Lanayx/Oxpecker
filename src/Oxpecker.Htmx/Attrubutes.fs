@@ -77,14 +77,3 @@ module AdditionalAttributes =
             this.attr("hx-sync", value) |> ignore
         member this.hxValidate with set value =
             this.attr("hx-validate", if value then "true" else "false") |> ignore
-
-module Test =
-
-    let test () =
-
-        let z =
-            div(hxGet = "/", hxDisable = true, hxHistoryElt = true).hxOn("clicked", "alert!")
-                {
-                "sdf"
-            }
-        z
