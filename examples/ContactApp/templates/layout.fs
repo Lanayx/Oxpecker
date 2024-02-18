@@ -5,12 +5,11 @@ open Oxpecker.ViewEngine
 let html (content: HtmlElement) =
     html(lang="") {
         head() {
-            //title() { "Contact App" }
+            title() { "Contact App" }
             script()
         }
         body(style = "width: 800px; margin: 0 auto") {
-            //main() {
-            div() {
+            main() {
                 header() {
                     h1() {
                         span(style="text-transform:uppercase;") { "contacts.app" }
