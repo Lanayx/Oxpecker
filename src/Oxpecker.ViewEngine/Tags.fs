@@ -9,6 +9,8 @@ module Tags =
         inherit HtmlElement("head")
     type body() =
         inherit HtmlElement("body")
+    type title() =
+        inherit HtmlElement("title")
     type div() =
         inherit HtmlElement("div")
     type article() =
@@ -19,6 +21,8 @@ module Tags =
         inherit HtmlElement("header")
     type footer() =
         inherit HtmlElement("footer")
+    type main() =
+        inherit HtmlElement("main")
     type h1() =
         inherit HtmlElement("h1")
     type h2() =
@@ -71,6 +75,32 @@ module Tags =
         inherit HtmlElement("u")
     type s() =
         inherit HtmlElement("s")
+    type noscript() =
+        inherit HtmlElement("noscript")
+    type code() =
+        inherit HtmlElement("code")
+    type pre() =
+        inherit HtmlElement("pre")
+    type blockquote() =
+        inherit HtmlElement("blockquote")
+    type cite() =
+        inherit HtmlElement("cite")
+    type q() =
+        inherit HtmlElement("q")
+    type address() =
+        inherit HtmlElement("address")
+    type del() =
+        inherit HtmlElement("del")
+    type ins() =
+        inherit HtmlElement("ins")
+    type abbr() =
+        inherit HtmlElement("abbr")
+    type dfn() =
+        inherit HtmlElement("dfn")
+    type sub() =
+        inherit HtmlElement("sub")
+    type sup() =
+        inherit HtmlElement("sup")
 
     type br() =
         inherit HtmlElement(HtmlElementType.VoidNode "br")
@@ -83,6 +113,15 @@ module Tags =
             with set value = this.attr("href", value) |> ignore
         member this.rel
             with set value = this.attr("rel", value) |> ignore
+        member this.target
+            with set value = this.attr("target", value) |> ignore
+        member this.download
+            with set value = this.attr("download", value) |> ignore
+
+    type base'() =
+        inherit HtmlElement(HtmlElementType.VoidNode "base")
+        member this.href
+            with set value = this.attr("href", value) |> ignore
         member this.target
             with set value = this.attr("target", value) |> ignore
 
@@ -195,6 +234,15 @@ module Tags =
         member this.alt
             with set value = this.attr("alt", value) |> ignore
 
+    type output() =
+        inherit HtmlElement("output")
+        member this.for'
+            with set value = this.attr("for", value) |> ignore
+        member this.form
+            with set value = this.attr("form", value) |> ignore
+        member this.name
+            with set value = this.attr("name", value) |> ignore
+
     type textarea() =
         inherit HtmlElement("textarea")
         member this.name
@@ -252,6 +300,13 @@ module Tags =
             with set value = this.attr("value", value) |> ignore
         member this.selected
             with set value = this.attr("selected", value) |> ignore
+        member this.disabled
+            with set value = this.attr("disabled", value) |> ignore
+
+    type optgroup() =
+        inherit HtmlElement("optgroup")
+        member this.label
+            with set value = this.attr("label", value) |> ignore
         member this.disabled
             with set value = this.attr("disabled", value) |> ignore
 
@@ -359,3 +414,54 @@ module Tags =
             with set value = this.attr("name", value) |> ignore
         member this.value
             with set value = this.attr("value", value) |> ignore
+
+    type data() =
+        inherit HtmlElement("data")
+        member this.value
+            with set value = this.attr("value", value) |> ignore
+
+    type time() =
+        inherit HtmlElement("time")
+        member this.datetime
+            with set value = this.attr("datetime", value) |> ignore
+
+    type progress() =
+        inherit HtmlElement("progress")
+        member this.value
+            with set value = this.attr("value", value) |> ignore
+        member this.max
+            with set value = this.attr("max", value) |> ignore
+
+    type meter() =
+        inherit HtmlElement("meter")
+        member this.value
+            with set value = this.attr("value", value) |> ignore
+        member this.min
+            with set value = this.attr("min", value) |> ignore
+        member this.max
+            with set value = this.attr("max", value) |> ignore
+        member this.low
+            with set value = this.attr("low", value) |> ignore
+        member this.high
+            with set value = this.attr("high", value) |> ignore
+        member this.optimum
+            with set value = this.attr("optimum", value) |> ignore
+
+    type details() =
+        inherit HtmlElement("details")
+        member this.open'
+            with set value = this.attr("open", value) |> ignore
+
+    type summary() =
+        inherit HtmlElement("summary")
+
+    type dialog() =
+        inherit HtmlElement("dialog")
+        member this.open'
+            with set value = this.attr("open", value) |> ignore
+
+    type menu() =
+        inherit HtmlElement("menu")
+
+    type datalist() =
+        inherit HtmlElement("datalist")

@@ -16,9 +16,9 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.3.0</Version>
-        <PackageVersion>0.3.0</PackageVersion>
-        <PackageReleaseNotes>Aria attributes support</PackageReleaseNotes>
+        <Version>0.3.1</Version>
+        <PackageVersion>0.3.1</PackageVersion>
+        <PackageReleaseNotes>More html tags added</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
