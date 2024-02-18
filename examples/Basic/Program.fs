@@ -8,6 +8,7 @@ open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker
 open Oxpecker.ViewEngine
+open Oxpecker.ViewEngine.Aria
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
@@ -147,12 +148,11 @@ let endpoints = [
     subRoute "/auth/{lang}" [ route "/" handler11 ]
 ]
 
-
 let errorView errorCode (errorText: string) =
     html() {
         body(style = "width: 800px; margin: 0 auto") {
             h1(style = "text-align: center; color: red") { raw $"Error <i>%d{errorCode}</i>" }
-            p() { errorText }
+            p(ariaErrorMessage = "err1") { errorText }
         }
     }
 

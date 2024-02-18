@@ -1,6 +1,7 @@
 module Tests
 
 open Oxpecker.ViewEngine
+open Oxpecker.ViewEngine.Aria
 open Xunit
 open FsUnitTyped
 
@@ -51,3 +52,17 @@ let ``Encode test`` () =
     result
     |> Render.toString
     |> shouldEqual """<p id="&lt;br&gt;"><hr><span>&lt;hr&gt;</span></p>"""
+
+[<Fact>]
+let ``Aria test`` () =
+    let result =
+        span(
+            role="checkbox",
+            id="checkBoxInput",
+            ariaChecked="false",
+            tabindex=0,
+            ariaLabelledBy="chk15-label"
+        )
+    result
+    |> Render.toString
+    |> shouldEqual """<span role="checkbox" id="checkBoxInput" aria-checked="false" tabindex="0" aria-labelledby="chk15-label"></span>"""

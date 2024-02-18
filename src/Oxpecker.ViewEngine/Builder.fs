@@ -45,6 +45,8 @@ module Builder =
             with set value = this.attr("lang", value) |> ignore
         member this.dir
             with set value = this.attr("dir", value) |> ignore
+        member this.tabindex
+            with set (value: int) = this.attr("tabindex", string value) |> ignore
 
         member this.Render(tw: TextWriter) : unit =
             let inline handleSingleTag (tagName: string) =

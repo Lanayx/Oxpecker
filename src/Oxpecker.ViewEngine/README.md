@@ -39,6 +39,7 @@ let mainView (model: Person) =
 - [Event handlers](#event-handlers)
 - [Html escaping](#html-escaping)
 - [Rendering](#rendering)
+- [ARIA](#aria)
 
 ### HtmlElement
 
@@ -123,3 +124,19 @@ There are several functions to render `HtmlElement` (after opening Oxpecker.View
 - **Render.toString** will render to standard .NET UTF16 string
 - **Render.toBytes** will render to UTF8-encoded byte array
 - **Render.toHtmlDocBytes** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+
+### Aria
+
+To enable ARIA attributes support you need to open `Aria` module:
+
+```fsharp
+open Oxpecker.ViewEngine.Aria
+
+let x = span(
+    role="checkbox",
+    id="checkBoxInput",
+    ariaChecked="false",
+    tabindex=0,
+    ariaLabelledBy="chk15-label"
+)
+```
