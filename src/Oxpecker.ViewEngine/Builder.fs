@@ -77,12 +77,12 @@ module Builder =
             | HtmlElementType.VoidNode tagName ->
                 renderStartTag(tagName)
             | HtmlElementType.NormalNode tagName ->
-                if isNotNull tagName then
+                if isNull tagName then
+                    renderChildren()
+                else
                     renderStartTag(tagName)
                     renderChildren()
                     renderEndTag(tagName)
-                else
-                    renderChildren()
 
         member this.AddChild(element: HtmlElement) =
             children.Enqueue(element)
