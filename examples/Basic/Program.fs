@@ -34,10 +34,7 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 [<CLIMutable>]
 type MyModel = { Name: string; Age: int }
 let handler4 (a: MyModel) : EndpointHandler =
-    fun (ctx: HttpContext) ->
-        task {
-            return! ctx.WriteJsonChunked { a with Name = a.Name + "!" }
-        }
+    fun (ctx: HttpContext) -> task { return! ctx.WriteJsonChunked { a with Name = a.Name + "!" } }
 
 let handler5 (test1: string) (test2: string) (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) ->

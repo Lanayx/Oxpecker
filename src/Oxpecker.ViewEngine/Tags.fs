@@ -107,9 +107,21 @@ module Tags =
         inherit HtmlElement("sup")
 
     type br() =
-        inherit HtmlElement(HtmlElementType.VoidNode "br")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "br"
+                }
+            )
     type hr() =
-        inherit HtmlElement(HtmlElementType.VoidNode "hr")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "hr"
+                }
+            )
 
     type a() =
         inherit HtmlElement("a")
@@ -123,14 +135,26 @@ module Tags =
             with set value = this.attr("download", value) |> ignore
 
     type base'() =
-        inherit HtmlElement(HtmlElementType.VoidNode "base")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "base"
+                }
+            )
         member this.href
             with set value = this.attr("href", value) |> ignore
         member this.target
             with set value = this.attr("target", value) |> ignore
 
     type img() =
-        inherit HtmlElement(HtmlElementType.VoidNode "img")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "img"
+                }
+            )
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.alt
@@ -171,7 +195,13 @@ module Tags =
             with set value = this.attr("crossorigin", value) |> ignore
 
     type link() =
-        inherit HtmlElement(HtmlElementType.VoidNode "link")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "link"
+                }
+            )
         member this.rel
             with set value = this.attr("rel", value) |> ignore
         member this.href
@@ -191,7 +221,13 @@ module Tags =
             with set value = this.attr("xmlns", value) |> ignore
 
     type meta() =
-        inherit HtmlElement(HtmlElementType.VoidNode "meta")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "meta"
+                }
+            )
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.content
@@ -202,7 +238,13 @@ module Tags =
             with set value = this.attr("http-equiv", value) |> ignore
 
     type input() =
-        inherit HtmlElement(HtmlElementType.VoidNode "input")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "input"
+                }
+            )
         member this.type'
             with set value = this.attr("type", value) |> ignore
         member this.name
@@ -389,9 +431,9 @@ module Tags =
         member this.height
             with set (value: int) = this.attr("height", string value) |> ignore
         member this.allowfullscreen
-            with set (value: bool) = this.attr("allowfullscreen", if value then "true" else "false") |> ignore
+            with set (value: bool) = this.attr("allowfullscreen", (if value then "true" else "false")) |> ignore
         member this.allowpaymentrequest
-            with set (value: bool) = this.attr("allowpaymentrequest", if value then "true" else "false") |> ignore
+            with set (value: bool) = this.attr("allowpaymentrequest", (if value then "true" else "false")) |> ignore
         member this.loading
             with set value = this.attr("loading", value) |> ignore
         member this.referrerpolicy
@@ -450,7 +492,13 @@ module Tags =
                     this.attr("muted", "") |> ignore
 
     type source() =
-        inherit HtmlElement(HtmlElementType.VoidNode "source")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "source"
+                }
+            )
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.type'
@@ -481,7 +529,13 @@ module Tags =
             with set (value: int) = this.attr("height", string value) |> ignore
 
     type param() =
-        inherit HtmlElement(HtmlElementType.VoidNode "param")
+        inherit
+            HtmlElement(
+                {
+                    NodeType = NodeType.VoidNode
+                    Value = "param"
+                }
+            )
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.value
