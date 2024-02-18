@@ -6,7 +6,6 @@ open System.Text.Encodings.Web
 [<AutoOpen>]
 module Builder =
 
-    open System.Text
     open Tools
 
     [<Struct>]
@@ -22,6 +21,7 @@ module Builder =
         | NormalNode of nn: string
         | VoidNode of vn: string
         | TextNode of tn: TextNodeType
+        | OnlyChildrenNode
     and [<Struct>] TextNodeType =
         | RegularTextNode of reg: string
         | RawTextNode of raw: string
@@ -60,21 +60,26 @@ module Builder =
                     HtmlEncoder.Default.Encode(tw, attr.Value)
                     tw.Write('"')
                 tw.Write('>')
+            let inline renderChildren() =
+                while isNotNull children.Head do
+                    let child = children.Dequeue()
+                    child.Render(tw)
 
             match elemType with
             | HtmlElementType.TextNode textNodeType ->
                 match textNodeType with
                 | RawTextNode content -> tw.Write(content)
                 | RegularTextNode content -> HtmlEncoder.Default.Encode(tw, content)
-            | HtmlElementType.VoidNode tagName -> handleSingleTag(tagName)
+            | HtmlElementType.VoidNode tagName ->
+                handleSingleTag(tagName)
             | HtmlElementType.NormalNode tagName ->
                 handleSingleTag(tagName)
-                while isNotNull children.Head do
-                    let child = children.Dequeue()
-                    child.Render(tw)
+                renderChildren()
                 tw.Write("</")
                 tw.Write(tagName)
                 tw.Write('>')
+            | HtmlElementType.OnlyChildrenNode ->
+                renderChildren()
 
         member this.AddChild(element: HtmlElement) =
             children.Enqueue(element)

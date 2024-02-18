@@ -5,6 +5,10 @@ module Tags =
 
     open Oxpecker.ViewEngine.Builder
 
+    /// Fragment (or template) node, only renders children, not itself
+    type __() =
+        inherit HtmlElement(HtmlElementType.OnlyChildrenNode)
+
     type head() =
         inherit HtmlElement("head")
     type body() =
