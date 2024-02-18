@@ -99,11 +99,11 @@ module Aria =
             this.attr("aria-setsize", string value) |> ignore
         member this.ariaSort with set value =
             this.attr("aria-sort", value) |> ignore
-        member this.ariaValueMax with set (value: int) =
-            this.attr("aria-valuemax", string value) |> ignore
-        member this.ariaValueMin with set (value: int) =
-            this.attr("aria-valuemin", string value) |> ignore
-        member this.ariaValueNow with set (value: int) =
-            this.attr("aria-valuenow", string value) |> ignore
+        member this.ariaValueMax with set value =
+            this.attr("aria-valuemax", value) |> ignore
+        member this.ariaValueMin with set value =
+            this.attr("aria-valuemin", value) |> ignore
+        member this.ariaValueNow with set value =
+            this.attr("aria-valuenow", value) |> ignore
         member this.ariaValueText with set value =
             this.attr("aria-valuetext", value) |> ignore

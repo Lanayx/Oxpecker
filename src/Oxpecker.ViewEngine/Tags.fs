@@ -250,7 +250,7 @@ module Tags =
         member this.minlength
             with set (value: int) = this.attr("minlength", string value) |> ignore
         member this.size
-            with set value = this.attr("size", value) |> ignore
+            with set (value: int) = this.attr("size", string value) |> ignore
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.width
@@ -500,26 +500,26 @@ module Tags =
     type progress() =
         inherit HtmlElement("progress")
         member this.value
-            with set (value: int) = this.attr("value", string value) |> ignore
+            with set value = this.attr("value", value) |> ignore
         member this.max
-            with set (value: int) = this.attr("max", string value) |> ignore
+            with set value = this.attr("max", value) |> ignore
 
     type meter() =
         inherit HtmlElement("meter")
         member this.form
             with set value = this.attr("form", value) |> ignore
         member this.value
-            with set (value: int) = this.attr("value", string value) |> ignore
+            with set value = this.attr("value", value) |> ignore
         member this.min
-            with set (value: int) = this.attr("min", string value) |> ignore
+            with set value = this.attr("min", value) |> ignore
         member this.max
-            with set (value: int) = this.attr("max", string value) |> ignore
+            with set value = this.attr("max", value) |> ignore
         member this.low
-            with set (value: int) = this.attr("low", string value) |> ignore
+            with set value = this.attr("low", value) |> ignore
         member this.high
-            with set (value: int) = this.attr("high", string value) |> ignore
+            with set value = this.attr("high", value) |> ignore
         member this.optimum
-            with set (value: int) = this.attr("optimum", string value) |> ignore
+            with set value = this.attr("optimum", value) |> ignore
 
     type details() =
         inherit HtmlElement("details")
