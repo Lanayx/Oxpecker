@@ -21,7 +21,7 @@ module Builder =
         | NormalNode of nn: string
         | VoidNode of vn: string
         | TextNode of tn: TextNodeType
-        | OnlyChildrenNode
+
     and [<Struct>] TextNodeType =
         | RegularTextNode of reg: string
         | RawTextNode of raw: string
@@ -49,7 +49,7 @@ module Builder =
             with set (value: int) = this.attr("tabindex", string value) |> ignore
 
         member this.Render(tw: TextWriter) : unit =
-            let inline handleSingleTag (tagName: string) =
+            let inline renderStartTag (tagName: string) =
                 tw.Write('<')
                 tw.Write(tagName)
                 while isNotNull attributes.Head do
@@ -64,6 +64,10 @@ module Builder =
                 while isNotNull children.Head do
                     let child = children.Dequeue()
                     child.Render(tw)
+            let inline renderEndTag (tagName: string) =
+                tw.Write("</")
+                tw.Write(tagName)
+                tw.Write('>')
 
             match elemType with
             | HtmlElementType.TextNode textNodeType ->
@@ -71,15 +75,14 @@ module Builder =
                 | RawTextNode content -> tw.Write(content)
                 | RegularTextNode content -> HtmlEncoder.Default.Encode(tw, content)
             | HtmlElementType.VoidNode tagName ->
-                handleSingleTag(tagName)
+                renderStartTag(tagName)
             | HtmlElementType.NormalNode tagName ->
-                handleSingleTag(tagName)
-                renderChildren()
-                tw.Write("</")
-                tw.Write(tagName)
-                tw.Write('>')
-            | HtmlElementType.OnlyChildrenNode ->
-                renderChildren()
+                if isNotNull tagName then
+                    renderStartTag(tagName)
+                    renderChildren()
+                    renderEndTag(tagName)
+                else
+                    renderChildren()
 
         member this.AddChild(element: HtmlElement) =
             children.Enqueue(element)

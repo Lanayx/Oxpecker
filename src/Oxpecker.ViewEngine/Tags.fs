@@ -7,7 +7,7 @@ module Tags =
 
     /// Fragment (or template) node, only renders children, not itself
     type __() =
-        inherit HtmlElement(HtmlElementType.OnlyChildrenNode)
+        inherit HtmlElement(null)
 
     type head() =
         inherit HtmlElement("head")
