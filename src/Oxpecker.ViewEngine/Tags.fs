@@ -136,9 +136,9 @@ module Tags =
         member this.alt
             with set value = this.attr("alt", value) |> ignore
         member this.width
-            with set value = this.attr("width", value) |> ignore
+            with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
-            with set value = this.attr("height", value) |> ignore
+            with set (value: int) = this.attr("height", string value) |> ignore
 
     type form() =
         inherit HtmlElement("form")
@@ -158,9 +158,17 @@ module Tags =
         member this.type'
             with set value = this.attr("type", value) |> ignore
         member this.async
-            with set value = this.attr("async", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("async", "") |> ignore
         member this.defer
-            with set value = this.attr("defer", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("defer", "") |> ignore
+        member this.integrity
+            with set value = this.attr("integrity", value) |> ignore
+        member this.crossorigin
+            with set value = this.attr("crossorigin", value) |> ignore
 
     type link() =
         inherit HtmlElement(HtmlElementType.VoidNode "link")
@@ -172,6 +180,10 @@ module Tags =
             with set value = this.attr("type", value) |> ignore
         member this.media
             with set value = this.attr("media", value) |> ignore
+        member this.as'
+            with set value = this.attr("as", value) |> ignore
+        member this.sizes
+            with set value = this.attr("sizes", value) |> ignore
 
     type html() =
         inherit HtmlElement("html")
@@ -200,9 +212,13 @@ module Tags =
         member this.placeholder
             with set value = this.attr("placeholder", value) |> ignore
         member this.required
-            with set value = this.attr("required", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("required", "") |> ignore
         member this.autofocus
-            with set value = this.attr("autofocus", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("autofocus", "") |> ignore
         member this.autocomplete
             with set value = this.attr("autocomplete", value) |> ignore
         member this.min
@@ -214,27 +230,33 @@ module Tags =
         member this.pattern
             with set value = this.attr("pattern", value) |> ignore
         member this.readonly
-            with set value = this.attr("readonly", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("readonly", "") |> ignore
         member this.disabled
-            with set value = this.attr("disabled", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
         member this.multiple
-            with set value = this.attr("multiple", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("multiple", "") |> ignore
         member this.accept
             with set value = this.attr("accept", value) |> ignore
         member this.list
             with set value = this.attr("list", value) |> ignore
         member this.maxlength
-            with set value = this.attr("maxlength", value) |> ignore
+            with set (value: int) = this.attr("maxlength", string value) |> ignore
         member this.minlength
-            with set value = this.attr("minlength", value) |> ignore
+            with set (value: int) = this.attr("minlength", string value) |> ignore
         member this.size
             with set value = this.attr("size", value) |> ignore
         member this.src
             with set value = this.attr("src", value) |> ignore
-        member this.height
-            with set value = this.attr("height", value) |> ignore
         member this.width
-            with set value = this.attr("width", value) |> ignore
+            with set (value: int) = this.attr("width", string value) |> ignore
+        member this.height
+            with set (value: int) = this.attr("height", string value) |> ignore
         member this.alt
             with set value = this.attr("alt", value) |> ignore
 
@@ -254,21 +276,29 @@ module Tags =
         member this.placeholder
             with set value = this.attr("placeholder", value) |> ignore
         member this.required
-            with set value = this.attr("required", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("required", "") |> ignore
         member this.autofocus
-            with set value = this.attr("autofocus", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("autofocus", "") |> ignore
         member this.readonly
-            with set value = this.attr("readonly", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("readonly", "") |> ignore
         member this.disabled
-            with set value = this.attr("disabled", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
         member this.rows
-            with set value = this.attr("rows", value) |> ignore
+            with set (value: int) = this.attr("rows", string value) |> ignore
         member this.cols
-            with set value = this.attr("cols", value) |> ignore
+            with set (value: int) = this.attr("cols", string value) |> ignore
         member this.wrap
             with set value = this.attr("wrap", value) |> ignore
         member this.maxlength
-            with set value = this.attr("maxlength", value) |> ignore
+            with set (value: int) = this.attr("maxlength", string value) |> ignore
 
     type button() =
         inherit HtmlElement("button")
@@ -279,40 +309,60 @@ module Tags =
         member this.value
             with set value = this.attr("value", value) |> ignore
         member this.disabled
-            with set value = this.attr("disabled", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
         member this.autofocus
-            with set value = this.attr("autofocus", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("autofocus", "") |> ignore
 
     type select() =
         inherit HtmlElement("select")
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.required
-            with set value = this.attr("required", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("required", "") |> ignore
         member this.autofocus
-            with set value = this.attr("autofocus", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("autofocus", "") |> ignore
         member this.disabled
-            with set value = this.attr("disabled", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
         member this.multiple
-            with set value = this.attr("multiple", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("multiple", "") |> ignore
         member this.size
-            with set value = this.attr("size", value) |> ignore
+            with set (value: int) = this.attr("size", string value) |> ignore
 
     type option() =
         inherit HtmlElement("option")
         member this.value
             with set value = this.attr("value", value) |> ignore
         member this.selected
-            with set value = this.attr("selected", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("selected", "") |> ignore
         member this.disabled
-            with set value = this.attr("disabled", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
+        member this.label
+            with set value = this.attr("label", value) |> ignore
 
     type optgroup() =
         inherit HtmlElement("optgroup")
         member this.label
             with set value = this.attr("label", value) |> ignore
         member this.disabled
-            with set value = this.attr("disabled", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
 
     type label() =
         inherit HtmlElement("label")
@@ -335,13 +385,13 @@ module Tags =
         member this.sandbox
             with set value = this.attr("sandbox", value) |> ignore
         member this.width
-            with set value = this.attr("width", value) |> ignore
+            with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
-            with set value = this.attr("height", value) |> ignore
+            with set (value: int) = this.attr("height", string value) |> ignore
         member this.allowfullscreen
-            with set value = this.attr("allowfullscreen", value) |> ignore
+            with set (value: bool) = this.attr("allowfullscreen", if value then "true" else "false") |> ignore
         member this.allowpaymentrequest
-            with set value = this.attr("allowpaymentrequest", value) |> ignore
+            with set (value: bool) = this.attr("allowpaymentrequest", if value then "true" else "false") |> ignore
         member this.loading
             with set value = this.attr("loading", value) |> ignore
         member this.referrerpolicy
@@ -356,30 +406,48 @@ module Tags =
         member this.poster
             with set value = this.attr("poster", value) |> ignore
         member this.autoplay
-            with set value = this.attr("autoplay", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("autoplay", "") |> ignore
         member this.controls
-            with set value = this.attr("controls", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("controls", "") |> ignore
         member this.loop
-            with set value = this.attr("loop", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("loop", "") |> ignore
         member this.muted
-            with set value = this.attr("muted", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("muted", "") |> ignore
         member this.width
-            with set value = this.attr("width", value) |> ignore
+            with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
-            with set value = this.attr("height", value) |> ignore
+            with set (value: int) = this.attr("height", string value) |> ignore
+        member this.preload
+            with set value = this.attr("preload", value) |> ignore
 
     type audio() =
         inherit HtmlElement("audio")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.autoplay
-            with set value = this.attr("autoplay", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("autoplay", "") |> ignore
         member this.controls
-            with set value = this.attr("controls", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("controls", "") |> ignore
         member this.loop
-            with set value = this.attr("loop", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("loop", "") |> ignore
         member this.muted
-            with set value = this.attr("muted", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("muted", "") |> ignore
 
     type source() =
         inherit HtmlElement(HtmlElementType.VoidNode "source")
@@ -397,9 +465,9 @@ module Tags =
     type canvas() =
         inherit HtmlElement("canvas")
         member this.width
-            with set value = this.attr("width", value) |> ignore
+            with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
-            with set value = this.attr("height", value) |> ignore
+            with set (value: int) = this.attr("height", string value) |> ignore
 
     type object'() =
         inherit HtmlElement("object")
@@ -408,9 +476,9 @@ module Tags =
         member this.type'
             with set value = this.attr("type", value) |> ignore
         member this.width
-            with set value = this.attr("width", value) |> ignore
+            with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
-            with set value = this.attr("height", value) |> ignore
+            with set (value: int) = this.attr("height", string value) |> ignore
 
     type param() =
         inherit HtmlElement(HtmlElementType.VoidNode "param")
@@ -432,29 +500,33 @@ module Tags =
     type progress() =
         inherit HtmlElement("progress")
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: int) = this.attr("value", string value) |> ignore
         member this.max
-            with set value = this.attr("max", value) |> ignore
+            with set (value: int) = this.attr("max", string value) |> ignore
 
     type meter() =
         inherit HtmlElement("meter")
+        member this.form
+            with set value = this.attr("form", value) |> ignore
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: int) = this.attr("value", string value) |> ignore
         member this.min
-            with set value = this.attr("min", value) |> ignore
+            with set (value: int) = this.attr("min", string value) |> ignore
         member this.max
-            with set value = this.attr("max", value) |> ignore
+            with set (value: int) = this.attr("max", string value) |> ignore
         member this.low
-            with set value = this.attr("low", value) |> ignore
+            with set (value: int) = this.attr("low", string value) |> ignore
         member this.high
-            with set value = this.attr("high", value) |> ignore
+            with set (value: int) = this.attr("high", string value) |> ignore
         member this.optimum
-            with set value = this.attr("optimum", value) |> ignore
+            with set (value: int) = this.attr("optimum", string value) |> ignore
 
     type details() =
         inherit HtmlElement("details")
         member this.open'
-            with set value = this.attr("open", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("open", "") |> ignore
 
     type summary() =
         inherit HtmlElement("summary")
@@ -462,7 +534,9 @@ module Tags =
     type dialog() =
         inherit HtmlElement("dialog")
         member this.open'
-            with set value = this.attr("open", value) |> ignore
+            with set (value: bool) =
+                if value then
+                    this.attr("open", "") |> ignore
 
     type menu() =
         inherit HtmlElement("menu")
