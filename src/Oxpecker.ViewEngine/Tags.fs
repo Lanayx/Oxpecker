@@ -597,3 +597,17 @@ module Tags =
 
     type datalist() =
         inherit HtmlElement("datalist")
+
+    type fieldset() =
+        inherit HtmlElement("fieldset")
+        member this.disabled
+            with set (value: bool) =
+                if value then
+                    this.attr("disabled", "") |> ignore
+        member this.form
+            with set value = this.attr("form", value) |> ignore
+        member this.name
+            with set value = this.attr("name", value) |> ignore
+
+    type legend() =
+        inherit HtmlElement("legend")
