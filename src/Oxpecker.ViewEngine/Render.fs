@@ -1,16 +1,17 @@
 ﻿module Oxpecker.ViewEngine.Render
 
 open System.Buffers
+open System.Globalization
 open System.IO
 open System.Text
 
 let inline private toStringWriter (view: HtmlElement) =
-    let sw = new StringWriter()
+    let sw = new StringWriter(Tools.stringBuilderPool.Get(), CultureInfo.InvariantCulture)
     view.Render sw
     sw
 
 let inline private toHtmlDocStringWriter (view: HtmlElement) =
-    let sw = new StringWriter()
+    let sw = new StringWriter(Tools.stringBuilderPool.Get(), CultureInfo.InvariantCulture)
     sw.WriteLine("<!DOCTYPE html>")
     view.Render sw
     sw
@@ -24,14 +25,20 @@ let inline private copyStringBuilderToBytes (sb: StringBuilder) =
 
 let toString (view: HtmlElement) =
     let sb = toStringWriter view
-    sb.ToString()
+    let result = sb.ToString()
+    Tools.stringBuilderPool.Return(sb.GetStringBuilder())
+    result
 
 let toBytes (view: HtmlElement) =
     use sw = toStringWriter view
     let sb = sw.GetStringBuilder()
-    copyStringBuilderToBytes sb
+    let result = copyStringBuilderToBytes sb
+    Tools.stringBuilderPool.Return(sb)
+    result
 
 let toHtmlDocBytes (view: HtmlElement) =
     use sw = toHtmlDocStringWriter view
     let sb = sw.GetStringBuilder()
-    copyStringBuilderToBytes sb
+    let result = copyStringBuilderToBytes sb
+    Tools.stringBuilderPool.Return(sb)
+    result

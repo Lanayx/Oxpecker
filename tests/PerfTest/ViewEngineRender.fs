@@ -46,8 +46,8 @@ type ViewEngineRender() =
     //
     // | Method             | Mean     | Error     | StdDev    | Gen0   | Allocated |
     // |------------------- |---------:|----------:|----------:|-------:|----------:|
-    // | RenderOxpeckerView | 1.618 us | 0.0209 us | 0.0196 us | 0.4807 |   1.97 KB |
-    // | RenderGiraffeView  | 1.287 us | 0.0250 us | 0.0445 us | 2.5234 |  10.32 KB |
+    // | RenderOxpeckerView | 1.404 us | 0.0165 us | 0.0154 us | 0.1335 |     560 B |
+    // | RenderGiraffeView  | 1.275 us | 0.0208 us | 0.0232 us | 2.5234 |   10568 B |
 
 
     [<Benchmark>]
