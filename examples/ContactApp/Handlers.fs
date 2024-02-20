@@ -39,7 +39,25 @@ let postNewContact: EndpointHandler =
                 return ctx.Response.Redirect("/contacts")
         }
 
+let postEditContact id: EndpointHandler =
+    fun ctx ->
+        task {
+            let! contact = ctx.BindForm<ContactDTO>()
+            let validatedContact = contact.Validate()
+            if validatedContact.errors.Count > 0 then
+                return! ctx.WriteHtmlView(edit.html { validatedContact with id = id })
+            else
+                let domainContact = validatedContact.ToDomain()
+                ContactService.update({domainContact with Id = id})
+                return ctx.Response.Redirect($"/contacts/{id}")
+        }
+
 let viewContact id: EndpointHandler =
     fun ctx ->
         let contact = ContactService.find id
         show.html contact |> ctx.WriteHtmlView
+
+let getEditContact id: EndpointHandler =
+    fun ctx ->
+        let contact = ContactService.find id |> ContactDTO.FromDomain
+        edit.html contact |> ctx.WriteHtmlView

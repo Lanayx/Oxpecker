@@ -11,6 +11,7 @@
         <Compile Include="templates\index.fs" />
         <Compile Include="templates\new.fs" />
         <Compile Include="templates\show.fs" />
+        <Compile Include="templates\edit.fs" />
         <Compile Include="ContactService.fs" />
         <Compile Include="Handlers.fs" />
         <Compile Include="Program.fs" />

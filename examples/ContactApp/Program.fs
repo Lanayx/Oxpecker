@@ -14,11 +14,13 @@ let endpoints = [
             route "/" getContacts
             route "/new" getNewContact
             routef "/{%i}" viewContact
+            routef "/{%i}/edit" getEditContact
         ]
     ]
     POST [
         subRoute "/contacts" [
             route "/new" postNewContact
+            routef "/{%i}/edit" postEditContact
         ]
     ]
 ]

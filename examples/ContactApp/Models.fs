@@ -33,3 +33,5 @@ type ContactDTO = {
         { this with errors = errors }
     member this.ToDomain() =
         { Id = this.id; First = this.first; Last = this.last; Phone = this.phone; Email = this.email }
+    static member FromDomain(contact: Contact) =
+        { id = contact.Id; first = contact.First; last = contact.Last; phone = contact.Phone; email = contact.Email; errors = dict [] }
