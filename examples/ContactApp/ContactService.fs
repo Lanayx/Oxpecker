@@ -28,3 +28,6 @@ let find id =
 let update (contact: Contact) =
     let index = contactDb.FindIndex(fun c -> c.Id = contact.Id)
     contactDb[index] <- contact
+
+let delete id =
+    contactDb.RemoveAll(fun c -> c.Id = id)

@@ -15,15 +15,16 @@ let getContacts: EndpointHandler =
             index.html "" result |> ctx.WriteHtmlView
 
 let getNewContact: EndpointHandler =
-    let newContact = {
-        id = 0
-        first = ""
-        last = ""
-        email = ""
-        phone = ""
-        errors = dict []
-    }
-    new'.html newContact |> htmlView
+    fun ctx ->
+        let newContact = {
+            id = 0
+            first = ""
+            last = ""
+            email = ""
+            phone = ""
+            errors = dict []
+        }
+        new'.html newContact |> ctx.WriteHtmlView
 
 let postNewContact: EndpointHandler =
     fun ctx ->
@@ -61,3 +62,10 @@ let getEditContact id: EndpointHandler =
     fun ctx ->
         let contact = ContactService.find id |> ContactDTO.FromDomain
         edit.html contact |> ctx.WriteHtmlView
+
+let postDeleteContact id: EndpointHandler =
+    fun ctx ->
+        task {
+            ContactService.delete id |> ignore
+            ctx.Response.Redirect("/contacts")
+        }
