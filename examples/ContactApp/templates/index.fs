@@ -3,7 +3,7 @@ open Oxpecker.ViewEngine
 open ContactApp.Models
 
 let html q (contacts: Contact seq) =
-    div() {
+    __() {
         form(action="/contacts", method="get") {
             label(for'="search") { "Search Term" }
             input(id="search", type'="search", name="q", value=q, style="margin: 0 5px")

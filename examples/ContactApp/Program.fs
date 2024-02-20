@@ -10,7 +10,15 @@ open ContactApp.Handlers
 let endpoints = [
     GET [
         route "/" <| redirectTo "/contacts" true
-        route "/contacts" getContacts
+        subRoute "/contacts" [
+            route "/" getContacts
+            route "/new" getNewContact
+        ]
+    ]
+    POST [
+        subRoute "/contacts" [
+            route "/new" postNewContact
+        ]
     ]
 ]
 

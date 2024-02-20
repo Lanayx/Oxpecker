@@ -15,3 +15,9 @@ let searchContact (search: string) =
 
 let all (): Contact seq =
     contactDb
+
+let add (contact: Contact) =
+    let newId = contactDb |> Seq.maxBy(fun c -> c.id) |> fun c -> c.id + 1
+    let newContact = { contact with id = newId }
+    contactDb.Add(newContact)
+    newContact
