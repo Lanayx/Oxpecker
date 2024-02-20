@@ -59,6 +59,7 @@ module Builder =
 
         member this.Render(tw: TextWriter) : unit =
             let inline renderStartTag (tagName: string) =
+                let oldAttributes = attributes
                 tw.Write('<')
                 tw.Write(tagName)
                 while isNotNull attributes.Head do
@@ -69,10 +70,13 @@ module Builder =
                     HtmlEncoder.Default.Encode(tw, attr.Value)
                     tw.Write('"')
                 tw.Write('>')
+                attributes <- oldAttributes
             let inline renderChildren () =
+                let oldChildren = children
                 while isNotNull children.Head do
                     let child = children.Dequeue()
                     child.Render(tw)
+                children <- oldChildren
             let inline renderEndTag (tagName: string) =
                 tw.Write("</")
                 tw.Write(tagName)
@@ -89,7 +93,9 @@ module Builder =
                     renderStartTag(elemType.Value)
                     renderChildren()
                     renderEndTag(elemType.Value)
-            | _ -> failwith "Invalid node type"
+            | _ ->
+                failwith "Invalid node type"
+
 
         member this.AddChild(element: HtmlElement) =
             children.Enqueue(element)

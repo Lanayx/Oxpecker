@@ -84,3 +84,12 @@ let ``Only children test`` () =
     result
     |> Render.toString
     |> shouldEqual """<div id="1">Hello</div><div id="2">World</div><div id="3">!</div>"""
+
+
+[<Fact>]
+let ``Double render works`` () =
+    let test = span(id = "test1") { "test2" }
+    let result1 = test |> Render.toString
+    let result2 = test |> Render.toString
+    result1 |> shouldEqual """<span id="test1">test2</span>"""
+    result2 |> shouldEqual """<span id="test1">test2</span>"""

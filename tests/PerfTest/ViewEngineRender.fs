@@ -44,10 +44,11 @@ type ViewEngineRender() =
     //   DefaultJob : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX2
     //
     //
-    // | Method             | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
-    // |------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
-    // | RenderOxpeckerView |   157.7 ns |  1.82 ns |  1.42 ns | 0.0763 |      - |     320 B |
-    // | RenderGiraffeView  | 1,220.5 ns | 15.05 ns | 13.34 ns | 2.5234 | 0.0019 |   10568 B |
+    // | Method             | Mean     | Error     | StdDev    | Gen0   | Gen1   | Allocated |
+    // |------------------- |---------:|----------:|----------:|-------:|-------:|----------:|
+    // | RenderOxpeckerView | 1.904 us | 0.0360 us | 0.0353 us | 0.4807 |      - |   1.97 KB |
+    // | RenderGiraffeView  | 1.275 us | 0.0246 us | 0.0242 us | 2.5234 | 0.0019 |  10.32 KB |
+
 
     [<Benchmark>]
     member this.RenderOxpeckerView() =
