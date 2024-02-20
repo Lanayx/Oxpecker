@@ -57,12 +57,30 @@ let ``Encode test`` () =
 let ``Aria test`` () =
     let result =
         span(
-            role="checkbox",
-            id="checkBoxInput",
-            ariaChecked="false",
-            tabindex=0,
-            ariaLabelledBy="chk15-label"
+            role = "checkbox",
+            id = "checkBoxInput",
+            ariaChecked = "false",
+            tabindex = 0,
+            ariaLabelledBy = "chk15-label"
         )
     result
     |> Render.toString
-    |> shouldEqual """<span role="checkbox" id="checkBoxInput" aria-checked="false" tabindex="0" aria-labelledby="chk15-label"></span>"""
+    |> shouldEqual
+        """<span role="checkbox" id="checkBoxInput" aria-checked="false" tabindex="0" aria-labelledby="chk15-label"></span>"""
+
+[<Fact>]
+let ``Only children test`` () =
+    let result =
+        __() {
+            div(id = "1") { "Hello" }
+            __() {
+                div(id = "2") { "World" }
+                div(id = "3") {
+                    __()
+                    "!"
+                }
+            }
+        }
+    result
+    |> Render.toString
+    |> shouldEqual """<div id="1">Hello</div><div id="2">World</div><div id="3">!</div>"""

@@ -40,6 +40,7 @@ let mainView (model: Person) =
 - [Html escaping](#html-escaping)
 - [Rendering](#rendering)
 - [ARIA](#aria)
+- [Fragments](#fragments)
 
 ### HtmlElement
 
@@ -140,3 +141,20 @@ let x = span(
     ariaLabelledBy="chk15-label"
 )
 ```
+
+### Fragments
+
+Sometimes you need to group several elements together without wrapping them in `div` or similar. You can use `__` special tag for that:
+
+```fsharp
+let onlyChildren = __() {
+    span() { "Some text" }
+    span() { "Some other text" }
+}
+
+let parent = div() {
+    onlyChildren
+}
+
+```
+
