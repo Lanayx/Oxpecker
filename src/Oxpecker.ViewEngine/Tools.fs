@@ -24,8 +24,3 @@ type CustomQueue<'T> =
         else
             this.Tail.Next <- item
             this.Tail <- item
-
-    member this.Dequeue() =
-        let item = this.Head
-        this.Head <- this.Head.Next
-        item.Value

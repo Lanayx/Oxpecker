@@ -59,24 +59,24 @@ module Builder =
 
         member this.Render(tw: TextWriter) : unit =
             let inline renderStartTag (tagName: string) =
-                let oldAttributes = attributes
                 tw.Write('<')
                 tw.Write(tagName)
-                while isNotNull attributes.Head do
-                    let attr = attributes.Dequeue()
+                let mutable next = attributes.Head
+                while isNotNull next do
+                    let attr = next.Value
                     tw.Write(' ')
                     tw.Write(attr.Name)
                     tw.Write("=\"")
                     HtmlEncoder.Default.Encode(tw, attr.Value)
                     tw.Write('"')
+                    next <- next.Next
                 tw.Write('>')
-                attributes <- oldAttributes
             let inline renderChildren () =
-                let oldChildren = children
-                while isNotNull children.Head do
-                    let child = children.Dequeue()
+                let mutable next = children.Head
+                while isNotNull next do
+                    let child = next.Value
                     child.Render(tw)
-                children <- oldChildren
+                    next <- next.Next
             let inline renderEndTag (tagName: string) =
                 tw.Write("</")
                 tw.Write(tagName)
