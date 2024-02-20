@@ -4,20 +4,23 @@ open System
 open ContactApp.Models
 
 let private contactDb = ResizeArray([
-    { id = 1; first =  "John"; last = "Smith"; email = "john@example.com"; phone = "123-456-7890" }
-    { id = 2; first =  "Dana"; last = "Crandith"; email = "dcran@example.com"; phone = "123-456-7890" }
-    { id = 3; first =  "Edith"; last = "Neutvaar"; email = "en@example.com"; phone = "123-456-7890" }
+    { Id = 1; First =  "John"; Last = "Smith"; Email = "john@example.com"; Phone = "123-456-7890" }
+    { Id = 2; First =  "Dana"; Last = "Crandith"; Email = "dcran@example.com"; Phone = "123-456-7890" }
+    { Id = 3; First =  "Edith"; Last = "Neutvaar"; Email = "en@example.com"; Phone = "123-456-7890" }
 ])
 
 let searchContact (search: string) =
-    contactDb |> Seq.filter(fun c -> c.first.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                     || c.last.Contains(search, StringComparison.OrdinalIgnoreCase))
+    contactDb |> Seq.filter(fun c -> c.First.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                     || c.Last.Contains(search, StringComparison.OrdinalIgnoreCase))
 
 let all (): Contact seq =
     contactDb
 
 let add (contact: Contact) =
-    let newId = contactDb |> Seq.maxBy(fun c -> c.id) |> fun c -> c.id + 1
-    let newContact = { contact with id = newId }
+    let newId = contactDb |> Seq.maxBy(fun c -> c.Id) |> fun c -> c.Id + 1
+    let newContact = { contact with Id = newId }
     contactDb.Add(newContact)
     newContact
+
+let find id =
+    contactDb.Find(fun c -> c.Id = id)

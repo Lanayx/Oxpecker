@@ -39,3 +39,7 @@ let postNewContact: EndpointHandler =
                 return ctx.Response.Redirect("/contacts")
         }
 
+let viewContact id: EndpointHandler =
+    fun ctx ->
+        let contact = ContactService.find id
+        show.html contact |> ctx.WriteHtmlView

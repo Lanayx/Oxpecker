@@ -4,11 +4,11 @@ open System.Collections.Generic
 
 
 type Contact = {
-    id: int
-    first: string
-    last: string
-    phone: string
-    email: string
+    Id: int
+    First: string
+    Last: string
+    Phone: string
+    Email: string
 }
 
 [<CLIMutable>]
@@ -32,4 +32,4 @@ type ContactDTO = {
         if String.IsNullOrEmpty(this.email) then errors.Add("email", "Email is required")
         { this with errors = errors }
     member this.ToDomain() =
-        { id = this.id; first = this.first; last = this.last; phone = this.phone; email = this.email }
+        { Id = this.id; First = this.first; Last = this.last; Phone = this.phone; Email = this.email }

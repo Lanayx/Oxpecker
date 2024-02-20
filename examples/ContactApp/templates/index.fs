@@ -18,13 +18,13 @@ let html q (contacts: Contact seq) =
             tbody() {
                 for contact in contacts do
                     tr() {
-                        td() { contact.first }
-                        td() { contact.last }
-                        td() { contact.phone }
-                        td() { contact.email }
+                        td() { contact.First }
+                        td() { contact.Last }
+                        td() { contact.Phone }
+                        td() { contact.Email }
                         td() {
-                            a(href= $"/contacts/{contact.id}/edit"){ "Edit" }
-                            a(href= $"/contacts/{contact.id}/edit"){ "View" }
+                            a(href= $"/contacts/{contact.Id}/edit"){ "Edit" }
+                            a(href= $"/contacts/{contact.Id}"){ "View" }
                         }
                     }
             }
