@@ -13,7 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="Oxpecker" Version="0.7.1" />
-      <PackageReference Include="Oxpecker.ViewEngine" Version="0.3.0" />
+      <PackageReference Include="Oxpecker.ViewEngine" Version="0.4.0" />
     </ItemGroup>
 
 </Project>
