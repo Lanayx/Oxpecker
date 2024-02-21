@@ -37,14 +37,16 @@ type ViewEngineBuild() =
 
     // BenchmarkDotNet v0.13.12, Windows 10
     // AMD Ryzen 7 2700X, 1 CPU, 16 logical and 8 physical cores
-    // .NET SDK 8.0.101
-    //   [Host]     : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2 DEBUG
-    //   DefaultJob : .NET 8.0.1 (8.0.123.58001), X64 RyuJI
-
+    // .NET SDK 8.0.200
+    //   [Host]     : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX2 DEBUG
+    //   DefaultJob : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX2
+    //
+    //
     // | Method            | Mean     | Error     | StdDev    | Gen0   | Allocated |
     // |------------------ |---------:|----------:|----------:|-------:|----------:|
-    // | BuildOxpeckerView | 1.442 us | 0.0155 us | 0.0145 us | 1.5049 |   6.15 KB |
-    // | BuildGiraffeView  | 1.609 us | 0.0111 us | 0.0098 us | 1.0338 |   4.23 KB |
+    // | BuildOxpeckerView | 1.443 us | 0.0284 us | 0.0292 us | 1.3638 |   5.57 KB |
+    // | BuildGiraffeView  | 1.661 us | 0.0332 us | 0.0341 us | 1.0338 |   4.23 KB |
+
 
 
     [<Benchmark>]

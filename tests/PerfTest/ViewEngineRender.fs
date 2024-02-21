@@ -39,15 +39,15 @@ type ViewEngineRender() =
 
     // BenchmarkDotNet v0.13.12, Windows 10
     // AMD Ryzen 7 2700X, 1 CPU, 16 logical and 8 physical cores
-    // .NET SDK 8.0.101
-    //   [Host]     : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2 DEBUG
-    //   DefaultJob : .NET 8.0.1 (8.0.123.58001), X64 RyuJI
-
-    // | Method             | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
-    // |------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
-    // | RenderOxpeckerView |   141.9 ns |  0.98 ns |  0.87 ns | 0.0763 |      - |     320 B |
-    // | RenderGiraffeView  | 1,217.4 ns | 14.39 ns | 12.76 ns | 2.5234 | 0.0019 |   10568 B |
-
+    // .NET SDK 8.0.200
+    //   [Host]     : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX2 DEBUG
+    //   DefaultJob : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX2
+    //
+    //
+    // | Method             | Mean       | Error    | StdDev  | Gen0   | Gen1   | Allocated |
+    // |------------------- |-----------:|---------:|--------:|-------:|-------:|----------:|
+    // | RenderOxpeckerView |   766.2 ns |  6.15 ns | 5.75 ns | 0.1202 |      - |     504 B |
+    // | RenderGiraffeView  | 1,237.7 ns | 10.67 ns | 9.98 ns | 2.5234 | 0.0019 |   10568 B |
 
 
     [<Benchmark>]

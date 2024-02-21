@@ -1,12 +1,20 @@
 ﻿namespace Oxpecker.ViewEngine
 
-open System.IO
-open System.Text.Encodings.Web
+open System.Text
+
+module NodeType =
+    [<Literal>]
+    let NormalNode = 0uy
+    [<Literal>]
+    let VoidNode = 1uy
+    [<Literal>]
+    let RegularTextNode = 2uy
+    [<Literal>]
+    let RawTextNode = 3uy
 
 [<AutoOpen>]
 module Builder =
 
-    open System.Text
     open Tools
 
     [<Struct>]
@@ -18,13 +26,7 @@ module Builder =
     type HtmlAttribute = { Name: string; Value: string }
 
     [<Struct>]
-    type HtmlElementType =
-        | NormalNode of nn: string
-        | VoidNode of vn: string
-        | TextNode of tn: TextNodeType
-    and [<Struct>] TextNodeType =
-        | RegularTextNode of reg: string
-        | RawTextNode of raw: string
+    type HtmlElementType = { NodeType: byte; Value: string }
 
     type HtmlElementFun = HtmlElement -> unit
 
@@ -32,7 +34,13 @@ module Builder =
         let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
         let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
 
-        new(tagName: string) = HtmlElement(HtmlElementType.NormalNode(tagName))
+        new(tagName: string) =
+            HtmlElement(
+                {
+                    NodeType = NodeType.NormalNode
+                    Value = tagName
+                }
+            )
 
         // global attributes
         member this.id
@@ -48,33 +56,43 @@ module Builder =
         member this.tabindex
             with set (value: int) = this.attr("tabindex", string value) |> ignore
 
-        member this.Render(tw: TextWriter) : unit =
-            let inline handleSingleTag (tagName: string) =
-                tw.Write('<')
-                tw.Write(tagName)
-                while isNotNull attributes.Head do
-                    let attr = attributes.Dequeue()
-                    tw.Write(' ')
-                    tw.Write(attr.Name)
-                    tw.Write("=\"")
-                    HtmlEncoder.Default.Encode(tw, attr.Value)
-                    tw.Write('"')
-                tw.Write('>')
+        member this.Render(sb: StringBuilder) : unit =
+            let inline renderStartTag (tagName: string) =
+                sb.Append('<').Append(tagName) |> ignore
+                let mutable next = attributes.Head
+                while isNotNull next do
+                    let attr = next.Value
+                    sb
+                        .Append(' ')
+                        .Append(attr.Name)
+                        .Append("=\"")
+                        .Append(HtmlEncoder.Encode(attr.Value))
+                        .Append('"')
+                    |> ignore
+                    next <- next.Next
+                sb.Append('>') |> ignore
+            let inline renderChildren () =
+                let mutable next = children.Head
+                while isNotNull next do
+                    let child = next.Value
+                    child.Render(sb)
+                    next <- next.Next
+            let inline renderEndTag (tagName: string) =
+                sb.Append("</").Append(tagName).Append('>') |> ignore
 
-            match elemType with
-            | HtmlElementType.TextNode textNodeType ->
-                match textNodeType with
-                | RawTextNode content -> tw.Write(content)
-                | RegularTextNode content -> HtmlEncoder.Default.Encode(tw, content)
-            | HtmlElementType.VoidNode tagName -> handleSingleTag(tagName)
-            | HtmlElementType.NormalNode tagName ->
-                handleSingleTag(tagName)
-                while isNotNull children.Head do
-                    let child = children.Dequeue()
-                    child.Render(tw)
-                tw.Write("</")
-                tw.Write(tagName)
-                tw.Write('>')
+            match elemType.NodeType with
+            | NodeType.RawTextNode -> elemType.Value |> sb.Append |> ignore
+            | NodeType.RegularTextNode -> elemType.Value |> HtmlEncoder.Encode |> sb.Append |> ignore
+            | NodeType.VoidNode -> renderStartTag elemType.Value
+            | NodeType.NormalNode ->
+                if isNull elemType.Value then
+                    renderChildren()
+                else
+                    renderStartTag elemType.Value
+                    renderChildren()
+                    renderEndTag elemType.Value
+            | _ -> failwith "Invalid node type"
+
 
         member this.AddChild(element: HtmlElement) =
             children.Enqueue(element)
@@ -111,14 +129,25 @@ module Builder =
             fun builder -> builder.AddChild(element) |> ignore
 
         member inline _.Yield(text: string) : HtmlElementFun =
-            fun builder -> builder.AddChild(TextNode(RegularTextNode text)) |> ignore
+            fun builder ->
+                builder.AddChild(
+                    HtmlElement {
+                        NodeType = NodeType.RegularTextNode
+                        Value = text
+                    }
+                )
+                |> ignore
 
         member inline _.Yield(text: RawText) : HtmlElementFun =
-            fun builder -> builder.AddChild(TextNode(RawTextNode text.Text)) |> ignore
+            fun builder ->
+                builder.AddChild(
+                    HtmlElement {
+                        NodeType = NodeType.RawTextNode
+                        Value = text.Text
+                    }
+                )
+                |> ignore
 
         member inline this.Run([<InlineIfLambda>] runExpr: HtmlElementFun) =
             runExpr this
             this
-
-    and TextNode(text: TextNodeType) =
-        inherit HtmlElement(HtmlElementType.TextNode text)

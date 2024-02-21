@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
         <PackageId>Oxpecker</PackageId>
         <Title>Oxpecker</Title>
         <RootNamespace>Oxpecker</RootNamespace>
@@ -46,5 +46,4 @@
         <Compile Include="Routing.fs" />
         <Compile Include="Middleware.fs" />
     </ItemGroup>
-
 </Project>

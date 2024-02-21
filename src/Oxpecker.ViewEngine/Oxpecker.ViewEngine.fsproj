@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
         <PackageId>Oxpecker.ViewEngine</PackageId>
         <Title>Oxpecker.ViewEngine</Title>
         <RootNamespace>Oxpecker.ViewEngine</RootNamespace>
@@ -16,11 +16,10 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.3.0</Version>
-        <PackageVersion>0.3.0</PackageVersion>
-        <PackageReleaseNotes>Aria attributes support</PackageReleaseNotes>
+        <Version>0.4.0</Version>
+        <PackageVersion>0.4.0</PackageVersion>
+        <PackageReleaseNotes>HTML improvements</PackageReleaseNotes>
     </PropertyGroup>
-
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Tools.fs" />
@@ -28,5 +27,8 @@
         <Compile Include="Tags.fs" />
         <Compile Include="Aria.fs" />
         <Compile Include="Render.fs" />
+    </ItemGroup>    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.2" />
     </ItemGroup>
 </Project>
