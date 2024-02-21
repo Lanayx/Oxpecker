@@ -1,7 +1,6 @@
 ﻿namespace Oxpecker.ViewEngine
 
-open System.IO
-open System.Text.Encodings.Web
+open System.Text
 
 module NodeType =
     [<Literal>]
@@ -57,44 +56,42 @@ module Builder =
         member this.tabindex
             with set (value: int) = this.attr("tabindex", string value) |> ignore
 
-        member this.Render(tw: TextWriter) : unit =
+        member this.Render(sb: StringBuilder) : unit =
             let inline renderStartTag (tagName: string) =
-                tw.Write('<')
-                tw.Write(tagName)
+                sb.Append('<').Append(tagName) |> ignore
                 let mutable next = attributes.Head
                 while isNotNull next do
                     let attr = next.Value
-                    tw.Write(' ')
-                    tw.Write(attr.Name)
-                    tw.Write("=\"")
-                    HtmlEncoder.Default.Encode(tw, attr.Value)
-                    tw.Write('"')
+                    sb
+                        .Append(' ')
+                        .Append(attr.Name)
+                        .Append("=\"")
+                        .Append(HtmlEncoder.Encode(attr.Value))
+                        .Append('"')
+                    |> ignore
                     next <- next.Next
-                tw.Write('>')
+                sb.Append('>') |> ignore
             let inline renderChildren () =
                 let mutable next = children.Head
                 while isNotNull next do
                     let child = next.Value
-                    child.Render(tw)
+                    child.Render(sb)
                     next <- next.Next
             let inline renderEndTag (tagName: string) =
-                tw.Write("</")
-                tw.Write(tagName)
-                tw.Write('>')
+                sb.Append("</").Append(tagName).Append('>') |> ignore
 
             match elemType.NodeType with
-            | NodeType.RawTextNode -> tw.Write(elemType.Value)
-            | NodeType.RegularTextNode -> HtmlEncoder.Default.Encode(tw, elemType.Value)
-            | NodeType.VoidNode -> renderStartTag(elemType.Value)
+            | NodeType.RawTextNode -> elemType.Value |> sb.Append |> ignore
+            | NodeType.RegularTextNode -> elemType.Value |> HtmlEncoder.Encode |> sb.Append |> ignore
+            | NodeType.VoidNode -> renderStartTag elemType.Value
             | NodeType.NormalNode ->
                 if isNull elemType.Value then
                     renderChildren()
                 else
-                    renderStartTag(elemType.Value)
+                    renderStartTag elemType.Value
                     renderChildren()
-                    renderEndTag(elemType.Value)
-            | _ ->
-                failwith "Invalid node type"
+                    renderEndTag elemType.Value
+            | _ -> failwith "Invalid node type"
 
 
         member this.AddChild(element: HtmlElement) =
