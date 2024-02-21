@@ -1,19 +1,19 @@
 ﻿module Oxpecker.ViewEngine.Render
 
 open System.Buffers
-open System.IO
 open System.Text
+open Oxpecker.ViewEngine.Tools
 
-let inline private toStringWriter (view: HtmlElement) =
-    let sw = new StringWriter()
-    view.Render sw
-    sw
+let inline private toStringBuilder (view: HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    view.Render sb
+    sb
 
-let inline private toHtmlDocStringWriter (view: HtmlElement) =
-    let sw = new StringWriter()
-    sw.WriteLine("<!DOCTYPE html>")
-    view.Render sw
-    sw
+let inline private toHtmlDocStringBuilder (view: HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    sb.AppendLine("<!DOCTYPE html>") |> ignore
+    view.Render sb
+    sb
 
 let inline private copyStringBuilderToBytes (sb: StringBuilder) =
     let chArray = ArrayPool<char>.Shared.Rent(sb.Length)
@@ -22,16 +22,23 @@ let inline private copyStringBuilderToBytes (sb: StringBuilder) =
     ArrayPool<char>.Shared.Return(chArray)
     bytes
 
+/// Render HtmlElement to normal UTF16 string
 let toString (view: HtmlElement) =
-    let sb = toStringWriter view
-    sb.ToString()
+    let sb = toStringBuilder view
+    let result = sb.ToString()
+    StringBuilderPool.Return(sb)
+    result
 
+/// Render HTMLElement to UTF8 encoded bytes
 let toBytes (view: HtmlElement) =
-    use sw = toStringWriter view
-    let sb = sw.GetStringBuilder()
-    copyStringBuilderToBytes sb
+    let sb = toStringBuilder view
+    let result = copyStringBuilderToBytes sb
+    StringBuilderPool.Return(sb)
+    result
 
+/// Render HTMLElement to UTF8 encoded bytes with DOCTYPE prefix
 let toHtmlDocBytes (view: HtmlElement) =
-    use sw = toHtmlDocStringWriter view
-    let sb = sw.GetStringBuilder()
-    copyStringBuilderToBytes sb
+    let sb = toHtmlDocStringBuilder view
+    let result = copyStringBuilderToBytes sb
+    StringBuilderPool.Return(sb)
+    result

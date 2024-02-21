@@ -1,5 +1,12 @@
 ﻿module Oxpecker.ViewEngine.Tools
 
+open System.Text.Encodings.Web
+open Microsoft.Extensions.ObjectPool
+
+let internal StringBuilderPool =
+    DefaultObjectPoolProvider().CreateStringBuilderPool()
+let internal HtmlEncoder = HtmlEncoder.Default
+
 /// <summary>
 /// Checks if an object is not null.
 /// </summary>
@@ -24,8 +31,3 @@ type CustomQueue<'T> =
         else
             this.Tail.Next <- item
             this.Tail <- item
-
-    member this.Dequeue() =
-        let item = this.Head
-        this.Head <- this.Head.Next
-        item.Value
