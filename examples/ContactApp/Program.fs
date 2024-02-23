@@ -21,7 +21,6 @@ let endpoints = [
         subRoute "/contacts" [
             route "/new" postNewContact
             routef "/{%i}/edit" postEditContact
-
         ]
     ]
     DELETE [
@@ -64,6 +63,7 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
 
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder
+        .UseStaticFiles()
         .UseRouting()
         .Use(errorHandler)
         .UseOxpecker(endpoints)

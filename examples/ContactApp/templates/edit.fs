@@ -8,7 +8,7 @@ let html (contact: ContactDTO) =
         form(action= $"/contacts/{contact.id}/edit", method="post") {
             fieldset() {
                 legend() { "Contact Values" }
-                div(class'="table rows") {
+                div() {
                     p() {
                         label(for'="email") { "Email" }
                         input(name="email", id="email", type'="text", placeholder="Email", value=contact.email)

@@ -6,6 +6,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Content Include="wwwroot\site.css">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Compile Include="Models.fs" />
         <Compile Include="templates\layout.fs" />
         <Compile Include="templates\index.fs" />
