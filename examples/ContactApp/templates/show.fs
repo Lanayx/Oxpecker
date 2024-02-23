@@ -1,7 +1,8 @@
 ﻿module ContactApp.templates.show
 
-open ContactApp.Models
 open Oxpecker.ViewEngine
+open ContactApp.Models
+open ContactApp.templates.shared
 
 let html (contact: Contact) =
     __() {
