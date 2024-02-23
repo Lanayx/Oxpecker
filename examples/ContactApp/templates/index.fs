@@ -1,6 +1,7 @@
 ﻿module ContactApp.templates.index
 open Oxpecker.ViewEngine
 open ContactApp.Models
+open ContactApp.templates.shared
 
 let html q (contacts: Contact seq) =
     __() {

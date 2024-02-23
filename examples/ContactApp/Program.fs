@@ -15,6 +15,7 @@ let endpoints = [
             route "/new" getNewContact
             routef "/{%i}" viewContact
             routef "/{%i}/edit" getEditContact
+            routef "/{%i}/email" validateEmail
         ]
     ]
     POST [

@@ -1,4 +1,5 @@
 ﻿module ContactApp.Handlers
+open System.Threading.Tasks
 open ContactApp.templates
 open ContactApp.Models
 open Oxpecker
@@ -45,7 +46,7 @@ let postEditContact id: EndpointHandler =
         task {
             let! contact = ctx.BindForm<ContactDTO>()
             let validatedContact = contact.Validate()
-            if validatedContact.errors.Count > 0 then
+            if validatedContact.errors.Count = 0 then
                 return! ctx.WriteHtmlView(edit.html { validatedContact with id = id })
             else
                 let domainContact = validatedContact.ToDomain()
@@ -70,3 +71,22 @@ let postDeleteContact id: EndpointHandler =
             ctx.Response.Redirect("/contacts")
             ctx.SetStatusCode(303)
         }
+
+let validateEmail id: EndpointHandler =
+    fun ctx ->
+        match ctx.TryGetQueryStringValue("email") with
+        | Some email ->
+            let contact =
+                if id = 0 then
+                    { Id = 0; First = ""; Last = ""; Phone = ""; Email = email }
+                else
+                    let contact = ContactService.find id
+                    { contact with Email = email  }
+            if ContactService.validateEmail { contact with Email = email  } then
+                Task.CompletedTask
+            else
+                ctx.WriteText "Invalid email"
+        | None ->
+                Task.CompletedTask
+
+

@@ -31,3 +31,9 @@ let update (contact: Contact) =
 
 let delete id =
     contactDb.RemoveAll(fun c -> c.Id = id)
+
+let validateEmail (contact: Contact) =
+    let existingContact = contactDb |> Seq.tryFind(fun c -> c.Email = contact.Email)
+    match existingContact with
+    | Some c when c.Id <> contact.Id -> false
+    | _ -> true

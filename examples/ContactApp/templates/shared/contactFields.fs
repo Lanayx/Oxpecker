@@ -1,5 +1,7 @@
 ﻿namespace ContactApp.templates.shared
 
+open Oxpecker.Htmx
+
 module contactFields =
 
     open ContactApp.Models
@@ -9,7 +11,9 @@ module contactFields =
         div() {
             p() {
                 label(for'="email") { "Email" }
-                input(name="email", id="email", type'="email", placeholder="Email", value=contact.email)
+                input(name="email", id="email", type'="email", placeholder="Email", value=contact.email,
+                      hxTrigger="change, keyup delay:200ms changed",
+                      hxGet= $"/contacts/{contact.id}/email", hxTarget="next .error")
                 span(class'="error") { contact.GetError("email") }
             }
             p() {
