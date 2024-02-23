@@ -68,4 +68,5 @@ let postDeleteContact id: EndpointHandler =
         task {
             ContactService.delete id |> ignore
             ctx.Response.Redirect("/contacts")
+            ctx.SetStatusCode(303)
         }

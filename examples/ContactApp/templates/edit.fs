@@ -1,6 +1,7 @@
 ﻿module ContactApp.templates.edit
 open ContactApp.Models
 open Oxpecker.ViewEngine
+open Oxpecker.Htmx
 
 let html (contact: ContactDTO) =
     __() {
@@ -33,9 +34,10 @@ let html (contact: ContactDTO) =
             }
         }
 
-        form(action= $"/contacts/{contact.id}/delete", method="post"){
-            button() { "Delete Contact" }
-        }
+        button(hxDelete= $"/contacts/{contact.id}",
+               hxTarget="body",
+               hxPushUrl="true",
+               hxConfirm="Are you sure you want to delete this contact?") { "Delete Contact" }
 
         p() {
             a(href="/contacts") { "Back" }
