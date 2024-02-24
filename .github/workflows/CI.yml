@@ -10,33 +10,41 @@ on:
     - cron: "0 0 * * *"
 
 env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_VERSION: 8.0.200
 
+# Kill other jobs when we trigger this workflow by sending new commits
+# to the PR.
+# https://stackoverflow.com/a/72408109
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  fantomas-check:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Tool Restore
+        run: dotnet tool restore
+
+      - name: Lint
+        run: dotnet fantomas -r --check .
+
   build:
     runs-on: ubuntu-22.04
-    container:
-      image: "ubuntu:22.04"
+    needs: ['fantomas-check']
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install required dependencies
-        run: |
-          apt update
-          apt install --yes sudo
-          sudo apt install --yes --no-install-recommends git
-
-          # We need to install `ca-certificates`, otherwise we would get these errors below:
-          # `Unable to load the service index for source https://api.nuget.org/v3/index.json.
-          # The SSL connection could not be established, see inner exception.
-          # The remote certificate is invalid because of errors in the certificate chain: UntrustedRoot`
-          sudo apt install --yes --no-install-recommends ca-certificates
-
-          # otherwise: Error: Failed to install dotnet, exit code: 1. dotnet_install: Error: curl (recommended) or wget are required to download dotnet. Install missing prerequisite to proceed.
-          sudo apt install --yes --no-install-recommends curl
-
-          # otherwise: Process terminated. Couldn't find a valid ICU package installed on the system. Please install libicu (or icu-libs) using your package manager and try again. Alternatively you can set the configuration flag System.Globalization.Invariant to true if you want to run with no globalization support. Please see https://aka.ms/dotnet-missing-libicu for more information.
-          sudo apt install --yes --no-install-recommends libicu70
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       # workaround for https://github.com/actions/runner/issues/2033
       - name: ownership workaround
