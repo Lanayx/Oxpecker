@@ -3,7 +3,7 @@ open Oxpecker.ViewEngine
 open ContactApp.Models
 open ContactApp.templates.shared
 
-let html q (contacts: Contact seq) =
+let html q page (contacts: Contact[]) =
     __() {
         form(action="/contacts", method="get") {
             label(for'="search") { "Search Term" }
@@ -28,6 +28,14 @@ let html q (contacts: Contact seq) =
                             a(href= $"/contacts/{contact.Id}"){ "View" }
                         }
                     }
+            }
+        }
+        div() {
+            span(style="float: right") {
+                if page > 1 then
+                  a(href= $"/contacts?page={page- 1}") { "Previous" }
+                if contacts.Length = 5 then
+                  a(href= $"/contacts?page={page + 1}") { "Next" }
             }
         }
         p() {

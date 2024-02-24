@@ -7,13 +7,18 @@ open Oxpecker
 
 let getContacts: EndpointHandler =
     fun ctx ->
+        let page = ctx.TryGetQueryStringValue "page" |> Option.map int |> Option.defaultValue 1
         match ctx.TryGetQueryStringValue "q" with
         | Some search ->
-            let result = ContactService.searchContact search
-            index.html search result |> ctx.WriteHtmlView
+            let result =
+                ContactService.searchContact search
+                |> Seq.toArray
+            index.html search page result |> ctx.WriteHtmlView
         | None ->
-            let result = ContactService.all()
-            index.html "" result |> ctx.WriteHtmlView
+            let result =
+                ContactService.all page
+                |> Seq.toArray
+            index.html "" page result |> ctx.WriteHtmlView
 
 let getNewContact: EndpointHandler =
     fun ctx ->
