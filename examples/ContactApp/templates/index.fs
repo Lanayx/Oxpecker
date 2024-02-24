@@ -32,11 +32,12 @@ let html q page (contacts: Contact[]) =
                 if contacts.Length = 5 then
                     tr() {
                         td(colspan=5, style="text-align: center") {
-                            button(hxTarget="closest tr",
+                            span(hxTarget="closest tr",
+                                    hxTrigger="revealed",
                                     hxSwap="outerHTML",
                                     hxSelect="tbody > tr",
                                     hxGet= $"/contacts?page={page + 1}"){
-                              "Load More"
+                              "Loading More..."
                             }
                         }
                     }
