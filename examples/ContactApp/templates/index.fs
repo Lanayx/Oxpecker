@@ -28,16 +28,20 @@ let html q page (contacts: Contact[]) =
                             a(href= $"/contacts/{contact.Id}"){ "View" }
                         }
                     }
-            }
-        }
-        div() {
-            span(style="float: right") {
-                if page > 1 then
-                  a(href= $"/contacts?page={page- 1}") { "Previous" }
                 if contacts.Length = 5 then
-                  a(href= $"/contacts?page={page + 1}") { "Next" }
+                    tr() {
+                        td(colspan="5", style="text-align: center") {
+                            button(hxTarget="closest tr",
+                                    hxSwap="outerHTML",
+                                    hxSelect="tbody > tr",
+                                    hxGet= $"/contacts?page={page + 1}"){
+                              "Load More"
+                            }
+                        }
+                    }
             }
         }
+
         p() {
             a(href="/contacts/new") { "Add Contact" }
         }
