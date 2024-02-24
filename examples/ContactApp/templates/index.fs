@@ -1,5 +1,6 @@
 ﻿module ContactApp.templates.index
 open Oxpecker.ViewEngine
+open Oxpecker.Htmx
 open ContactApp.Models
 open ContactApp.templates.shared
 
@@ -30,7 +31,7 @@ let html q page (contacts: Contact[]) =
                     }
                 if contacts.Length = 5 then
                     tr() {
-                        td(colspan="5", style="text-align: center") {
+                        td(colspan=5, style="text-align: center") {
                             button(hxTarget="closest tr",
                                     hxSwap="outerHTML",
                                     hxSelect="tbody > tr",
