@@ -8,7 +8,11 @@ let html q page (contacts: Contact[]) =
     __() {
         form(action="/contacts", method="get") {
             label(for'="search") { "Search Term" }
-            input(id="search", type'="search", name="q", value=q, style="margin: 0 5px")
+            input(id="search", type'="search", name="q", value=q, style="margin: 0 5px",
+                  hxGet="/contacts",
+                  hxTrigger="search, keyup delay:200ms changed",
+                  hxTarget="tbody",
+                  hxSelect="tbody tr")
             input(type'="submit", value="Search")
         }
         table() {
