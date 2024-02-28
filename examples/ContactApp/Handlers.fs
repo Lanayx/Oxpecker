@@ -1,4 +1,5 @@
 ﻿module ContactApp.Handlers
+open System.Threading
 open System.Threading.Tasks
 open ContactApp.templates
 open ContactApp.Models
@@ -14,7 +15,11 @@ let getContacts: EndpointHandler =
             let result =
                 ContactService.searchContact search
                 |> Seq.toArray
-            ctx |> writeHtml (index.html search page result)
+            match ctx.TryGetRequestHeader "HX-Trigger" with
+            | Some "search" ->
+                ctx.WriteHtmlView (index.rows page result)
+            | _ ->
+                ctx |> writeHtml (index.html search page result)
         | None ->
             let result =
                 ContactService.all page
@@ -22,16 +27,15 @@ let getContacts: EndpointHandler =
             ctx |> writeHtml (index.html "" page result)
 
 let getNewContact: EndpointHandler =
-    fun ctx ->
-        let newContact = {
-            id = 0
-            first = ""
-            last = ""
-            email = ""
-            phone = ""
-            errors = dict []
-        }
-        ctx |> writeHtml (new'.html newContact)
+    let newContact = {
+        id = 0
+        first = ""
+        last = ""
+        email = ""
+        phone = ""
+        errors = dict []
+    }
+    writeHtml (new'.html newContact)
 
 let postNewContact: EndpointHandler =
     fun ctx ->

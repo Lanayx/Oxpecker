@@ -17,6 +17,11 @@
     animation: fade 3s linear;
 }
 
+.spinner {
+    width: 20px;
+    height: 20px;
+}
+
 @keyframes fade {
     0% { opacity: 0.9 }
     100% { opacity: 0 }
