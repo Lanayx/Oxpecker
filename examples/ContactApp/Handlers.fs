@@ -2,6 +2,7 @@
 open System.Threading.Tasks
 open ContactApp.templates
 open ContactApp.Models
+open ContactApp.Tools
 open Oxpecker
 
 
@@ -13,12 +14,12 @@ let getContacts: EndpointHandler =
             let result =
                 ContactService.searchContact search
                 |> Seq.toArray
-            index.html search page result |> ctx.WriteHtmlView
+            ctx |> writeHtml (index.html search page result)
         | None ->
             let result =
                 ContactService.all page
                 |> Seq.toArray
-            index.html "" page result |> ctx.WriteHtmlView
+            ctx |> writeHtml (index.html "" page result)
 
 let getNewContact: EndpointHandler =
     fun ctx ->
@@ -30,7 +31,7 @@ let getNewContact: EndpointHandler =
             phone = ""
             errors = dict []
         }
-        new'.html newContact |> ctx.WriteHtmlView
+        ctx |> writeHtml (new'.html newContact)
 
 let postNewContact: EndpointHandler =
     fun ctx ->
@@ -38,11 +39,12 @@ let postNewContact: EndpointHandler =
             let! contact = ctx.BindForm<ContactDTO>()
             let validatedContact = contact.Validate()
             if validatedContact.errors.Count > 0 then
-                return! ctx.WriteHtmlView(new'.html validatedContact)
+                return! ctx |> writeHtml (new'.html validatedContact)
             else
                 validatedContact.ToDomain()
                 |> ContactService.add
                 |> ignore
+                flash "Created new Contact!" ctx
                 return ctx.Response.Redirect("/contacts")
         }
 
@@ -51,28 +53,28 @@ let postEditContact id: EndpointHandler =
         task {
             let! contact = ctx.BindForm<ContactDTO>()
             let validatedContact = contact.Validate()
-            if validatedContact.errors.Count = 0 then
-                return! ctx.WriteHtmlView(edit.html { validatedContact with id = id })
+            if validatedContact.errors.Count > 0 then
+                return! ctx |> writeHtml (edit.html { validatedContact with id = id })
             else
                 let domainContact = validatedContact.ToDomain()
                 ContactService.update({domainContact with Id = id})
+                flash "Updated Contact!" ctx
                 return ctx.Response.Redirect($"/contacts/{id}")
         }
 
 let viewContact id: EndpointHandler =
-    fun ctx ->
-        let contact = ContactService.find id
-        show.html contact |> ctx.WriteHtmlView
+    let contact = ContactService.find id
+    writeHtml <| show.html contact
 
 let getEditContact id: EndpointHandler =
-    fun ctx ->
-        let contact = ContactService.find id |> ContactDTO.FromDomain
-        edit.html contact |> ctx.WriteHtmlView
+    let contact = ContactService.find id |> ContactDTO.FromDomain
+    writeHtml <| edit.html contact
 
 let postDeleteContact id: EndpointHandler =
     fun ctx ->
         task {
             ContactService.delete id |> ignore
+            flash "Deleted Contact!" ctx
             ctx.Response.Redirect("/contacts")
             ctx.SetStatusCode(303)
         }

@@ -1,10 +1,15 @@
 ﻿namespace ContactApp.templates.shared
 
+open Microsoft.AspNetCore.Http
+open ContactApp.Tools
+
 module layout =
     open Oxpecker.ViewEngine
     open Oxpecker.Htmx
 
-    let html (content: HtmlElement) =
+    let html (content: HtmlElement) (ctx: HttpContext)  =
+        let flashMessage = getFlashedMessage ctx
+
         html(lang="") {
             head() {
                 title() { "Contact App" }
@@ -20,6 +25,8 @@ module layout =
                             span(style="text-transform:uppercase;") { "contacts.app" }
                         }
                         h2() { "A Demo Contacts Application" }
+                        if isNotNull flashMessage then
+                            div(class'="alert fadeOut") { flashMessage }
                     }
                     hr()
                     content

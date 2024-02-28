@@ -1,4 +1,23 @@
 ﻿.error {
-  color: red;
+    color: red;
 }
 
+.alert {
+    color: green;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    padding: 10px;
+    background-color: lightcyan;
+}
+
+.fadeOut {
+    opacity: 0;
+    animation: fade 3s linear;
+}
+
+@keyframes fade {
+    0% { opacity: 0.9 }
+    100% { opacity: 0 }
+}
