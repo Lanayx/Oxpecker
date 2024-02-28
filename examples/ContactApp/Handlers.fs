@@ -26,6 +26,11 @@ let getContacts: EndpointHandler =
                 |> Seq.toArray
             ctx |> writeHtml (index.html "" page result)
 
+let getContactsCount: EndpointHandler =
+    fun ctx ->
+        let count = ContactService.count()
+        ctx.WriteText $"({count} total Contacts)"
+
 let getNewContact: EndpointHandler =
     let newContact = {
         id = 0

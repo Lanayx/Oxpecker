@@ -13,6 +13,7 @@ let endpoints = [
         subRoute "/contacts" [
             route "/" getContacts
             route "/new" getNewContact
+            route "/count" getContactsCount
             routef "/{%i}" viewContact
             routef "/{%i}/edit" getEditContact
             routef "/{%i}/email" validateEmail

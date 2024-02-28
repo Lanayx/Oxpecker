@@ -1,6 +1,7 @@
 ﻿module ContactApp.ContactService
 
 open System
+open System.Threading
 open ContactApp.Models
 
 let private contactDb = ResizeArray([
@@ -17,6 +18,10 @@ let private contactDb = ResizeArray([
     { Id = 11; First =  "Dana4"; Last = "Crandith"; Email = "dcran4@example.com"; Phone = "123-456-7890" }
     { Id = 12; First =  "Edith4"; Last = "Neutvaar"; Email = "en4@example.com"; Phone = "123-456-7890" }
 ])
+
+let count() =
+    Thread.Sleep 2000
+    contactDb.Count
 
 let searchContact (search: string) =
     contactDb

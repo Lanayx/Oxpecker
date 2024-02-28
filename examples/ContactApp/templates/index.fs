@@ -58,6 +58,9 @@ let html q page (contacts: Contact[]) =
 
         p() {
             a(href="/contacts/new") { "Add Contact" }
+            span(hxGet="/contacts/count", hxTrigger="revealed"){
+                img(class'="spinner htmx-indicator", src="/spinning-circles.svg")
+            }
         }
     }
     |> layout.html
