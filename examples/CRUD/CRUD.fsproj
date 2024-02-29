@@ -14,6 +14,7 @@
         <Compile Include="Env.fs" />
         <Compile Include="Handlers.fs" />
         <Compile Include="Program.fs"/>
+        <Content Include="README.md" />
     </ItemGroup>
 
     <ItemGroup>
