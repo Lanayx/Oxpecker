@@ -15,6 +15,9 @@ let rows page (contacts: Contact[]) =
                 td() {
                     a(href= $"/contacts/{contact.Id}/edit"){ "Edit" }
                     a(href= $"/contacts/{contact.Id}"){ "View" }
+                    a(href= "#", hxDelete= $"/contacts/{contact.Id}",
+                      hxConfirm="Are you sure you want to delete this contact?",
+                      hxTarget="body"){ "Delete" }
                 }
             }
         if contacts.Length = 5 then
