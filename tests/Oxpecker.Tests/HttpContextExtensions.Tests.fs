@@ -31,23 +31,23 @@ let ``GetRequestUrl returns entire URL of the HTTP request`` () =
 [<Fact>]
 let ``TryGetRequestHeader during HTTP GET request with returns correct result`` () =
     let ctx = DefaultHttpContext()
-    ctx.TryGetRequestHeader "X-Test" |> shouldEqual None
+    ctx.TryGetHeaderValue "X-Test" |> shouldEqual None
     ctx.Request.Headers.Add("X-Test", "It works!")
 
-    let result = ctx.TryGetRequestHeader "X-Test"
+    let result = ctx.TryGetHeaderValue "X-Test"
 
     result |> shouldEqual(Some "It works!")
 
 [<Fact>]
 let ``TryGetQueryStringValue during HTTP GET request with query string returns correct result`` () =
     let ctx = DefaultHttpContext()
-    ctx.TryGetQueryStringValue "BirthDate" |> shouldEqual None
+    ctx.TryGetQueryValue "BirthDate" |> shouldEqual None
     let queryStr =
         "?Name=John%20Doe&IsVip=true&BirthDate=1990-04-20&Balance=150000.5&LoyaltyPoints=137"
     let query = QueryHelpers.ParseQuery queryStr
     ctx.Request.Query <- QueryCollection(query)
 
-    let result = ctx.TryGetQueryStringValue "BirthDate"
+    let result = ctx.TryGetQueryValue "BirthDate"
 
     result |> shouldEqual(Some "1990-04-20")
 

@@ -53,20 +53,6 @@ module Tags =
         inherit HtmlElement("strong")
     type em() =
         inherit HtmlElement("em")
-    type table() =
-        inherit HtmlElement("table")
-    type tr() =
-        inherit HtmlElement("tr")
-    type td() =
-        inherit HtmlElement("td")
-    type th() =
-        inherit HtmlElement("th")
-    type tbody() =
-        inherit HtmlElement("tbody")
-    type thead() =
-        inherit HtmlElement("thead")
-    type tfoot() =
-        inherit HtmlElement("tfoot")
     type caption() =
         inherit HtmlElement("caption")
     type nav() =
@@ -105,6 +91,8 @@ module Tags =
         inherit HtmlElement("sub")
     type sup() =
         inherit HtmlElement("sup")
+    type template() =
+        inherit HtmlElement("template")
 
     type br() =
         inherit
@@ -611,3 +599,35 @@ module Tags =
 
     type legend() =
         inherit HtmlElement("legend")
+
+
+    type table() =
+        inherit HtmlElement("table")
+    type tbody() =
+        inherit HtmlElement("tbody")
+    type thead() =
+        inherit HtmlElement("thead")
+    type tfoot() =
+        inherit HtmlElement("tfoot")
+    type tr() =
+        inherit HtmlElement("tr")
+    type th() =
+        inherit HtmlElement("th")
+        member this.abbr
+            with set value = this.attr("abbr", value) |> ignore
+        member this.colspan
+            with set (value: int) = this.attr("colspan", string value) |> ignore
+        member this.rowspan
+            with set (value: int) = this.attr("rowspan", string value) |> ignore
+        member this.headers
+            with set value = this.attr("headers", value) |> ignore
+        member this.scope
+            with set value = this.attr("scope", value) |> ignore
+    type td() =
+        inherit HtmlElement("td")
+        member this.colspan
+            with set (value: int) = this.attr("colspan", string value) |> ignore
+        member this.rowspan
+            with set (value: int) = this.attr("rowspan", string value) |> ignore
+        member this.headers
+            with set value = this.attr("headers", value) |> ignore
