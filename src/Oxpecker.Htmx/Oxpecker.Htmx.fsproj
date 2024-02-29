@@ -21,14 +21,11 @@
         <PackageVersion>0.1.0</PackageVersion>
         <PackageReleaseNotes>Initial HTMX support</PackageReleaseNotes>
     </PropertyGroup>
-
+    <ItemGroup>
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.5.0" />
+    </ItemGroup>
     <ItemGroup>
         <Compile Include="Attributes.fs" />
         <Compile Include="Headers.fs" />
     </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
-    </ItemGroup>
-
 </Project>
