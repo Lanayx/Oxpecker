@@ -1,5 +1,4 @@
 ﻿module ContactApp.Handlers
-open System.Threading
 open System.Threading.Tasks
 open ContactApp.templates
 open ContactApp.Models
@@ -10,13 +9,13 @@ open Oxpecker
 
 let getContacts: EndpointHandler =
     fun ctx ->
-        let page = ctx.TryGetQueryStringValue "page" |> Option.map int |> Option.defaultValue 1
-        match ctx.TryGetQueryStringValue "q" with
+        let page = ctx.TryGetQueryValue "page" |> Option.map int |> Option.defaultValue 1
+        match ctx.TryGetQueryValue "q" with
         | Some search ->
             let result =
                 ContactService.searchContact search
                 |> Seq.toArray
-            match ctx.TryGetRequestHeader "HX-Trigger" with
+            match ctx.TryGetHeaderValue "HX-Trigger" with
             | Some "search" ->
                 ctx.WriteHtmlView (index.rows page result)
             | _ ->
@@ -84,7 +83,7 @@ let deleteContact id: EndpointHandler =
     fun ctx ->
         task {
             ContactService.delete id |> ignore
-            match ctx.TryGetRequestHeader "HX-Trigger" with
+            match ctx.TryGetHeaderValue "HX-Trigger" with
             | Some "delete-btn" ->
                 flash "Deleted Contact!" ctx
                 ctx.Response.Redirect("/contacts")
@@ -94,12 +93,12 @@ let deleteContact id: EndpointHandler =
         }
 
 let deleteContacts (ctx: HttpContext) =
-    match ctx.Request.Form.TryGetValue "selected_contact_ids" with
-    | true, ids ->
+    match ctx.TryGetFormValues "selected_contact_ids" with
+    | Some ids ->
         for id in ids do
             id |> int |> ContactService.delete |> ignore
         flash "Deleted Contacts!" ctx
-    | _ ->
+    | None ->
         ()
     let page = 1
     let result =
@@ -109,7 +108,7 @@ let deleteContacts (ctx: HttpContext) =
 
 let validateEmail id: EndpointHandler =
     fun ctx ->
-        match ctx.TryGetQueryStringValue("email") with
+        match ctx.TryGetQueryValue("email") with
         | Some email ->
             let contact =
                 if id = 0 then
