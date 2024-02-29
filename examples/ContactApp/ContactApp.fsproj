@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="wwwroot\site.css">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="wwwroot\spinning-circles.svg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Compile Include="Models.fs" />
+        <Compile Include="Tools.fs" />
+        <Compile Include="templates\shared\layout.fs" />
+        <Compile Include="templates\shared\contactFields.fs" />
+        <Compile Include="templates\index.fs" />
+        <Compile Include="templates\show.fs" />
+        <Compile Include="templates\edit.fs" />
+        <Compile Include="templates\new.fs" />
+        <Compile Include="ContactService.fs" />
+        <Compile Include="Handlers.fs" />
+        <Compile Include="Program.fs" />
+        <Content Include="README.md" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Oxpecker.Htmx\Oxpecker.Htmx.fsproj" />
+      <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
+    </ItemGroup>
+
+</Project>
