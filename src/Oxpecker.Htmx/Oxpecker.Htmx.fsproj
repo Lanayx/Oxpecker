@@ -2,7 +2,24 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <PackageId>Oxpecker.Htmx</PackageId>
+        <Title>Oxpecker.Htmx</Title>
+        <RootNamespace>Oxpecker.Htmx</RootNamespace>
+        <AssemblyName>Oxpecker.Htmx</AssemblyName>
+        <Company>F# community</Company>
+        <Description>HTMX support for Oxpecker.ViewEngine</Description>
+        <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.Htmx/README.md</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;Render</PackageTags>
+        <Authors>Vladimir Shchur, F# community</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <Version>0.1.0</Version>
+        <PackageVersion>0.1.0</PackageVersion>
+        <PackageReleaseNotes>Initial HTMX support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
