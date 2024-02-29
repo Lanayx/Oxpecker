@@ -16,7 +16,7 @@ let rows page (contacts: Contact[]) =
                     a(href= $"/contacts/{contact.Id}/edit"){ "Edit" }
                     a(href= $"/contacts/{contact.Id}"){ "View" }
                     a(href= "#", hxDelete= $"/contacts/{contact.Id}",
-                      hxSwap="outerHTML",
+                      hxSwap="outerHTML swap:1s",
                       hxConfirm="Are you sure you want to delete this contact?",
                       hxTarget="closest tr"){ "Delete" }
                 }
