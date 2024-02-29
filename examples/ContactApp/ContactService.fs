@@ -4,7 +4,7 @@ open System
 open System.Threading
 open ContactApp.Models
 
-let private contactDb = ResizeArray([
+let internal contactDb = ResizeArray([
     { Id = 1; First =  "John"; Last = "Smith"; Email = "john@example.com"; Phone = "123-456-7890" }
     { Id = 2; First =  "Dana"; Last = "Crandith"; Email = "dcran@example.com"; Phone = "123-456-7890" }
     { Id = 3; First =  "Edith"; Last = "Neutvaar"; Email = "en@example.com"; Phone = "123-456-7890" }

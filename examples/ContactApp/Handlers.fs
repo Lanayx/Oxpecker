@@ -6,6 +6,7 @@ open ContactApp.Tools
 open Microsoft.AspNetCore.Http
 open Oxpecker
 
+let mutable archiver = Archiver(ResizeArray())
 
 let getContacts: EndpointHandler =
     fun ctx ->
@@ -19,12 +20,12 @@ let getContacts: EndpointHandler =
             | Some "search" ->
                 ctx.WriteHtmlView (index.rows page result)
             | _ ->
-                ctx |> writeHtml (index.html search page result)
+                ctx |> writeHtml (index.html search page result archiver)
         | None ->
             let result =
                 ContactService.all page
                 |> Seq.toArray
-            ctx |> writeHtml (index.html "" page result)
+            ctx |> writeHtml (index.html "" page result archiver)
 
 let getContactsCount: EndpointHandler =
     fun ctx ->
@@ -104,7 +105,7 @@ let deleteContacts (ctx: HttpContext) =
     let result =
         ContactService.all page
         |> Seq.toArray
-    ctx |> writeHtml (index.html "" page result)
+    ctx |> writeHtml (index.html "" page result archiver)
 
 let validateEmail id: EndpointHandler =
     fun ctx ->
@@ -123,4 +124,17 @@ let validateEmail id: EndpointHandler =
         | None ->
                 Task.CompletedTask
 
+let startArchive: EndpointHandler =
+    fun ctx ->
+        archiver <- Archiver(ContactService.contactDb)
+        archiver.Run() |> ignore
+        ctx.WriteHtmlView (index.archiveUi archiver)
 
+let getArchiveStatus: EndpointHandler =
+    fun ctx ->
+        ctx.WriteHtmlView (index.archiveUi archiver)
+
+let deleteArchive: EndpointHandler =
+    fun ctx ->
+        archiver.Reset()
+        ctx.WriteHtmlView (index.archiveUi archiver)

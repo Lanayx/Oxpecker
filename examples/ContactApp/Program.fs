@@ -17,18 +17,25 @@ let endpoints = [
             routef "/{%i}" viewContact
             routef "/{%i}/edit" getEditContact
             routef "/{%i}/email" validateEmail
+            route "/archive" getArchiveStatus
+            route "/archive/file" (
+                setHttpHeader "Content-Disposition" "attachment; filename=contacts.zip"
+                >=> streamFile true archiver.ArchiveFile None None
+            )
         ]
     ]
     POST [
         subRoute "/contacts" [
             route "/new" insertContact
             routef "/{%i}/edit" updateContact
+            route "/archive" startArchive
         ]
     ]
     DELETE [
         subRoute "/contacts" [
             route "/" deleteContacts
             routef "/{%i}" deleteContact
+            route "/archive" deleteArchive
         ]
     ]
 ]

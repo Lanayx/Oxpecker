@@ -1,8 +1,33 @@
 ﻿module ContactApp.templates.index
+open ContactApp.Tools
 open Oxpecker.ViewEngine
 open Oxpecker.Htmx
+open Oxpecker.ViewEngine.Aria
 open ContactApp.Models
 open ContactApp.templates.shared
+
+let archiveUi (archiver: Archiver) =
+    div(id="archive-ui", hxTarget="this", hxSwap="outerHTML") {
+        if archiver.Status = "Waiting" then
+            button(hxPost="/contacts/archive"){
+                "Download Contact Archive"
+            }
+    elif archiver.Status = "Running" then
+        div(hxGet="/contacts/archive", hxTrigger="load delay:500ms") {
+            "Creating Archive..."
+            div(class'="progress") {
+                div(id="archive-progress", class'="progress-bar", role="progressbar",
+                     ariaValueNow= $"{archiver.Progress * 100.}",
+                     style= $"width:{archiver.Progress * 100.}%%")
+            }
+        }
+    elif archiver.Status = "Complete" then
+        a(hxBoost=false, href="/contacts/archive/file") {
+            "Archive Ready!  Click here to download. "
+            raw "&downarrow;"
+        }
+        button(hxDelete="/contacts/archive"){ "Clear Download" }
+    }
 
 let rows page (contacts: Contact[]) =
     __() {
@@ -36,9 +61,9 @@ let rows page (contacts: Contact[]) =
             }
     }
 
-
-let html q page (contacts: Contact[]) =
+let html q page (contacts: Contact[]) archiver =
     __() {
+        archiveUi archiver
         form(action="/contacts", method="get") {
             label(for'="search") { "Search Term" }
             input(id="search", type'="search", name="q", value=q, style="margin: 0 5px", autocomplete="off",
