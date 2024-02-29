@@ -6,24 +6,42 @@ module HxHeader =
 
     [<RequireQualifiedAccess>]
     module Request =
-        let [<Literal>] Boosted = "HX-Boosted"
-        let [<Literal>] CurrentUrl = "HX-Current-URL"
-        let [<Literal>] HistoryRestoreRequest = "HX-History-Restore-Request"
-        let [<Literal>] Prompt = "HX-Prompt"
-        let [<Literal>] Request = "HX-Request"
-        let [<Literal>] Target = "HX-Target"
-        let [<Literal>] TriggerName = "HX-Trigger-Name"
-        let [<Literal>] Trigger = "HX-Trigger"
+        [<Literal>]
+        let Boosted = "HX-Boosted"
+        [<Literal>]
+        let CurrentUrl = "HX-Current-URL"
+        [<Literal>]
+        let HistoryRestoreRequest = "HX-History-Restore-Request"
+        [<Literal>]
+        let Prompt = "HX-Prompt"
+        [<Literal>]
+        let Request = "HX-Request"
+        [<Literal>]
+        let Target = "HX-Target"
+        [<Literal>]
+        let TriggerName = "HX-Trigger-Name"
+        [<Literal>]
+        let Trigger = "HX-Trigger"
 
     [<RequireQualifiedAccess>]
     module Response =
-        let [<Literal>] Location = "HX-Location"
-        let [<Literal>] PushUrl = "HX-Push-Url"
-        let [<Literal>] Redirect = "HX-Redirect"
-        let [<Literal>] Refresh = "HX-Refresh"
-        let [<Literal>] ReplaceUrl = "HX-Replace-Url"
-        let [<Literal>] Reswap = "HX-Reswap"
-        let [<Literal>] Retarget = "HX-Retarget"
-        let [<Literal>] Trigger = "HX-Trigger"
-        let [<Literal>] TriggerAfterSettle = "HX-Trigger-After-Settle"
-        let [<Literal>] TriggerAfterSwap = "HX-Trigger-After-Swap"
+        [<Literal>]
+        let Location = "HX-Location"
+        [<Literal>]
+        let PushUrl = "HX-Push-Url"
+        [<Literal>]
+        let Redirect = "HX-Redirect"
+        [<Literal>]
+        let Refresh = "HX-Refresh"
+        [<Literal>]
+        let ReplaceUrl = "HX-Replace-Url"
+        [<Literal>]
+        let Reswap = "HX-Reswap"
+        [<Literal>]
+        let Retarget = "HX-Retarget"
+        [<Literal>]
+        let Trigger = "HX-Trigger"
+        [<Literal>]
+        let TriggerAfterSettle = "HX-Trigger-After-Settle"
+        [<Literal>]
+        let TriggerAfterSwap = "HX-Trigger-After-Swap"
