@@ -1,6 +1,8 @@
 ﻿namespace Oxpecker.ViewEngine
 
+open System.Diagnostics.CodeAnalysis
 open System.Text
+open JetBrains.Annotations
 
 module NodeType =
     [<Literal>]
@@ -47,6 +49,7 @@ module Builder =
             with set value = this.attr("id", value) |> ignore
         member this.class'
             with set value = this.attr("class", value) |> ignore
+        [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
         member this.style
             with set value = this.attr("style", value) |> ignore
         member this.lang
@@ -55,6 +58,8 @@ module Builder =
             with set value = this.attr("dir", value) |> ignore
         member this.tabindex
             with set (value: int) = this.attr("tabindex", string value) |> ignore
+        member this.on(eventName: string, [<StringSyntax("js")>] eventHandler: string) =
+            this.attr($"on{eventName}", eventHandler)
 
         member this.Render(sb: StringBuilder) : unit =
             let inline renderStartTag (tagName: string) =
