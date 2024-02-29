@@ -8,6 +8,7 @@ let rows page (contacts: Contact[]) =
     __() {
         for contact in contacts do
             tr() {
+                td() { input(type'="checkbox", name="selected_contact_ids", value= $"{contact.Id}") }
                 td() { contact.First }
                 td() { contact.Last }
                 td() { contact.Phone }
@@ -49,21 +50,33 @@ let html q page (contacts: Contact[]) =
             img(id="spinner", class'="spinner htmx-indicator", src="/spinning-circles.svg", alt="Request In Flight...")
             input(type'="submit", value="Search")
         }
-        table() {
-            thead() {
-                tr() {
-                    th(){"First"}; th(){"Last"}; th(){"Phone"}; th(){"Email"}; th()
+        form() {
+            table() {
+                thead() {
+                    tr() {
+                        th(){"First"}; th(){"Last"}; th(){"Phone"}; th(){"Email"}; th()
+                    }
+                }
+                tbody() {
+                    rows page contacts
                 }
             }
-            tbody() {
-                rows page contacts
-            }
-        }
 
-        p() {
-            a(href="/contacts/new") { "Add Contact" }
-            span(hxGet="/contacts/count", hxTrigger="revealed"){
-                img(class'="spinner htmx-indicator", src="/spinning-circles.svg")
+            p() {
+                span (style="float: left") {
+                    button( hxDelete="/contacts",
+                            hxConfirm="Are you sure you want to delete these contacts?",
+                            hxTarget="body") {
+                        "Delete Selected Contacts"
+                    }
+                }
+
+                span(style="float: right") {
+                    a(href="/contacts/new") { "Add Contact" }
+                    span(hxGet="/contacts/count", hxTrigger="revealed"){
+                        img(class'="spinner htmx-indicator", src="/spinning-circles.svg")
+                    }
+                }
             }
         }
     }

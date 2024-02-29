@@ -4,6 +4,7 @@ open System.Threading.Tasks
 open ContactApp.templates
 open ContactApp.Models
 open ContactApp.Tools
+open Microsoft.AspNetCore.Http
 open Oxpecker
 
 
@@ -91,6 +92,20 @@ let deleteContact id: EndpointHandler =
             | _ ->
                 ()
         }
+
+let deleteContacts (ctx: HttpContext) =
+    match ctx.Request.Form.TryGetValue "selected_contact_ids" with
+    | true, ids ->
+        for id in ids do
+            id |> int |> ContactService.delete |> ignore
+        flash "Deleted Contacts!" ctx
+    | _ ->
+        ()
+    let page = 1
+    let result =
+        ContactService.all page
+        |> Seq.toArray
+    ctx |> writeHtml (index.html "" page result)
 
 let validateEmail id: EndpointHandler =
     fun ctx ->

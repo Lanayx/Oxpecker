@@ -26,7 +26,10 @@ let endpoints = [
         ]
     ]
     DELETE [
-        routef "contacts/{%i}" deleteContact
+        subRoute "/contacts" [
+            route "/" deleteContacts
+            routef "/{%i}" deleteContact
+        ]
     ]
 ]
 
