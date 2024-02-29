@@ -41,7 +41,7 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetRouteValue<'T>(ctx: HttpContext, key: string) =
         match ctx.Request.RouteValues.TryGetValue key with
-        | true, value -> Some(value :?> 'T)
+        | true, value -> value :?> 'T |> Some
         | _ -> None
 
     /// <summary>
@@ -51,9 +51,21 @@ type HttpContextExtensions() =
     /// <param name="key">The name of the HTTP header.</param>
     /// <returns> Returns Some string if the HTTP header was present in the request, otherwise returns None.</returns>
     [<Extension>]
-    static member TryGetRequestHeader(ctx: HttpContext, key: string) =
+    static member TryGetHeaderValue(ctx: HttpContext, key: string) =
         match ctx.Request.Headers.TryGetValue key with
-        | true, value -> Some(string value)
+        | true, value -> value |> string |> Some
+        | _ -> None
+
+    /// <summary>
+    /// Tries to get the string seq value of a HTTP header from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the HTTP header.</param>
+    /// <returns> Returns Some string seq if the HTTP header was present in the request, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetHeaderValues(ctx: HttpContext, key: string) =
+        match ctx.Request.Headers.TryGetValue key with
+        | true, value -> value |> Seq.map string |> Some
         | _ -> None
 
     /// <summary>
@@ -63,9 +75,45 @@ type HttpContextExtensions() =
     /// <param name="key">The name of the query string parameter.</param>
     /// <returns>Returns Some string if the parameter was present in the request's query string, otherwise returns None.</returns>
     [<Extension>]
-    static member TryGetQueryStringValue(ctx: HttpContext, key: string) =
+    static member TryGetQueryValue(ctx: HttpContext, key: string) =
         match ctx.Request.Query.TryGetValue key with
-        | true, value -> Some(value.ToString())
+        | true, value -> value |> string |> Some
+        | _ -> None
+
+    /// <summary>
+    /// Tries to get the string seq value of a query string parameter from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the query string parameter.</param>
+    /// <returns>Returns Some string seq if the parameter was present in the request's query string, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetQueryValues(ctx: HttpContext, key: string) =
+        match ctx.Request.Query.TryGetValue key with
+        | true, value -> value |> Seq.map string |> Some
+        | _ -> None
+
+    /// <summary>
+    /// Tries to get the <see cref="System.String"/> value of a form parameter from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the query string parameter.</param>
+    /// <returns>Returns Some string if the parameter was present in the request's form, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetFormValue(ctx: HttpContext, key: string) =
+        match ctx.Request.Form.TryGetValue key with
+        | true, value -> value |> string |> Some
+        | _ -> None
+
+    /// <summary>
+    /// Tries to get the string seq value of a form parameter from the request.
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the query string parameter.</param>
+    /// <returns>Returns Some string seq if the parameter was present in the request's form, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetFormValues(ctx: HttpContext, key: string) =
+        match ctx.Request.Form.TryGetValue key with
+        | true, value -> value |> Seq.map string |> Some
         | _ -> None
 
     /// <summary>
