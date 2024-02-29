@@ -119,7 +119,7 @@ If you need to access the `HttpContext` object then you'll have to explicitly re
 let sayHelloWorld : EndpointHandler =
     fun (ctx: HttpContext) ->
         let name =
-            ctx.TryGetQueryStringValue "name"
+            ctx.TryGetQueryValue "name"
             |> Option.defaultValue "Oxpecker"
         let greeting = sprintf "Hello World, from %s" name
         text greeting ctx
@@ -514,13 +514,13 @@ Oxpecker comes with a large set of default `HttpContext` extension methods as we
 
 ### HTTP Headers
 
-Working with HTTP headers in Oxpecker is plain simple. The `TryGetRequestHeader (key: string)` extension method tries to retrieve the value of a given HTTP header and then returns either `Some string` or `None`:
+Working with HTTP headers in Oxpecker is plain simple. The `TryGetHeaderValue (key: string)` extension method tries to retrieve the value of a given HTTP header and then returns either `Some string` or `None`:
 
 ```fsharp
 let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         let someValue =
-            match ctx.TryGetRequestHeader "X-MyOwnHeader" with
+            match ctx.TryGetHeaderValue "X-MyOwnHeader" with
             | None -> "default value"
             | Some headerValue -> headerValue
 
@@ -692,13 +692,13 @@ In this example the final URL to retrieve "Bar 2" would be `http[s]://your-domai
 
 ### Query Strings
 
-Working with query strings is very similar to working with HTTP headers in Oxpecker. The `TryGetQueryStringValue (key : string)` extension method tries to retrieve the value of a given query string parameter and then returns either `Some string` or `None`:
+Working with query strings is very similar to working with HTTP headers in Oxpecker. The `TryGetQueryValue (key : string)` extension method tries to retrieve the value of a given query string parameter and then returns either `Some string` or `None`:
 
 ```fsharp
 let someHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         let someValue =
-            match ctx.TryGetQueryStringValue "q" with
+            match ctx.TryGetQueryValue "q" with
             | None   -> "default value"
             | Some q -> q
 
@@ -1027,7 +1027,7 @@ The `authorizeRequest (predicate: HttpContext -> bool) (authFailedHandler: Endpo
 let apiKey = "some-secret-key-1234"
 
 let validateApiKey (ctx: HttpContext) =
-    match ctx.TryGetRequestHeader "X-API-Key" with
+    match ctx.TryGetHeaderValue "X-API-Key" with
     | Some key -> apiKey.Equals key
     | None     -> false
 
