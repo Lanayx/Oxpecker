@@ -149,7 +149,7 @@ let errorView errorCode (errorText: string) =
     html() {
         body(style = "width: 800px; margin: 0 auto") {
             h1(style = "text-align: center; color: red") { raw $"Error <i>%d{errorCode}</i>" }
-            p(ariaErrorMessage = "err1") { errorText }
+            p(ariaErrorMessage = "err1").on("click", "console.log('clicked on error')") { errorText }
         }
     }
 

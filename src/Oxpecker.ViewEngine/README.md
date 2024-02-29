@@ -98,12 +98,15 @@ div().attr("data-secret-key", "lk23j4oij234"){
 
 ### Event handlers
 
-`Oxpecker.ViewEngine` doesn't provide support for javascript event handlers like `onclick`. This is done on purpose, since it would encourage people using them, which is rather an antipattern. However, if you really need it, you can always use `.attr` method to achieve same goal.
+`Oxpecker.ViewEngine` doesn't provide attributes for javascript event handlers like `onclick`. This is done on purpose, since it would encourage people using them, which is rather an antipattern. However, if you really need it, you can always use `.on` method to achieve same goal.
+
+ViewEngine will create html attribute with inline handler for you:
 
 ```fsharp
-div().attr("onclick", "alert('Hello')"){
+div().on("click", "alert('Hello')"){
     "Clickable div"
 }
+// <div onclick="alert('Hello')">Clickable div</div>
 ```
 
 
