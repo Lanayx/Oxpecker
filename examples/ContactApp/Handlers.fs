@@ -42,7 +42,7 @@ let getNewContact: EndpointHandler =
     }
     writeHtml (new'.html newContact)
 
-let postNewContact: EndpointHandler =
+let insertContact: EndpointHandler =
     fun ctx ->
         task {
             let! contact = ctx.BindForm<ContactDTO>()
@@ -57,7 +57,7 @@ let postNewContact: EndpointHandler =
                 return ctx.Response.Redirect("/contacts")
         }
 
-let postEditContact id: EndpointHandler =
+let updateContact id: EndpointHandler =
     fun ctx ->
         task {
             let! contact = ctx.BindForm<ContactDTO>()
@@ -79,13 +79,17 @@ let getEditContact id: EndpointHandler =
     let contact = ContactService.find id |> ContactDTO.FromDomain
     writeHtml <| edit.html contact
 
-let postDeleteContact id: EndpointHandler =
+let deleteContact id: EndpointHandler =
     fun ctx ->
         task {
             ContactService.delete id |> ignore
-            flash "Deleted Contact!" ctx
-            ctx.Response.Redirect("/contacts")
-            ctx.SetStatusCode(303)
+            match ctx.TryGetRequestHeader "HX-Trigger" with
+            | Some "delete-btn" ->
+                flash "Deleted Contact!" ctx
+                ctx.Response.Redirect("/contacts")
+                ctx.SetStatusCode(303)
+            | _ ->
+                ()
         }
 
 let validateEmail id: EndpointHandler =

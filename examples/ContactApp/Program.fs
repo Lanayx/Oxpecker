@@ -21,12 +21,12 @@ let endpoints = [
     ]
     POST [
         subRoute "/contacts" [
-            route "/new" postNewContact
-            routef "/{%i}/edit" postEditContact
+            route "/new" insertContact
+            routef "/{%i}/edit" updateContact
         ]
     ]
     DELETE [
-        routef "contacts/{%i}" postDeleteContact
+        routef "contacts/{%i}" deleteContact
     ]
 ]
 

@@ -16,8 +16,9 @@ let rows page (contacts: Contact[]) =
                     a(href= $"/contacts/{contact.Id}/edit"){ "Edit" }
                     a(href= $"/contacts/{contact.Id}"){ "View" }
                     a(href= "#", hxDelete= $"/contacts/{contact.Id}",
+                      hxSwap="outerHTML",
                       hxConfirm="Are you sure you want to delete this contact?",
-                      hxTarget="body"){ "Delete" }
+                      hxTarget="closest tr"){ "Delete" }
                 }
             }
         if contacts.Length = 5 then

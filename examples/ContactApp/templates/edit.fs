@@ -15,10 +15,11 @@ let html (contact: ContactDTO) =
             }
         }
 
-        button(hxDelete= $"/contacts/{contact.id}",
-               hxTarget="body",
+        button(id="delete-btn",
+               hxDelete= $"/contacts/{contact.id}",
                hxPushUrl="true",
-               hxConfirm="Are you sure you want to delete this contact?") { "Delete Contact" }
+               hxConfirm="Are you sure you want to delete this contact?",
+               hxTarget="body") { "Delete Contact" }
 
         p() {
             a(href="/contacts") { "Back" }
