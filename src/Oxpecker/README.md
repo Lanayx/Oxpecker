@@ -406,7 +406,7 @@ There's a handful more extension methods available to retrieve a few default dep
 #### Functional DI
 However, if you prefer to use a more functional approach to dependency injection, you shouldn't use container based approach, but rather follow the _Env_ strategy.
 
-The approach is described in the article https://bartoszsypytkowski.com/dealing-with-complex-dependency-injection-in-f/ , and to see how it looks in practice, you can refer to the [CRUD example in the repository.](https://github.com/Lanayx/Oxpecker/tree/develop/examples/CRUD)
+The approach is described in the article https://bartoszsypytkowski.com/dealing-with-complex-dependency-injection-in-f/ , and to see how it looks in practice, you can refer to the [CRUD example in the repository.](https://github.com/Lanayx/Oxpecker/tree/main/examples/CRUD)
 
 
 
@@ -1336,7 +1336,7 @@ let someHandler (dataObj: obj) : EndpointHandler =
 
 #### Writing HTML Views
 
-Oxpecker comes with its own extremely powerful view engine for functional developers (see [Oxpecker View Engine](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.ViewEngine/README.md)). The `WriteHtmlView (htmlView : HtmlElement)` extension method and the `htmlView (htmlView : HtmlElement)` http handler will both compile a given html view into valid HTML code and write the output to the response stream of the HTTP request. Additionally they will both set the `Content-Length` HTTP header to the correct value and set the `Content-Type` header to `text/html`:
+Oxpecker comes with its own extremely powerful view engine for functional developers (see [Oxpecker View Engine](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.ViewEngine/README.md)). The `WriteHtmlView (htmlView : HtmlElement)` extension method and the `htmlView (htmlView : HtmlElement)` http handler will both compile a given html view into valid HTML code and write the output to the response stream of the HTTP request. Additionally they will both set the `Content-Length` HTTP header to the correct value and set the `Content-Type` header to `text/html`:
 
 ```fsharp
 let indexView =
@@ -1562,4 +1562,4 @@ ASP.NET Core has its own [Response Compression Middleware](https://learn.microso
 
 ## Testing
 
-Integration testing of an Oxpecker application follows the concept of [ASP.NET Core testing](https://learn.microsoft.com/en-us/aspnet/core/test/middleware). You can check out the examples of tests in this repository itself: [Oxpecker.Tests](https://github.com/Lanayx/Oxpecker/tree/develop/tests/Oxpecker.Tests)
+Integration testing of an Oxpecker application follows the concept of [ASP.NET Core testing](https://learn.microsoft.com/en-us/aspnet/core/test/middleware). You can check out the examples of tests in this repository itself: [Oxpecker.Tests](https://github.com/Lanayx/Oxpecker/tree/main/tests/Oxpecker.Tests)

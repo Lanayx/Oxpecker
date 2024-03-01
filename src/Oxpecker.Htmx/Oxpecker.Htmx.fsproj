@@ -11,7 +11,7 @@
         <Description>HTMX support for Oxpecker.ViewEngine</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.Htmx/README.md</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/main/src/Oxpecker.Htmx/README.md</PackageProjectUrl>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;Render</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
@@ -25,6 +25,7 @@
         <PackageReference Include="Oxpecker.ViewEngine" Version="0.5.0" />
     </ItemGroup>
     <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Attributes.fs" />
         <Compile Include="Headers.fs" />
     </ItemGroup>
