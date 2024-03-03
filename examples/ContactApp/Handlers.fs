@@ -5,6 +5,7 @@ open ContactApp.Models
 open ContactApp.Tools
 open Microsoft.AspNetCore.Http
 open Oxpecker
+open Oxpecker.Htmx
 
 let mutable archiver = Archiver(ResizeArray())
 
@@ -16,7 +17,7 @@ let getContacts: EndpointHandler =
             let result =
                 ContactService.searchContact search
                 |> Seq.toArray
-            match ctx.TryGetHeaderValue "HX-Trigger" with
+            match ctx.TryGetHeaderValue HxHeader.Request.Trigger with
             | Some "search" ->
                 ctx.WriteHtmlView (index.rows page result)
             | _ ->
@@ -84,7 +85,7 @@ let deleteContact id: EndpointHandler =
     fun ctx ->
         task {
             ContactService.delete id |> ignore
-            match ctx.TryGetHeaderValue "HX-Trigger" with
+            match ctx.TryGetHeaderValue HxHeader.Request.Trigger with
             | Some "delete-btn" ->
                 flash "Deleted Contact!" ctx
                 ctx.Response.Redirect("/contacts")
