@@ -58,6 +58,36 @@ module Builder =
             with set value = this.attr("dir", value) |> ignore
         member this.tabindex
             with set (value: int) = this.attr("tabindex", string value) |> ignore
+        member this.title
+            with set value = this.attr("title", value) |> ignore
+        member this.accesskey
+            with set (value: char) = this.attr("accesskey", string value) |> ignore
+        member this.contenteditable
+            with set (value: bool) = this.attr("contenteditable", (if value then "true" else "false")) |> ignore
+        member this.draggable
+            with set value = this.attr("draggable", value) |> ignore
+        member this.enterkeyhint
+            with set value = this.attr("enterkeyhint", value) |> ignore
+        member this.hidden
+            with set (value: bool) =
+                if value then
+                    this.attr("hidden", "") |> ignore
+        member this.inert
+            with set (value: bool) =
+                if value then
+                    this.attr("inert", "") |> ignore
+        member this.inputmode
+            with set value = this.attr("inputmode", value) |> ignore
+        member this.popover
+            with set (value: bool) =
+                if value then
+                    this.attr("popover", "") |> ignore
+        member this.spellcheck
+            with set (value: bool) = this.attr("spellcheck", (if value then "true" else "false")) |> ignore
+        member this.translate
+            with set (value: bool) = this.attr("translate", (if value then "yes" else "no")) |> ignore
+
+        /// Add event handler to the element through the corresponding attribute
         member this.on(eventName: string, [<StringSyntax("js")>] eventHandler: string) =
             this.attr($"on{eventName}", eventHandler)
 
@@ -103,6 +133,7 @@ module Builder =
             children.Enqueue(element)
             this
 
+        /// Add an attribute to the element
         member this.attr(name: string, value: string) =
             if isNotNull value then
                 attributes.Enqueue({ Name = name; Value = value })
