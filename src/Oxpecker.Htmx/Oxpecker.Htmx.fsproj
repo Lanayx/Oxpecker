@@ -22,7 +22,7 @@
         <PackageReleaseNotes>Initial HTMX support</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.5.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.6.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\" />
