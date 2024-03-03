@@ -46,12 +46,14 @@ let configureApp (appBuilder: WebApplication) =
         appBuilder.UseExceptionHandler("/error", true) |> ignore
     appBuilder
         .UseStaticFiles()
+        .UseAntiforgery()
         .UseRouting()
         .UseOxpecker(endpoints) |> ignore
 
 let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
+        .AddAntiforgery()
         .AddOxpecker()
     |> ignore
 
