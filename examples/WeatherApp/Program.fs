@@ -7,8 +7,12 @@ open Microsoft.Extensions.Hosting
 open Oxpecker
 open WeatherApp.templates
 open WeatherApp.Models
+open WeatherApp.templates.shared
 
-let htmlView' f (ctx: HttpContext) = ctx.WriteHtmlView(f ctx)
+let htmlView' f (ctx: HttpContext) =
+    f ctx
+    |> layout.html ctx
+    |> ctx.WriteHtmlView
 
 let getWeatherData (ctx: HttpContext) =
     task {
