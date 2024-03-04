@@ -13,6 +13,7 @@
         <Compile Include="templates\weather.fs" />
         <Compile Include="templates\error.fs" />
         <Compile Include="Program.fs" />
+        <Content Include="README.md" />
     </ItemGroup>
 
     <ItemGroup>
