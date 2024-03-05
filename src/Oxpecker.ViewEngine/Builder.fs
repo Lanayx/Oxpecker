@@ -90,6 +90,9 @@ module Builder =
         /// Add event handler to the element through the corresponding attribute
         member this.on(eventName: string, [<StringSyntax("js")>] eventHandler: string) =
             this.attr($"on{eventName}", eventHandler)
+        /// Add data attribute to the element
+        member this.data(name: string, value: string) =
+            this.attr($"data-{name}", value)
 
         member this.Render(sb: StringBuilder) : unit =
             let inline renderStartTag (tagName: string) =
