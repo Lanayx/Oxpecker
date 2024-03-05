@@ -4,6 +4,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.Extensions.Logging
 open Oxpecker
 open WeatherApp.templates
 open WeatherApp.Models
@@ -57,6 +58,7 @@ let configureApp (appBuilder: WebApplication) =
 let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
+        .AddLogging(fun builder -> builder.AddFilter("Microsoft.AspNetCore", LogLevel.Warning) |> ignore)
         .AddAntiforgery()
         .AddOxpecker()
     |> ignore
