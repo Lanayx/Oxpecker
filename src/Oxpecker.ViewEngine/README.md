@@ -47,18 +47,22 @@ let mainView (model: Person) =
 `HtmlElement` is a main building block of `Oxpecker.ViewEngine`. It can be constructed from the instance of the `HtmlElementType`:
 
 ```fsharp
-type HtmlElementType =
-    | NormalNode of string
-    | VoidNode of string
-    | TextNode of TextNodeType
+module NodeType =
+    let NormalNode = 0uy
+    let VoidNode = 1uy
+    let RegularTextNode = 2uy
+    let RawTextNode = 3uy
+type HtmlElementType = { NodeType: byte; Value: string }
+type HtmlElement(elemType: HtmlElementType) =
+    ...
 ```
-This represents 3 types of Html elements: normal tags that have opening and closing part, void tags with no closint part and text nodes (which can be escaped and non-escaped strings).
+This represents 4 types of Html elements: normal tags that have opening and closing part, void tags with no closint part and text nodes (which can be escaped and non-escaped strings).
 
-All HTML tags inherit from `HtmlElement`, so you can easily add your own tag by in the same way:
+All HTML tags inherit from `HtmlElement` and you can easily create your own tag:
 
 ```fsharp
 type myTag() =
-    inherit HtmlElement("myTag")
+    inherit HtmlElement("myTag") // this overload creates NormalNode
 ```
 
 `HtmlElement` holds two collections inside: attributes and children. More on them below.
@@ -91,9 +95,16 @@ let children = result.Attributes // myClass
 You can also attach _any_ custom attribute to the `HtmlElement` using `.attr` method:
 
 ```fsharp
-div().attr("data-secret-key", "lk23j4oij234"){
+div().attr("my-secret-key", "lk23j4oij234"){
     "Secret div"
 }
+```
+For **data-*** attributes you can use dedicated method:
+
+```fsharp
+div().data("secret-key", "lk23j4oij234"){
+    "Secret div"
+} // renders <div data-secret-key="lk23j4oij234">Secret div</div>
 ```
 
 ### Event handlers
@@ -160,4 +171,3 @@ let parent = div() {
 }
 
 ```
-

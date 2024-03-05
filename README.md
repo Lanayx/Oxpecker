@@ -32,6 +32,7 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/main/examples/Basic)
 - [Full CRUD example with functional DI](https://github.com/Lanayx/Oxpecker/blob/main/examples/CRUD)
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp)
+- [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/main/examples/WeatherApp)
 
 ## Documentation:
 

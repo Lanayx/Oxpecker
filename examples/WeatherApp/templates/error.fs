@@ -2,7 +2,6 @@ module WeatherApp.templates.error
 
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
-open WeatherApp.templates.shared
 open System.Diagnostics
 open System
 
@@ -42,6 +41,5 @@ let html (ctx: HttpContext) =
             " and restarting the app."
         }
     }
-    |> layout.html ctx
 
 

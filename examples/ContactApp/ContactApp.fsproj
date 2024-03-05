@@ -28,7 +28,7 @@
 
     <ItemGroup>
         <PackageReference Include="Oxpecker" Version="0.8.1" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.6.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.7.0" />
         <PackageReference Include="Oxpecker.Htmx" Version="0.1.0" />
     </ItemGroup>
 

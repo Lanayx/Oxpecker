@@ -3,7 +3,6 @@ module WeatherApp.templates.weather
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
 open Oxpecker.Htmx
-open WeatherApp.templates.shared
 open WeatherApp.Models
 
 let data (forecasts: WeatherForecast[]) =
@@ -37,4 +36,3 @@ let html (ctx: HttpContext) =
             em() { "Loading..." }
         }
     }
-    |> layout.html ctx

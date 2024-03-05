@@ -79,7 +79,7 @@ let html q page (contacts: Contact[]) archiver =
             table() {
                 thead() {
                     tr() {
-                        th(){"First"}; th(){"Last"}; th(){"Phone"}; th(){"Email"}; th()
+                        th(); th(){"First"}; th(){"Last"}; th(){"Phone"}; th(){"Email"}; th()
                     }
                 }
                 tbody() {

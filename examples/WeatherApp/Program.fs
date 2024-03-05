@@ -4,11 +4,16 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.Extensions.Logging
 open Oxpecker
 open WeatherApp.templates
 open WeatherApp.Models
+open WeatherApp.templates.shared
 
-let htmlView' f (ctx: HttpContext) = ctx.WriteHtmlView(f ctx)
+let htmlView' f (ctx: HttpContext) =
+    f ctx
+    |> layout.html ctx
+    |> ctx.WriteHtmlView
 
 let getWeatherData (ctx: HttpContext) =
     task {
@@ -46,12 +51,15 @@ let configureApp (appBuilder: WebApplication) =
         appBuilder.UseExceptionHandler("/error", true) |> ignore
     appBuilder
         .UseStaticFiles()
+        .UseAntiforgery()
         .UseRouting()
         .UseOxpecker(endpoints) |> ignore
 
 let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
+        .AddLogging(fun builder -> builder.AddFilter("Microsoft.AspNetCore", LogLevel.Warning) |> ignore)
+        .AddAntiforgery()
         .AddOxpecker()
     |> ignore
 
