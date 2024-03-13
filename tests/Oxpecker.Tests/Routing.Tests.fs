@@ -1,12 +1,9 @@
 ﻿module Oxpecker.Tests.Routing
 
 open System
-open System.IO
-open System.Collections.Generic
 open System.Net
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Xunit
