@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <PackageId>Oxpecker.OpenApi</PackageId>
+        <Title>Oxpecker.OpenApi</Title>
+        <RootNamespace>Oxpecker.OpenApi</RootNamespace>
+        <AssemblyName>Oxpecker.OpenApi</AssemblyName>
+        <Company>F# community</Company>
+        <Description>OpenApi support for Oxpecker</Description>
+        <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.OpenApi/README.md</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Http;Web;OpenApi</PackageTags>
+        <Authors>Vladimir Shchur, F# community</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <Version>0.1.0</Version>
+        <PackageVersion>0.1.0</PackageVersion>
+        <PackageReleaseNotes>Initial OpenApi support</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="README.md">
+          <Pack>true</Pack>
+          <PackagePath>\</PackagePath>
+        </None>
+        <Compile Include="Configuration.fs" />
+        <Compile Include="Routing.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Oxpecker\Oxpecker.fsproj" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
+    </ItemGroup>
+
+</Project>

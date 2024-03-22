@@ -1,5 +1,7 @@
 # Oxpecker.Htmx
 
+`Oxpecker.Htmx` extends `Oxpecker.ViewEngine` package with HTMX attributes and headers.
+
 [Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
 
 Markup example:
@@ -25,7 +27,5 @@ let renderForm q =
 ## Documentation:
 
 Please refer to the official site for the HTMX documentation: https://htmx.org/.
-
-Oxpecker.Htmx is a thin F# wrapper around official HTMX library.
 
 You can check [ContactApp sample](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp) in the repository to get a better understanding of how the code will look like in your application.
