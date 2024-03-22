@@ -94,6 +94,19 @@ let ``routex: GET "/foo2" returns "bar"`` () =
 // ---------------------------------
 
 [<Fact>]
+let ``routef generates route correctly`` () =
+    task {
+        let endpoint =  routef "/foo/{%s}/{%i}/{%O:guid}" (fun x y z -> text "Hello")
+
+        match endpoint with
+        | SimpleEndpoint (_, route, _, _) ->
+            route |> shouldEqual "/foo/{x}/{y}/{z:guid}"
+        | _ ->
+            failwith "Expected SimpleEndpoint"
+    }
+
+
+[<Fact>]
 let ``routef: GET "/foo/blah blah/bar" returns "blah blah"`` () =
 
     task {
@@ -229,7 +242,7 @@ let ``routef: GET "/foo/%u/bar/%u" returns "Id1: ..., Id2: ..."`` () =
 [<Fact>]
 let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
     task {
-        let endpoints = [ GET [ routef "/foo/%s/%s" (fun s1 s2 -> text $"%s{s1},%s{s2}") ] ]
+        let endpoints = [ GET [ routef "/foo/{%s}/{%s}" (fun s1 s2 -> text $"%s{s1},%s{s2}") ] ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
@@ -239,6 +252,7 @@ let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.NotFound
         resultString |> shouldEqual "Not found"
     }
+
 
 // ---------------------------------
 // subRoute Tests

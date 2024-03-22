@@ -107,6 +107,7 @@ let endpoints = [
         route "/" <| text "Hello World"
         route "/iresult" <| %Ok {| Text = "Hello World" |}
         route "/ibadResult" <| % BadRequest()
+        routef "/text/{%s}" text
         routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
         routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
