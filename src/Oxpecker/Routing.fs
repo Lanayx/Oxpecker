@@ -83,14 +83,22 @@ module private RouteTemplateBuilder =
         let mutable index = 0
         let mappings = ResizeArray()
 
-        let placeholderEvaluator = MatchEvaluator(fun m ->
-            let vtype = m.Groups[1].Value[0] // First capture group is the variable type s, i, or O
-            let formatSpecifier = if m.Groups[2].Success then m.Groups[2].Value else ""
-            let paramName = parameters[index].Name
-            index <- index + 1 // Increment index for next use
-            mappings.Add(paramName, vtype, if formatSpecifier = "" then None else (Some <| formatSpecifier.TrimStart(':')))
-            $"{{{paramName}{formatSpecifier}}}" // Construct the new placeholder
-        )
+        let placeholderEvaluator =
+            MatchEvaluator(fun m ->
+                let vtype = m.Groups[1].Value[0] // First capture group is the variable type s, i, or O
+                let formatSpecifier = if m.Groups[2].Success then m.Groups[2].Value else ""
+                let paramName = parameters[index].Name
+                index <- index + 1 // Increment index for next use
+                mappings.Add(
+                    paramName,
+                    vtype,
+                    if formatSpecifier = "" then
+                        None
+                    else
+                        Some <| formatSpecifier.TrimStart(':')
+                )
+                $"{{{paramName}{formatSpecifier}}}" // Construct the new placeholder
+            )
 
         let newRoute = placeholderPattern.Replace(pathValue, placeholderEvaluator)
         (newRoute, mappings.ToArray()) // Convert ResizeArray to Array
@@ -213,15 +221,15 @@ module Routers =
         let handlerType = routeHandler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
         let parameters = handlerMethod.GetParameters()
-        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
+        let template, mappings =
+            RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
 
         let requestDelegate =
             fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler mappings parameters
 
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
-    let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint =
-        NestedEndpoint(path, endpoints, id)
+    let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
 
 
     let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
@@ -238,20 +246,10 @@ module Routers =
     let rec configureEndpoint (f: ConfigureEndpoint) (endpoint: Endpoint) =
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
-            SimpleEndpoint(
-                verb,
-                template,
-                handler,
-                configureEndpoint >> f
-            )
+            SimpleEndpoint(verb, template, handler, configureEndpoint >> f)
         | NestedEndpoint(template, endpoints, configureEndpoint) ->
-            NestedEndpoint(
-                template,
-                endpoints,
-                configureEndpoint >> f
-            )
-        | MultiEndpoint endpoints ->
-            MultiEndpoint(Seq.map (configureEndpoint f) endpoints)
+            NestedEndpoint(template, endpoints, configureEndpoint >> f)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (configureEndpoint f) endpoints)
 
     let addMetadata (metadata: obj) =
         configureEndpoint _.WithMetadata(metadata)
@@ -268,14 +266,10 @@ type EndpointRouteBuilderExtensions() =
             configureEndpoint: ConfigureEndpoint
         ) =
         match verb with
-        | Any ->
-            builder
-                .Map(routeTemplate, requestDelegate)
-                |> configureEndpoint
+        | Any -> builder.Map(routeTemplate, requestDelegate) |> configureEndpoint
         | Verbs verbs ->
-            builder
-                .MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
-                |> configureEndpoint
+            builder.MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
+            |> configureEndpoint
         |> ignore
 
     [<Extension>]
@@ -290,18 +284,9 @@ type EndpointRouteBuilderExtensions() =
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
-                groupBuilder.MapSingleEndpoint(
-                    verb,
-                    template,
-                    handler,
-                    parentConfigureEndpoint >> configureEndpoint
-                )
+                groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigureEndpoint >> configureEndpoint)
             | NestedEndpoint(template, endpoints, configureEndpoint) ->
-                groupBuilder.MapNestedEndpoint(
-                    template,
-                    endpoints,
-                    parentConfigureEndpoint >> configureEndpoint
-                )
+                groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigureEndpoint >> configureEndpoint)
             | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint endpoints
 
     [<Extension>]
@@ -310,7 +295,8 @@ type EndpointRouteBuilderExtensions() =
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
                 builder.MapSingleEndpoint(verb, template, handler, configureEndpoint)
-            | NestedEndpoint(template, endpoints, configureEndpoint) -> builder.MapNestedEndpoint(template, endpoints, configureEndpoint)
+            | NestedEndpoint(template, endpoints, configureEndpoint) ->
+                builder.MapNestedEndpoint(template, endpoints, configureEndpoint)
             | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints
 
     [<Extension>]
@@ -320,5 +306,6 @@ type EndpointRouteBuilderExtensions() =
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
                 builder.MapSingleEndpoint(verb, template, handler, configureEndpoint)
-            | NestedEndpoint(template, endpoints, configureEndpoint) -> builder.MapNestedEndpoint(template, endpoints, configureEndpoint)
+            | NestedEndpoint(template, endpoints, configureEndpoint) ->
+                builder.MapNestedEndpoint(template, endpoints, configureEndpoint)
             | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints
