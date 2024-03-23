@@ -1,6 +1,5 @@
 module Oxpecker.Tests.Helpers
 
-open System
 open Xunit
 open FsUnitTyped
 open Oxpecker.Helpers

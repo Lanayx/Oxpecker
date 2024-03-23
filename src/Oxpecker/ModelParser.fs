@@ -5,13 +5,18 @@
 /// </summary>
 module ModelParser =
     open System
+    open System.Collections.Generic
     open System.Globalization
     open System.Reflection
-    open System.Collections.Generic
     open System.ComponentModel
+    open System.Text.RegularExpressions
     open Microsoft.Extensions.Primitives
     open Microsoft.FSharp.Reflection
-    open System.Text.RegularExpressions
+    open Microsoft.FSharp.Collections
+
+    let listGenericType = typedefof<List<_>>
+    let optionGenericType = typedefof<Option<_>>
+    let nullableGenericType = typedefof<Nullable<_>>
 
     type private Type with
         member this.IsGeneric() = this.GetTypeInfo().IsGenericType
@@ -19,16 +24,12 @@ module ModelParser =
         member this.IsFSharpList() =
             match this.IsGeneric() with
             | false -> false
-            | true ->
-                let t = this.GetGenericTypeDefinition()
-                t = typedefof<Microsoft.FSharp.Collections.List<_>>
+            | true -> this.GetGenericTypeDefinition() = listGenericType
 
         member this.IsFSharpOption() =
             match this.IsGeneric() with
             | false -> false
-            | true ->
-                let t = this.GetGenericTypeDefinition()
-                t = typedefof<Microsoft.FSharp.Core.Option<_>>
+            | true -> this.GetGenericTypeDefinition() = optionGenericType
 
         member this.GetGenericType() = this.GetGenericArguments().[0]
 
@@ -123,7 +124,7 @@ module ModelParser =
         else
             let converter =
                 if t.GetTypeInfo().IsValueType then
-                    typedefof<Nullable<_>>.MakeGenericType([| t |])
+                    nullableGenericType.MakeGenericType([| t |])
                 else
                     t
                 |> TypeDescriptor.GetConverter

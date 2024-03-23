@@ -4,7 +4,6 @@ open System.Threading.Tasks
 
 [<AutoOpen>]
 module ResponseCaching =
-    open System
     open Microsoft.Net.Http.Headers
     open Microsoft.AspNetCore.Http
     open Microsoft.AspNetCore.ResponseCaching

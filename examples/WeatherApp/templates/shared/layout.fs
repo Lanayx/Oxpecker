@@ -5,6 +5,8 @@ open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Oxpecker.Htmx
 
+#nowarn "3391"
+
 module layout =
 
     let navLink (attrs: {| Href: string; Class: string; Ctx: HttpContext|}) =

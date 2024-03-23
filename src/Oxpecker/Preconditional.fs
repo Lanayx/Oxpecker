@@ -4,7 +4,6 @@ module Oxpecker.Preconditional
 open System
 open System.Linq
 open System.Runtime.CompilerServices
-open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Headers
 open Microsoft.Extensions.Primitives

@@ -1,9 +1,9 @@
 namespace Oxpecker
 
 open System
-open System.Net
 open System.Reflection
 open System.Runtime.CompilerServices
+open System.Text.RegularExpressions
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
@@ -41,13 +41,75 @@ module RoutingTypes =
             | CONNECT -> "CONNECT"
 
     type RouteTemplate = string
-    type Metadata = obj seq
-
+    type ConfigureEndpoint = IEndpointConventionBuilder -> IEndpointConventionBuilder
     type Endpoint =
-        | SimpleEndpoint of HttpVerbs * RouteTemplate * EndpointHandler * Metadata
-        | NestedEndpoint of RouteTemplate * Endpoint seq * Metadata
+        | SimpleEndpoint of HttpVerbs * RouteTemplate * EndpointHandler * ConfigureEndpoint
+        | NestedEndpoint of RouteTemplate * Endpoint seq * ConfigureEndpoint
         | MultiEndpoint of Endpoint seq
 
+module RouteTemplateBuilder =
+
+    // Kestrel has made the weird decision to
+    // partially decode a route argument, which
+    // means that a given route argument would get
+    // entirely URL decoded except for '%2F' (/).
+    // Hence decoding %2F must happen separately as
+    // part of the string parsing function.
+    //
+    // For more information please check:
+    // https://github.com/aspnet/Mvc/issues/4599
+    let stringParse (s: string) =
+        s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase) |> box
+    let intParse (s: string) = int s |> box
+    let boolParse (s: string) = bool.Parse s |> box
+    let charParse (s: string) = char s[0] |> box
+    let int64Parse (s: string) = int64 s |> box
+    let floatParse (s: string) = float s |> box
+    let uint64Parse (s: string) = uint64 s |> box
+    let guidParse (s: string) = Guid.Parse s |> box
+
+    let tryGetParser (c: char) (modifier: string option) =
+        match c with
+        | 's' -> Some stringParse
+        | 'i' -> Some intParse
+        | 'b' -> Some boolParse
+        | 'c' -> Some charParse
+        | 'd' -> Some int64Parse
+        | 'f' -> Some floatParse
+        | 'u' -> Some uint64Parse
+        | 'O' ->
+            match modifier with
+            | Some "guid" -> Some guidParse
+            | _ -> None
+        | _ -> None
+
+    let placeholderPattern = Regex("\{%([sibcdfuO])(:[^}]+)?\}")
+    // This function should convert to route template and mappings
+    // "api/{%s}/{%i}" -> ("api/{x}/{y}", [("x", 's', None); ("y", 'i', None)])
+    // "api/{%O:guid}/{%s}" -> ("api/{x:guid}/{y}", [("x", 'O', Some "guid"); ("y", 's', None)])
+    let convertToRouteTemplate (pathValue: string) (parameters: ParameterInfo[]) =
+        let mutable index = 0
+        let mappings = ResizeArray()
+
+        let placeholderEvaluator =
+            MatchEvaluator(fun m ->
+                let vtype = m.Groups[1].Value[0] // First capture group is the variable type s, i, or O
+                let formatSpecifier = if m.Groups[2].Success then m.Groups[2].Value else ""
+                let paramName = parameters[index].Name
+                index <- index + 1 // Increment index for next use
+                mappings.Add(
+                    paramName,
+                    vtype,
+                    if formatSpecifier = "" then
+                        None
+                    else
+                        Some <| formatSpecifier.TrimStart(':')
+                )
+                $"{{{paramName}{formatSpecifier}}}" // Construct the new placeholder
+            )
+
+        let newRoute = placeholderPattern.Replace(pathValue, placeholderEvaluator)
+        (newRoute, mappings.ToArray())
 
 module RoutingInternal =
     type ApplyBefore =
@@ -73,67 +135,49 @@ module RoutingInternal =
             | MultiEndpoint endpoints ->
                 MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware, e)) endpoints)
 
-module private RouteTemplateBuilder =
+    let invokeHandler<'T>
+        (ctx: HttpContext)
+        (methodInfo: MethodInfo)
+        (handler: 'T)
+        (mappings: (string * char * Option<_>) array)
+        (parameters: ParameterInfo array)
+        =
+        let routeData = ctx.GetRouteData()
+        let mappingArguments =
+            seq {
+                for mapping in mappings do
+                    let placeholderName, formatChar, modifier = mapping
+                    let routeValue = routeData.Values[placeholderName] |> string
+                    match RouteTemplateBuilder.tryGetParser formatChar modifier with
+                    | Some parseFn ->
+                        try
+                            parseFn routeValue
+                        with :? FormatException as ex ->
+                            raise
+                            <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
+                    | None -> routeValue
+            }
+        let paramCount = parameters.Length
+        if paramCount = mappings.Length + 1 then
+            methodInfo.Invoke(handler, [| yield! mappingArguments; ctx |]) :?> Task
+        elif paramCount = mappings.Length then
+            let result =
+                methodInfo.Invoke(handler, [| yield! mappingArguments |]) :?> FSharpFunc<HttpContext, Task>
+            result ctx
+        else
+            failwith "Unsupported routef handler"
 
-    let convertToRouteTemplate (pathValue: string) =
-        let rec convert (i: int) (chars: char list) =
-            match chars with
-            | '%' :: '%' :: tail ->
-                let template, mappings = convert i tail
-                "%" + template, mappings
-            | '%' :: c :: tail ->
-                let template, mappings = convert (i + 1) tail
-                let placeholderName = $"{c}{i}"
-                placeholderName + template, (placeholderName, c) :: mappings
-            | c :: tail ->
-                let template, mappings = convert i tail
-                c.ToString() + template, mappings
-            | [] -> "", []
+    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) =
+        let handlerType = routeHandler.GetType()
+        let handlerMethod = handlerType.GetMethods()[0]
+        let parameters = handlerMethod.GetParameters()
+        let template, mappings =
+            RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
 
-        pathValue |> List.ofSeq |> convert 0
+        let requestDelegate =
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler mappings parameters
 
-module private RequestDelegateBuilder =
-    // Kestrel has made the weird decision to
-    // partially decode a route argument, which
-    // means that a given route argument would get
-    // entirely URL decoded except for '%2F' (/).
-    // Hence decoding %2F must happen separately as
-    // part of the string parsing function.
-    //
-    // For more information please check:
-    // https://github.com/aspnet/Mvc/issues/4599
-    let stringParse (s: string) =
-        s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase) |> box
-    let intParse (s: string) = int s |> box
-    let boolParse (s: string) = bool.Parse s |> box
-    let charParse (s: string) = char s[0] |> box
-    let int64Parse (s: string) = int64 s |> box
-    let floatParse (s: string) = float s |> box
-    let uint64Parse (s: string) = uint64 s |> box
-    let guidParse (s: string) = Guid.Parse s |> box
-
-    let tryGetParser (c: char) (endpoint: RouteEndpoint) (placeholderName: string) =
-        match c with
-        | 's' -> Some stringParse
-        | 'i' -> Some intParse
-        | 'b' -> Some boolParse
-        | 'c' -> Some charParse
-        | 'd' -> Some int64Parse
-        | 'f' -> Some floatParse
-        | 'u' -> Some uint64Parse
-        | 'O' ->
-            match endpoint.RoutePattern.ParameterPolicies.TryGetValue(placeholderName) with
-            | true, policyReference ->
-                match policyReference[0].Content with
-                | "guid" -> Some guidParse
-                | _ -> None
-            | _ -> None
-        | _ -> None
-
-    let private handleResult (result: HttpContext option) (ctx: HttpContext) =
-        match result with
-        | None -> ctx.SetStatusCode(int HttpStatusCode.UnprocessableEntity)
-        | Some _ -> ()
+        template, mappings, requestDelegate
 
 
 [<AutoOpen>]
@@ -147,8 +191,6 @@ module Routers =
         | NestedEndpoint(handler, endpoints, metadata) ->
             NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), metadata)
         | MultiEndpoint endpoints -> endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs) |> MultiEndpoint
-
-
 
     let rec private applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
@@ -174,54 +216,14 @@ module Routers =
     let CONNECT: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ CONNECT ])
 
     let route (path: string) (handler: EndpointHandler) : Endpoint =
-        SimpleEndpoint(HttpVerbs.Any, path, handler, Seq.empty)
-
-
-    let private invokeHandler<'T>
-        (ctx: HttpContext)
-        (methodInfo: MethodInfo)
-        (handler: 'T)
-        (mappings: (string * char) array)
-        =
-        let routeData = ctx.GetRouteData()
-        let endpointData = ctx.GetEndpoint() :?> RouteEndpoint
-        let mappingArguments =
-            seq {
-                for mapping in mappings do
-                    let placeholderName, formatChar = mapping
-                    let routeValue = routeData.Values[placeholderName] |> string
-                    match RequestDelegateBuilder.tryGetParser formatChar endpointData placeholderName with
-                    | Some parseFn ->
-                        try
-                            parseFn routeValue
-                        with :? FormatException as ex ->
-                            raise
-                            <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
-                    | None -> routeValue
-            }
-        let paramCount = methodInfo.GetParameters().Length
-        if paramCount = mappings.Length + 1 then
-            methodInfo.Invoke(handler, [| yield! mappingArguments; ctx |]) :?> Task
-        elif paramCount = mappings.Length then
-            let result =
-                methodInfo.Invoke(handler, [| yield! mappingArguments |]) :?> FSharpFunc<HttpContext, Task>
-            result ctx
-        else
-            failwith "Unsupported"
+        SimpleEndpoint(HttpVerbs.Any, path, handler, id)
 
     let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) : Endpoint =
-        let handlerType = routeHandler.GetType()
-        let handlerMethod = handlerType.GetMethods()[0]
-        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value
-        let arrMappings = mappings |> List.toArray
+        let template, _, requestDelegate = routefInner path routeHandler
 
-        let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler arrMappings
+        SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
-        SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, Seq.empty)
-
-    let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint =
-        NestedEndpoint(path, endpoints, Seq.empty)
+    let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
 
 
     let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
@@ -235,28 +237,16 @@ module Routers =
             NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, metadata)
         | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints)
 
-    let rec addMetadata (newMetadata: obj) (endpoint: Endpoint) =
+    let rec configureEndpoint (f: ConfigureEndpoint) (endpoint: Endpoint) =
         match endpoint with
-        | SimpleEndpoint(verb, template, handler, metadata) ->
-            SimpleEndpoint(
-                verb,
-                template,
-                handler,
-                seq {
-                    yield! metadata
-                    newMetadata
-                }
-            )
-        | NestedEndpoint(template, endpoints, metadata) ->
-            NestedEndpoint(
-                template,
-                endpoints,
-                seq {
-                    yield! metadata
-                    newMetadata
-                }
-            )
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (addMetadata newMetadata) endpoints)
+        | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
+            SimpleEndpoint(verb, template, handler, configureEndpoint >> f)
+        | NestedEndpoint(template, endpoints, configureEndpoint) ->
+            NestedEndpoint(template, endpoints, configureEndpoint >> f)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (configureEndpoint f) endpoints)
+
+    let addMetadata (metadata: obj) =
+        configureEndpoint _.WithMetadata(metadata)
 
 type EndpointRouteBuilderExtensions() =
 
@@ -267,17 +257,13 @@ type EndpointRouteBuilderExtensions() =
             verb: HttpVerbs,
             routeTemplate: RouteTemplate,
             requestDelegate: RequestDelegate,
-            metadata: Metadata
+            configureEndpoint: ConfigureEndpoint
         ) =
         match verb with
-        | Any ->
-            builder
-                .Map(routeTemplate, requestDelegate)
-                .WithMetadata(metadata |> Seq.toArray)
+        | Any -> builder.Map(routeTemplate, requestDelegate) |> configureEndpoint
         | Verbs verbs ->
-            builder
-                .MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
-                .WithMetadata(metadata |> Seq.toArray)
+            builder.MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
+            |> configureEndpoint
         |> ignore
 
     [<Extension>]
@@ -286,39 +272,25 @@ type EndpointRouteBuilderExtensions() =
             builder: IEndpointRouteBuilder,
             parentTemplate: RouteTemplate,
             endpoints: Endpoint seq,
-            parentMetadata: Metadata
+            parentConfigureEndpoint: ConfigureEndpoint
         ) =
         let groupBuilder = builder.MapGroup(parentTemplate)
         for endpoint in endpoints do
             match endpoint with
-            | SimpleEndpoint(verb, template, handler, metadata) ->
-                groupBuilder.MapSingleEndpoint(
-                    verb,
-                    template,
-                    handler,
-                    seq {
-                        yield! parentMetadata
-                        yield! metadata
-                    }
-                )
-            | NestedEndpoint(template, endpoints, metadata) ->
-                groupBuilder.MapNestedEndpoint(
-                    template,
-                    endpoints,
-                    seq {
-                        yield! parentMetadata
-                        yield! metadata
-                    }
-                )
+            | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
+                groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigureEndpoint >> configureEndpoint)
+            | NestedEndpoint(template, endpoints, configureEndpoint) ->
+                groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigureEndpoint >> configureEndpoint)
             | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint endpoints
 
     [<Extension>]
     static member private MapMultiEndpoint(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
         for endpoint in endpoints do
             match endpoint with
-            | SimpleEndpoint(verb, template, handler, metadata) ->
-                builder.MapSingleEndpoint(verb, template, handler, metadata)
-            | NestedEndpoint(template, endpoints, metadata) -> builder.MapNestedEndpoint(template, endpoints, metadata)
+            | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
+                builder.MapSingleEndpoint(verb, template, handler, configureEndpoint)
+            | NestedEndpoint(template, endpoints, configureEndpoint) ->
+                builder.MapNestedEndpoint(template, endpoints, configureEndpoint)
             | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints
 
     [<Extension>]
@@ -326,7 +298,8 @@ type EndpointRouteBuilderExtensions() =
 
         for endpoint in endpoints do
             match endpoint with
-            | SimpleEndpoint(verb, template, handler, metadata) ->
-                builder.MapSingleEndpoint(verb, template, handler, metadata)
-            | NestedEndpoint(template, endpoints, metadata) -> builder.MapNestedEndpoint(template, endpoints, metadata)
+            | SimpleEndpoint(verb, template, handler, configureEndpoint) ->
+                builder.MapSingleEndpoint(verb, template, handler, configureEndpoint)
+            | NestedEndpoint(template, endpoints, configureEndpoint) ->
+                builder.MapNestedEndpoint(template, endpoints, configureEndpoint)
             | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints

@@ -1,6 +1,5 @@
 ﻿namespace PerfTest
 
-open System.IO
 open BenchmarkDotNet.Attributes
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder

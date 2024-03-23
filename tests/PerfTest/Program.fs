@@ -1,5 +1,4 @@
-﻿open System
-open BenchmarkDotNet.Running
+﻿open BenchmarkDotNet.Running
 open PerfTest
 
 [<EntryPoint>]
