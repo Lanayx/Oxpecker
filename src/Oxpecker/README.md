@@ -31,6 +31,12 @@ An in depth functional reference to all of Oxpecker's default features.
     - [HTTP Verbs](#http-verbs)
     - [HTTP Status Codes](#http-status-codes)
     - [Routing](#routing)
+      - [route](#route)
+      - [routef](#routef)
+      - [subRoute](#subroute)
+      - [addMetadata](#addmetadata)
+      - [configureEndpoint](#configureendpoint)
+    - [Query Strings](#query-strings)
     - [Model Binding](#model-binding)
       - [Binding JSON](#binding-json)
       - [Binding Forms](#binding-forms)
@@ -47,6 +53,7 @@ An in depth functional reference to all of Oxpecker's default features.
       - [Writing HTML views](#writing-html-views)
     - [Streaming](#streaming)
     - [Redirection](#redirection)
+    - [Response compression](#response-compression)
 - [Testing](#testing)
 
 ## Fundamentals
@@ -229,9 +236,9 @@ routef "/{%s}" (bindQuery << handler)
 routef "/{%s}/{%s}" (bindForm <<+ handler)
 routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
-#### Multi-route composition
+#### Multi-route handler
 
-Sometimes you want to compose some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
+Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
 
 ```fsharp
 
@@ -691,6 +698,31 @@ let webApp =
 ```
 
 In this example the final URL to retrieve "Bar 2" would be `http[s]://your-domain.com/api/v2/bar`.
+
+#### addMetadata
+
+It lets you add [metadata](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#endpoint-metadata) to a route which can be used later on in the pipeline:
+
+```fsharp
+let webApp =
+    GET [
+        route "/foo" (text "Foo") |> addMetadata "foo"
+    ]
+```
+
+#### configureEndpoint
+
+This function allows you to configure an endpoint using ASP.NET `.With*` extension methods:
+
+```fsharp
+let webApp =
+    GET [
+        route "/foo" (text "Foo")
+          |> configureEndpoint
+             _.WithMetadata("foo")
+              .WithDisplayName("Foo")
+    ]
+```
 
 ### Query Strings
 

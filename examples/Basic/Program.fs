@@ -9,6 +9,7 @@ open Microsoft.Net.Http.Headers
 open Oxpecker
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
+open Oxpecker.OpenApi
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
@@ -108,11 +109,12 @@ let endpoints = [
         route "/iresult" <| %Ok {| Text = "Hello World" |}
         route "/ibadResult" <| % BadRequest()
         routef "/text/{%s}" text
+        |> configureEndpoint _.WithName("GetText")
+        |> addOpenApiSimple<unit, string>
         routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
         routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         route "/x" (bindQuery handler4)
-        routef "/x/{%s}/{%s}" (bindQuery <<+ handler5)
         routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
         routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
         route "/abc" (json {| X = "Y" |})
@@ -120,6 +122,15 @@ let endpoints = [
     ]
     POST [
         route "/x" (bindJson handler4)
+        routef "/x/{%s}/{%s}" (bindForm <<+ handler5)
+        |> configureEndpoint _.WithName("BindForm")
+        |> addOpenApi(
+            OpenApiConfig(
+                requestBody =
+                    RequestBody(typeof<MyModel>, [| "multipart/form-data"; "application/x-www-form-urlencoded" |]),
+                responseBodies = [ ResponseBody(typeof<MyModel>) ]
+            )
+        )
         route "/y" (bindQuery(bindJson << handler7))
         routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
         routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
@@ -184,12 +195,16 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseRouting()
         .Use(errorHandler)
         .UseOxpecker(endpoints)
+        .UseSwagger() // for generating OpenApi spec
+        .UseSwaggerUI() // for viewing Swagger UI
         .Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
+        .AddEndpointsApiExplorer() // use the API Explorer to discover and describe endpoints
+        .AddSwaggerGen() // swagger dependencies
         .AddSingleton<ILogger>(fun sp ->
             sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.Basic"))
     |> ignore

@@ -1,5 +1,7 @@
 namespace Oxpecker.OpenApi
 
+open System.Reflection
+
 [<AutoOpen>]
 module Routing =
 
@@ -21,7 +23,6 @@ module Routing =
             | Some "guid" -> OpenApiSchema(Type = "string", Format = "uuid")
             | _ -> OpenApiSchema(Type = "string")
         | _ -> OpenApiSchema(Type = "string")
-
 
     let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) : Endpoint =
         let template, mappings, requestDelegate =
@@ -53,4 +54,9 @@ module Routing =
             | reqType, _ when reqType = unitType -> "InvokeUnitReq"
             | _, respType when respType = unitType -> "InvokeUnitResp"
             | _, _ -> "Invoke"
-        configureEndpoint _.WithMetadata(typeof<FakeFunc<'Req, 'Res>>.GetMethod(methodName)).WithOpenApi()
+        configureEndpoint
+            _.WithMetadata(
+                typeof<FakeFunc<'Req, 'Res>>
+                    .GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
+            )
+                .WithOpenApi()

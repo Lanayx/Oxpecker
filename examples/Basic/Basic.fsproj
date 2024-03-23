@@ -13,7 +13,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\src\Oxpecker.OpenApi\Oxpecker.OpenApi.fsproj" />
       <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     </ItemGroup>
 
 </Project>

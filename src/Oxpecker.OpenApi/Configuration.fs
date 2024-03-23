@@ -1,6 +1,7 @@
 namespace Oxpecker.OpenApi
 
 open System
+open System.Reflection
 open System.Runtime.CompilerServices
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
@@ -18,37 +19,38 @@ module Configuration =
         member this.InvokeUnitResp(_: 'T) = ()
         member this.InvokeUnit() = ()
 
-    let internal fakeFuncMethod = typeof<FakeFunc<_, _>>.GetMethod("InvokeUnit")
+    let internal fakeFuncMethod =
+        typeof<FakeFunc<_, _>>
+            .GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
     let internal unitType = typeof<unit>
 
 
-    type RequestInfo(?requestType: Type, ?contentTypes: string[], ?isOptional: bool) =
+    type RequestBody(?requestType: Type, ?contentTypes: string[], ?isOptional: bool) =
         let requestType = requestType |> Option.defaultValue null
         let contentTypes = contentTypes |> Option.defaultValue [| "application/json" |]
         let isOptional = isOptional |> Option.defaultValue false
         member this.ToAttribute() =
             AcceptsMetadata(contentTypes, requestType, isOptional)
 
-    type ResponseInfo(?responseType: Type, ?contentTypes: string[], ?statusCode: int) =
+    type ResponseBody(?responseType: Type, ?contentTypes: string[], ?statusCode: int) =
         let responseType = responseType |> Option.defaultValue null
         let contentTypes = contentTypes |> Option.defaultValue null
         let statusCode = statusCode |> Option.defaultValue 200
         member this.ToAttribute() =
             ProducesResponseTypeMetadata(statusCode, responseType, contentTypes)
 
-
     type OpenApiConfig
         (
-            ?requestInfo: RequestInfo,
-            ?responseInfos: ResponseInfo seq,
+            ?requestBody: RequestBody,
+            ?responseBodies: ResponseBody seq,
             ?configureOperation: OpenApiOperation -> OpenApiOperation
         ) =
 
         member this.Build(builder: IEndpointConventionBuilder) =
             builder.WithMetadata(fakeFuncMethod) |> ignore
-            requestInfo
+            requestBody
             |> Option.iter(fun accepts -> builder.WithMetadata(accepts.ToAttribute()) |> ignore)
-            responseInfos
+            responseBodies
             |> Option.iter(fun responseInfos ->
                 for produces in responseInfos do
                     builder.WithMetadata(produces.ToAttribute()) |> ignore)
