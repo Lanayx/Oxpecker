@@ -68,20 +68,20 @@ module RouteTemplateBuilder =
     let uint64Parse (s: string) = uint64 s |> box
     let guidParse (s: string) = Guid.Parse s |> box
 
-    let tryGetParser (c: char) (modifier: string option) =
+    let inline tryGetParser (c: char) (modifier: string option) =
         match c with
-        | 's' -> Some stringParse
-        | 'i' -> Some intParse
-        | 'b' -> Some boolParse
-        | 'c' -> Some charParse
-        | 'd' -> Some int64Parse
-        | 'f' -> Some floatParse
-        | 'u' -> Some uint64Parse
+        | 's' -> ValueSome stringParse
+        | 'i' -> ValueSome intParse
+        | 'b' -> ValueSome boolParse
+        | 'c' -> ValueSome charParse
+        | 'd' -> ValueSome int64Parse
+        | 'f' -> ValueSome floatParse
+        | 'u' -> ValueSome uint64Parse
         | 'O' ->
             match modifier with
-            | Some "guid" -> Some guidParse
-            | _ -> None
-        | _ -> None
+            | Some "guid" -> ValueSome guidParse
+            | _ -> ValueNone
+        | _ -> ValueNone
 
     let placeholderPattern = Regex("\{%([sibcdfuO])(:[^}]+)?\}")
     // This function should convert to route template and mappings
@@ -143,26 +143,28 @@ module RoutingInternal =
         (parameters: ParameterInfo array)
         =
         let routeData = ctx.GetRouteData()
-        let mappingArguments =
-            seq {
+        let inline getMappingArguments shouldAddCtx =
+            [|
                 for mapping in mappings do
                     let placeholderName, formatChar, modifier = mapping
                     let routeValue = routeData.Values[placeholderName] |> string
                     match RouteTemplateBuilder.tryGetParser formatChar modifier with
-                    | Some parseFn ->
+                    | ValueSome parseFn ->
                         try
                             parseFn routeValue
                         with :? FormatException as ex ->
                             raise
                             <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
-                    | None -> routeValue
-            }
+                    | ValueNone -> routeValue
+                if shouldAddCtx then
+                    ctx
+            |]
         let paramCount = parameters.Length
         if paramCount = mappings.Length + 1 then
-            methodInfo.Invoke(handler, [| yield! mappingArguments; ctx |]) :?> Task
+            methodInfo.Invoke(handler, getMappingArguments true) :?> Task
         elif paramCount = mappings.Length then
             let result =
-                methodInfo.Invoke(handler, [| yield! mappingArguments |]) :?> FSharpFunc<HttpContext, Task>
+                methodInfo.Invoke(handler, getMappingArguments false) :?> FSharpFunc<HttpContext, Task>
             result ctx
         else
             failwith "Unsupported routef handler"
