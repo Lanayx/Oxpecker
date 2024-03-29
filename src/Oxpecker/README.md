@@ -679,6 +679,20 @@ The format string supports the following format chars:
 | `%u`        | `uint64`                                                                                                                |
 | `%O`        | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
 
+_Note_: `routef` handler can only handle up to 5 route parameters. It's not recommended to use more than 3 parameters in a route, but if you really need a lot, you can use `route` with `EndpointHandler` function that utilizes `.TryGetRouteValue` extension.
+
+```fsharp
+route "/{a}/{b}/{c}/{d}/{e}/{f}" (fun ctx ->
+    let a = ctx.TryGetRouteValue("a") |> Option.defaultValue ""
+    let b = ctx.TryGetRouteValue("b") |> Option.defaultValue ""
+    let c = ctx.TryGetRouteValue("c") |> Option.defaultValue ""
+    let d = ctx.TryGetRouteValue("d") |> Option.defaultValue ""
+    let e = ctx.TryGetRouteValue("e") |> Option.defaultValue ""
+    let f = ctx.TryGetRouteValue("f") |> Option.defaultValue ""
+    text (sprintf "%s %s %s %s %s %s", a b c d e f) ctx
+)
+```
+
 #### subRoute
 
 It lets you categorise routes without having to repeat already pre-filtered parts of the route:

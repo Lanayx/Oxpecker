@@ -143,22 +143,21 @@ module RoutingInternal =
         (parameters: ParameterInfo array)
         =
         let routeData = ctx.GetRouteData()
-        let inline getMappingArguments shouldAddCtx =
-            [|
-                for mapping in mappings do
-                    let placeholderName, formatChar, modifier = mapping
-                    let routeValue = routeData.Values[placeholderName] |> string
-                    match RouteTemplateBuilder.tryGetParser formatChar modifier with
-                    | ValueSome parseFn ->
-                        try
-                            parseFn routeValue
-                        with :? FormatException as ex ->
-                            raise
-                            <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
-                    | ValueNone -> routeValue
-                if shouldAddCtx then
-                    ctx
-            |]
+        let inline getMappingArguments shouldAddCtx = [|
+            for mapping in mappings do
+                let placeholderName, formatChar, modifier = mapping
+                let routeValue = routeData.Values[placeholderName] |> string
+                match RouteTemplateBuilder.tryGetParser formatChar modifier with
+                | ValueSome parseFn ->
+                    try
+                        parseFn routeValue
+                    with :? FormatException as ex ->
+                        raise
+                        <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
+                | ValueNone -> routeValue
+            if shouldAddCtx then
+                ctx
+        |]
         let paramCount = parameters.Length
         if paramCount = mappings.Length + 1 then
             methodInfo.Invoke(handler, getMappingArguments true) :?> Task
