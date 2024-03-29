@@ -139,8 +139,7 @@ module RoutingInternal =
         =
         let routeData = ctx.GetRouteData()
         let inline getMappingArguments shouldAddCtx = [|
-            for mapping in mappings do
-                let placeholderName, formatChar, modifier = mapping
+            for placeholderName, formatChar, modifier in mappings do
                 let routeValue = routeData.Values[placeholderName] |> string
                 RouteTemplateBuilder.parse formatChar modifier routeValue
             if shouldAddCtx then
