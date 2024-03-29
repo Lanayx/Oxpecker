@@ -96,13 +96,12 @@ type Routing() =
     //   [Host]     : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2 DEBUG
     //   DefaultJob : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
     //
-    //
     // | Method            | Mean      | Error     | StdDev    | Gen0   | Allocated |
     // |------------------ |----------:|----------:|----------:|-------:|----------:|
-    // | GetOxpeckerRoute  |  7.886 us | 0.1379 us | 0.1475 us | 0.9766 |   8.01 KB |
-    // | GetOxpeckerRoutef | 12.885 us | 0.3035 us | 0.8561 us | 1.0986 |    9.8 KB |
-    // | GetGiraffeRoute   |  8.763 us | 0.1748 us | 0.4085 us | 1.0986 |    9.4 KB |
-    // | GetGiraffeRoutef  | 25.607 us | 0.4973 us | 0.4885 us | 1.4648 |  13.38 KB |
+    // | GetOxpeckerRoute  |  8.079 us | 0.1612 us | 0.3145 us | 0.9766 |   8.09 KB |
+    // | GetOxpeckerRoutef |  9.773 us | 0.1941 us | 0.2157 us | 0.9766 |   8.78 KB |
+    // | GetGiraffeRoute   |  9.354 us | 0.1802 us | 0.4963 us | 1.0986 |   9.46 KB |
+    // | GetGiraffeRoutef  | 22.890 us | 0.4577 us | 0.8135 us | 1.4648 |  13.46 KB |
 
     let oxpeckerServer = OxpeckerRouting.webApp()
     let giraffeServer = GiraffeRouting.webApp()

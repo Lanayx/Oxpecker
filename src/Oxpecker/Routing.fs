@@ -58,30 +58,25 @@ module RouteTemplateBuilder =
     //
     // For more information please check:
     // https://github.com/aspnet/Mvc/issues/4599
-    let stringParse (s: string) =
-        s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase) |> box
-    let intParse (s: string) = int s |> box
-    let boolParse (s: string) = bool.Parse s |> box
-    let charParse (s: string) = char s[0] |> box
-    let int64Parse (s: string) = int64 s |> box
-    let floatParse (s: string) = float s |> box
-    let uint64Parse (s: string) = uint64 s |> box
-    let guidParse (s: string) = Guid.Parse s |> box
 
-    let inline tryGetParser (c: char) (modifier: string option) =
-        match c with
-        | 's' -> ValueSome stringParse
-        | 'i' -> ValueSome intParse
-        | 'b' -> ValueSome boolParse
-        | 'c' -> ValueSome charParse
-        | 'd' -> ValueSome int64Parse
-        | 'f' -> ValueSome floatParse
-        | 'u' -> ValueSome uint64Parse
-        | 'O' ->
-            match modifier with
-            | Some "guid" -> ValueSome guidParse
-            | _ -> ValueNone
-        | _ -> ValueNone
+    let inline parse (c: char) (modifier: string option) (s: string) : obj =
+        try
+            match c with
+            | 's' -> s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase)
+            | 'i' -> int s |> box
+            | 'b' -> bool.Parse s |> box
+            | 'c' -> char s[0] |> box
+            | 'd' -> int64 s |> box
+            | 'f' -> float s |> box
+            | 'u' -> uint64 s |> box
+            | 'O' ->
+                match modifier with
+                | Some "guid" -> Guid.Parse s |> box
+                | _ -> s
+            | _ -> s
+        with :? FormatException as ex ->
+            raise
+            <| RouteParseException($"Url segment value '%s{s}' has invalid format", ex)
 
     let placeholderPattern = Regex("\{%([sibcdfuO])(:[^}]+)?\}")
     // This function should convert to route template and mappings
@@ -147,14 +142,7 @@ module RoutingInternal =
             for mapping in mappings do
                 let placeholderName, formatChar, modifier = mapping
                 let routeValue = routeData.Values[placeholderName] |> string
-                match RouteTemplateBuilder.tryGetParser formatChar modifier with
-                | ValueSome parseFn ->
-                    try
-                        parseFn routeValue
-                    with :? FormatException as ex ->
-                        raise
-                        <| RouteParseException($"Url segment value '%s{routeValue}' has invalid format", ex)
-                | ValueNone -> routeValue
+                RouteTemplateBuilder.parse formatChar modifier routeValue
             if shouldAddCtx then
                 ctx
         |]
