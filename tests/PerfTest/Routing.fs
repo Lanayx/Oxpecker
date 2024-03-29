@@ -12,22 +12,22 @@ module OxpeckerRouting =
     let endpoints = [
         subRoute "/api1" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%i}/{%s}" <| fun id name -> text $"User {id} {name} received" ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
         subRoute "/api2" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%i}/{%s}" <| fun id name -> text $"User {id} {name} received" ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
         subRoute "/api3" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%i}/{%s}" <| fun id name -> text $"User {id} {name} received" ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
         subRoute "/api" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%i}/{%s}" <| fun id name -> text $"User {id} {name} received" ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
     ]
@@ -50,7 +50,7 @@ module GiraffeRouting =
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
                     GET
-                    >=> routef "/user/%i/%s" (fun (id, name) next -> text $"User {id} {name} received" next)
+                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
@@ -58,7 +58,7 @@ module GiraffeRouting =
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
                     GET
-                    >=> routef "/user/%i/%s" (fun (id, name) next -> text $"User {id} {name} received" next)
+                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
@@ -66,7 +66,7 @@ module GiraffeRouting =
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
                     GET
-                    >=> routef "/user/%i/%s" (fun (id, name) next -> text $"User {id} {name} received" next)
+                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
@@ -74,7 +74,7 @@ module GiraffeRouting =
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
                     GET
-                    >=> routef "/user/%i/%s" (fun (id, name) next -> text $"User {id} {name} received" next)
+                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
         ]
@@ -98,10 +98,10 @@ type Routing() =
     //
     // | Method            | Mean      | Error     | StdDev    | Gen0   | Allocated |
     // |------------------ |----------:|----------:|----------:|-------:|----------:|
-    // | GetOxpeckerRoute  |  8.079 us | 0.1612 us | 0.3145 us | 0.9766 |   8.09 KB |
-    // | GetOxpeckerRoutef |  9.773 us | 0.1941 us | 0.2157 us | 0.9766 |   8.78 KB |
-    // | GetGiraffeRoute   |  9.354 us | 0.1802 us | 0.4963 us | 1.0986 |   9.46 KB |
-    // | GetGiraffeRoutef  | 22.890 us | 0.4577 us | 0.8135 us | 1.4648 |  13.46 KB |
+    // | GetOxpeckerRoute  |  8.706 us | 0.1729 us | 0.3289 us | 0.9766 |   8.08 KB |
+    // | GetOxpeckerRoutef |  9.138 us | 0.1807 us | 0.2219 us | 0.9766 |    8.4 KB |
+    // | GetGiraffeRoute   |  9.611 us | 0.1918 us | 0.4741 us | 1.0986 |   9.48 KB |
+    // | GetGiraffeRoutef  | 26.128 us | 0.5105 us | 0.7948 us | 1.4648 |  13.11 KB |
 
     let oxpeckerServer = OxpeckerRouting.webApp()
     let giraffeServer = GiraffeRouting.webApp()
