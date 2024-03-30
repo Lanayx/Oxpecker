@@ -49,32 +49,28 @@ module GiraffeRouting =
                 "/api1"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
                 "/api2"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
                 "/api3"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
                 "/api"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
         ]

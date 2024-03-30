@@ -135,25 +135,31 @@ module RoutingInternal =
         (methodInfo: MethodInfo)
         (handler: 'T)
         (mappings: (string * char * Option<_>) array)
-        (parameters: ParameterInfo array)
+        (ctxInParameterList: bool)
         =
         let routeData = ctx.GetRouteData()
-        let inline getMappingArguments shouldAddCtx = [|
-            for placeholderName, formatChar, modifier in mappings do
-                let routeValue = routeData.Values[placeholderName] |> string
-                RouteTemplateBuilder.parse formatChar modifier routeValue
-            if shouldAddCtx then
-                ctx
-        |]
-        let paramCount = parameters.Length
-        if paramCount = mappings.Length + 1 then
-            methodInfo.Invoke(handler, getMappingArguments true) :?> Task
-        elif paramCount = mappings.Length then
-            let result =
-                methodInfo.Invoke(handler, getMappingArguments false) :?> FSharpFunc<HttpContext, Task>
-            result ctx
+        if ctxInParameterList then
+            methodInfo.Invoke(
+                handler,
+                [|
+                    for placeholderName, formatChar, modifier in mappings do
+                        let routeValue = routeData.Values[placeholderName] |> string
+                        RouteTemplateBuilder.parse formatChar modifier routeValue
+                    ctx
+                |]
+            )
+            :?> Task
         else
-            failwith "Unsupported routef handler"
+            methodInfo.Invoke(
+                handler,
+                [|
+                    for placeholderName, formatChar, modifier in mappings do
+                        let routeValue = routeData.Values[placeholderName] |> string
+                        RouteTemplateBuilder.parse formatChar modifier routeValue
+                |]
+            )
+            :?> FSharpFunc<HttpContext, Task>
+            <| ctx
 
     let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) =
         let handlerType = routeHandler.GetType()
@@ -161,9 +167,13 @@ module RoutingInternal =
         let parameters = handlerMethod.GetParameters()
         let template, mappings =
             RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
+        let ctxInParameterList =
+            if parameters.Length = mappings.Length + 1 then true
+            elif parameters.Length = mappings.Length then false
+            else failwith <| "Unsupported routef handler: " + path.Value
 
         let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler mappings parameters
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler mappings ctxInParameterList
 
         template, mappings, requestDelegate
 
