@@ -12,22 +12,22 @@ module OxpeckerRouting =
     let endpoints = [
         subRoute "/api1" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%s}" <| fun id ctx -> text $"User {id} received" ctx ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
         subRoute "/api2" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%s}" <| fun id ctx -> text $"User {id} received" ctx ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
         subRoute "/api3" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%s}" <| fun id ctx -> text $"User {id} received" ctx ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
         subRoute "/api" [
             GET [ route "/users" <| text "Users received" ]
-            GET [ routef "/user/{%s}" <| fun id ctx -> text $"User {id} received" ctx ]
+            GET [ routef "/user/{%s}/{%s}" <| fun id name -> text "User received" ]
             GET [ route "/json" <| json {| Name = "User" |} ]
         ]
     ]
@@ -49,32 +49,28 @@ module GiraffeRouting =
                 "/api1"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s" (fun id next ctx -> text $"User {id} received" next ctx)
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
                 "/api2"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s" (fun id next ctx -> text $"User {id} received" next ctx)
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
                 "/api3"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s" (fun id next ctx -> text $"User {id} received" next ctx)
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
             subRoute
                 "/api"
                 (choose [
                     GET >=> route "/users" >=> text "Users received"
-                    GET
-                    >=> routef "/user/%s" (fun id next ctx -> text $"User {id} received" next ctx)
+                    GET >=> routef "/user/%s/%s" (fun (id, name) -> text "User received")
                     GET >=> route "/json" >=> json {| Name = "User" |}
                 ])
         ]
@@ -89,22 +85,19 @@ module GiraffeRouting =
 
 [<MemoryDiagnoser>]
 type Routing() =
-    // BenchmarkDotNet v0.13.12, Windows 10
-    // AMD Ryzen 7 2700X, 1 CPU, 16 logical and 8 physical cores
-    // .NET SDK 8.0.101
-    //   [Host]     : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2 DEBUG
-    //   DefaultJob : .NET 8.0.1 (8.0.123.58001), X64 RyuJIT AVX2
-    //
-    //
-    // | Method            | Mean     | Error    | StdDev   | Median   | Gen0   | Allocated |
-    // |------------------ |---------:|---------:|---------:|---------:|-------:|----------:|
-    // | GetOxpeckerRoute  | 12.10 us | 0.311 us | 0.871 us | 11.98 us | 1.9531 |   8.09 KB |
-    // | GetOxpeckerRoutef | 21.05 us | 0.418 us | 0.764 us | 20.85 us | 2.1973 |   9.34 KB |
-    // | GetOxpeckerJson   | 18.11 us | 0.361 us | 0.971 us | 18.09 us | 2.0752 |   8.77 KB |
-    // | GetGiraffeRoute   | 15.22 us | 0.379 us | 1.082 us | 15.06 us | 2.3193 |    9.5 KB |
-    // | GetGiraffeRoutef  | 23.17 us | 0.548 us | 1.553 us | 22.71 us | 2.9297 |  12.02 KB |
-    // | GetGiraffeJson    | 21.60 us | 0.975 us | 2.874 us | 20.52 us | 2.0752 |   8.78 KB |
 
+    // BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.3296/23H2/2023Update/SunValley3)
+    // AMD Ryzen 5 5600H with Radeon Graphics, 1 CPU, 12 logical and 6 physical cores
+    // .NET SDK 8.0.200
+    //   [Host]     : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2 DEBUG
+    //   DefaultJob : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
+    //
+    // | Method            | Mean      | Error     | StdDev    | Gen0   | Allocated |
+    // |------------------ |----------:|----------:|----------:|-------:|----------:|
+    // | GetOxpeckerRoute  |  8.706 us | 0.1729 us | 0.3289 us | 0.9766 |   8.08 KB |
+    // | GetOxpeckerRoutef |  9.138 us | 0.1807 us | 0.2219 us | 0.9766 |    8.4 KB |
+    // | GetGiraffeRoute   |  9.611 us | 0.1918 us | 0.4741 us | 1.0986 |   9.48 KB |
+    // | GetGiraffeRoutef  | 26.128 us | 0.5105 us | 0.7948 us | 1.4648 |  13.11 KB |
 
     let oxpeckerServer = OxpeckerRouting.webApp()
     let giraffeServer = GiraffeRouting.webApp()
@@ -116,16 +109,12 @@ type Routing() =
     member this.GetOxpeckerRoute() = oxpeckerClient.GetAsync("/api/users")
 
     [<Benchmark>]
-    member this.GetOxpeckerRoutef() = oxpeckerClient.GetAsync("/api/user/1")
-
-    [<Benchmark>]
-    member this.GetOxpeckerJson() = oxpeckerClient.GetAsync("/api/json")
+    member this.GetOxpeckerRoutef() =
+        oxpeckerClient.GetAsync("/api/user/1/don")
 
     [<Benchmark>]
     member this.GetGiraffeRoute() = giraffeClient.GetAsync("/api/users")
 
     [<Benchmark>]
-    member this.GetGiraffeRoutef() = giraffeClient.GetAsync("/api/user/1")
-
-    [<Benchmark>]
-    member this.GetGiraffeJson() = oxpeckerClient.GetAsync("/api/json")
+    member this.GetGiraffeRoutef() =
+        giraffeClient.GetAsync("/api/user/1/don")
