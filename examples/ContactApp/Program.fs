@@ -85,8 +85,6 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddSingleton<ILogger>(fun sp ->
-            sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.Basic"))
     |> ignore
 
 

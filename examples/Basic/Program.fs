@@ -205,8 +205,6 @@ let configureServices (services: IServiceCollection) =
         .AddOxpecker()
         .AddEndpointsApiExplorer() // use the API Explorer to discover and describe endpoints
         .AddSwaggerGen() // swagger dependencies
-        .AddSingleton<ILogger>(fun sp ->
-            sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.Basic"))
     |> ignore
 
 

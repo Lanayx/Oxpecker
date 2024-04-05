@@ -16,9 +16,9 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.9.1</Version>
-        <PackageVersion>0.9.1</PackageVersion>
-        <PackageReleaseNotes>routef performance improvements</PackageReleaseNotes>
+        <Version>0.9.2</Version>
+        <PackageVersion>0.9.2</PackageVersion>
+        <PackageReleaseNotes>Default ILogger singleton added</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>

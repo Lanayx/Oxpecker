@@ -3,8 +3,10 @@ module Oxpecker.Middleware
 
 open System.Runtime.CompilerServices
 open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.DependencyInjection.Extensions
+open Microsoft.Extensions.Logging
 
 [<Extension>]
 type ApplicationBuilderExtensions() =
@@ -27,4 +29,10 @@ type ServiceCollectionExtensions() =
     [<Extension>]
     static member AddOxpecker(svc: IServiceCollection) =
         svc.TryAddSingleton<Serializers.IJsonSerializer>(SystemTextJson.Serializer())
+        svc.TryAddSingleton<ILogger>(fun sp ->
+            let loggerFactory = sp.GetRequiredService<ILoggerFactory>()
+            let webApp = sp.GetRequiredService<IWebHostEnvironment>()
+            // see https://github.com/dotnet/aspnetcore/blob/main/src/DefaultBuilder/src/WebApplication.cs
+            let categoryName = if isNull webApp then nameof WebApplication else webApp.ApplicationName
+            loggerFactory.CreateLogger categoryName)
         svc
