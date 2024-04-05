@@ -57,11 +57,7 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-        .AddOxpecker()
-        .AddSingleton<ILogger>(fun sp -> sp.GetRequiredService<ILoggerFactory>().CreateLogger("Oxpecker.Examples.CRUD"))
-    |> ignore
+    services.AddRouting().AddOxpecker() |> ignore
 
 [<EntryPoint>]
 let main args =
