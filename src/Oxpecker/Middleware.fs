@@ -33,6 +33,10 @@ type ServiceCollectionExtensions() =
             let loggerFactory = sp.GetRequiredService<ILoggerFactory>()
             let webApp = sp.GetRequiredService<IWebHostEnvironment>()
             // see https://github.com/dotnet/aspnetcore/blob/main/src/DefaultBuilder/src/WebApplication.cs
-            let categoryName = if isNull webApp then nameof WebApplication else webApp.ApplicationName
+            let categoryName =
+                if isNull webApp then
+                    nameof WebApplication
+                else
+                    webApp.ApplicationName
             loggerFactory.CreateLogger categoryName)
         svc

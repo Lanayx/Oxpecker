@@ -57,10 +57,7 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-        .AddOxpecker()
-    |> ignore
+    services.AddRouting().AddOxpecker() |> ignore
 
 [<EntryPoint>]
 let main args =
