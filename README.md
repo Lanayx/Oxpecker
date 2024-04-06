@@ -40,3 +40,4 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 * [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
 * [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.ViewEngine/README.md)
 * [Oxpecker.Htmx Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.Htmx/README.md)
+* [Oxpecker.OpenApi Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.OpenApi/README.md)
