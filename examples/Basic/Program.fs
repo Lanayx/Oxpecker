@@ -103,6 +103,9 @@ let RESPONSE_CACHE =
         |> Some
     applyBefore <| responseCaching cacheDirective None None
 
+let GET_HEAD_OPTIONS: Endpoint seq -> Endpoint =
+    applyHttpVerbsToEndpoints(Verbs [ HttpVerb.GET; HttpVerb.HEAD; HttpVerb.OPTIONS ])
+
 let endpoints = [
     GET [
         route "/" <| text "Hello World"
@@ -150,9 +153,10 @@ let endpoints = [
             route "/closed" handler1 |> addMetadata(RequiresAuditAttribute())
         ]
     )
-
-    route "/time" handler10 |> NO_RESPONSE_CACHE
-    route "/time-cached" handler10 |> RESPONSE_CACHE
+    GET_HEAD_OPTIONS [
+        route "/time" handler10 |> NO_RESPONSE_CACHE
+        route "/time-cached" handler10 |> RESPONSE_CACHE
+    ]
     route "/redirect" (redirectTo "/time" false)
     subRoute "/auth/{lang}" [ route "/" handler11 ]
 ]

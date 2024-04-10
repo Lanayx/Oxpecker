@@ -585,19 +585,18 @@ let submitFooHandler : EndpointHandler =
 let submitBarHandler : EndpointHandler =
     // Do something
 
-let webApp =
-    [
-        // Filters for GET requests
-        GET [
-            route "/foo" <| text "Foo"
-            route "/bar" <| text "Bar"
-        ]
-        // Filters for POST requests
-        POST [
-            route "/foo" <| submitFooHandler
-            route "/bar" <| submitBarHandler
-        ]
+let webApp = [
+    // Filters for GET requests
+    GET [
+        route "/foo" <| text "Foo"
+        route "/bar" <| text "Bar"
     ]
+    // Filters for POST requests
+    POST [
+        route "/foo" <| submitFooHandler
+        route "/bar" <| submitBarHandler
+    ]
+]
 ```
 
 If you need to check the request's HTTP verb from within an `EndpointHandler` function then you can use the default ASP.NET Core `HttpMethods` class:
@@ -615,6 +614,21 @@ let someHandler : EndpointHandler =
 ```
 
 The `GET_HEAD` is a special function which can be used to enable `GET` and `HEAD` requests on a resource at the same time. This can be very useful when caching is enabled and clients might want to send `HEAD` requests to check the `ETag` or `Last-Modified` HTTP headers before issuing a `GET`.
+
+You can also create custom combinations of HTTP verbs by using the `applyHttpVerbsToEndpoints` function:
+
+```fsharp
+let GET_HEAD_OPTIONS: Endpoint seq -> Endpoint =
+    applyHttpVerbsToEndpoints(Verbs [ HttpVerb.GET; HttpVerb.HEAD; HttpVerb.OPTIONS ])
+
+let webApp = [
+    GET_HEAD_OPTIONS [
+        route "/foo" <| text "Foo"
+        route "/bar" <| text "Bar"
+    ]
+]
+```
+
 
 ### HTTP Status Codes
 
