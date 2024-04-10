@@ -183,14 +183,14 @@ module Routers =
     open CoreInternal
     open RoutingInternal
 
-    let rec private applyHttpVerbsToEndpoint (verbs: HttpVerbs) (endpoint: Endpoint) : Endpoint =
+    let rec applyHttpVerbsToEndpoint (verbs: HttpVerbs) (endpoint: Endpoint) : Endpoint =
         match endpoint with
         | SimpleEndpoint(_, template, handler, metadata) -> SimpleEndpoint(verbs, template, handler, metadata)
         | NestedEndpoint(handler, endpoints, metadata) ->
             NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), metadata)
         | MultiEndpoint endpoints -> endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs) |> MultiEndpoint
 
-    let rec private applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
+    let rec applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
         |> Seq.map (function
             | SimpleEndpoint(_, routeTemplate, requestDelegate, metadata) ->
@@ -222,7 +222,6 @@ module Routers =
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
-
 
     let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
         compose_opImpl Unchecked.defaultof<ApplyBefore> beforeHandler endpoint
