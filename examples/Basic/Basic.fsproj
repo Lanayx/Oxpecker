@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.9.2" />
+        <PackageReference Include="Oxpecker" Version="0.9.3" />
         <PackageReference Include="Oxpecker.ViewEngine" Version="0.7.0" />
         <PackageReference Include="Oxpecker.OpenApi" Version="0.1.0" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
