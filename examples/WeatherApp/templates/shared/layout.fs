@@ -73,9 +73,9 @@ module layout =
         html(lang="en") {
             head() {
                 title() {
-                    if ctx.Items.ContainsKey("Title") then
-                        string ctx.Items["Title"]
-                    else
+                    match ctx.Items.TryGetValue "Title" with
+                    | true, title -> string title
+                    | false, _ ->
                         "WeatherApp"
                 }
                 meta(charset="utf-8")

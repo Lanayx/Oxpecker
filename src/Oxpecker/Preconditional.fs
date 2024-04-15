@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Http.Headers
 open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
+[<Struct>]
 type Precondition =
     | NoConditionsSpecified
     | ResourceNotModified
