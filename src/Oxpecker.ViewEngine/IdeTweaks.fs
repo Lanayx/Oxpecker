@@ -2,7 +2,6 @@ namespace JetBrains.Annotations
 
 open System
 
-[<Struct>]
 type internal InjectedLanguage =
     | CSS = 0
     | HTML = 1
