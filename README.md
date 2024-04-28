@@ -1,5 +1,7 @@
 # Oxpecker
 
+![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
+
 * [Oxpecker Nuget package](https://www.nuget.org/packages/Oxpecker)
 * [Oxpecker.ViewEngine Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
 * [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)

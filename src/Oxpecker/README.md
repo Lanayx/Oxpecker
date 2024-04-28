@@ -1,7 +1,5 @@
 # Oxpecker
 
-![Oxpecker](https://github.com/Lanayx/Oxpecker/tree/develop/images/oxpecker.png)
-
 Oxpecker is an F# wrapper of ASP.NET Core Endpoint routing (also known as Minimal API) with easy to comprehend API, mostly inherited from Giraffe framework.
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker)
