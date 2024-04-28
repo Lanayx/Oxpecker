@@ -23,6 +23,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Attributes.fs" />
         <Compile Include="Headers.fs" />

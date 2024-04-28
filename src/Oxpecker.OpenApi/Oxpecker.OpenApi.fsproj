@@ -23,10 +23,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="README.md">
-          <Pack>true</Pack>
-          <PackagePath>\</PackagePath>
-        </None>
+        <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Configuration.fs" />
         <Compile Include="Routing.fs" />
     </ItemGroup>

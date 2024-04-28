@@ -21,6 +21,7 @@
         <PackageReleaseNotes>Added data-* attribute support</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
+        <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="IdeTweaks.fs" />
         <Compile Include="Tools.fs" />
