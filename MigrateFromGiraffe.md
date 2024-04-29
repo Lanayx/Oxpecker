@@ -2,10 +2,17 @@
 
 While Oxpecker is mostly oriented at developers building brand-new projects, some people might want to migrate their Giraffe applications to Oxpecker to get better support.
 
-Oxpecker API is very similar to Giraffe, however there are some breaking changes you need to be aware of. There are three main sections for migrating from Giraffe Standard Routing, from Giraffe Endpoint Routing and common set of changes for both.
+Oxpecker API is very similar to Giraffe, however there are some breaking changes you need to be aware of. There is a common list of changes and additional one for migration from Standard Routing (not required if you are already using Endpoint Routing in Giraffe).
 
 - [Common Changes](#common-changes)
-- [Migrate from Endpoint Routing](#migrate-from-endpoint-routing)
+  - [HTTP Handler Type](#http-handler-type)
+  - [View Engine](#view-engine)
+  - [HTTP context extensions](#http-context-extensions)
+  - [HttpStatusCodeHandlers](#httpstatuscodehandlers)
+  - [routef function](#routef-function)
+  - [Content negotiation](#content-negotiation)
+  - [Response caching](#response-caching)
+  - [Other changes](#other-changes)
 - [Migrate from Standard Routing](#migrate-from-standard-routing)
 
 ## Common Changes
@@ -103,8 +110,19 @@ Successful.OK myObject next ctx
 ctx.Write <| TypedResults.Ok myObject
 ```
 
-### routef parameters changes
+### routef function
 
+- Route parameters **must** now be enclosed in curly braces
+- Route parameters are now curried
+- Some format characters were changed
+
+```fsharp
+// Giraffe
+routef "/hello/%s/%O" (fun (a, b) -> doSomething a b)
+
+// Oxpecker
+routef "/hello/{%s}/{%O:guid}" (fun a b -> doSomething a b)
+```
 
 | Format Char | Giraffe | Oxpecker                                                                                                                |
 |-------------|---------|-------------------------------------------------------------------------------------------------------------------------|
@@ -141,54 +159,6 @@ responseCaching
 - `readFileAsStringAsync` was dropped
 - custom computation expressions for option and result were dropped
 
-
-## Migrate from Endpoint Routing
-
-### routef function
-
-- Route parameters **must** now be enclosed in curly braces
-- Route parameters are now curried
-
-```fsharp
-// Giraffe
-routef "/hello/%s/%O" (fun (a, b) -> doSomething a b)
-
-// Oxpecker
-routef "/hello/{%s}/{%O:guid}" (fun a b -> doSomething a b)
-```
-
-### Setup
-
-Here is the app and services configuration for Giraffe
-```fsharp
-// Giraffe
-let configureApp (appBuilder: IApplicationBuilder) =
-    appBuilder
-        .UseRouting()
-        .UseGiraffe(endpoints)
-        .UseGiraffe(notFoundHandler)
-
-let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-        .AddGiraffe() |> ignore
-```
-
-And here is the same configuration for Oxpecker
-```fsharp
-// Oxpecker
-let configureApp (appBuilder: IApplicationBuilder) =
-    appBuilder
-        .UseRouting()
-        .UseOxpecker(endpoints)
-        .Run(notFoundHandler)
-
-let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-        .AddOxpecker() |> ignore
-```
-
 ## Migrate from Standard Routing
 
 The main difference between Standard and Endpoint routing is that in Standard routing every route is tried out sequentially, while in Endpoint routing [all possible matches are processed at once](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#url-matching). Standard routing is essentially a sequential chain of monadic binds, while Endpoint routing is buiding a map of routes and letting `EndpointRouting` middleware handle it.
@@ -200,19 +170,19 @@ The main difference between Standard and Endpoint routing is that in Standard ro
 let webApp =
     (choose [
         GET_HEAD >=> routef "/hello/%s" (fun name -> text $"Hello {name}!")
-        GET >=> choose [
-            route "/foo" >=> text "Bar"
+        GET >=> (choose [
+            route "/foo" >=> setHttpHeader "X-Version" "1" >=> text "Bar"
             subRoute "/v2" >=> (choose [
                 route "/foo" >=> text "Bar2"
             ])
-        ]
+        ])
     ])
 
 // Oxpecker
 let webApp = [
     GET_HEAD [ routef "/hello/{%s}" (fun name -> text $"Hello {name}!") ]
     GET [
-        route "/foo" <| text "Bar"
+        route "/foo" (setHttpHeader "X-Version" "1" >=> text "Bar")
         subRoute "/v2" [
             route "/foo" <| text "Bar2"
         ]
