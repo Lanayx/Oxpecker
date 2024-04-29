@@ -248,7 +248,7 @@ type StreamingExtensions() =
                 match Path.IsPathRooted filePath with
                 | true -> filePath
                 | false ->
-                    let env = ctx.GetHostingEnvironment()
+                    let env = ctx.GetWebHostEnvironment()
                     Path.Combine(env.ContentRootPath, filePath)
             use stream = new FileStream(filePath, FileMode.Open, FileAccess.Read)
             return! ctx.WriteStream(enableRangeProcessing, stream, eTag, lastModified)

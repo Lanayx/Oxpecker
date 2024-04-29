@@ -45,6 +45,18 @@ type HttpContextExtensions() =
         | _ -> None
 
     /// <summary>
+    /// Tries to retrieve the <see cref="System.String"/> value of a cookie from the request
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="key">The name of the cookie.</param>
+    /// <returns>Returns Some string if the cookie was set, otherwise returns None.</returns>
+    [<Extension>]
+    static member TryGetCookieValue (ctx: HttpContext, key: string) =
+        match ctx.Request.Cookies.TryGetValue key with
+        | true, value -> value |> Some
+        | _ -> None
+
+    /// <summary>
     /// Tries to get the <see cref="System.String"/> value of a HTTP header from the request.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
@@ -159,7 +171,7 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns>Returns an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/>.</returns>
     [<Extension>]
-    static member GetHostingEnvironment(ctx: HttpContext) = ctx.GetService<IWebHostEnvironment>()
+    static member GetWebHostEnvironment(ctx: HttpContext) = ctx.GetService<IWebHostEnvironment>()
 
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/> from the request's service container.
@@ -173,16 +185,16 @@ type HttpContextExtensions() =
     /// Sets the HTTP status code of the response.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="httpStatusCode">The status code to be set in the response. For convenience you can use the static <see cref="Microsoft.AspNetCore.Http.StatusCodes"/> class for passing in named status codes instead of using pure int values.</param>
+    /// <param name="httpStatusCode">The status code to be set in the response. For convenience, you can use the static <see cref="Microsoft.AspNetCore.Http.StatusCodes"/> class for passing in named status codes instead of using pure int values.</param>
     [<Extension>]
     static member SetStatusCode(ctx: HttpContext, httpStatusCode: int) =
         ctx.Response.StatusCode <- httpStatusCode
 
     /// <summary>
-    /// Adds or sets a HTTP header in the response.
+    /// Adds or sets an HTTP header in the response.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="key">The HTTP header name. For convenience you can use the static <see cref="Microsoft.Net.Http.Headers.HeaderNames"/> class for passing in strongly typed header names instead of using pure `string` values.</param>
+    /// <param name="key">The HTTP header name. For convenience, you can use the static <see cref="Microsoft.Net.Http.Headers.HeaderNames"/> class for passing in strongly typed header names instead of using pure `string` values.</param>
     /// <param name="value">The value to be set. Non string values will be converted to a string using the object's ToString() method.</param>
     [<Extension>]
     static member SetHttpHeader(ctx: HttpContext, key: string, value: string) = ctx.Response.Headers[key] <- value
@@ -206,7 +218,7 @@ type HttpContextExtensions() =
     /// Since .NET 7 these rules are enforced by Kestrel (https://github.com/dotnet/aspnetcore/pull/43103)
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="bytes">The byte array to be send back to the client.</param>
+    /// <param name="bytes">The byte array to be sent back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteBytes(ctx: HttpContext, bytes: byte[]) =
@@ -255,7 +267,7 @@ type HttpContextExtensions() =
     /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="value">The object to be send back to the client.</param>
+    /// <param name="value">The object to be sent back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteJson<'T>(ctx: HttpContext, value: 'T) =
@@ -268,7 +280,7 @@ type HttpContextExtensions() =
     /// The JSON serializer can be configured in the ASP.NET Core startup code by registering a custom class of type <see cref="Json.ISerializer"/>.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="value">The object to be send back to the client.</param>
+    /// <param name="value">The object to be sent back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteJsonChunked<'T>(ctx: HttpContext, value: 'T) =
