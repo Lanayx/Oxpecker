@@ -12,6 +12,7 @@
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/main/src/Oxpecker.Htmx/README.md</PackageProjectUrl>
+        <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;HTMX</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>

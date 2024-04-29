@@ -11,7 +11,8 @@
         <Description>OpenApi support for Oxpecker</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.OpenApi/README.md</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/main/src/Oxpecker.OpenApi/README.md</PackageProjectUrl>
+        <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Http;Web;OpenApi</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
