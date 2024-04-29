@@ -37,9 +37,10 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/develop/examples/WeatherApp)
 
-## Documentation:
+## Documentation links:
 
 * [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker/README.md)
 * [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.ViewEngine/README.md)
 * [Oxpecker.Htmx Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.Htmx/README.md)
 * [Oxpecker.OpenApi Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.OpenApi/README.md)
+* [Migration from Giraffe](https://github.com/Lanayx/Oxpecker/blob/develop/MigrateFromGiraffe.md)

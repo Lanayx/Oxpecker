@@ -51,7 +51,7 @@ type HttpContextExtensions() =
     /// <param name="key">The name of the cookie.</param>
     /// <returns>Returns Some string if the cookie was set, otherwise returns None.</returns>
     [<Extension>]
-    static member TryGetCookieValue (ctx: HttpContext, key: string) =
+    static member TryGetCookieValue(ctx: HttpContext, key: string) =
         match ctx.Request.Cookies.TryGetValue key with
         | true, value -> value |> Some
         | _ -> None
