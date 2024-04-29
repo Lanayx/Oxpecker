@@ -17,16 +17,14 @@
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <Version>0.1.0</Version>
-        <PackageVersion>0.1.0</PackageVersion>
-        <PackageReleaseNotes>Initial OpenApi support</PackageReleaseNotes>
+        <Version>0.1.1</Version>
+        <PackageVersion>0.1.1</PackageVersion>
+        <PackageReleaseNotes>Added logo</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="README.md">
-          <Pack>true</Pack>
-          <PackagePath>\</PackagePath>
-        </None>
+        <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Configuration.fs" />
         <Compile Include="Routing.fs" />
     </ItemGroup>

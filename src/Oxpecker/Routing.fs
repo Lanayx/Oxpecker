@@ -13,11 +13,8 @@ open Oxpecker
 
 [<AutoOpen>]
 module RoutingTypes =
-    type HttpVerbs =
-        | Verbs of HttpVerb seq
-        | Any
-
-    and HttpVerb =
+    [<Struct>]
+    type HttpVerb =
         | GET
         | POST
         | PUT
@@ -39,6 +36,10 @@ module RoutingTypes =
             | OPTIONS -> "OPTIONS"
             | TRACE -> "TRACE"
             | CONNECT -> "CONNECT"
+
+    type HttpVerbs =
+        | Verbs of HttpVerb seq
+        | Any
 
     type RouteTemplate = string
     type ConfigureEndpoint = IEndpointConventionBuilder -> IEndpointConventionBuilder

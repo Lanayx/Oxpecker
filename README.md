@@ -1,5 +1,7 @@
 # Oxpecker
 
+![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
+
 * [Oxpecker Nuget package](https://www.nuget.org/packages/Oxpecker)
 * [Oxpecker.ViewEngine Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
 * [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
@@ -35,9 +37,10 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/main/examples/WeatherApp)
 
-## Documentation:
+## Documentation links:
 
 * [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
 * [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.ViewEngine/README.md)
 * [Oxpecker.Htmx Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.Htmx/README.md)
 * [Oxpecker.OpenApi Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.OpenApi/README.md)
+* [Migration from Giraffe](https://github.com/Lanayx/Oxpecker/blob/main/MigrateFromGiraffe.md)
