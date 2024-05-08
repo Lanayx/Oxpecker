@@ -1,11 +1,9 @@
 ﻿module Oxpecker.ViewEngine.Tools
 
-open System.Text.Encodings.Web
 open Microsoft.Extensions.ObjectPool
 
 let internal StringBuilderPool =
     DefaultObjectPoolProvider().CreateStringBuilderPool()
-let internal HtmlEncoder = HtmlEncoder.Default
 
 /// <summary>
 /// Checks if an object is not null.
