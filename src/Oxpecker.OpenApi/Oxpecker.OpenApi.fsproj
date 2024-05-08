@@ -11,28 +11,30 @@
         <Description>OpenApi support for Oxpecker</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.OpenApi/README.md</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.OpenApi</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Http;Web;OpenApi</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <Version>0.1.1</Version>
         <PackageVersion>0.1.1</PackageVersion>
         <PackageReleaseNotes>Added logo</PackageReleaseNotes>
     </PropertyGroup>
-
+    <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
+    </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Configuration.fs" />
         <Compile Include="Routing.fs" />
     </ItemGroup>
-
     <ItemGroup>
         <ProjectReference Include="..\Oxpecker\Oxpecker.fsproj" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
     </ItemGroup>
 
 </Project>
