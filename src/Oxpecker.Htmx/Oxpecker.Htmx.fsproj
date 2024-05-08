@@ -23,7 +23,7 @@
         <PackageReleaseNotes>Added logo</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.7.1" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.7.2" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
