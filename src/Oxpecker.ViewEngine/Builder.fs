@@ -1,6 +1,7 @@
 ﻿namespace Oxpecker.ViewEngine
 
 open System.Diagnostics.CodeAnalysis
+open System.Net
 open System.Text
 open JetBrains.Annotations
 
@@ -103,7 +104,7 @@ module Builder =
                         .Append(' ')
                         .Append(attr.Name)
                         .Append("=\"")
-                        .Append(HtmlEncoder.Encode(attr.Value))
+                        .Append(WebUtility.HtmlEncode(attr.Value))
                         .Append('"')
                     |> ignore
                     next <- next.Next
@@ -119,7 +120,7 @@ module Builder =
 
             match elemType.NodeType with
             | NodeType.RawTextNode -> elemType.Value |> sb.Append |> ignore
-            | NodeType.RegularTextNode -> elemType.Value |> HtmlEncoder.Encode |> sb.Append |> ignore
+            | NodeType.RegularTextNode -> elemType.Value |> WebUtility.HtmlEncode |> sb.Append |> ignore
             | NodeType.VoidNode -> renderStartTag elemType.Value
             | NodeType.NormalNode ->
                 if isNull elemType.Value then
