@@ -19,12 +19,42 @@ module Common =
         Height: float
     }
     let users = [|
-        { Name = "User1"; Age = 20; Created = DateTime.UtcNow; Height = 170.2 }
-        { Name = "User2"; Age = 21; Created = DateTime.UtcNow; Height = 170.3 }
-        { Name = "User3"; Age = 22; Created = DateTime.UtcNow; Height = 170.4 }
-        { Name = "User4"; Age = 30; Created = DateTime.UtcNow; Height = 180.2 }
-        { Name = "User5"; Age = 31; Created = DateTime.UtcNow; Height = 180.3 }
-        { Name = "User6"; Age = 32; Created = DateTime.UtcNow; Height = 180.4 }
+        {
+            Name = "User1"
+            Age = 20
+            Created = DateTime.UtcNow
+            Height = 170.2
+        }
+        {
+            Name = "User2"
+            Age = 21
+            Created = DateTime.UtcNow
+            Height = 170.3
+        }
+        {
+            Name = "User3"
+            Age = 22
+            Created = DateTime.UtcNow
+            Height = 170.4
+        }
+        {
+            Name = "User4"
+            Age = 30
+            Created = DateTime.UtcNow
+            Height = 180.2
+        }
+        {
+            Name = "User5"
+            Age = 31
+            Created = DateTime.UtcNow
+            Height = 180.3
+        }
+        {
+            Name = "User6"
+            Age = 32
+            Created = DateTime.UtcNow
+            Height = 180.4
+        }
     |]
 
 module STJ =
@@ -70,8 +100,7 @@ module SpanJson =
                         ArrayPool<byte>.Shared.Return(buffer.Array)
                     }
 
-            member this.Deserialize(ctx) =
-                failwith "Not implemented"
+            member this.Deserialize(ctx) = failwith "Not implemented"
 
     let webApp () =
         let builder =
@@ -82,7 +111,8 @@ module SpanJson =
                     services
                         .AddRouting()
                         .AddOxpecker()
-                        .AddSingleton<Serializers.IJsonSerializer>(SpanJsonSerializer()) |> ignore)
+                        .AddSingleton<Serializers.IJsonSerializer>(SpanJsonSerializer())
+                    |> ignore)
         new TestServer(builder)
 
 [<MemoryDiagnoser>]
