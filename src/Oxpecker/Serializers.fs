@@ -40,7 +40,6 @@ module SystemTextJson =
                         ctx.Response.WriteAsJsonAsync(value, options)
                     else
                         ctx.Response.ContentType <- "application/json; charset=utf-8"
-                        ctx.Response.Headers.TransferEncoding <- "chunked"
                         Task.CompletedTask
                 else
                     task {

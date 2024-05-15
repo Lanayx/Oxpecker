@@ -10,6 +10,7 @@
         <Compile Include="ViewEngineBuild.fs" />
         <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Routing.fs" />
+        <Compile Include="JSON.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 
@@ -18,6 +19,7 @@
       <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
       <PackageReference Include="Giraffe" Version="6.2.0" />
       <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.1"/>
+      <PackageReference Include="SpanJson" Version="4.0.1" />
     </ItemGroup>
 
     <ItemGroup>
