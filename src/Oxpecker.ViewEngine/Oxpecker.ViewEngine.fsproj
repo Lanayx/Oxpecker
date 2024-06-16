@@ -16,6 +16,8 @@
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;Render</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <Version>0.7.2</Version>

@@ -16,6 +16,8 @@
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;HTMX</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <Version>0.1.1</Version>
