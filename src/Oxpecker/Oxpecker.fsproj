@@ -10,13 +10,16 @@
         <Description>F# web framework built on top of ASP.NET Core</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/main/src/Oxpecker/README.md</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/main/src/Oxpecker</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Functional;Http;Web;Framework;Micro;Service</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <Version>0.10.1</Version>
         <PackageVersion>0.10.1</PackageVersion>
         <PackageReleaseNotes>Updated ViewEngine reference</PackageReleaseNotes>
@@ -28,6 +31,7 @@
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
         <PackageReference Include="Oxpecker.ViewEngine" Version="0.7.2" />
     </ItemGroup>

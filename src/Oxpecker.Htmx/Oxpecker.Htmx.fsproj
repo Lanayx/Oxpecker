@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
@@ -11,18 +10,22 @@
         <Description>HTMX support for Oxpecker.ViewEngine</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/main/src/Oxpecker.Htmx/README.md</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.Htmx</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;HTMX</PackageTags>
         <Authors>Vladimir Shchur, F# community</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <Version>0.1.1</Version>
         <PackageVersion>0.1.1</PackageVersion>
         <PackageReleaseNotes>Added logo</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Oxpecker.ViewEngine" Version="0.7.2" />
     </ItemGroup>
     <ItemGroup>
