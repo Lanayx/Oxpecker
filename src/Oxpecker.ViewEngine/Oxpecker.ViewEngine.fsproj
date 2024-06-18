@@ -20,9 +20,9 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.7.2</Version>
-        <PackageVersion>0.7.2</PackageVersion>
-        <PackageReleaseNotes>Changed Html encoder</PackageReleaseNotes>
+        <Version>0.8.0</Version>
+        <PackageVersion>0.8.0</PackageVersion>
+        <PackageReleaseNotes>Added toHtmlDocString render function</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

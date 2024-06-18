@@ -29,6 +29,13 @@ let toString (view: HtmlElement) =
     StringBuilderPool.Return(sb)
     result
 
+/// Render HtmlElement to normal UTF16 string with DOCTYPE prefix
+let toHtmlDocString (view: HtmlElement) =
+    let sb = toHtmlDocStringBuilder view
+    let result = sb.ToString()
+    StringBuilderPool.Return(sb)
+    result
+
 /// Render HTMLElement to UTF8 encoded bytes
 let toBytes (view: HtmlElement) =
     let sb = toStringBuilder view
