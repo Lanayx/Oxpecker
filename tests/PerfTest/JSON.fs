@@ -96,7 +96,7 @@ module SpanJson =
                         let buffer = JsonSerializer.Generic.Utf8.SerializeToArrayPool<_>(value)
                         ctx.Response.Headers.ContentLength <- buffer.Count
                         if ctx.Request.Method <> HttpMethods.Head then
-                            do! ctx.Response.Body.WriteAsync(buffer)
+                            do! ctx.Response.Body.WriteAsync(buffer.AsMemory(0, buffer.Count))
                         ArrayPool<byte>.Shared.Return(buffer.Array)
                     }
 

@@ -235,7 +235,7 @@ type HttpContextExtensions() =
                     bytes.LongLength
             ctx.Response.ContentLength <- contentLength
         if ctx.Request.Method <> HttpMethods.Head then
-            ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
+            ctx.Response.Body.WriteAsync(bytes.AsMemory(0, bytes.Length)).AsTask()
         else
             Task.CompletedTask
 
