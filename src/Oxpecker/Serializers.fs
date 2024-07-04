@@ -22,7 +22,12 @@ module Serializers =
 [<RequireQualifiedAccess>]
 module SystemTextJson =
 
-    let private serializeToStream value (stream: RecyclableMemoryStream) (ctx: HttpContext) (options: JsonSerializerOptions)  =
+    let private serializeToStream
+        value
+        (stream: RecyclableMemoryStream)
+        (ctx: HttpContext)
+        (options: JsonSerializerOptions)
+        =
         JsonSerializer.Serialize(stream, value, options)
         ctx.Response.ContentType <- "application/json; charset=utf-8"
         ctx.Response.Headers.ContentLength <- stream.Length
