@@ -342,14 +342,24 @@ Create a web application and plug it into the ASP.NET Core middleware:
 ```fsharp
 open Oxpecker
 
+// usually your application consists of several routes
 let webApp = [
+    route "/"       <| text "Hello world"
     route "/ping"   <| text "pong"
+]
+// sometimes it can only be a single route
+let webApp1 = route "/" <| "Hello Oxpecker"
+// or it can only be a single "MultiEndpoint" route
+let webApp2 = GET [
+    route "/" <| "Hello Oxpecker"
 ]
 
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder
         .UseRouting()
         .UseOxpecker(webApp) // Add Oxpecker to the ASP.NET Core pipeline, should go after UseRouting
+        //.UseOxpecker(webApp1) will work
+        //.UseOxpecker(webApp2) will also work
     |> ignore
 
 let configureServices (services: IServiceCollection) =
@@ -1005,183 +1015,22 @@ See also [large file uploads in ASP.NET Core](https://stackoverflow.com/question
 
 ### Authentication and Authorization
 
-ASP.NET Core has a wealth of [Authentication](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/index) and [Authorization](https://docs.microsoft.com/en-us/aspnet/core/security/authorization/index) options which work out of the box with Oxpecker.
-
-Additionally Oxpecker offers a few `EndpointMiddleware` functions which make it easier to work with ASP.NET Core's authentication and authorization APIs in a functional way.
-
-Note, that the functions below are simple helpers and you can always write your own Auth `EndpointMiddleware` or `EndpointHandler` with few lines  of code if needed.
-
-#### requiresAuthentication
-
-The `requiresAuthentication (authFailedHandler: EndpointHandler)` endpoint middleware validates if a user has been authenticated by one of ASP.NET Core's authentication middleware. If the identity of a user could not be established then the `authFailedHandler` will be executed:
-
+Oxpecker's security model is the same as [Minimal API security model](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security), please make sure you are very familiar with it.
+The main difference is that in Oxpecker you can conveniently call `configureEndpoint _.RequireAuthorization` on both a single endpoint and a group of endpoints.
 ```fsharp
-let notLoggedIn: EndpointHandler =
-    %TypedResults.Unauthorized()
-
-let AUTH = applyBefore <| requiresAuthentication notLoggedIn
-
 let webApp = [
-    route "/" <| text "Hello World"
-    AUTH <|
-        subRoute "/user" [
-            GET  [ route "" readUserHandler ]
-            POST [ route "" submitUserHandler ]
-        ]
-]
-```
-
-#### requiresRole
-
-The `requiresRole (role: string) (authFailedHandler : EndpointHandler)` endpoint middleware checks if an authenticated user is part of a given `role`. If a user fails to be in a certain role then the `authFailedHandler` will be executed:
-
-```fsharp
-let notLoggedIn: EndpointHandler =
-    %TypedResults.Unauthorized()
-
-let notAdmin: EndpointHandler =
-    %TypedResults.Forbid()
-
-let AUTH = applyBefore <| requiresAuthentication notLoggedIn
-let ADMIN = applyBefore <| requiresRole "Admin" notAdmin
-
-let webApp = [
-    route "/" <| text "Hello World"
-    (AUTH >> ADMIN) <|
-        subRoute "/user" [
-            POST   [ routef "/%s/edit"   editUserHandler ]
-            DELETE [ routef "/%s/delete" deleteUserHandler ]
-        ]
-]
-```
-
-#### requiresRoleOf
-
-The `requiresRoleOf (roles: string seq) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user is part of a list of given `roles`. If a user fails to be in at least one of the `roles` then the `authFailedHandler` will be executed:
-
-```fsharp
-let notLoggedIn: EndpointHandler =
-    %TypedResults.Unauthorized()
-
-let notProUserOrAdmin: EndpointHandler =
-    %TypedResults.Forbid()
-
-let AUTH = applyBefore <| requiresAuthentication notLoggedIn
-
-let PRO_OR_ADMIN = applyBefore <|
-    requiresRoleOf [ "ProUser"; "Admin" ] notProUserOrAdmin
-
-let webApp = [
-    route "/" <| text "Hello World"
-    (AUTH >> PRO_OR_ADMIN) <|
-        subRoute "/user" [
-            POST   [ routef "/%s/edit"   editUserHandler ]
-            DELETE [ routef "/%s/delete" deleteUserHandler ]
-        ]
-]
-```
-
-#### authorizeRequest
-
-The `authorizeRequest (predicate: HttpContext -> bool) (authFailedHandler: EndpointHandler)` endpoint middleware validates a request based on a given predicate. If the predicate returns false then the `authFailedHandler` will get executed:
-
-```fsharp
-let apiKey = "some-secret-key-1234"
-
-let validateApiKey (ctx: HttpContext) =
-    match ctx.TryGetHeaderValue "X-API-Key" with
-    | Some key -> apiKey.Equals key
-    | None     -> false
-
-let accessDenied = setStatusCode 401 >=> text "Access Denied"
-let requiresApiKey =
-    authorizeRequest validateApiKey accessDenied
-
-let webApp = [
-    route "/" <| text "Hello World"
-    route "/private" (requiresApiKey >=> protectedHandler)
-]
-```
-
-#### authorizeUser
-
-The `authorizeUser (policy: ClaimsPrincipal -> bool) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given user policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed:
-
-```fsharp
-let notLoggedIn: EndpointHandler =
-    %TypedResults.Unauthorized()
-
-let accessDenied = setStatusCode 401 >=> text "Access Denied"
-
-let mustBeLoggedIn = requiresAuthentication notLoggedIn
-
-let mustBeJohn =
-    authorizeUser (fun u -> u.HasClaim (ClaimTypes.Name, "John")) accessDenied
-
-let webApp = [
+    // single endpoint
     route "/" (text "Hello World")
-    route "/john-only" (
-        mustBeLoggedIn >=> mustBeJohn >=> userHandler
-    )
-]
-```
-
-#### authorizeByPolicyName
-
-The `authorizeByPolicyName (policyName: string) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given authorization policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed:
-
-```fsharp
-let notLoggedIn: EndpointHandler =
-    %TypedResults.Unauthorized()
-
-let accessDenied = setStatusCode 401 >=> text "Access Denied"
-
-let mustBeLoggedIn = requiresAuthentication notLoggedIn
-
-let mustBeOver21 =
-    authorizeByPolicyName "MustBeOver21" accessDenied
-
-let webApp =[
-    route "/" (text "Hello World")
-    route "/adults-only" (
-        mustBeLoggedIn >=> mustBeOver21 >=> userHandler
-    )
-]
-```
-
-#### authorizeByPolicy
-
-The `authorizeByPolicy (policy: AuthorizationPolicy) (authFailedHandler: EndpointHandler)` endpoint middleware checks if an authenticated user meets a given authorization policy. If the policy cannot be satisfied then the `authFailedHandler` will get executed.
-
-See [authorizeByPolicyName](#authorizebypolicyname) for more information.
-
-#### challenge
-
-The `challenge (authScheme: string)` endpoint handler will challenge the client to authenticate with a specific `authScheme`. This function is often used in combination with the `requiresAuthentication` endpoint handler:
-
-```fsharp
-let AUTH = applyBefore <| requiresAuthentication (challenge "Cookie")
-
-let webApp =[
-    route "/" (text "Hello World")
-    AUTH <|
-        subRoute "/user" [
-            GET  [ route "" readUserHandler ]
-            POST [ route "" submitUserHandler ]
-        ]
-]
-```
-
-In this example the client will be challenged to authenticate with a scheme called "Cookie". The scheme name must match one of the registered authentication schemes from the configuration of the ASP.NET Core auth middleware.
-
-#### signOut
-
-The `signOut (authScheme: string)` endpoint handler will sign a user out from a given `authScheme`:
-
-```fsharp
-let webApp = [
-    route "/" (text "Hello World")
-    route "/signout" (signOut "Cookie" >=> redirectTo "/" false)
+        |> configureEndpoint
+            _.DisableAntiforgery()
+             .RequireAuthorization()
+    // endpoint group
+    GET [
+        route "/index" <| text "index"
+        route "/ping"  <| text "pong"
+    ] |> configureEndpoint _.RequireAuthorization(
+            AuthorizeAttribute(AuthenticationSchemes = "MyScheme")
+        )
 ]
 ```
 ### Conditional Requests

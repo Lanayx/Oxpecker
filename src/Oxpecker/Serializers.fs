@@ -22,7 +22,7 @@ module Serializers =
 [<RequireQualifiedAccess>]
 module SystemTextJson =
 
-    let private serializeToStream
+    let private serializeToStreamWithLength
         value
         (stream: RecyclableMemoryStream)
         (ctx: HttpContext)
@@ -49,7 +49,6 @@ module SystemTextJson =
         let options =
             defaultArg options <| JsonSerializerOptions(JsonSerializerDefaults.Web)
 
-
         interface Serializers.IJsonSerializer with
             member this.Serialize(value, ctx, chunked) =
                 if chunked then
@@ -61,7 +60,7 @@ module SystemTextJson =
                 else
                     task {
                         use stream = recyclableMemoryStreamManager.Value.GetStream()
-                        return! serializeToStream value stream ctx options
+                        return! serializeToStreamWithLength value stream ctx options
                     }
 
             member this.Deserialize(ctx) =

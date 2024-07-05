@@ -1,5 +1,6 @@
 ﻿open System
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
@@ -85,7 +86,7 @@ let handler11: EndpointHandler =
         let lang = ctx.TryGetRouteValue("lang") |> Option.defaultValue ""
         ctx.WriteText($"lang={lang}")
 
-let authHandler: EndpointHandler =
+let closedHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
         if ctx.Request.Path.Value.Contains("closed") then
             ctx.SetStatusCode 401
@@ -93,7 +94,7 @@ let authHandler: EndpointHandler =
         else
             Task.CompletedTask
 
-let MY_AUTH = applyBefore authHandler
+let CLOSED = applyBefore closedHandler
 let MY_HEADER endpoint =
     applyBefore (setHeaderMw "my" "header") endpoint
 let NO_RESPONSE_CACHE = applyBefore noResponseCaching
@@ -143,10 +144,10 @@ let endpoints = [
 
     subRoute "/sub1" [
         GET [ subRoute "/sub2" [ MY_HEADER <| route "/test" handler1 ] ]
-        MY_AUTH <| POST [ route "/sub2/test" handler1 ]
+        CLOSED <| POST [ route "/sub2/test" handler1 ]
     ]
-    MY_AUTH <| route "/auth/x" (text "Not closed")
-    MY_AUTH
+    CLOSED <| route "/auth/x" (text "Not closed")
+    CLOSED
     <| MY_HEADER(
         subRoute "/auth" [
             route "/open" handler1
@@ -157,6 +158,7 @@ let endpoints = [
         route "/time" handler10 |> NO_RESPONSE_CACHE
         route "/time-cached" handler10 |> RESPONSE_CACHE
     ]
+    |> configureEndpoint _.RequireAuthorization(AuthorizeAttribute(AuthenticationSchemes = "MyScheme"))
     route "/redirect" (redirectTo "/time" false)
     subRoute "/auth/{lang}" [ route "/" handler11 ]
 ]

@@ -277,25 +277,17 @@ type EndpointRouteBuilderExtensions() =
                 groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
             | NestedEndpoint(template, endpoints, configure) ->
                 groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
-            | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint endpoints
+            | MultiEndpoint endpoints -> groupBuilder.MapOxpeckerEndpoints endpoints
 
     [<Extension>]
-    static member private MapMultiEndpoint(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
-        for endpoint in endpoints do
-            match endpoint with
-            | SimpleEndpoint(verb, template, handler, configure) ->
-                builder.MapSingleEndpoint(verb, template, handler, configure)
-            | NestedEndpoint(template, endpoints, configure) ->
-                builder.MapNestedEndpoint(template, endpoints, configure)
-            | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints
+    static member MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint) =
+        match endpoint with
+        | SimpleEndpoint(verb, template, handler, configure) ->
+            builder.MapSingleEndpoint(verb, template, handler, configure)
+        | NestedEndpoint(template, endpoints, configure) -> builder.MapNestedEndpoint(template, endpoints, configure)
+        | MultiEndpoint endpoints -> builder.MapOxpeckerEndpoints endpoints
 
     [<Extension>]
     static member MapOxpeckerEndpoints(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
-
         for endpoint in endpoints do
-            match endpoint with
-            | SimpleEndpoint(verb, template, handler, configure) ->
-                builder.MapSingleEndpoint(verb, template, handler, configure)
-            | NestedEndpoint(template, endpoints, configure) ->
-                builder.MapNestedEndpoint(template, endpoints, configure)
-            | MultiEndpoint endpoints -> builder.MapMultiEndpoint endpoints
+            builder.MapOxpeckerEndpoint(endpoint)

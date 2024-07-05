@@ -18,6 +18,13 @@ type ApplicationBuilderExtensions() =
     static member UseOxpecker(builder: IApplicationBuilder, endpoints: Endpoint seq) =
         builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoints endpoints)
 
+    /// <summary>
+    /// Uses ASP.NET Core's Endpoint Routing middleware to register single Oxpecker endpoint.
+    /// </summary>
+    [<Extension>]
+    static member UseOxpecker(builder: IApplicationBuilder, endpoint: Endpoint) =
+        builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoint endpoint)
+
 [<Extension>]
 type ServiceCollectionExtensions() =
     /// <summary>
