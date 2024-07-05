@@ -20,9 +20,9 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.10.1</Version>
-        <PackageVersion>0.10.1</PackageVersion>
-        <PackageReleaseNotes>Updated ViewEngine reference</PackageReleaseNotes>
+        <Version>0.11.0</Version>
+        <PackageVersion>0.11.0</PackageVersion>
+        <PackageReleaseNotes>Legacy auth module removed</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
@@ -48,7 +48,6 @@
         <Compile Include="ResponseCaching.fs" />
         <Compile Include="Preconditional.fs" />
         <Compile Include="Streaming.fs" />
-        <Compile Include="Auth.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="Middleware.fs" />
     </ItemGroup>

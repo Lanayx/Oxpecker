@@ -14,11 +14,19 @@ module WebApp =
 
     let notFoundHandler = setStatusCode 404 >=> text "Not found"
 
-    let webApp endpoints =
+    let webApp (endpoints: Endpoint seq) =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
                 .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints).Run(notFoundHandler))
+                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
+        new TestServer(builder)
+
+    let webAppOneRoute (endpoint: Endpoint) =
+        let builder =
+            WebHostBuilder()
+                .UseKestrel()
+                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoint).Run(notFoundHandler))
                 .ConfigureServices(fun services -> services.AddRouting() |> ignore)
         new TestServer(builder)
 
@@ -29,8 +37,8 @@ module WebApp =
 [<Fact>]
 let ``route: GET "/" returns "Hello World"`` () =
     task {
-        let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo" <| text "bar" ] ]
-        let server = WebApp.webApp endpoints
+        let endpoint = GET [ route "/" <| text "Hello World"; route "/foo" <| text "bar" ]
+        let server = WebApp.webAppOneRoute endpoint
         let client = server.CreateClient()
 
         let! result = client.GetAsync("/")

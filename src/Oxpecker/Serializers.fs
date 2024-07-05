@@ -4,6 +4,7 @@ open System.IO
 open Microsoft.AspNetCore.Http
 open System.Text.Json
 open System.Threading.Tasks
+open Microsoft.IO
 
 [<RequireQualifiedAccess>]
 module Serializers =
@@ -20,6 +21,21 @@ module Serializers =
 
 [<RequireQualifiedAccess>]
 module SystemTextJson =
+
+    let private serializeToStreamWithLength
+        value
+        (stream: RecyclableMemoryStream)
+        (ctx: HttpContext)
+        (options: JsonSerializerOptions)
+        =
+        JsonSerializer.Serialize(stream, value, options)
+        ctx.Response.ContentType <- "application/json; charset=utf-8"
+        ctx.Response.Headers.ContentLength <- stream.Length
+        stream.Seek(0, SeekOrigin.Begin) |> ignore
+        if ctx.Request.Method <> HttpMethods.Head then
+            stream.CopyToAsync(ctx.Response.Body)
+        else
+            Task.CompletedTask
 
     /// <summary>
     /// <see cref="SystemTextJson.Serializer" /> is an alternaive <see cref="Json.ISerializer"/> in Oxpecker.
@@ -44,14 +60,7 @@ module SystemTextJson =
                 else
                     task {
                         use stream = recyclableMemoryStreamManager.Value.GetStream()
-                        JsonSerializer.Serialize(stream, value, options)
-                        ctx.Response.ContentType <- "application/json; charset=utf-8"
-                        ctx.Response.Headers.ContentLength <- stream.Length
-                        stream.Seek(0, SeekOrigin.Begin) |> ignore
-                        if ctx.Request.Method <> HttpMethods.Head then
-                            return! stream.CopyToAsync(ctx.Response.Body)
-                        else
-                            return ()
+                        return! serializeToStreamWithLength value stream ctx options
                     }
 
             member this.Deserialize(ctx) =
