@@ -425,7 +425,7 @@ There's a handful more extension methods available to retrieve a few default dep
 #### Functional DI
 However, if you prefer to use a more functional approach to dependency injection, you shouldn't use container based approach, but rather follow the _Env_ strategy.
 
-The approach is described in the article https://bartoszsypytkowski.com/dealing-with-complex-dependency-injection-in-f/ , and to see how it looks in practice, you can refer to the [CRUD example in the repository.](https://github.com/Lanayx/Oxpecker/tree/develop/examples/CRUD)
+The approach is described in the article https://medium.com/@lanayx/dependency-injection-in-f-the-missing-manual-d376e9cafd0f , and to see how it looks in practice, you can refer to the [CRUD example in the repository.](https://github.com/Lanayx/Oxpecker/tree/develop/examples/CRUD)
 
 
 
