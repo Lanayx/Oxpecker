@@ -277,7 +277,22 @@ type EndpointRouteBuilderExtensions() =
                 groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
             | NestedEndpoint(template, endpoints, configure) ->
                 groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
-            | MultiEndpoint endpoints -> groupBuilder.MapOxpeckerEndpoints endpoints
+            | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint(endpoints, parentConfigure)
+
+    [<Extension>]
+    static member private MapMultiEndpoint
+        (
+            builder: IEndpointRouteBuilder,
+            endpoints: Endpoint seq,
+            parentConfigure: ConfigureEndpoint
+        ) =
+        for endpoint in endpoints do
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, configure) ->
+                builder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
+            | NestedEndpoint(template, endpoints, configure) ->
+                builder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
+            | MultiEndpoint endpoints -> builder.MapMultiEndpoint(endpoints, parentConfigure)
 
     [<Extension>]
     static member MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint) =
