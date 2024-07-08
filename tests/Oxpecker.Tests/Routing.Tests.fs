@@ -437,22 +437,20 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
         let mutable innerMetadata = Unchecked.defaultof<EndpointMetadataCollection>
         let endpoints = [
             route "/" (fun ctx ->
-                            rootMetadata <- ctx.GetEndpoint().Metadata
-                            ctx.WriteText ""
-                        )
+                rootMetadata <- ctx.GetEndpoint().Metadata
+                ctx.WriteText "")
             GET [
                 route "/get" (fun ctx ->
-                            getMetadata <- ctx.GetEndpoint().Metadata
-                            ctx.WriteText "Hello World"
-                        )
+                    getMetadata <- ctx.GetEndpoint().Metadata
+                    ctx.WriteText "Hello World")
                 subRoute "/api" [
-                    routef "/inner" (
-                        fun ctx ->
-                            innerMetadata <- ctx.GetEndpoint().Metadata
-                            ctx.WriteText "Hi"
-                        )
-                ] |> configureEndpoint _.ShortCircuit()
-            ] |> configureEndpoint _.DisableAntiforgery()
+                    routef "/inner" (fun ctx ->
+                        innerMetadata <- ctx.GetEndpoint().Metadata
+                        ctx.WriteText "Hi")
+                ]
+                |> configureEndpoint _.ShortCircuit()
+            ]
+            |> configureEndpoint _.DisableAntiforgery()
         ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
