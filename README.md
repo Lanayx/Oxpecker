@@ -7,9 +7,9 @@
 * [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
 * [Oxpecker.OpenApi Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
 
-Oxpecker is a functional wrapper around ASP.NET Core Endpoint routing (sometimes called Minimal API). Repository contains both main project and other related packages.
+Oxpecker is a functional wrapper around ASP.NET Core Endpoint routing. Repository contains both main project and other related packages.
 
-This library is basically a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to it's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
+This library is basically a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
 Medium introductory post: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
 

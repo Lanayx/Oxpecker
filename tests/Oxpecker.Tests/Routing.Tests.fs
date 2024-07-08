@@ -2,13 +2,16 @@
 
 open System
 open System.Net
+open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
+open Microsoft.AspNetCore.Http.Metadata
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Xunit
 open FsUnitTyped
 open Oxpecker
+open Microsoft.AspNetCore.Routing
 
 module WebApp =
 
@@ -427,22 +430,35 @@ let ``subRoute: Route after nested sub routes has same beginning of path`` () =
     }
 
 [<Fact>]
-let ``subRoute: routef inside subRoute`` () =
+let ``subRoute: configureEndpoint inside subRoute`` () =
     task {
+        let mutable rootMetadata = Unchecked.defaultof<EndpointMetadataCollection>
+        let mutable getMetadata = Unchecked.defaultof<EndpointMetadataCollection>
+        let mutable innerMetadata = Unchecked.defaultof<EndpointMetadataCollection>
         let endpoints = [
+            route "/" (fun ctx ->
+                rootMetadata <- ctx.GetEndpoint().Metadata
+                ctx.WriteText "")
             GET [
-                route "/" <| text "Hello World"
-                route "/foo" <| text "bar"
-                subRoute "/api" [ route "" <| text "api root"; routef "/foo/bar/{%s}" text ]
-                route "/api/test" <| text "test"
+                route "/get" (fun ctx ->
+                    getMetadata <- ctx.GetEndpoint().Metadata
+                    ctx.WriteText "Hello World")
+                subRoute "/api" [
+                    routef "/inner" (fun ctx ->
+                        innerMetadata <- ctx.GetEndpoint().Metadata
+                        ctx.WriteText "Hi")
+                ]
+                |> configureEndpoint _.ShortCircuit()
             ]
+            |> configureEndpoint _.DisableAntiforgery()
         ]
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
-        let! result = client.GetAsync("/api/foo/bar/yadayada")
-        let! resultString = result.Content.ReadAsStringAsync()
+        let! _ = client.GetAsync("/api/inner")
+        let! _ = client.GetAsync("/")
+        let! _ = client.GetAsync("/get")
 
-        result.StatusCode |> shouldEqual HttpStatusCode.OK
-        resultString |> shouldEqual "yadayada"
+        innerMetadata.Count |> shouldBeGreaterThan getMetadata.Count
+        getMetadata.Count |> shouldBeGreaterThan rootMetadata.Count
     }
