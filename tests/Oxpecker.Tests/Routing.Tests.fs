@@ -430,6 +430,27 @@ let ``subRoute: Route after nested sub routes has same beginning of path`` () =
     }
 
 [<Fact>]
+let ``subRoute: routef inside subRoute`` () =
+    task {
+        let endpoints = [
+            GET [
+                route "/" <| text "Hello World"
+                route "/foo" <| text "bar"
+                subRoute "/api" [ route "" <| text "api root"; routef "/foo/bar/{%s}" text ]
+                route "/api/test" <| text "test"
+            ]
+        ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! result = client.GetAsync("/api/foo/bar/yadayada")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        resultString |> shouldEqual "yadayada"
+    }
+
+[<Fact>]
 let ``subRoute: configureEndpoint inside subRoute`` () =
     task {
         let mutable rootMetadata = Unchecked.defaultof<EndpointMetadataCollection>
