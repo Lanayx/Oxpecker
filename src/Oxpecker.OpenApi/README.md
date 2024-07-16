@@ -2,7 +2,7 @@
 
 `Oxpecker.OpenApi` extends `Oxpecker` framework with functionality to automatically generate OpenApi spec from code.
 
-[Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
+[Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi) `dotnet add package Oxpecker.OpenApi`
 
 Two usages:
 

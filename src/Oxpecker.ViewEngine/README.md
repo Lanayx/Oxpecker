@@ -2,7 +2,7 @@
 
 `Oxpecker.ViewEngine` is code-as-markup engine used to render your HTML views based on the F# feature called [Computation Expressions](https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions).
 
-[Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
+[Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine) `dotnet add package Oxpecker.ViewEngine`
 
 Markup example:
 
