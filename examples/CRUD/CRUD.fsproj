@@ -1,9 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net8.0</TargetFramework>
-        <ServerGarbageCollection>true</ServerGarbageCollection>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
@@ -18,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.11.1" />
+        <PackageReference Include="Oxpecker" Version="0.12.0" />
         <PackageReference Include="FSharp.UMX" Version="1.1.0" />
     </ItemGroup>
 

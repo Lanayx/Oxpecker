@@ -2,7 +2,7 @@
 
 `Oxpecker.Htmx` extends `Oxpecker.ViewEngine` package with HTMX attributes and headers.
 
-[Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
+[Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx) `dotnet add package Oxpecker.Htmx`
 
 Markup example:
 

@@ -2,7 +2,7 @@
 
 `Oxpecker.ViewEngine` is code-as-markup engine used to render your HTML views based on the F# feature called [Computation Expressions](https://learn.microsoft.com/en-us/dotnet/fsharp/language-reference/computation-expressions).
 
-[Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
+[Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine) `dotnet add package Oxpecker.ViewEngine`
 
 Markup example:
 
@@ -140,6 +140,7 @@ There are several functions to render `HtmlElement` (after opening Oxpecker.View
 - **Render.toBytes** will render to UTF8-encoded byte array
 - **Render.toHtmlDocBytes** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
 - **Render.toHtmlDocString** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toStream** will asynchronously render to stream in UTF8 encoding
 
 ### Aria
 

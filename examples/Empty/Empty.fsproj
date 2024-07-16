@@ -12,11 +12,6 @@
 
     <ItemGroup>
         <PackageReference Include="Oxpecker" Version="0.12.0" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.9.0" />
-        <PackageReference Include="Oxpecker.OpenApi" Version="0.1.0" />
-        <PackageReference Include="Oxpecker.Htmx" Version="0.1.1" />
-        <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     </ItemGroup>
 
 </Project>

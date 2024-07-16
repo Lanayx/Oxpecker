@@ -2,7 +2,7 @@
 
 Oxpecker is an F# framework based on ASP.NET Core Endpoint routing (similar to Minimal APIs, so they are competitors) with easy to comprehend API, mostly inherited from Giraffe framework.
 
-[Nuget package](https://www.nuget.org/packages/Oxpecker)
+[Nuget package](https://www.nuget.org/packages/Oxpecker) `dotnet add package Oxpecker`
 
 Examples can be found [here](https://github.com/Lanayx/Oxpecker/tree/main/examples)
 
