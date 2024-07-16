@@ -75,8 +75,7 @@ module layout =
                 title() {
                     match ctx.Items.TryGetValue "Title" with
                     | true, title -> string title
-                    | false, _ ->
-                        "WeatherApp"
+                    | false, _ -> "WeatherApp"
                 }
                 meta(charset="utf-8")
                 meta(name="viewport", content="width=device-width, initial-scale=1.0")

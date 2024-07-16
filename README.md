@@ -32,6 +32,7 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - Many useful **HttpContext** extensions
 
 ## Examples:
+- [Empty template](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Empty)
 - [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Basic)
 - [Full CRUD example with functional DI](https://github.com/Lanayx/Oxpecker/blob/develop/examples/CRUD)
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp)
