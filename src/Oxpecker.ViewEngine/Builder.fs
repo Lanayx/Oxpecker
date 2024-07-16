@@ -147,10 +147,8 @@ module Builder =
 
         // builder methods
         member inline _.Combine
-            (
-                [<InlineIfLambda>] first: HtmlElementFun,
-                [<InlineIfLambda>] second: HtmlElementFun
-            ) : HtmlElementFun =
+            ([<InlineIfLambda>] first: HtmlElementFun, [<InlineIfLambda>] second: HtmlElementFun)
+            : HtmlElementFun =
             fun builder ->
                 first builder
                 second builder

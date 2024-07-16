@@ -1,5 +1,7 @@
 module Tests
 
+open System.IO
+open System.Text
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Xunit
@@ -93,3 +95,15 @@ let ``Double render works`` () =
     let result2 = test |> Render.toString
     result1 |> shouldEqual """<span id="test1">test2</span>"""
     result2 |> shouldEqual """<span id="test1">test2</span>"""
+
+[<Fact>]
+let ``Basic chunked test`` () =
+    task {
+        let view = html() { div(id = "1") }
+        use stream = new MemoryStream()
+        do! view |> Render.toStream stream
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual """<html><div id="1"></div></html>"""
+    }

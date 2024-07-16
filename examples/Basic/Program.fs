@@ -11,6 +11,8 @@ open Oxpecker
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Oxpecker.OpenApi
+open Oxpecker.Htmx
+open FSharp.Control
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
@@ -94,6 +96,43 @@ let closedHandler: EndpointHandler =
         else
             Task.CompletedTask
 
+
+let streamingJson: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let values =
+            taskSeq {
+                for i in 1..10 do
+                    do! Task.Delay(500)
+                    yield {| Id = i; Name = $"Name {i}" |}
+            }
+        jsonChunked values ctx
+
+let streamingHtml1: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let html =
+            html() {
+                head() {
+                    script(src = "https://unpkg.com/htmx.org@1.9.12")
+                    script(src = "https://unpkg.com/htmx.ext...chunked-transfer@1.0.4/dist/index.js") // workaround, see https://github.com/bigskysoftware/htmx/issues/1911
+                }
+                body(style = "width: 800px; margin: 0 auto", hxExt = "chunked-transfer") {
+                    h1(style = "text-align: center; color: blue") { "HTML Streaming example" }
+                    h2(hxGet = "/streamHtml2", hxTarget = "this", hxTrigger = "load")
+                }
+            }
+        htmlView html ctx
+
+
+let streamingHtml2: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let values =
+            taskSeq {
+                for ch in "Hello world using Oxpecker streaming!" do
+                    do! Task.Delay(20)
+                    __() { string ch }
+            }
+        htmlChunked values ctx
+
 let CLOSED = applyBefore closedHandler
 let MY_HEADER endpoint =
     applyBefore (setHeaderMw "my" "header") endpoint
@@ -123,6 +162,9 @@ let endpoints = [
         routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
         route "/abc" (json {| X = "Y" |})
         route "/cbd/{**x}" (json {| X = "Z" |})
+        route "streamJson" streamingJson
+        route "streamHtml1" streamingHtml1
+        route "streamHtml2" streamingHtml2
     ]
     POST [
         route "/x" (bindJson handler4)

@@ -140,6 +140,7 @@ There are several functions to render `HtmlElement` (after opening Oxpecker.View
 - **Render.toBytes** will render to UTF8-encoded byte array
 - **Render.toHtmlDocBytes** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
 - **Render.toHtmlDocString** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toStream** will asynchronously render to stream in UTF8 encoding
 
 ### Aria
 

@@ -5,19 +5,14 @@ open CRUD.Models
 
 type IGetOrders =
     abstract member GetOrders: unit -> Task<Order[]>
-
 type IGetOrder =
     abstract member GetOrder: Id -> Task<Order option>
-
 type IGetProduct =
     abstract member GetProduct: Id -> Task<Product option>
-
 type ICreateOrder =
     abstract member CreateOrder: Order -> Task<unit>
-
 type IUpdateOrder =
     abstract member UpdateOrder: Order -> Task<unit>
-
 type IDeleteOrder =
     abstract member DeleteOrder: Id -> Task<unit>
 

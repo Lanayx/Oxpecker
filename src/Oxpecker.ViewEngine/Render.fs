@@ -1,6 +1,8 @@
 ﻿module Oxpecker.ViewEngine.Render
 
+open System
 open System.Buffers
+open System.IO
 open System.Text
 open Oxpecker.ViewEngine.Tools
 
@@ -49,3 +51,15 @@ let toHtmlDocBytes (view: HtmlElement) =
     let result = copyStringBuilderToBytes sb
     StringBuilderPool.Return(sb)
     result
+
+/// Render HTMLElement to stream using UTF8 stream writer
+let toStream (stream: Stream) (view: HtmlElement) =
+    let sb = toStringBuilder view
+    let streamWriter = new StreamWriter(stream, leaveOpen = true)
+    task {
+        use _ = streamWriter :> IAsyncDisposable
+        try
+            return! streamWriter.WriteAsync(sb)
+        finally
+            StringBuilderPool.Return(sb)
+    }

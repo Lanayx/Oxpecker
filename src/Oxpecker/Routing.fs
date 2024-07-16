@@ -281,11 +281,8 @@ type EndpointRouteBuilderExtensions() =
 
     [<Extension>]
     static member private MapMultiEndpoint
-        (
-            builder: IEndpointRouteBuilder,
-            endpoints: Endpoint seq,
-            parentConfigure: ConfigureEndpoint
-        ) =
+        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, parentConfigure: ConfigureEndpoint)
+        =
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->

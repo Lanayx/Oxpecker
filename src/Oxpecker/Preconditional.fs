@@ -128,11 +128,8 @@ type PreconditionExtensions() =
     /// </returns>
     [<Extension>]
     static member ValidatePreconditions
-        (
-            ctx: HttpContext,
-            eTag: EntityTagHeaderValue option,
-            lastModified: DateTimeOffset option
-        ) =
+        (ctx: HttpContext, eTag: EntityTagHeaderValue option, lastModified: DateTimeOffset option)
+        =
         // Parse headers
         let responseHeaders = ctx.Response.GetTypedHeaders()
         let requestHeaders = ctx.Request.GetTypedHeaders()

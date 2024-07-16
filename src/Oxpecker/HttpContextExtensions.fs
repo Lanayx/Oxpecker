@@ -1,6 +1,7 @@
 namespace Oxpecker
 
 open System
+open System.Collections.Generic
 open System.Globalization
 open System.Runtime.CompilerServices
 open System.Text
@@ -299,6 +300,22 @@ type HttpContextExtensions() =
         let bytes = Render.toHtmlDocBytes htmlView
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         ctx.WriteBytes bytes
+
+    /// <summary>
+    /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
+    /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="htmlStream">An `HtmlElement` stream to be send back to the client.</param>
+    /// <returns>Task of writing to the body of the response.</returns>
+    [<Extension>]
+    static member WriteHtmlChunked(ctx: HttpContext, htmlStream: IAsyncEnumerable<HtmlElement>) =
+        ctx.Response.ContentType <- "text/html; charset=utf-8"
+        let enumerator = htmlStream.GetAsyncEnumerator()
+        task {
+            while! enumerator.MoveNextAsync() do
+                do! Render.toStream ctx.Response.Body enumerator.Current
+        }
 
     /// <summary>
     /// Executes and ASP.NET Core IResult. Note that in most cases the response will be chunked.
