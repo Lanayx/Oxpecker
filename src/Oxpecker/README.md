@@ -1247,7 +1247,7 @@ let someHandler (dataObj: obj) : EndpointHandler =
 
 #### Writing HTML Views
 
-Oxpecker comes with its own extremely powerful view engine for functional developers (see [Oxpecker View Engine](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.ViewEngine/README.md)). The `WriteHtmlView (htmlView : HtmlElement)` extension method and the `htmlView (htmlView : HtmlElement)` http handler will both compile a given html view into valid HTML code and write the output to the response stream of the HTTP request. Additionally they will both set the `Content-Length` HTTP header to the correct value and set the `Content-Type` header to `text/html`:
+Oxpecker comes with its own extremely powerful view engine for functional developers (see [Oxpecker View Engine](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.ViewEngine/README.md)). The `WriteHtmlView (htmlView : HtmlElement)` extension method and the `htmlView (htmlView : HtmlElement)` HTTP handler will both compile a given html view into valid HTML code and write the output to the response stream of the HTTP request. Additionally they will both set the `Content-Length` HTTP header to the correct value and set the `Content-Type` header to `text/html`:
 
 ```fsharp
 let indexView =
@@ -1274,6 +1274,35 @@ let someHandler : EndpointHandler =
     // Do stuff
     htmlView indexView
 ```
+
+You can also use HTML streaming using `htmlChunked` and `htmlViewChunked` HTTP handlers and there corresponding `WriteHtmlChunked` and `WriteHtmlViewChunked` extension methods.
+
+```fsharp
+let indexView =
+    html() {
+        head() {
+            title() { "Oxpecker" }
+        }
+        body() {
+            h1(id="Header") { "Oxpecker" }
+            p() { "Hello World." }
+        }
+    }
+
+let someHandler : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            // Do stuff
+            return! ctx.WriteHtmlViewChunked indexView
+        }
+
+// or...
+
+let someHandler : EndpointHandler =
+    // Do stuff
+    htmlViewChunked indexView
+```
+
 
 **Warning**: While being fast at runtime, using many long CE expressions might slow down your project compilation and IDE experience (see [the issue](https://github.com/Lanayx/Oxpecker/issues/5)), so you might decide to use a different view engine. There are multiple view engines for your choice: Giraffe.ViewEngine, Feliz.ViewEngine, Falco.Markup or you can even write your own! To plug in an external view engine you can write a simple extension:
 ```fsharp

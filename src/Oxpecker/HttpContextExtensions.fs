@@ -9,6 +9,7 @@ open System.Threading.Tasks
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
+open Microsoft.AspNetCore.WebUtilities
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker.ViewEngine
@@ -289,7 +290,7 @@ type HttpContextExtensions() =
         serializer.Serialize(value, ctx, true)
 
     /// <summary>
-    /// <para>Compiles a `Oxpecker.OxpeckerViewEngine.Builder.HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
+    /// <para>Compiles an `HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
@@ -312,9 +313,28 @@ type HttpContextExtensions() =
     static member WriteHtmlChunked(ctx: HttpContext, htmlStream: IAsyncEnumerable<HtmlElement>) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         let enumerator = htmlStream.GetAsyncEnumerator()
+        let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
         task {
+            use _ = textWriter :> IAsyncDisposable
             while! enumerator.MoveNextAsync() do
-                do! Render.toStream ctx.Response.Body enumerator.Current
+                do! Render.toTextWriterAsync textWriter enumerator.Current
+                do! textWriter.FlushAsync()
+        }
+
+    /// <summary>
+    /// <para>Serializes an HTML element object and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
+    /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <param name="htmlElement">An `HtmlElement` object to be send back to the client.</param>
+    /// <returns>Task of writing to the body of the response.</returns>
+    [<Extension>]
+    static member WriteHtmlViewChunked(ctx: HttpContext, htmlElement: HtmlElement) =
+        ctx.Response.ContentType <- "text/html; charset=utf-8"
+        let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
+        task {
+            use _ = textWriter :> IAsyncDisposable
+            return! Render.toHtmlDocTextWriterAsync textWriter htmlElement
         }
 
     /// <summary>
@@ -327,7 +347,7 @@ type HttpContextExtensions() =
     /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
     /// </summary>
     /// <typeparam name="'T"></typeparam>
-    /// <returns>Retruns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
+    /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
     [<Extension>]
     static member BindJson<'T>(ctx: HttpContext) =
         let serializer = ctx.GetJsonSerializer()

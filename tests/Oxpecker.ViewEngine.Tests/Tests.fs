@@ -1,5 +1,6 @@
 module Tests
 
+open System
 open System.IO
 open System.Text
 open Oxpecker.ViewEngine
@@ -101,9 +102,23 @@ let ``Basic chunked test`` () =
     task {
         let view = html() { div(id = "1") }
         use stream = new MemoryStream()
-        do! view |> Render.toStream stream
+        do! Render.toStreamAsync stream view
         stream.Seek(0L, SeekOrigin.Begin) |> ignore
         stream.ToArray()
         |> Encoding.UTF8.GetString
         |> shouldEqual """<html><div id="1"></div></html>"""
+    }
+
+[<Fact>]
+let ``Render to text writer`` () =
+    task {
+        let view = html() { div(id = "1") }
+        let stream = new MemoryStream()
+        let textWriter = new StreamWriter(stream, leaveOpen = true)
+        do! Render.toHtmlDocTextWriterAsync textWriter view
+        do! textWriter.DisposeAsync()
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="1"></div></html>"""
     }

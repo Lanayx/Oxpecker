@@ -53,13 +53,45 @@ let toHtmlDocBytes (view: HtmlElement) =
     result
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toStream (stream: Stream) (view: HtmlElement) =
+let toStreamAsync (stream: Stream) (view: HtmlElement) =
     let sb = toStringBuilder view
     let streamWriter = new StreamWriter(stream, leaveOpen = true)
     task {
-        use _ = streamWriter :> IAsyncDisposable
         try
+            use _ = streamWriter :> IAsyncDisposable
             return! streamWriter.WriteAsync(sb)
+        finally
+            StringBuilderPool.Return(sb)
+    }
+
+/// Render HTMLElement to stream using UTF8 stream writer
+let toHtmlDocStreamAsync (stream: Stream) (view: HtmlElement) =
+    let sb = toHtmlDocStringBuilder view
+    let streamWriter = new StreamWriter(stream, leaveOpen = true)
+    task {
+        try
+            use _ = streamWriter :> IAsyncDisposable
+            return! streamWriter.WriteAsync(sb)
+        finally
+            StringBuilderPool.Return(sb)
+    }
+
+/// Render HTMLElement to stream using UTF8 stream writer
+let toTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
+    let sb = toStringBuilder view
+    task {
+        try
+            return! textWriter.WriteAsync(sb)
+        finally
+            StringBuilderPool.Return(sb)
+    }
+
+/// Render HTMLElement to stream using UTF8 stream writer
+let toHtmlDocTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
+    let sb = toHtmlDocStringBuilder view
+    task {
+        try
+            return! textWriter.WriteAsync(sb)
         finally
             StringBuilderPool.Return(sb)
     }
