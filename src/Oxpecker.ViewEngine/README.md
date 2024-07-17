@@ -138,9 +138,12 @@ There are several functions to render `HtmlElement` (after opening Oxpecker.View
 
 - **Render.toString** will render to standard .NET UTF16 string
 - **Render.toBytes** will render to UTF8-encoded byte array
+- **Render.toStreamAsync** will asynchronously render to stream in UTF8 encoding
+- **Render.toTextWriterAsync** will asynchronously render to the provided text writer
 - **Render.toHtmlDocBytes** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
 - **Render.toHtmlDocString** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toStream** will asynchronously render to stream in UTF8 encoding
+- **Render.toHtmlDocStreamAsync** is the same as **Render.toStreamAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocTextWriterAsync** is the same as **Render.toTextWriterAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
 
 ### Aria
 

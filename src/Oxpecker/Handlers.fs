@@ -145,7 +145,7 @@ module ResponseHandlers =
         fun (ctx: HttpContext) -> ctx.WriteHtmlString html
 
     /// <summary>
-    /// <para>Compiles a `Oxpecker.OxpeckerViewEngine.Builder.HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
+    /// <para>Compiles an `HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
     /// </summary>
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
@@ -163,6 +163,16 @@ module ResponseHandlers =
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
     let htmlChunked (htmlStream: IAsyncEnumerable<HtmlElement>) : EndpointHandler =
         fun (ctx: HttpContext) -> ctx.WriteHtmlChunked htmlStream
+
+    /// <summary>
+    /// <para>Serializes an `HtmlElement` and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
+    /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
+    /// </summary>
+    /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
+    /// <param name="ctx">HttpContext</param>
+    /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+    let htmlViewChunked (htmlView: HtmlElement) : EndpointHandler =
+        fun (ctx: HttpContext) -> ctx.WriteHtmlViewChunked htmlView
 
     /// <summary>
     /// Clears the current <see cref="Microsoft.AspNetCore.Http.HttpResponse"/> object.
