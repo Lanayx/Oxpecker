@@ -149,9 +149,8 @@ module ModelParser =
         let error =
             // Iterate through all properties of the model
             model.GetType().GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
-            |> Seq.toList
-            |> List.filter _.CanWrite
-            |> List.fold
+            |> Seq.filter _.CanWrite
+            |> Seq.fold
                 (fun (error: string option) (prop: PropertyInfo) ->
                     // If previous property failed to parse then short circuit the parsing and return the error.
                     if error.IsSome then
@@ -237,7 +236,6 @@ module ModelParser =
                 match res with
                 | Ok o -> prop.PropertyType.MakeSomeCase(o) |> box |> Some
                 | Error _ -> None
-
         else
             None
 
@@ -254,7 +252,7 @@ module ModelParser =
 
             let innerType = prop.PropertyType.GetElementType()
 
-            let seqOfObjects =
+            let arrOfValues =
                 data
                 |> Seq.filter(fun item -> regex.IsMatch item.Key)
                 |> Seq.map(fun item ->
@@ -278,14 +276,15 @@ module ModelParser =
                     match res with
                     | Ok o -> Some(index, o)
                     | Error _ -> None)
+                |> Seq.toArray
 
             let arrayOfObjects =
-                if (seqOfObjects |> Seq.length > 0) then
-                    let arraySize = (seqOfObjects |> Seq.last |> fst) + 1
+                if (arrOfValues |> Array.length > 0) then
+                    let arraySize = (arrOfValues |> Array.last |> fst) + 1
                     let arrayOfObjects = Array.CreateInstance(innerType, arraySize)
 
-                    seqOfObjects
-                    |> Seq.iter(fun (index, item) -> arrayOfObjects.SetValue(item, index))
+                    arrOfValues
+                    |> Array.iter(fun (index, item) -> arrayOfObjects.SetValue(item, index))
 
                     arrayOfObjects
                 else
