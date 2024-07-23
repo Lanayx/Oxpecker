@@ -149,9 +149,8 @@ module ModelParser =
         let error =
             // Iterate through all properties of the model
             model.GetType().GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
-            |> Seq.toList
-            |> List.filter _.CanWrite
-            |> List.fold
+            |> Seq.filter _.CanWrite
+            |> Seq.fold
                 (fun (error: string option) (prop: PropertyInfo) ->
                     // If previous property failed to parse then short circuit the parsing and return the error.
                     if error.IsSome then
@@ -203,15 +202,13 @@ module ModelParser =
         (data: IDictionary<string, StringValues>)
         (prop: PropertyInfo)
         : obj option =
-        let lowerCasedPropName = prop.Name
-        let isMaybeComplexType =
-            data.Keys |> Seq.exists(_.StartsWith(lowerCasedPropName + "."))
+        let isMaybeComplexType = data.Keys |> Seq.exists(_.StartsWith(prop.Name + "."))
         let isRecordType = FSharpType.IsRecord prop.PropertyType
         let isGenericType = prop.PropertyType.IsGenericType
         let tryResolveComplexType = isMaybeComplexType && (isRecordType || isGenericType)
 
         if tryResolveComplexType then
-            let regex = lowerCasedPropName |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
+            let regex = prop.Name |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
 
             let dictData =
                 data
@@ -228,16 +225,15 @@ module ModelParser =
                 let model = Activator.CreateInstance(prop.PropertyType)
                 let res = parseModel model cultureInfo dictData
                 match res with
-                | Ok o -> o |> box |> Some
+                | Ok o -> o |> Some
                 | Error _ -> None
             | true ->
                 let genericType = prop.PropertyType.GetGenericType()
                 let model = Activator.CreateInstance(genericType)
                 let res = parseModel model cultureInfo dictData
                 match res with
-                | Ok o -> prop.PropertyType.MakeSomeCase(o) |> box |> Some
+                | Ok o -> prop.PropertyType.MakeSomeCase(o) |> Some
                 | Error _ -> None
-
         else
             None
 
@@ -248,13 +244,11 @@ module ModelParser =
         : obj option =
 
         if prop.PropertyType.IsArray then
-            let lowerCasedPropName = prop.Name
-            let regex =
-                lowerCasedPropName |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
+            let regex = prop.Name |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
 
             let innerType = prop.PropertyType.GetElementType()
 
-            let seqOfObjects =
+            let arrOfValues =
                 data
                 |> Seq.filter(fun item -> regex.IsMatch item.Key)
                 |> Seq.map(fun item ->
@@ -278,14 +272,15 @@ module ModelParser =
                     match res with
                     | Ok o -> Some(index, o)
                     | Error _ -> None)
+                |> Seq.toArray
 
             let arrayOfObjects =
-                if (seqOfObjects |> Seq.length > 0) then
-                    let arraySize = (seqOfObjects |> Seq.last |> fst) + 1
+                if (arrOfValues |> Array.length > 0) then
+                    let arraySize = (arrOfValues |> Array.last |> fst) + 1
                     let arrayOfObjects = Array.CreateInstance(innerType, arraySize)
 
-                    seqOfObjects
-                    |> Seq.iter(fun (index, item) -> arrayOfObjects.SetValue(item, index))
+                    arrOfValues
+                    |> Array.iter(fun (index, item) -> arrayOfObjects.SetValue(item, index))
 
                     arrayOfObjects
                 else
