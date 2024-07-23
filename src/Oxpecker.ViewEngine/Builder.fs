@@ -33,7 +33,7 @@ module Builder =
 
     type HtmlElementFun = HtmlElement -> unit
 
-    and HtmlElement(elemType: HtmlElementType) =
+    and HtmlElement(elementType: HtmlElementType) =
         let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
         let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
 
@@ -118,17 +118,17 @@ module Builder =
             let inline renderEndTag (tagName: string) =
                 sb.Append("</").Append(tagName).Append('>') |> ignore
 
-            match elemType.NodeType with
-            | NodeType.RawTextNode -> elemType.Value |> sb.Append |> ignore
-            | NodeType.RegularTextNode -> elemType.Value |> WebUtility.HtmlEncode |> sb.Append |> ignore
-            | NodeType.VoidNode -> renderStartTag elemType.Value
+            match elementType.NodeType with
+            | NodeType.RawTextNode -> elementType.Value |> sb.Append |> ignore
+            | NodeType.RegularTextNode -> elementType.Value |> WebUtility.HtmlEncode |> sb.Append |> ignore
+            | NodeType.VoidNode -> renderStartTag elementType.Value
             | NodeType.NormalNode ->
-                if isNull elemType.Value then
+                if isNull elementType.Value then
                     renderChildren()
                 else
-                    renderStartTag elemType.Value
+                    renderStartTag elementType.Value
                     renderChildren()
-                    renderEndTag elemType.Value
+                    renderEndTag elementType.Value
             | _ -> failwith "Invalid node type"
 
 
@@ -144,6 +144,7 @@ module Builder =
 
         member this.Children = children
         member this.Attributes = attributes
+        member this.ElementType = elementType
 
         // builder methods
         member inline _.Combine
