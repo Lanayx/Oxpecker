@@ -29,3 +29,11 @@ type CustomQueue<'T> =
         else
             this.Tail.Next <- item
             this.Tail <- item
+
+    member this.AsEnumerable() =
+        let mutable next = this.Head
+        seq {
+            while isNotNull next do
+                yield next.Value
+                next <- next.Next
+        }
