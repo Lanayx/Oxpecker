@@ -1,4 +1,4 @@
-module Tests
+module Render.Tests
 
 open System
 open System.IO
