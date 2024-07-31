@@ -1,9 +1,7 @@
 ﻿namespace Oxpecker.ViewEngine
 
-open System.Diagnostics.CodeAnalysis
 open System.Net
 open System.Text
-open JetBrains.Annotations
 
 module NodeType =
     [<Literal>]
@@ -44,55 +42,6 @@ module Builder =
                     Value = tagName
                 }
             )
-
-        // global attributes
-        member this.id
-            with set value = this.attr("id", value) |> ignore
-        member this.class'
-            with set value = this.attr("class", value) |> ignore
-        [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
-        member this.style
-            with set value = this.attr("style", value) |> ignore
-        member this.lang
-            with set value = this.attr("lang", value) |> ignore
-        member this.dir
-            with set value = this.attr("dir", value) |> ignore
-        member this.tabindex
-            with set (value: int) = this.attr("tabindex", string value) |> ignore
-        member this.title
-            with set value = this.attr("title", value) |> ignore
-        member this.accesskey
-            with set (value: char) = this.attr("accesskey", string value) |> ignore
-        member this.contenteditable
-            with set (value: bool) = this.attr("contenteditable", (if value then "true" else "false")) |> ignore
-        member this.draggable
-            with set value = this.attr("draggable", value) |> ignore
-        member this.enterkeyhint
-            with set value = this.attr("enterkeyhint", value) |> ignore
-        member this.hidden
-            with set (value: bool) =
-                if value then
-                    this.attr("hidden", "") |> ignore
-        member this.inert
-            with set (value: bool) =
-                if value then
-                    this.attr("inert", "") |> ignore
-        member this.inputmode
-            with set value = this.attr("inputmode", value) |> ignore
-        member this.popover
-            with set (value: bool) =
-                if value then
-                    this.attr("popover", "") |> ignore
-        member this.spellcheck
-            with set (value: bool) = this.attr("spellcheck", (if value then "true" else "false")) |> ignore
-        member this.translate
-            with set (value: bool) = this.attr("translate", (if value then "yes" else "no")) |> ignore
-
-        /// Add event handler to the element through the corresponding attribute
-        member this.on(eventName: string, [<StringSyntax("js")>] eventHandler: string) =
-            this.attr($"on{eventName}", eventHandler)
-        /// Add data attribute to the element
-        member this.data(name: string, value: string) = this.attr($"data-{name}", value)
 
         member this.Render(sb: StringBuilder) : unit =
             let inline renderStartTag (tagName: string) =
