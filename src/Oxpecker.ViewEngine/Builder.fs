@@ -1,6 +1,7 @@
 ﻿namespace Oxpecker.ViewEngine
 
 open System.Net
+open System.Runtime.CompilerServices
 open System.Text
 
 module NodeType =
@@ -80,6 +81,9 @@ module Builder =
                     renderEndTag elementType.Value
             | _ -> failwith "Invalid node type"
 
+        member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
+        member this.AddChild(element: HtmlElement) = children.Enqueue(element)
+
         member this.Children = children
         member this.Attributes = attributes
         member this.ElementType = elementType
@@ -102,10 +106,10 @@ module Builder =
                 for value in values do
                     body value builder
 
-        member inline _.Yield(element: HtmlElement) : HtmlElementFun = _.Children.Enqueue(element)
+        member inline _.Yield(element: HtmlElement) : HtmlElementFun = _.AddChild(element)
 
         member inline _.Yield(text: string) : HtmlElementFun =
-            _.Children.Enqueue(
+            _.AddChild(
                 HtmlElement {
                     NodeType = NodeType.RegularTextNode
                     Value = text
@@ -113,13 +117,15 @@ module Builder =
             )
 
         member inline _.Yield(text: RawText) : HtmlElementFun =
-            _.Children.Enqueue(
+            _.AddChild(
                 HtmlElement {
                     NodeType = NodeType.RawTextNode
                     Value = text.Text
                 }
             )
 
-        member inline this.Run([<InlineIfLambda>] runExpr: HtmlElementFun) =
+    type HtmlElementExtensions =
+        [<Extension>]
+        static member inline Run<'T when 'T :> HtmlElement>(this: 'T, [<InlineIfLambda>] runExpr: HtmlElementFun) =
             runExpr this
             this

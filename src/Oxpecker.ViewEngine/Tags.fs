@@ -22,7 +22,7 @@ module Tags =
         [<Extension>]
         static member attr<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
             if isNotNull value then
-                this.Attributes.Enqueue({ Name = name; Value = value })
+                this.AddAttribute({ Name = name; Value = value })
             this
 
         /// Add event handler to the element through the corresponding attribute
