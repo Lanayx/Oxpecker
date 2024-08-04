@@ -1,6 +1,8 @@
 ﻿namespace Oxpecker.ViewEngine
 
 open System.Diagnostics.CodeAnalysis
+open Oxpecker.ViewEngine.Tools
+open System.Runtime.CompilerServices
 open JetBrains.Annotations
 
 [<AutoOpen>]
@@ -11,6 +13,30 @@ module Tags =
     /// Fragment (or template) node, only renders children, not itself
     type __() =
         inherit HtmlElement(null)
+
+    /// Set of html extensions that keep original type
+    [<Extension>]
+    type HtmlElementExtensions =
+
+        /// Add an attribute to the element
+        [<Extension>]
+        static member attr<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
+            if isNotNull value then
+                this.Attributes.Enqueue({ Name = name; Value = value })
+            this
+
+        /// Add event handler to the element through the corresponding attribute
+        [<Extension>]
+        static member on<'T when 'T :> HtmlElement>
+            (this: 'T, eventName: string, [<StringSyntax("js")>] eventHandler: string)
+            =
+            this.attr($"on{eventName}", eventHandler)
+
+        /// Add data attribute to the element
+        [<Extension>]
+        static member data<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
+            this.attr($"data-{name}", value)
+
 
     // global attributes
     type HtmlElement with
@@ -55,12 +81,6 @@ module Tags =
             with set (value: bool) = this.attr("spellcheck", (if value then "true" else "false")) |> ignore
         member this.translate
             with set (value: bool) = this.attr("translate", (if value then "yes" else "no")) |> ignore
-
-        /// Add event handler to the element through the corresponding attribute
-        member this.on(eventName: string, [<StringSyntax("js")>] eventHandler: string) =
-            this.attr($"on{eventName}", eventHandler)
-        /// Add data attribute to the element
-        member this.data(name: string, value: string) = this.attr($"data-{name}", value)
 
     type head() =
         inherit HtmlElement("head")

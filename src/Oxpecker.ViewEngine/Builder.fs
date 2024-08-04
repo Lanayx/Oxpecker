@@ -80,22 +80,12 @@ module Builder =
                     renderEndTag elementType.Value
             | _ -> failwith "Invalid node type"
 
-
-        member this.AddChild(element: HtmlElement) =
-            children.Enqueue(element)
-            this
-
-        /// Add an attribute to the element
-        member this.attr(name: string, value: string) =
-            if isNotNull value then
-                attributes.Enqueue({ Name = name; Value = value })
-            this
-
         member this.Children = children
         member this.Attributes = attributes
         member this.ElementType = elementType
 
-        // builder methods
+    // builder methods
+    type HtmlElement with
         member inline _.Combine
             ([<InlineIfLambda>] first: HtmlElementFun, [<InlineIfLambda>] second: HtmlElementFun)
             : HtmlElementFun =
@@ -112,28 +102,23 @@ module Builder =
                 for value in values do
                     body value builder
 
-        member inline _.Yield(element: HtmlElement) : HtmlElementFun =
-            fun builder -> builder.AddChild(element) |> ignore
+        member inline _.Yield(element: HtmlElement) : HtmlElementFun = _.Children.Enqueue(element)
 
         member inline _.Yield(text: string) : HtmlElementFun =
-            fun builder ->
-                builder.AddChild(
-                    HtmlElement {
-                        NodeType = NodeType.RegularTextNode
-                        Value = text
-                    }
-                )
-                |> ignore
+            _.Children.Enqueue(
+                HtmlElement {
+                    NodeType = NodeType.RegularTextNode
+                    Value = text
+                }
+            )
 
         member inline _.Yield(text: RawText) : HtmlElementFun =
-            fun builder ->
-                builder.AddChild(
-                    HtmlElement {
-                        NodeType = NodeType.RawTextNode
-                        Value = text.Text
-                    }
-                )
-                |> ignore
+            _.Children.Enqueue(
+                HtmlElement {
+                    NodeType = NodeType.RawTextNode
+                    Value = text.Text
+                }
+            )
 
         member inline this.Run([<InlineIfLambda>] runExpr: HtmlElementFun) =
             runExpr this
