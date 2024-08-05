@@ -20,9 +20,9 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.10.2</Version>
-        <PackageVersion>0.10.2</PackageVersion>
-        <PackageReleaseNotes>Added .AsEnumerable() method to CustomQueue</PackageReleaseNotes>
+        <Version>0.11.0</Version>
+        <PackageVersion>0.11.0</PackageVersion>
+        <PackageReleaseNotes>Builder now returns the same type instead of base</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>

@@ -28,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -61,3 +61,5 @@ jobs:
       - name: Compile the main solution
         run: dotnet build --no-restore
 
+      - name: Test the main solution
+        run: dotnet test --no-restore --no-build
