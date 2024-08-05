@@ -1,9 +1,8 @@
 ﻿namespace Oxpecker.ViewEngine
 
-open System.Diagnostics.CodeAnalysis
 open System.Net
+open System.Runtime.CompilerServices
 open System.Text
-open JetBrains.Annotations
 
 module NodeType =
     [<Literal>]
@@ -45,55 +44,6 @@ module Builder =
                 }
             )
 
-        // global attributes
-        member this.id
-            with set value = this.attr("id", value) |> ignore
-        member this.class'
-            with set value = this.attr("class", value) |> ignore
-        [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
-        member this.style
-            with set value = this.attr("style", value) |> ignore
-        member this.lang
-            with set value = this.attr("lang", value) |> ignore
-        member this.dir
-            with set value = this.attr("dir", value) |> ignore
-        member this.tabindex
-            with set (value: int) = this.attr("tabindex", string value) |> ignore
-        member this.title
-            with set value = this.attr("title", value) |> ignore
-        member this.accesskey
-            with set (value: char) = this.attr("accesskey", string value) |> ignore
-        member this.contenteditable
-            with set (value: bool) = this.attr("contenteditable", (if value then "true" else "false")) |> ignore
-        member this.draggable
-            with set value = this.attr("draggable", value) |> ignore
-        member this.enterkeyhint
-            with set value = this.attr("enterkeyhint", value) |> ignore
-        member this.hidden
-            with set (value: bool) =
-                if value then
-                    this.attr("hidden", "") |> ignore
-        member this.inert
-            with set (value: bool) =
-                if value then
-                    this.attr("inert", "") |> ignore
-        member this.inputmode
-            with set value = this.attr("inputmode", value) |> ignore
-        member this.popover
-            with set (value: bool) =
-                if value then
-                    this.attr("popover", "") |> ignore
-        member this.spellcheck
-            with set (value: bool) = this.attr("spellcheck", (if value then "true" else "false")) |> ignore
-        member this.translate
-            with set (value: bool) = this.attr("translate", (if value then "yes" else "no")) |> ignore
-
-        /// Add event handler to the element through the corresponding attribute
-        member this.on(eventName: string, [<StringSyntax("js")>] eventHandler: string) =
-            this.attr($"on{eventName}", eventHandler)
-        /// Add data attribute to the element
-        member this.data(name: string, value: string) = this.attr($"data-{name}", value)
-
         member this.Render(sb: StringBuilder) : unit =
             let inline renderStartTag (tagName: string) =
                 sb.Append('<').Append(tagName) |> ignore
@@ -131,22 +81,15 @@ module Builder =
                     renderEndTag elementType.Value
             | _ -> failwith "Invalid node type"
 
-
-        member this.AddChild(element: HtmlElement) =
-            children.Enqueue(element)
-            this
-
-        /// Add an attribute to the element
-        member this.attr(name: string, value: string) =
-            if isNotNull value then
-                attributes.Enqueue({ Name = name; Value = value })
-            this
+        member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
+        member this.AddChild(element: HtmlElement) = children.Enqueue(element)
 
         member this.Children = children
         member this.Attributes = attributes
         member this.ElementType = elementType
 
-        // builder methods
+    // builder methods
+    type HtmlElement with
         member inline _.Combine
             ([<InlineIfLambda>] first: HtmlElementFun, [<InlineIfLambda>] second: HtmlElementFun)
             : HtmlElementFun =
@@ -163,29 +106,26 @@ module Builder =
                 for value in values do
                     body value builder
 
-        member inline _.Yield(element: HtmlElement) : HtmlElementFun =
-            fun builder -> builder.AddChild(element) |> ignore
+        member inline _.Yield(element: HtmlElement) : HtmlElementFun = _.AddChild(element)
 
         member inline _.Yield(text: string) : HtmlElementFun =
-            fun builder ->
-                builder.AddChild(
-                    HtmlElement {
-                        NodeType = NodeType.RegularTextNode
-                        Value = text
-                    }
-                )
-                |> ignore
+            _.AddChild(
+                HtmlElement {
+                    NodeType = NodeType.RegularTextNode
+                    Value = text
+                }
+            )
 
         member inline _.Yield(text: RawText) : HtmlElementFun =
-            fun builder ->
-                builder.AddChild(
-                    HtmlElement {
-                        NodeType = NodeType.RawTextNode
-                        Value = text.Text
-                    }
-                )
-                |> ignore
+            _.AddChild(
+                HtmlElement {
+                    NodeType = NodeType.RawTextNode
+                    Value = text.Text
+                }
+            )
 
-        member inline this.Run([<InlineIfLambda>] runExpr: HtmlElementFun) =
+    type HtmlElementExtensions =
+        [<Extension>]
+        static member inline Run<'T when 'T :> HtmlElement>(this: 'T, [<InlineIfLambda>] runExpr: HtmlElementFun) =
             runExpr this
             this

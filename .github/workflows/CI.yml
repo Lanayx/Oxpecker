@@ -12,7 +12,7 @@ on:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_VERSION: 8.0.200
+  DOTNET_VERSION: 8.0.303
 
 # Kill other jobs when we trigger this workflow by sending new commits
 # to the PR.
@@ -28,7 +28,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET Core
+      - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -61,3 +61,5 @@ jobs:
       - name: Compile the main solution
         run: dotnet build --no-restore
 
+      - name: Test the main solution
+        run: dotnet test --no-restore --no-build

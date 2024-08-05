@@ -20,9 +20,9 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.10.2</Version>
-        <PackageVersion>0.10.2</PackageVersion>
-        <PackageReleaseNotes>Added .AsEnumerable() method to CustomQueue</PackageReleaseNotes>
+        <Version>0.11.0</Version>
+        <PackageVersion>0.11.0</PackageVersion>
+        <PackageReleaseNotes>Builder now returns the same type instead of base</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

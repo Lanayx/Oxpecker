@@ -1,5 +1,10 @@
 ﻿namespace Oxpecker.ViewEngine
 
+open System.Diagnostics.CodeAnalysis
+open Oxpecker.ViewEngine.Tools
+open System.Runtime.CompilerServices
+open JetBrains.Annotations
+
 [<AutoOpen>]
 module Tags =
 
@@ -8,6 +13,74 @@ module Tags =
     /// Fragment (or template) node, only renders children, not itself
     type __() =
         inherit HtmlElement(null)
+
+    /// Set of html extensions that keep original type
+    [<Extension>]
+    type HtmlElementExtensions =
+
+        /// Add an attribute to the element
+        [<Extension>]
+        static member attr<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
+            if isNotNull value then
+                this.AddAttribute({ Name = name; Value = value })
+            this
+
+        /// Add event handler to the element through the corresponding attribute
+        [<Extension>]
+        static member on<'T when 'T :> HtmlElement>
+            (this: 'T, eventName: string, [<StringSyntax("js")>] eventHandler: string)
+            =
+            this.attr($"on{eventName}", eventHandler)
+
+        /// Add data attribute to the element
+        [<Extension>]
+        static member data<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
+            this.attr($"data-{name}", value)
+
+
+    // global attributes
+    type HtmlElement with
+        member this.id
+            with set value = this.attr("id", value) |> ignore
+        member this.class'
+            with set value = this.attr("class", value) |> ignore
+        [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
+        member this.style
+            with set value = this.attr("style", value) |> ignore
+        member this.lang
+            with set value = this.attr("lang", value) |> ignore
+        member this.dir
+            with set value = this.attr("dir", value) |> ignore
+        member this.tabindex
+            with set (value: int) = this.attr("tabindex", string value) |> ignore
+        member this.title
+            with set value = this.attr("title", value) |> ignore
+        member this.accesskey
+            with set (value: char) = this.attr("accesskey", string value) |> ignore
+        member this.contenteditable
+            with set (value: bool) = this.attr("contenteditable", (if value then "true" else "false")) |> ignore
+        member this.draggable
+            with set value = this.attr("draggable", value) |> ignore
+        member this.enterkeyhint
+            with set value = this.attr("enterkeyhint", value) |> ignore
+        member this.hidden
+            with set (value: bool) =
+                if value then
+                    this.attr("hidden", "") |> ignore
+        member this.inert
+            with set (value: bool) =
+                if value then
+                    this.attr("inert", "") |> ignore
+        member this.inputmode
+            with set value = this.attr("inputmode", value) |> ignore
+        member this.popover
+            with set (value: bool) =
+                if value then
+                    this.attr("popover", "") |> ignore
+        member this.spellcheck
+            with set (value: bool) = this.attr("spellcheck", (if value then "true" else "false")) |> ignore
+        member this.translate
+            with set (value: bool) = this.attr("translate", (if value then "yes" else "no")) |> ignore
 
     type head() =
         inherit HtmlElement("head")

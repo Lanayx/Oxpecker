@@ -179,7 +179,7 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
         let htmlDoc =
             html() {
                 head()
-                body() { h1() { "Hello world" } }
+                body() { h1(id = "header") { "Hello world" } }
             }
         do! ctx.WriteHtmlView(htmlDoc)
 
@@ -189,5 +189,5 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
 
         result
         |> shouldEqual
-            $"<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1>Hello world</h1></body></html>"
+            $"""<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1 id="header">Hello world</h1></body></html>"""
     }
