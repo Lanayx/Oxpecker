@@ -44,32 +44,33 @@ let mainView (model: Person) =
 
 ### HtmlElement
 
-`HtmlElement` is a main building block of `Oxpecker.ViewEngine`. It can be constructed from the instance of the `HtmlElementType`:
+`HtmlElement` is a main interface of `Oxpecker.ViewEngine`. It's extended by two additional interfaces `HtmlTag` and `HtmlContainer`:
 
 ```fsharp
-module NodeType =
-    let NormalNode = 0uy
-    let VoidNode = 1uy
-    let RegularTextNode = 2uy
-    let RawTextNode = 3uy
-type HtmlElementType = { NodeType: byte; Value: string }
-type HtmlElement(elemType: HtmlElementType) =
+    type HtmlElement =
+        abstract member Render: StringBuilder -> unit
+    type HtmlTag =
+        inherit HtmlElement
+        abstract member AddAttribute: HtmlAttribute -> unit
+    type HtmlContainer =
+        inherit HtmlElement
+        abstract member AddChild: HtmlElement -> unit
     ...
 ```
-This represents 4 types of Html elements: normal tags that have opening and closing part, void tags with no closint part and text nodes (which can be escaped and non-escaped strings).
+There are 5 types of HTML elements available: `RegularNode`, `VoidNode` (only attributes), `FragmentNode` (only children), `RegularTextNode`(escaped text), `RawTextNode`(unescaped text).
 
-All HTML tags inherit from `HtmlElement` and you can easily create your own tag:
+All HTML tags inherit from `RegularNode` or `VoidNode` and you can easily create your own tag:
 
 ```fsharp
 type myTag() =
-    inherit HtmlElement("myTag") // this overload creates NormalNode
+    inherit RegularNode("myTag") // will render <myTag></myTag>
 ```
 
 `HtmlElement` holds two collections inside: attributes and children. More on them below.
 
 ### Children
 
-Normal nodes can have children that will be added to children collection as you write them between curly braces. Void nodes and Text nodes don't have children. You can programmatically access `Chidren` property of any `HtmlElement`.
+Regular nodes can have children that will be added to children collection as you write them between curly braces. Void nodes and Text nodes don't have children. You can programmatically access `Chidren` property of any `HtmlContainer`.
 
 ```fsharp
 let result = div() {
@@ -77,12 +78,12 @@ let result = div() {
     span() { "Some text" }
 }
 
-let children = result.Children // <br> and <span>
+let children = result.Children // br and span
 ```
 
 ### Attributes
 
-Normal and Void nodes can have attributes. Some general attributes are defined inside `HtmlElement` while each tag can have it's specific attributes. This will prevent you from assiging attributes to the element that it doesn't support. You can programmatically access `Attributes` property of any `HtmlElement`.
+Regular and Void nodes can have attributes. Some general attributes are defined inside `HtmlElement` while each tag can have it's specific attributes. This will prevent you from assigning attributes to the element that it doesn't support. You can programmatically access `Attributes` property of any `HtmlTag`.
 
 ```fsharp
 let result = div(class'="myClass") {
@@ -90,7 +91,7 @@ let result = div(class'="myClass") {
     a(href="/") { "Some link" }
 }
 
-let children = result.Attributes // myClass
+let children = result.Attributes // class=myClass
 ```
 You can also attach _any_ custom attribute to the `HtmlElement` using `.attr` method:
 
@@ -167,12 +168,12 @@ Sometimes you need to group several elements together without wrapping them in `
 
 ```fsharp
 let onlyChildren = __() {
-    span() { "Some text" }
-    span() { "Some other text" }
+    span() { "one" }
+    span() { "two" }
 }
 
 let parent = div() {
     onlyChildren
-}
+} // renders <div><span>one</span><span>two</span></div>
 
 ```

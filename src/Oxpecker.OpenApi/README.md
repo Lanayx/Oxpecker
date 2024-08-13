@@ -24,7 +24,7 @@ let endpoints = [
     GET [
         routef "/product/{%i}" (
             fun id ->
-                forecases
+                products
                 |> Array.find (fun f -> f.Id = num)
                 |> json
         )

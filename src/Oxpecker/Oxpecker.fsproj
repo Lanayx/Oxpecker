@@ -20,9 +20,9 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.13.0</Version>
-        <PackageVersion>0.13.0</PackageVersion>
-        <PackageReleaseNotes>Added support for HTML view streaming</PackageReleaseNotes>
+        <Version>0.13.1</Version>
+        <PackageVersion>0.13.1</PackageVersion>
+        <PackageReleaseNotes>Updated Oxpecker.ViewEngine dependency</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
@@ -33,7 +33,7 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.11.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.12.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

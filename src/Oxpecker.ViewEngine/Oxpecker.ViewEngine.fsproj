@@ -20,11 +20,12 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.11.0</Version>
-        <PackageVersion>0.11.0</PackageVersion>
-        <PackageReleaseNotes>Builder now returns the same type instead of base</PackageReleaseNotes>
+        <Version>0.12.0</Version>
+        <PackageVersion>0.12.0</PackageVersion>
+        <PackageReleaseNotes>Changed HtmlElement to interface</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="AssemblyInfo.fs" />
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="IdeTweaks.fs" />

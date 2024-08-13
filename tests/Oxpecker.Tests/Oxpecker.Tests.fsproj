@@ -38,7 +38,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker" Version="0.13.0" />
+        <PackageReference Include="Oxpecker" Version="0.13.1" />
     </ItemGroup>
 
 </Project>

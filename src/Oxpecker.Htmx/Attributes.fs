@@ -5,7 +5,7 @@ open Oxpecker.ViewEngine
 
 [<AutoOpen>]
 module CoreAttributes =
-    type HtmlElement with
+    type HtmlTag with
         /// issues a GET to the specified URL
         member this.hxGet
             with set value = this.attr("hx-get", value) |> ignore
@@ -45,7 +45,7 @@ module CoreAttributes =
 
 [<AutoOpen>]
 module AdditionalAttributes =
-    type HtmlElement with
+    type HtmlTag with
         /// add progressive enhancement for links and forms
         member this.hxBoost
             with set value = this.attr("hx-boost", (if value then "true" else "false")) |> ignore

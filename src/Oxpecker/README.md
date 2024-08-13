@@ -42,6 +42,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [Binding Forms](#binding-forms)
       - [Binding Query Strings](#binding-query-strings)
     - [File Upload](#file-upload)
+    - [WebSockets](#websockets)
     - [Authentication and Authorization](#authentication-and-authorization)
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
@@ -1012,6 +1013,18 @@ let webApp = [ route "/upload" fileUploadHandler ]
 For large file uploads it is recommended to [stream the file](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads#upload-large-files-with-streaming) in order to prevent resource exhaustion.
 
 See also [large file uploads in ASP.NET Core](https://stackoverflow.com/questions/36437282/dealing-with-large-file-uploads-on-asp-net-core-1-0) on StackOverflow.
+
+### WebSockets
+
+Oxpecker's doesn't provide any additional wrappers and fully relies on [ASP.NET Core WebSocket support](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/websockets):
+```fsharp
+let configureApp (appBuilder: IApplicationBuilder) =
+    appBuilder
+        .UseRouting()
+        .UseOxpecker(webApp) // Add Oxpecker
+        .UseWebSockets() // Add WebSockets
+    |> ignore
+```
 
 ### Authentication and Authorization
 
