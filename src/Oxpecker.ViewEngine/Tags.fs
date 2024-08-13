@@ -12,7 +12,7 @@ module Tags =
 
     /// Fragment (or template) node, only renders children, not itself
     type __() =
-        inherit HtmlElement(null)
+        inherit FragmentNode()
 
     /// Set of html extensions that keep original type
     [<Extension>]
@@ -20,26 +20,22 @@ module Tags =
 
         /// Add an attribute to the element
         [<Extension>]
-        static member attr<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
+        static member attr(this: #HtmlTag, name: string, value: string) =
             if isNotNull value then
                 this.AddAttribute({ Name = name; Value = value })
             this
 
         /// Add event handler to the element through the corresponding attribute
         [<Extension>]
-        static member on<'T when 'T :> HtmlElement>
-            (this: 'T, eventName: string, [<StringSyntax("js")>] eventHandler: string)
-            =
+        static member on(this: #HtmlTag, eventName: string, [<StringSyntax("js")>] eventHandler: string) =
             this.attr($"on{eventName}", eventHandler)
 
         /// Add data attribute to the element
         [<Extension>]
-        static member data<'T when 'T :> HtmlElement>(this: 'T, name: string, value: string) =
-            this.attr($"data-{name}", value)
-
+        static member data(this: #HtmlTag, name: string, value: string) = this.attr($"data-{name}", value)
 
     // global attributes
-    type HtmlElement with
+    type HtmlTag with
         member this.id
             with set value = this.attr("id", value) |> ignore
         member this.class'
@@ -83,109 +79,98 @@ module Tags =
             with set (value: bool) = this.attr("translate", (if value then "yes" else "no")) |> ignore
 
     type head() =
-        inherit HtmlElement("head")
+        inherit RegularNode("head")
     type body() =
-        inherit HtmlElement("body")
+        inherit RegularNode("body")
     type title() =
-        inherit HtmlElement("title")
+        inherit RegularNode("title")
     type div() =
-        inherit HtmlElement("div")
+        inherit RegularNode("div")
     type article() =
-        inherit HtmlElement("article")
+        inherit RegularNode("article")
     type section() =
-        inherit HtmlElement("section")
+        inherit RegularNode("section")
     type header() =
-        inherit HtmlElement("header")
+        inherit RegularNode("header")
     type footer() =
-        inherit HtmlElement("footer")
+        inherit RegularNode("footer")
     type main() =
-        inherit HtmlElement("main")
+        inherit RegularNode("main")
     type h1() =
-        inherit HtmlElement("h1")
+        inherit RegularNode("h1")
     type h2() =
-        inherit HtmlElement("h2")
+        inherit RegularNode("h2")
     type h3() =
-        inherit HtmlElement("h3")
+        inherit RegularNode("h3")
     type h4() =
-        inherit HtmlElement("h4")
+        inherit RegularNode("h4")
     type h5() =
-        inherit HtmlElement("h5")
+        inherit RegularNode("h5")
     type h6() =
-        inherit HtmlElement("h6")
+        inherit RegularNode("h6")
     type ul() =
-        inherit HtmlElement("ul")
+        inherit RegularNode("ul")
     type ol() =
-        inherit HtmlElement("ol")
+        inherit RegularNode("ol")
     type li() =
-        inherit HtmlElement("li")
+        inherit RegularNode("li")
     type p() =
-        inherit HtmlElement("p")
+        inherit RegularNode("p")
     type span() =
-        inherit HtmlElement("span")
+        inherit RegularNode("span")
     type strong() =
-        inherit HtmlElement("strong")
+        inherit RegularNode("strong")
     type em() =
-        inherit HtmlElement("em")
+        inherit RegularNode("em")
     type caption() =
-        inherit HtmlElement("caption")
+        inherit RegularNode("caption")
     type nav() =
-        inherit HtmlElement("nav")
+        inherit RegularNode("nav")
     type i() =
-        inherit HtmlElement("i")
+        inherit RegularNode("i")
     type b() =
-        inherit HtmlElement("b")
+        inherit RegularNode("b")
     type u() =
-        inherit HtmlElement("u")
+        inherit RegularNode("u")
     type s() =
-        inherit HtmlElement("s")
+        inherit RegularNode("s")
     type noscript() =
-        inherit HtmlElement("noscript")
+        inherit RegularNode("noscript")
     type code() =
-        inherit HtmlElement("code")
+        inherit RegularNode("code")
     type pre() =
-        inherit HtmlElement("pre")
+        inherit RegularNode("pre")
     type blockquote() =
-        inherit HtmlElement("blockquote")
+        inherit RegularNode("blockquote")
     type cite() =
-        inherit HtmlElement("cite")
+        inherit RegularNode("cite")
     type q() =
-        inherit HtmlElement("q")
+        inherit RegularNode("q")
     type address() =
-        inherit HtmlElement("address")
+        inherit RegularNode("address")
     type del() =
-        inherit HtmlElement("del")
+        inherit RegularNode("del")
     type ins() =
-        inherit HtmlElement("ins")
+        inherit RegularNode("ins")
     type abbr() =
-        inherit HtmlElement("abbr")
+        inherit RegularNode("abbr")
     type dfn() =
-        inherit HtmlElement("dfn")
+        inherit RegularNode("dfn")
     type sub() =
-        inherit HtmlElement("sub")
+        inherit RegularNode("sub")
     type sup() =
-        inherit HtmlElement("sup")
+        inherit RegularNode("sup")
     type template() =
-        inherit HtmlElement("template")
+        inherit RegularNode("template")
 
     type br() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "br"
-                }
-            )
+        inherit VoidNode("br")
+
     type hr() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "hr"
-                }
-            )
+        inherit VoidNode("hr")
 
     type a() =
-        inherit HtmlElement("a")
+        inherit RegularNode("a")
         member this.href
             with set value = this.attr("href", value) |> ignore
         member this.rel
@@ -196,26 +181,14 @@ module Tags =
             with set value = this.attr("download", value) |> ignore
 
     type base'() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "base"
-                }
-            )
+        inherit VoidNode("base")
         member this.href
             with set value = this.attr("href", value) |> ignore
         member this.target
             with set value = this.attr("target", value) |> ignore
 
     type img() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "img"
-                }
-            )
+        inherit VoidNode("img")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.alt
@@ -226,7 +199,7 @@ module Tags =
             with set (value: int) = this.attr("height", string value) |> ignore
 
     type form() =
-        inherit HtmlElement("form")
+        inherit RegularNode("form")
         member this.action
             with set value = this.attr("action", value) |> ignore
         member this.method
@@ -237,7 +210,7 @@ module Tags =
             with set value = this.attr("target", value) |> ignore
 
     type script() =
-        inherit HtmlElement("script")
+        inherit RegularNode("script")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.type'
@@ -256,13 +229,7 @@ module Tags =
             with set value = this.attr("crossorigin", value) |> ignore
 
     type link() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "link"
-                }
-            )
+        inherit VoidNode("link")
         member this.rel
             with set value = this.attr("rel", value) |> ignore
         member this.href
@@ -277,18 +244,12 @@ module Tags =
             with set value = this.attr("sizes", value) |> ignore
 
     type html() =
-        inherit HtmlElement("html")
+        inherit RegularNode("html")
         member this.xmlns
             with set value = this.attr("xmlns", value) |> ignore
 
     type meta() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "meta"
-                }
-            )
+        inherit VoidNode("meta")
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.content
@@ -299,13 +260,7 @@ module Tags =
             with set value = this.attr("http-equiv", value) |> ignore
 
     type input() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "input"
-                }
-            )
+        inherit VoidNode("input")
         member this.type'
             with set value = this.attr("type", value) |> ignore
         member this.name
@@ -364,7 +319,7 @@ module Tags =
             with set value = this.attr("alt", value) |> ignore
 
     type output() =
-        inherit HtmlElement("output")
+        inherit RegularNode("output")
         member this.for'
             with set value = this.attr("for", value) |> ignore
         member this.form
@@ -373,7 +328,7 @@ module Tags =
             with set value = this.attr("name", value) |> ignore
 
     type textarea() =
-        inherit HtmlElement("textarea")
+        inherit RegularNode("textarea")
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.placeholder
@@ -404,7 +359,7 @@ module Tags =
             with set (value: int) = this.attr("maxlength", string value) |> ignore
 
     type button() =
-        inherit HtmlElement("button")
+        inherit RegularNode("button")
         member this.type'
             with set value = this.attr("type", value) |> ignore
         member this.name
@@ -421,7 +376,7 @@ module Tags =
                     this.attr("autofocus", "") |> ignore
 
     type select() =
-        inherit HtmlElement("select")
+        inherit RegularNode("select")
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.required
@@ -444,7 +399,7 @@ module Tags =
             with set (value: int) = this.attr("size", string value) |> ignore
 
     type option() =
-        inherit HtmlElement("option")
+        inherit RegularNode("option")
         member this.value
             with set value = this.attr("value", value) |> ignore
         member this.selected
@@ -459,7 +414,7 @@ module Tags =
             with set value = this.attr("label", value) |> ignore
 
     type optgroup() =
-        inherit HtmlElement("optgroup")
+        inherit RegularNode("optgroup")
         member this.label
             with set value = this.attr("label", value) |> ignore
         member this.disabled
@@ -468,19 +423,19 @@ module Tags =
                     this.attr("disabled", "") |> ignore
 
     type label() =
-        inherit HtmlElement("label")
+        inherit RegularNode("label")
         member this.for'
             with set value = this.attr("for", value) |> ignore
 
     type style() =
-        inherit HtmlElement("style")
+        inherit RegularNode("style")
         member this.type'
             with set value = this.attr("type", value) |> ignore
         member this.media
             with set value = this.attr("media", value) |> ignore
 
     type iframe() =
-        inherit HtmlElement("iframe")
+        inherit RegularNode("iframe")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.name
@@ -503,7 +458,7 @@ module Tags =
             with set value = this.attr("srcdoc", value) |> ignore
 
     type video() =
-        inherit HtmlElement("video")
+        inherit RegularNode("video")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.poster
@@ -532,7 +487,7 @@ module Tags =
             with set value = this.attr("preload", value) |> ignore
 
     type audio() =
-        inherit HtmlElement("audio")
+        inherit RegularNode("audio")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.autoplay
@@ -553,13 +508,7 @@ module Tags =
                     this.attr("muted", "") |> ignore
 
     type source() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "source"
-                }
-            )
+        inherit VoidNode("source")
         member this.src
             with set value = this.attr("src", value) |> ignore
         member this.type'
@@ -572,14 +521,14 @@ module Tags =
             with set value = this.attr("srcset", value) |> ignore
 
     type canvas() =
-        inherit HtmlElement("canvas")
+        inherit RegularNode("canvas")
         member this.width
             with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
             with set (value: int) = this.attr("height", string value) |> ignore
 
     type object'() =
-        inherit HtmlElement("object")
+        inherit RegularNode("object")
         member this.data
             with set value = this.attr("data", value) |> ignore
         member this.type'
@@ -590,37 +539,31 @@ module Tags =
             with set (value: int) = this.attr("height", string value) |> ignore
 
     type param() =
-        inherit
-            HtmlElement(
-                {
-                    NodeType = NodeType.VoidNode
-                    Value = "param"
-                }
-            )
+        inherit VoidNode("param")
         member this.name
             with set value = this.attr("name", value) |> ignore
         member this.value
             with set value = this.attr("value", value) |> ignore
 
     type data() =
-        inherit HtmlElement("data")
+        inherit RegularNode("data")
         member this.value
             with set value = this.attr("value", value) |> ignore
 
     type time() =
-        inherit HtmlElement("time")
+        inherit RegularNode("time")
         member this.datetime
             with set value = this.attr("datetime", value) |> ignore
 
     type progress() =
-        inherit HtmlElement("progress")
+        inherit RegularNode("progress")
         member this.value
             with set value = this.attr("value", value) |> ignore
         member this.max
             with set value = this.attr("max", value) |> ignore
 
     type meter() =
-        inherit HtmlElement("meter")
+        inherit RegularNode("meter")
         member this.form
             with set value = this.attr("form", value) |> ignore
         member this.value
@@ -637,30 +580,30 @@ module Tags =
             with set value = this.attr("optimum", value) |> ignore
 
     type details() =
-        inherit HtmlElement("details")
+        inherit RegularNode("details")
         member this.open'
             with set (value: bool) =
                 if value then
                     this.attr("open", "") |> ignore
 
     type summary() =
-        inherit HtmlElement("summary")
+        inherit RegularNode("summary")
 
     type dialog() =
-        inherit HtmlElement("dialog")
+        inherit RegularNode("dialog")
         member this.open'
             with set (value: bool) =
                 if value then
                     this.attr("open", "") |> ignore
 
     type menu() =
-        inherit HtmlElement("menu")
+        inherit RegularNode("menu")
 
     type datalist() =
-        inherit HtmlElement("datalist")
+        inherit RegularNode("datalist")
 
     type fieldset() =
-        inherit HtmlElement("fieldset")
+        inherit RegularNode("fieldset")
         member this.disabled
             with set (value: bool) =
                 if value then
@@ -671,21 +614,21 @@ module Tags =
             with set value = this.attr("name", value) |> ignore
 
     type legend() =
-        inherit HtmlElement("legend")
+        inherit RegularNode("legend")
 
 
     type table() =
-        inherit HtmlElement("table")
+        inherit RegularNode("table")
     type tbody() =
-        inherit HtmlElement("tbody")
+        inherit RegularNode("tbody")
     type thead() =
-        inherit HtmlElement("thead")
+        inherit RegularNode("thead")
     type tfoot() =
-        inherit HtmlElement("tfoot")
+        inherit RegularNode("tfoot")
     type tr() =
-        inherit HtmlElement("tr")
+        inherit RegularNode("tr")
     type th() =
-        inherit HtmlElement("th")
+        inherit RegularNode("th")
         member this.abbr
             with set value = this.attr("abbr", value) |> ignore
         member this.colspan
@@ -697,10 +640,33 @@ module Tags =
         member this.scope
             with set value = this.attr("scope", value) |> ignore
     type td() =
-        inherit HtmlElement("td")
+        inherit RegularNode("td")
         member this.colspan
             with set (value: int) = this.attr("colspan", string value) |> ignore
         member this.rowspan
             with set (value: int) = this.attr("rowspan", string value) |> ignore
         member this.headers
             with set value = this.attr("headers", value) |> ignore
+
+    type map() =
+        inherit RegularNode("map")
+        member this.name
+            with set value = this.attr("name", value) |> ignore
+    type area() =
+        inherit VoidNode("area")
+        member this.shape
+            with set value = this.attr("shape", value) |> ignore
+        member this.coords
+            with set value = this.attr("coords", value) |> ignore
+        member this.href
+            with set value = this.attr("href", value) |> ignore
+        member this.alt
+            with set value = this.attr("alt", value) |> ignore
+        member this.download
+            with set value = this.attr("download", value) |> ignore
+        member this.target
+            with set value = this.attr("target", value) |> ignore
+        member this.rel
+            with set value = this.attr("rel", value) |> ignore
+        member this.referrerpolicy
+            with set value = this.attr("referrerpolicy", value) |> ignore

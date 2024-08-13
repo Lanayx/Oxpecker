@@ -11,8 +11,8 @@ module OxpeckerViewBuild =
                 h1(style = "text-align: center; color: red") { "Error" }
                 p() { "Some long error text" }
                 ul() {
-                    for i in 1..10 do
-                        li() { span() { $"Test %d{i}" } }
+                    for _ in 1..10 do
+                        li() { span() { "Test" } }
                 }
             }
         }
@@ -26,8 +26,8 @@ module GiraffeViewBuild =
                 h1 [ _style "text-align: center; color: red" ] [ str "Error" ]
                 p [] [ str "Some long error text" ]
                 ul [] [
-                    for i in 1..10 do
-                        li [] [ span [] [ str $"Test %d{i}" ] ]
+                    for _ in 1..10 do
+                        li [] [ span [] [ str "Test" ] ]
                 ]
             ]
         ]
@@ -42,10 +42,10 @@ type ViewEngineBuild() =
     //   DefaultJob : .NET 8.0.2 (8.0.224.6711), X64 RyuJIT AVX2
     //
     //
-    // | Method            | Mean     | Error     | StdDev    | Gen0   | Allocated |
-    // |------------------ |---------:|----------:|----------:|-------:|----------:|
-    // | BuildOxpeckerView | 1.443 us | 0.0284 us | 0.0292 us | 1.3638 |   5.57 KB |
-    // | BuildGiraffeView  | 1.661 us | 0.0332 us | 0.0341 us | 1.0338 |   4.23 KB |
+    // | Method            | Mean     | Error    | StdDev   | Gen0   | Allocated |
+    // |------------------ |---------:|---------:|---------:|-------:|----------:|
+    // | BuildOxpeckerView | 590.8 ns | 11.51 ns | 17.58 ns | 0.7992 |   3.27 KB |
+    // | BuildGiraffeView  | 788.9 ns | 14.91 ns | 13.95 ns | 0.6323 |   2.59 KB |
 
 
 

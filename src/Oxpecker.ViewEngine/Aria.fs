@@ -2,7 +2,7 @@
 
 module Aria =
 
-    type HtmlElement with
+    type HtmlTag with
         // aria role
         member this.role
             with set value = this.attr("role", value) |> ignore

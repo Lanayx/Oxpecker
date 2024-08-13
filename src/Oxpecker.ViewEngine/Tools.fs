@@ -1,9 +1,8 @@
-﻿module Oxpecker.ViewEngine.Tools
+﻿module internal Oxpecker.ViewEngine.Tools
 
 open Microsoft.Extensions.ObjectPool
 
-let internal StringBuilderPool =
-    DefaultObjectPoolProvider().CreateStringBuilderPool()
+let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
 
 /// <summary>
 /// Checks if an object is not null.
