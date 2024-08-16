@@ -1,6 +1,5 @@
 ﻿open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
 open Oxpecker
 
 let endpoints = [

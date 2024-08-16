@@ -5,7 +5,6 @@ open CRUD.Env
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Oxpecker
 open type Microsoft.AspNetCore.Http.TypedResults
