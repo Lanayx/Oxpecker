@@ -15,7 +15,7 @@
       <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
       <ProjectReference Include="..\..\src\Oxpecker.Htmx\Oxpecker.Htmx.fsproj" />
       <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.1" />
     </ItemGroup>
 
 </Project>
