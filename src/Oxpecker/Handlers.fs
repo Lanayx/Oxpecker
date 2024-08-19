@@ -151,7 +151,7 @@ module ResponseHandlers =
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let htmlView (htmlView: HtmlElement) : EndpointHandler =
+    let htmlView (htmlView: #HtmlElement) : EndpointHandler =
         fun (ctx: HttpContext) -> ctx.WriteHtmlView htmlView
 
     /// <summary>
@@ -161,7 +161,7 @@ module ResponseHandlers =
     /// <param name="htmlStream">The stream of HtmlElements to be sent back to the client.</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let htmlChunked (htmlStream: IAsyncEnumerable<HtmlElement>) : EndpointHandler =
+    let htmlChunked (htmlStream: #IAsyncEnumerable<#HtmlElement>) : EndpointHandler =
         fun (ctx: HttpContext) -> ctx.WriteHtmlChunked htmlStream
 
     /// <summary>
@@ -171,7 +171,7 @@ module ResponseHandlers =
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    let htmlViewChunked (htmlView: HtmlElement) : EndpointHandler =
+    let htmlViewChunked (htmlView: #HtmlElement) : EndpointHandler =
         fun (ctx: HttpContext) -> ctx.WriteHtmlViewChunked htmlView
 
     /// <summary>

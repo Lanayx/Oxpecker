@@ -114,7 +114,12 @@ module Builder =
                 for value in values do
                     body value builder
 
-        member inline _.Yield(element: HtmlElement) : HtmlContainerFun = _.AddChild(element)
+        member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = _.AddChild(element)
+
+        member inline _.YieldFrom(elements: #seq<#HtmlElement>) : HtmlContainerFun =
+            fun builder ->
+                for element in elements do
+                    builder.AddChild(element)
 
         member inline _.Yield(text: string) : HtmlContainerFun = _.AddChild(RegularTextNode text)
 

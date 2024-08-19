@@ -88,6 +88,14 @@ let ``Only children test`` () =
     |> Render.toString
     |> shouldEqual """<div id="1">Hello</div><div id="2">World</div><div id="3">!</div>"""
 
+[<Fact>]
+let ``yield! test`` () =
+    let elements = [ li() { "one" }; li() { "two" }; li() { "three" } ]
+
+    let result = ul() { yield! elements }
+    result
+    |> Render.toString
+    |> shouldEqual """<ul><li>one</li><li>two</li><li>three</li></ul>"""
 
 [<Fact>]
 let ``Double render works`` () =

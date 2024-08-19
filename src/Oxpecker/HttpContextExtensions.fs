@@ -297,7 +297,7 @@ type HttpContextExtensions() =
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlView(ctx: HttpContext, htmlView: HtmlElement) =
+    static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
         let bytes = Render.toHtmlDocBytes htmlView
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         ctx.WriteBytes bytes
@@ -310,7 +310,7 @@ type HttpContextExtensions() =
     /// <param name="htmlStream">An `HtmlElement` stream to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlChunked(ctx: HttpContext, htmlStream: IAsyncEnumerable<HtmlElement>) =
+    static member WriteHtmlChunked(ctx: HttpContext, htmlStream: #IAsyncEnumerable<#HtmlElement>) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         let enumerator = htmlStream.GetAsyncEnumerator()
         let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
@@ -329,7 +329,7 @@ type HttpContextExtensions() =
     /// <param name="htmlElement">An `HtmlElement` object to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlViewChunked(ctx: HttpContext, htmlElement: HtmlElement) =
+    static member WriteHtmlViewChunked(ctx: HttpContext, htmlElement: #HtmlElement) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
         task {
@@ -341,7 +341,7 @@ type HttpContextExtensions() =
     /// Executes and ASP.NET Core IResult. Note that in most cases the response will be chunked.
     /// </summary>
     [<Extension>]
-    static member Write(ctx: HttpContext, result: IResult) = result.ExecuteAsync(ctx)
+    static member Write(ctx: HttpContext, result: #IResult) = result.ExecuteAsync(ctx)
 
     /// <summary>
     /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
