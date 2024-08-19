@@ -128,7 +128,7 @@ let streamingHtml2: EndpointHandler =
             taskSeq {
                 for ch in "Hello world using Oxpecker streaming!" do
                     do! Task.Delay(20)
-                    __() { string ch }
+                    ch |> string |> raw
             }
         htmlChunked values ctx
 
