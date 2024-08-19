@@ -1,6 +1,7 @@
 module Oxpecker.Tests.ModelParser
 
 open System
+open System.Globalization
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
@@ -41,9 +42,10 @@ let ``ModelParser.parse with model which has primitive array`` () =
     let expected = {
         SearchTerms = [| "a"; "abc"; "abcdef" |]
     }
-    let culture = None
+    let instance = Activator.CreateInstance<Model2>()
+    let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parse<Model2> culture modelData
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 
@@ -80,9 +82,10 @@ let ``ModelParser.parse with complete model data`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let culture = None
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parse<Model> culture modelData
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 
@@ -117,8 +120,10 @@ let ``ModelParser.parse with model data without optional parameters`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 [<Fact>]
@@ -150,8 +155,10 @@ let ``ModelParser.parse with missing array items`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 [<Fact>]
@@ -187,8 +194,10 @@ let ``ModelParser.parse with complete model data but with different order for ar
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 [<Fact>]
@@ -210,8 +219,10 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
         ]
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result
     |> shouldEqual(Error "The value 'wrong' is not a valid case for type Oxpecker.Tests.ModelParser+Sex.")
 
@@ -234,8 +245,10 @@ let ``ModelParser.parse with complete model data but wrong data`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "wrongAge"
         ]
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result
     |> shouldEqual(Error "Could not parse value 'wrong' to type System.DateTime.")
 
@@ -277,8 +290,10 @@ let ``ModelParser.parse with complete model data but mixed casing`` () =
             { Name = "Gholi"; Age = 0 }
         |]
     }
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 
@@ -305,8 +320,10 @@ let ``ModelParser.parse with incomplete model data`` () =
         Nicknames = Some [ "Susi"; "Eli"; "Liz" ]
         Children = [| { Name = "Hamed"; Age = 0 }; { Name = null; Age = 44 } |]
     }
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 [<Fact>]
@@ -332,8 +349,10 @@ let ``ModelParser.parse with incomplete model data and with different order for 
         Nicknames = Some [ "Susi"; "Eli"; "Liz" ]
         Children = [| { Name = "Hamed"; Age = 0 }; { Name = null; Age = 44 } |]
     }
-    let culture = None
-    let result = ModelParser.parse<Model> culture modelData
+    let instance = Activator.CreateInstance<Model>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 
@@ -348,8 +367,10 @@ let ``ModelParser.parse with composite model and SecondChild missing data`` () =
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = None
     }
-    let culture = None
-    let result = ModelParser.parse<CompositeModel> culture modelData
+    let instance = Activator.CreateInstance<CompositeModel>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)
 
 [<Fact>]
@@ -365,6 +386,8 @@ let ``ModelParser.parse with complete composite model data`` () =
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = Some { Name = "SecondName"; Age = 10 }
     }
-    let culture = None
-    let result = ModelParser.parse<CompositeModel> culture modelData
+    let instance = Activator.CreateInstance<CompositeModel>()
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel instance culture modelData
     result |> shouldEqual(Ok expected)

@@ -36,6 +36,7 @@ type ServiceCollectionExtensions() =
     [<Extension>]
     static member AddOxpecker(svc: IServiceCollection) =
         svc.TryAddSingleton<Serializers.IJsonSerializer>(SystemTextJson.Serializer())
+        svc.TryAddSingleton<IModelBinder>(ModelBinder())
         svc.TryAddSingleton<ILogger>(fun sp ->
             let loggerFactory = sp.GetRequiredService<ILoggerFactory>()
             let webApp = sp.GetRequiredService<IWebHostEnvironment>()

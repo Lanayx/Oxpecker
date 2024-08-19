@@ -1114,10 +1114,10 @@ Sending a response back to a client in Oxpecker can be done through a small rang
 
 #### Writing Bytes
 
-The `WriteBytes (data: byte[])` extension method and the `bytes (data: byte[])` endpoint handler both write a `byte array` to the response stream of the HTTP request:
+The `WriteBytes (data: byte array)` extension method and the `bytes (data: byte array)` endpoint handler both write a `byte array` to the response stream of the HTTP request:
 
 ```fsharp
-let someHandler (data: byte[]) : EndpointHandler =
+let someHandler (data: byte array) : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             // Do stuff
@@ -1126,7 +1126,7 @@ let someHandler (data: byte[]) : EndpointHandler =
 
 // or...
 
-let someHandler (data: byte[]) : EndpointHandler =
+let someHandler (data: byte array) : EndpointHandler =
     // Do stuff
     bytes data
 ```

@@ -32,11 +32,12 @@
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="AssemblyInfo.fs" />
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Helpers.fs" />
         <Compile Include="Serializers.fs" />
-        <Compile Include="ModelParser.fs" />
+        <Compile Include="ModelBinder.fs" />
         <Compile Include="HttpContextExtensions.fs" />
         <Compile Include="DateTimeExtensions.fs" />
         <Compile Include="Core.fs" />
