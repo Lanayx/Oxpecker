@@ -203,8 +203,8 @@ module Tags =
             with set value = this.attr("referrerpolicy", value) |> ignore
         member this.crossorigin
             with set value = this.attr("crossorigin", value) |> ignore
-        member this.crossorigin
-            with set value = this.attr("crossorigin", value) |> ignore
+        member this.sizes
+            with set value = this.attr("sizes", value) |> ignore
 
     type form() =
         inherit RegularNode("form")
