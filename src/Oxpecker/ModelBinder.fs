@@ -7,8 +7,7 @@ open Microsoft.Extensions.Primitives
 
 type ModelParserOptions = {
     CultureInfo: CultureInfo
-}
-with
+} with
     static member Default = {
         CultureInfo = CultureInfo.InvariantCulture
     }
@@ -307,8 +306,7 @@ module internal ModelParser =
 
 
 type ModelBinder(?options: ModelParserOptions) =
-    let options =
-        defaultArg options <| ModelParserOptions.Default
+    let options = defaultArg options <| ModelParserOptions.Default
 
     interface IModelBinder with
         /// <summary>

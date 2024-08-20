@@ -188,8 +188,7 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns>Returns an instance of <see cref="Oxpecker.IModelBinder"/>.</returns>
     [<Extension>]
-    static member GetModelBinder(ctx: HttpContext) : IModelBinder =
-        ctx.GetService<IModelBinder>()
+    static member GetModelBinder(ctx: HttpContext) : IModelBinder = ctx.GetService<IModelBinder>()
 
     /// <summary>
     /// Sets the HTTP status code of the response.
