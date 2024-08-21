@@ -83,7 +83,7 @@ module SpanJson =
     ]
 
     type SpanJsonSerializer() =
-        interface Serializers.IJsonSerializer with
+        interface IJsonSerializer with
             member this.Serialize(value, ctx, chunked) =
                 ctx.Response.ContentType <- "application/json; charset=utf-8"
                 if chunked then
@@ -111,7 +111,7 @@ module SpanJson =
                     services
                         .AddRouting()
                         .AddOxpecker()
-                        .AddSingleton<Serializers.IJsonSerializer>(SpanJsonSerializer())
+                        .AddSingleton<IJsonSerializer>(SpanJsonSerializer())
                     |> ignore)
         new TestServer(builder)
 

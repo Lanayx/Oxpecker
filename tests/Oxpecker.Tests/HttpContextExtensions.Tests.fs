@@ -133,8 +133,7 @@ let ``WriteJson should add json to the context`` () =
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let services = ServiceCollection()
-        services.AddSingleton<Serializers.IJsonSerializer>(fun sp ->
-            SystemTextJson.Serializer() :> Serializers.IJsonSerializer)
+        services.AddSingleton<IJsonSerializer>(fun sp -> SystemTextJsonSerializer() :> IJsonSerializer)
         |> ignore
         ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
 
@@ -155,8 +154,7 @@ let ``WriteJsonChunked should add json to the context`` () =
         let ctx = DefaultHttpContext()
         ctx.Response.Body <- new MemoryStream()
         let services = ServiceCollection()
-        services.AddSingleton<Serializers.IJsonSerializer>(fun sp ->
-            SystemTextJson.Serializer() :> Serializers.IJsonSerializer)
+        services.AddSingleton<IJsonSerializer>(fun sp -> SystemTextJsonSerializer() :> IJsonSerializer)
         |> ignore
         ctx.RequestServices <- DefaultServiceProviderFactory().CreateServiceProvider(services)
 

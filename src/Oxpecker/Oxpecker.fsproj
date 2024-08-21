@@ -18,9 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.13.0</Version>
-        <PackageVersion>0.13.0</PackageVersion>
-        <PackageReleaseNotes>Added support for HTML view streaming</PackageReleaseNotes>
+        <Version>0.14.0</Version>
+        <PackageVersion>0.14.0</PackageVersion>
+        <PackageReleaseNotes>Refactoring: JsonSerializer and ModelBinder API aligned.</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>

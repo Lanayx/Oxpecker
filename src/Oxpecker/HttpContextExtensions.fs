@@ -180,8 +180,7 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns>Returns an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/>.</returns>
     [<Extension>]
-    static member GetJsonSerializer(ctx: HttpContext) : Serializers.IJsonSerializer =
-        ctx.GetService<Serializers.IJsonSerializer>()
+    static member GetJsonSerializer(ctx: HttpContext) : IJsonSerializer = ctx.GetService<IJsonSerializer>()
 
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.IModelBinder"/> from the request's service container.
@@ -351,7 +350,7 @@ type HttpContextExtensions() =
     static member Write(ctx: HttpContext, result: #IResult) = result.ExecuteAsync(ctx)
 
     /// <summary>
-    /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
+    /// Uses the <see cref="Serializers.IJsonSerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
     /// </summary>
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
@@ -362,7 +361,7 @@ type HttpContextExtensions() =
             try
                 return! serializer.Deserialize<'T>(ctx)
             with ex ->
-                return raise <| ModelBindException("Unable to deserialize model to JSON", ex)
+                return raise <| ModelBindException("Unable to deserialize model from JSON", ex)
         }
 
     /// <summary>

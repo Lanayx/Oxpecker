@@ -5,13 +5,6 @@ open System.Collections.Generic
 open System.Globalization
 open Microsoft.Extensions.Primitives
 
-type ModelParserOptions = {
-    CultureInfo: CultureInfo
-} with
-    static member Default = {
-        CultureInfo = CultureInfo.InvariantCulture
-    }
-
 /// <summary>
 /// Interface defining Form and Query parsing methods.
 /// Use this interface to customize Form and Query parsing in Oxpecker.
@@ -57,8 +50,6 @@ module internal ModelParser =
         member this.MakeSomeCase(value: obj) =
             let cases = FSharpType.GetUnionCases this
             FSharpValue.MakeUnion(cases[1], [| value |])
-
-
 
     /// Returns either a successfully parsed object `'T` or a `string` error message containing the parsing error.
     let rec private parseValue (t: Type) (rawValues: StringValues) (culture: CultureInfo) : Result<obj, string> =
@@ -305,8 +296,19 @@ module internal ModelParser =
             None
 
 
-type ModelBinder(?options: ModelParserOptions) =
-    let options = defaultArg options <| ModelParserOptions.Default
+/// <summary>
+/// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
+/// </summary>
+type ModelBinderOptions = {
+    CultureInfo: CultureInfo
+} with
+    static member Default = {
+        CultureInfo = CultureInfo.InvariantCulture
+    }
+
+/// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
+type ModelBinder(?options: ModelBinderOptions) =
+    let options = defaultArg options <| ModelBinderOptions.Default
 
     interface IModelBinder with
         /// <summary>
