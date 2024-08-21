@@ -851,7 +851,7 @@ The underlying JSON serializer can be configured as a dependency during applicat
 
 #### Binding Forms
 
-The `BindForm<'T> (?cultureInfo : CultureInfo)` extension method binds form data to an object of type `'T`. You can also specify an optional `CultureInfo` object for parsing culture specific data such as `DateTime` objects or floating point numbers:
+The `BindForm<'T>` extension method binds form data to an object of type `'T`:
 
 ```fsharp
 [<CLIMutable>]
@@ -885,7 +885,7 @@ let webApp = [
 ]
 ```
 
-Alternatively you can use the `bindForm<'T>` and `bindFormC<'T>`(additional culture parameter) http handlers:
+Alternatively you can use the `bindForm<'T>` http handlers:
 
 ```fsharp
 [<CLIMutable>]
@@ -896,8 +896,6 @@ type Car = {
     Built  : DateTime
 }
 
-let british = CultureInfo.CreateSpecificCulture("en-GB")
-
 let webApp = [
     GET [
         route "/"    <| text "index"
@@ -905,16 +903,27 @@ let webApp = [
     ]
     POST [
         route "/car" (bindForm<Car> (fun model -> %Ok model))
-        route "/britishCar" (bindFormC<Car> british (fun model -> %Ok model))
     ]
 ]
 ```
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
 
+The underlying model binder is configured as a dependency during application startup:
+
+```fsharp
+let configureServices (services : IServiceCollection) =
+    // First register all default Oxpecker dependencies
+    services.AddOxpecker() |> ignore
+    // Now register custom model binder
+    services.AddSingleton<IModelBinder>(CustomModelBinder()) |> ignore
+    // or use default model binder, but with different options
+    services.AddSingleton<IModelBinder>(ModelBinder(specificOptions)) |> ignore
+```
+
 #### Binding Query Strings
 
-The `BindQuery<'T> (?cultureInfo: CultureInfo)` extension method binds query string parameters to an object of type `'T`. An optional `CultureInfo` object can be specified for parsing culture specific data such as `DateTime` objects and floating point numbers:
+The `BindQuery<'T>` extension method binds query string parameters to an object of type `'T`:
 
 ```fsharp
 [<CLIMutable>]
@@ -946,7 +955,7 @@ let webApp = [
 ]
 ```
 
-Alternatively you can use the `bindQuery<'T>` and `bindQueryC<'T>`(additional culture parameter) http handlers:
+Alternatively you can use the `bindQuery<'T>` http handler:
 
 ```fsharp
 [<CLIMutable>]
@@ -957,8 +966,6 @@ type Car = {
     Built  : DateTime
 }
 
-let british = CultureInfo.CreateSpecificCulture("en-GB")
-
 let webApp = [
     GET [
         route "/"    <| text "index"
@@ -966,12 +973,13 @@ let webApp = [
     ]
     POST [
         route "/car" (bindQuery<Car> (fun model -> %Ok model))
-        route "/britishCar" (bindQueryC<Car> british (fun model -> %Ok model))
     ]
 ]
 ```
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
+
+The underlying model binder is configured as a dependency during application startup (see [Binding Forms](#binding-forms))
 
 ### File Upload
 
@@ -1114,10 +1122,10 @@ Sending a response back to a client in Oxpecker can be done through a small rang
 
 #### Writing Bytes
 
-The `WriteBytes (data: byte[])` extension method and the `bytes (data: byte[])` endpoint handler both write a `byte array` to the response stream of the HTTP request:
+The `WriteBytes (data: byte array)` extension method and the `bytes (data: byte array)` endpoint handler both write a `byte array` to the response stream of the HTTP request:
 
 ```fsharp
-let someHandler (data: byte[]) : EndpointHandler =
+let someHandler (data: byte array) : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             // Do stuff
@@ -1126,7 +1134,7 @@ let someHandler (data: byte[]) : EndpointHandler =
 
 // or...
 
-let someHandler (data: byte[]) : EndpointHandler =
+let someHandler (data: byte array) : EndpointHandler =
     // Do stuff
     bytes data
 ```
@@ -1199,17 +1207,17 @@ let someHandler (person: Person) : EndpointHandler =
     jsonChunked person
 ```
 
-The underlying JSON serializer is configured as a dependency during application startup and defaults to `System.Text.Json` (when you write `services.AddOxpecker()`). You can implement `Serializers.IJsonSerializer` interface to plug in custom JSON serializer.
+The underlying JSON serializer is configured as a dependency during application startup and defaults to `System.Text.Json` (when you write `services.AddOxpecker()`). You can implement `IJsonSerializer` interface to plug in custom JSON serializer.
 
 ```fsharp
 let configureServices (services : IServiceCollection) =
     // First register all default Oxpecker dependencies
     services.AddOxpecker() |> ignore
     // Now register custom serializer
-    services.AddSingleton<Serializers.IJsonSerializer>(CustomSerializer()) |> ignore
+    services.AddSingleton<IJsonSerializer>(CustomSerializer()) |> ignore
     // or use default STJ serializer, but with different options
-    services.AddSingleton<Serializers.IJsonSerializer>(
-            SystemTextJson.Serializer(specificOptions)) |> ignore
+    services.AddSingleton<IJsonSerializer>(
+            SystemTextJsonSerializer(specificOptions)) |> ignore
 ```
 
 #### Writing IResult

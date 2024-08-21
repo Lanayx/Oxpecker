@@ -24,15 +24,14 @@ module Configuration =
             .GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
     let internal unitType = typeof<unit>
 
-
-    type RequestBody(?requestType: Type, ?contentTypes: string[], ?isOptional: bool) =
+    type RequestBody(?requestType: Type, ?contentTypes: string array, ?isOptional: bool) =
         let requestType = requestType |> Option.defaultValue null
         let contentTypes = contentTypes |> Option.defaultValue [| "application/json" |]
         let isOptional = isOptional |> Option.defaultValue false
         member this.ToAttribute() =
             AcceptsMetadata(contentTypes, requestType, isOptional)
 
-    type ResponseBody(?responseType: Type, ?contentTypes: string[], ?statusCode: int) =
+    type ResponseBody(?responseType: Type, ?contentTypes: string array, ?statusCode: int) =
         let responseType = responseType |> Option.defaultValue null
         let contentTypes = contentTypes |> Option.defaultValue null
         let statusCode = statusCode |> Option.defaultValue 200

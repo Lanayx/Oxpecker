@@ -19,8 +19,6 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <Version>0.1.1</Version>
         <PackageVersion>0.1.1</PackageVersion>
         <PackageReleaseNotes>Added logo</PackageReleaseNotes>
@@ -32,7 +30,6 @@
         <Compile Include="Routing.fs" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Oxpecker" Version="0.13.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
     </ItemGroup>

@@ -18,11 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <Version>0.12.0</Version>
-        <PackageVersion>0.12.0</PackageVersion>
-        <PackageReleaseNotes>Changed HtmlElement to interface</PackageReleaseNotes>
+        <Version>0.13.0</Version>
+        <PackageVersion>0.13.0</PackageVersion>
+        <PackageReleaseNotes>Improved HtmlElement type inference. Added support for yield!. Added more img attributes.</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />
@@ -36,7 +34,6 @@
         <Compile Include="Render.fs" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
         <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.2" />
     </ItemGroup>
 </Project>

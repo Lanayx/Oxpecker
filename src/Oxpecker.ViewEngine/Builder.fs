@@ -9,11 +9,6 @@ open Tools
 module Builder =
 
     [<Struct>]
-    type RawText = { Text: string }
-
-    let raw text = { Text = text }
-
-    [<Struct>]
     type HtmlAttribute = { Name: string; Value: string }
 
     type HtmlElement =
@@ -52,6 +47,7 @@ module Builder =
         let inline renderEndTag (tagName: string) (sb: StringBuilder) =
             sb.Append("</").Append(tagName).Append('>') |> ignore
 
+    /// Node with children only (no attributes)
     type FragmentNode() =
         let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
         member this.AddChild(element: HtmlElement) = children.Enqueue(element)
@@ -61,6 +57,7 @@ module Builder =
                 RenderHelpers.renderChildren sb children
             member this.AddChild(element: HtmlElement) = children.Enqueue(element)
 
+    /// Node with both children and attributes
     type RegularNode(tagName: string) =
         let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
         let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
@@ -77,6 +74,7 @@ module Builder =
         interface HtmlContainer with
             member this.AddChild(element: HtmlElement) = children.Enqueue(element)
 
+    /// Node with attributes only (no children)
     type VoidNode(tagName: string) =
         let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
         member this.Attributes = attributes.AsEnumerable()
@@ -86,16 +84,22 @@ module Builder =
                 RenderHelpers.renderStartTag tagName sb attributes
             member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
 
+    /// Text node that will be HTML-escaped
     type RegularTextNode(text: string) =
         interface HtmlElement with
             member this.Render(sb: StringBuilder) =
                 text |> WebUtility.HtmlEncode |> sb.Append |> ignore
 
+    /// Text node that will NOT be HTML-escaped
     type RawTextNode(text: string) =
         interface HtmlElement with
             member this.Render(sb: StringBuilder) = text |> sb.Append |> ignore
 
+    /// Create text node that will NOT be HTML-escaped
+    let raw text = RawTextNode text
+
     type HtmlContainerFun = HtmlContainer -> unit
+
     // builder methods
     type HtmlContainer with
         member inline _.Combine
@@ -109,16 +113,19 @@ module Builder =
 
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
 
-        member inline _.For(values: 'T seq, [<InlineIfLambda>] body: 'T -> HtmlContainerFun) : HtmlContainerFun =
+        member inline _.For(values: #seq<'T>, [<InlineIfLambda>] body: 'T -> HtmlContainerFun) : HtmlContainerFun =
             fun builder ->
                 for value in values do
                     body value builder
 
-        member inline _.Yield(element: HtmlElement) : HtmlContainerFun = _.AddChild(element)
+        member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = _.AddChild(element)
+
+        member inline _.YieldFrom(elements: #seq<#HtmlElement>) : HtmlContainerFun =
+            fun builder ->
+                for element in elements do
+                    builder.AddChild(element)
 
         member inline _.Yield(text: string) : HtmlContainerFun = _.AddChild(RegularTextNode text)
-
-        member inline _.Yield(text: RawText) : HtmlContainerFun = _.AddChild(RawTextNode text.Text)
 
     type HtmlContainerExtensions =
         [<Extension>]

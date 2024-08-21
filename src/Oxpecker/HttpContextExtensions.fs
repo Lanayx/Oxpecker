@@ -2,7 +2,6 @@ namespace Oxpecker
 
 open System
 open System.Collections.Generic
-open System.Globalization
 open System.Runtime.CompilerServices
 open System.Text
 open System.Threading.Tasks
@@ -23,6 +22,7 @@ type RouteParseException(message: string, ex) =
 
 type ModelBindException(message: string, ex) =
     inherit Exception(message, ex)
+
 
 [<Extension>]
 type HttpContextExtensions() =
@@ -180,8 +180,14 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns>Returns an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/>.</returns>
     [<Extension>]
-    static member GetJsonSerializer(ctx: HttpContext) : Serializers.IJsonSerializer =
-        ctx.GetService<Serializers.IJsonSerializer>()
+    static member GetJsonSerializer(ctx: HttpContext) : IJsonSerializer = ctx.GetService<IJsonSerializer>()
+
+    /// <summary>
+    /// Gets an instance of <see cref="Oxpecker.IModelBinder"/> from the request's service container.
+    /// </summary>
+    /// <returns>Returns an instance of <see cref="Oxpecker.IModelBinder"/>.</returns>
+    [<Extension>]
+    static member GetModelBinder(ctx: HttpContext) : IModelBinder = ctx.GetService<IModelBinder>()
 
     /// <summary>
     /// Sets the HTTP status code of the response.
@@ -223,7 +229,7 @@ type HttpContextExtensions() =
     /// <param name="bytes">The byte array to be sent back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteBytes(ctx: HttpContext, bytes: byte[]) =
+    static member WriteBytes(ctx: HttpContext, bytes: byte array) =
         let statusCode = ctx.Response.StatusCode
         let skipContentLengthHeader =
             is1xxStatusCode statusCode
@@ -297,7 +303,7 @@ type HttpContextExtensions() =
     /// <param name="htmlView">An `HtmlElement` object to be send back to the client and which represents a valid HTML view.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlView(ctx: HttpContext, htmlView: HtmlElement) =
+    static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
         let bytes = Render.toHtmlDocBytes htmlView
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         ctx.WriteBytes bytes
@@ -310,7 +316,7 @@ type HttpContextExtensions() =
     /// <param name="htmlStream">An `HtmlElement` stream to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlChunked(ctx: HttpContext, htmlStream: IAsyncEnumerable<HtmlElement>) =
+    static member WriteHtmlChunked(ctx: HttpContext, htmlStream: #IAsyncEnumerable<#HtmlElement>) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         let enumerator = htmlStream.GetAsyncEnumerator()
         let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
@@ -329,7 +335,7 @@ type HttpContextExtensions() =
     /// <param name="htmlElement">An `HtmlElement` object to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteHtmlViewChunked(ctx: HttpContext, htmlElement: HtmlElement) =
+    static member WriteHtmlViewChunked(ctx: HttpContext, htmlElement: #HtmlElement) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
         task {
@@ -341,10 +347,10 @@ type HttpContextExtensions() =
     /// Executes and ASP.NET Core IResult. Note that in most cases the response will be chunked.
     /// </summary>
     [<Extension>]
-    static member Write(ctx: HttpContext, result: IResult) = result.ExecuteAsync(ctx)
+    static member Write(ctx: HttpContext, result: #IResult) = result.ExecuteAsync(ctx)
 
     /// <summary>
-    /// Uses the <see cref="Json.ISerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
+    /// Uses the <see cref="Serializers.IJsonSerializer"/> to deserialize the entire body of the <see cref="Microsoft.AspNetCore.Http.HttpRequest"/> asynchronously into an object of type 'T.
     /// </summary>
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
@@ -355,47 +361,36 @@ type HttpContextExtensions() =
             try
                 return! serializer.Deserialize<'T>(ctx)
             with ex ->
-                return raise <| ModelBindException("Unable to deserialize model", ex)
+                return raise <| ModelBindException("Unable to deserialize model from JSON", ex)
         }
 
     /// <summary>
     /// Parses all input elements from an HTML form into an object of type 'T.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
     [<Extension>]
-    static member BindForm<'T>(ctx: HttpContext, ?cultureInfo: CultureInfo) =
+    static member BindForm<'T>(ctx: HttpContext) =
+        let binder = ctx.GetModelBinder()
         task {
-            let! form = ctx.Request.ReadFormAsync()
-            return
-                form
-                |> Seq.map(fun i -> i.Key, i.Value)
-                |> dict
-                |> ModelParser.parse<'T> cultureInfo
-                |> function
-                    | Ok value -> value
-                    | Error msg ->
-                        raise
-                        <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
+            try
+                let! form = ctx.Request.ReadFormAsync()
+                return binder.Bind<'T> form
+            with ex ->
+                return raise <| ModelBindException("Unable to deserialize model from form", ex)
         }
 
     /// <summary>
     /// Parses all parameters of a request's query string into an object of type 'T.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
-    /// <param name="cultureInfo">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
     /// <typeparam name="'T"></typeparam>
     /// <returns>Returns an instance of type 'T</returns>
     [<Extension>]
-    static member BindQuery<'T>(ctx: HttpContext, ?cultureInfo: CultureInfo) =
-        ctx.Request.Query
-        |> Seq.map(fun i -> i.Key, i.Value)
-        |> dict
-        |> ModelParser.parse<'T> cultureInfo
-        |> function
-            | Ok objData -> objData
-            | Error msg ->
-                raise
-                <| ModelBindException($"Unexpected error during non-strict model parsing: {msg}", null)
+    static member BindQuery<'T>(ctx: HttpContext) =
+        try
+            let binder = ctx.GetModelBinder()
+            binder.Bind<'T> ctx.Request.Query
+        with ex ->
+            raise <| ModelBindException("Unable to deserialize model from query", ex)

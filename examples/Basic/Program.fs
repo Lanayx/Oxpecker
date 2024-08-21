@@ -4,7 +4,6 @@ open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker
@@ -129,7 +128,7 @@ let streamingHtml2: EndpointHandler =
             taskSeq {
                 for ch in "Hello world using Oxpecker streaming!" do
                     do! Task.Delay(20)
-                    __() { string ch } :> HtmlElement
+                    ch |> string |> raw
             }
         htmlChunked values ctx
 

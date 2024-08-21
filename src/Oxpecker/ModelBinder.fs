@@ -1,16 +1,26 @@
 ﻿namespace Oxpecker
 
+open System
+open System.Collections.Generic
+open System.Globalization
+open Microsoft.Extensions.Primitives
+
+/// <summary>
+/// Interface defining Form and Query parsing methods.
+/// Use this interface to customize Form and Query parsing in Oxpecker.
+/// </summary>
+[<AllowNullLiteral>]
+type IModelBinder =
+    abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
-module ModelParser =
-    open System
-    open System.Collections.Generic
-    open System.Globalization
+module internal ModelParser =
+
     open System.Reflection
     open System.ComponentModel
     open System.Text.RegularExpressions
-    open Microsoft.Extensions.Primitives
     open Microsoft.FSharp.Reflection
     open Microsoft.FSharp.Collections
 
@@ -40,8 +50,6 @@ module ModelParser =
         member this.MakeSomeCase(value: obj) =
             let cases = FSharpType.GetUnionCases this
             FSharpValue.MakeUnion(cases[1], [| value |])
-
-
 
     /// Returns either a successfully parsed object `'T` or a `string` error message containing the parsing error.
     let rec private parseValue (t: Type) (rawValues: StringValues) (culture: CultureInfo) : Result<obj, string> =
@@ -134,17 +142,14 @@ module ModelParser =
             with _ ->
                 $"Could not parse value '%s{rawValue}' to type %s{t.ToString()}." |> Error
 
-    let rec private parseModel<'T>
+    let rec internal parseModel<'T>
         (model: 'T)
-        (cultureInfo: CultureInfo option)
+        (culture: CultureInfo)
         (data: IDictionary<string, StringValues>)
         : Result<'T, string> =
         // Normalize data
         let normalizeKey (key: string) = key.TrimEnd([| '['; ']' |])
         let data = data |> Seq.map(fun i -> normalizeKey i.Key, i.Value) |> dict
-
-        // Create culture and model objects
-        let culture = defaultArg cultureInfo CultureInfo.InvariantCulture
 
         let error =
             // Iterate through all properties of the model
@@ -163,10 +168,10 @@ module ModelParser =
                             // If there was an entry then try to parse the raw value.
                             match data.TryGetValue(prop.Name) with
                             | false, _ ->
-                                match getValueForArrayOfGenericType cultureInfo data prop with
+                                match getValueForArrayOfGenericType culture data prop with
                                 | Some v -> Ok v
                                 | None ->
-                                    match getValueForComplexType cultureInfo data prop with
+                                    match getValueForComplexType culture data prop with
                                     | Some v -> Ok v
                                     | None ->
                                         match getValueForMissingProperty prop.PropertyType with
@@ -198,7 +203,7 @@ module ModelParser =
         | true -> Some(t.MakeNoneCase())
 
     and getValueForComplexType
-        (cultureInfo: CultureInfo option)
+        (culture: CultureInfo)
         (data: IDictionary<string, StringValues>)
         (prop: PropertyInfo)
         : obj option =
@@ -223,14 +228,14 @@ module ModelParser =
             match prop.PropertyType.IsFSharpOption() with
             | false ->
                 let model = Activator.CreateInstance(prop.PropertyType)
-                let res = parseModel model cultureInfo dictData
+                let res = parseModel model culture dictData
                 match res with
                 | Ok o -> o |> Some
                 | Error _ -> None
             | true ->
                 let genericType = prop.PropertyType.GetGenericType()
                 let model = Activator.CreateInstance(genericType)
-                let res = parseModel model cultureInfo dictData
+                let res = parseModel model culture dictData
                 match res with
                 | Ok o -> prop.PropertyType.MakeSomeCase(o) |> Some
                 | Error _ -> None
@@ -238,7 +243,7 @@ module ModelParser =
             None
 
     and getValueForArrayOfGenericType
-        (cultureInfo: CultureInfo option)
+        (culture: CultureInfo)
         (data: IDictionary<string, StringValues>)
         (prop: PropertyInfo)
         : obj option =
@@ -267,7 +272,7 @@ module ModelParser =
                             Map.empty
 
                     let model = Activator.CreateInstance(innerType)
-                    let res = parseModel model cultureInfo dictData
+                    let res = parseModel model culture dictData
 
                     match res with
                     | Ok o -> Some(index, o)
@@ -290,14 +295,28 @@ module ModelParser =
         else
             None
 
-    /// <summary>
-    /// Tries to create an instance of type 'T from a given set of data.
-    /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
-    /// </summary>
-    /// <param name="culture">An optional <see cref="System.Globalization.CultureInfo"/> element to be used when parsing culture specific data such as float, DateTime or decimal values.</param>
-    /// <param name="data">A key-value dictionary of values for each property of type 'T. Only optional properties can be omitted from the dictionary.</param>
-    /// <typeparam name="'T"></typeparam>
-    /// <returns>If all properties were able to successfully parse then Some 'T will be returned, otherwise None.</returns>
-    let parse<'T> (culture: CultureInfo option) (data: IDictionary<string, StringValues>) =
-        let model = Activator.CreateInstance<'T>()
-        parseModel<'T> model culture data
+
+/// <summary>
+/// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
+/// </summary>
+type ModelBinderOptions = {
+    CultureInfo: CultureInfo
+} with
+    static member Default = {
+        CultureInfo = CultureInfo.InvariantCulture
+    }
+
+/// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
+type ModelBinder(?options: ModelBinderOptions) =
+    let options = defaultArg options <| ModelBinderOptions.Default
+
+    interface IModelBinder with
+        /// <summary>
+        /// Tries to create an instance of type 'T from a given set of data.
+        /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
+        /// </summary>
+        member this.Bind<'T>(data) =
+            let model = Activator.CreateInstance<'T>()
+            match ModelParser.parseModel<'T> model options.CultureInfo (Dictionary data) with
+            | Ok value -> value
+            | Error msg -> failwith msg
