@@ -96,7 +96,7 @@ module Builder =
             member this.Render(sb: StringBuilder) = text |> sb.Append |> ignore
 
     /// Create text node that will NOT be HTML-escaped
-    let raw text = RawTextNode text
+    let inline raw text = RawTextNode text
 
     type HtmlContainerFun = HtmlContainer -> unit
 
