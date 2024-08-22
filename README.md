@@ -45,3 +45,9 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 * [Oxpecker.Htmx Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.Htmx/README.md)
 * [Oxpecker.OpenApi Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.OpenApi/README.md)
 * [Migration from Giraffe](https://github.com/Lanayx/Oxpecker/blob/main/MigrateFromGiraffe.md)
+
+## develop vs main branch:
+
+**develop** is a development branch, projects are linked with each other using project references. Use this branch to send PRs.
+
+**main** is a production branch, projects are linked with each other using nuget packages. Packages are published from this branch.

@@ -20,8 +20,8 @@
       <PackageReference Include="Giraffe" Version="7.0.0" />
       <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.8"/>
       <PackageReference Include="SpanJson" Version="4.2.0" />
-      <PackageReference Include="Oxpecker" Version="0.13.1" />
-      <PackageReference Include="Oxpecker.ViewEngine" Version="0.12.0" />
+      <PackageReference Include="Oxpecker" Version="0.14.0" />
+      <PackageReference Include="Oxpecker.ViewEngine" Version="0.13.0" />
     </ItemGroup>
 
 </Project>
