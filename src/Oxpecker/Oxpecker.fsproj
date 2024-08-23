@@ -18,9 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.14.0</Version>
-        <PackageVersion>0.14.0</PackageVersion>
-        <PackageReleaseNotes>Refactoring: JsonSerializer and ModelBinder API aligned.</PackageReleaseNotes>
+        <Version>0.14.1</Version>
+        <PackageVersion>0.14.1</PackageVersion>
+        <PackageReleaseNotes>Updated ViewEngine dependency</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
@@ -30,7 +30,7 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.13.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.13.1" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />

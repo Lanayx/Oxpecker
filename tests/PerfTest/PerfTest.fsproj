@@ -16,12 +16,13 @@
 
     <ItemGroup>
       <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+      <PackageReference Include="Falco.Markup" Version="1.1.1" />
       <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
       <PackageReference Include="Giraffe" Version="7.0.0" />
       <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.8"/>
       <PackageReference Include="SpanJson" Version="4.2.0" />
-      <PackageReference Include="Oxpecker" Version="0.14.0" />
-      <PackageReference Include="Oxpecker.ViewEngine" Version="0.13.0" />
+      <PackageReference Include="Oxpecker" Version="0.14.1" />
+      <PackageReference Include="Oxpecker.ViewEngine" Version="0.13.1" />
     </ItemGroup>
 
 </Project>

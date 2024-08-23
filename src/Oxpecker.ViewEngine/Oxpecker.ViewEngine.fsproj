@@ -18,9 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.13.0</Version>
-        <PackageVersion>0.13.0</PackageVersion>
-        <PackageReleaseNotes>Improved HtmlElement type inference. Added support for yield!. Added more img attributes.</PackageReleaseNotes>
+        <Version>0.13.1</Version>
+        <PackageVersion>0.13.1</PackageVersion>
+        <PackageReleaseNotes>Improved .data() and .on() performance</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />
