@@ -81,5 +81,4 @@ type ViewEngineRender() =
 
     [<Benchmark>]
     member this.RenderFalcoView() =
-        FalcoViewRender.staticHtml
-        |> Falco.Markup.XmlNodeRenderer.renderHtml
+        FalcoViewRender.staticHtml |> Falco.Markup.XmlNodeRenderer.renderHtml

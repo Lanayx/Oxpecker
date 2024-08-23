@@ -28,11 +28,11 @@ module Tags =
         /// Add event handler to the element through the corresponding attribute
         [<Extension>]
         static member on(this: #HtmlTag, eventName: string, [<StringSyntax("js")>] eventHandler: string) =
-            this.attr($"on{eventName}", eventHandler)
+            this.attr($"on%s{eventName}", eventHandler)
 
         /// Add data attribute to the element
         [<Extension>]
-        static member data(this: #HtmlTag, name: string, value: string) = this.attr($"data-{name}", value)
+        static member data(this: #HtmlTag, name: string, value: string) = this.attr($"data-%s{name}", value)
 
     // global attributes
     type HtmlTag with
