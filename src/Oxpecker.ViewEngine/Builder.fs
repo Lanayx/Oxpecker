@@ -50,12 +50,13 @@ module Builder =
     /// Node with children only (no attributes)
     type FragmentNode() =
         let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
-        member this.AddChild(element: HtmlElement) = children.Enqueue(element)
         member this.Children = children.AsEnumerable()
+        member this.AddChild(element: HtmlElement) = children.Enqueue(element)
+        member this.Render(sb: StringBuilder) =
+            RenderHelpers.renderChildren sb children
         interface HtmlContainer with
-            member this.Render(sb: StringBuilder) =
-                RenderHelpers.renderChildren sb children
-            member this.AddChild(element: HtmlElement) = children.Enqueue(element)
+            member this.Render sb = this.Render sb
+            member this.AddChild element = this.AddChild element
 
     /// Node with both children and attributes
     type RegularNode(tagName: string) =
@@ -64,36 +65,43 @@ module Builder =
         member this.Children = children.AsEnumerable()
         member this.Attributes = attributes.AsEnumerable()
         member this.TagName = tagName
+        member this.Render(sb: StringBuilder) =
+            RenderHelpers.renderStartTag tagName sb attributes
+            RenderHelpers.renderChildren sb children
+            RenderHelpers.renderEndTag tagName sb
+        member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
+        member this.AddChild(element: HtmlElement) = children.Enqueue(element)
         interface HtmlElement with
-            member this.Render(sb: StringBuilder) =
-                RenderHelpers.renderStartTag tagName sb attributes
-                RenderHelpers.renderChildren sb children
-                RenderHelpers.renderEndTag tagName sb
+            member this.Render sb = this.Render sb
         interface HtmlTag with
-            member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
+            member this.AddAttribute attribute = this.AddAttribute attribute
         interface HtmlContainer with
-            member this.AddChild(element: HtmlElement) = children.Enqueue(element)
+            member this.AddChild element = this.AddChild element
 
     /// Node with attributes only (no children)
     type VoidNode(tagName: string) =
         let mutable attributes: CustomQueue<HtmlAttribute> = Unchecked.defaultof<_>
         member this.Attributes = attributes.AsEnumerable()
+        member this.Render(sb: StringBuilder) =
+            RenderHelpers.renderStartTag tagName sb attributes
+        member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
         member this.TagName = tagName
         interface HtmlTag with
-            member this.Render(sb: StringBuilder) =
-                RenderHelpers.renderStartTag tagName sb attributes
-            member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
+            member this.Render sb = this.Render sb
+            member this.AddAttribute attribute = this.AddAttribute attribute
 
     /// Text node that will be HTML-escaped
     type RegularTextNode(text: string) =
+        member this.Render(sb: StringBuilder) =
+            text |> WebUtility.HtmlEncode |> sb.Append |> ignore
         interface HtmlElement with
-            member this.Render(sb: StringBuilder) =
-                text |> WebUtility.HtmlEncode |> sb.Append |> ignore
+            member this.Render sb = this.Render sb
 
     /// Text node that will NOT be HTML-escaped
     type RawTextNode(text: string) =
+        member this.Render(sb: StringBuilder) = text |> sb.Append |> ignore
         interface HtmlElement with
-            member this.Render(sb: StringBuilder) = text |> sb.Append |> ignore
+            member this.Render sb = this.Render sb
 
     /// Create text node that will NOT be HTML-escaped
     let inline raw text = RawTextNode text

@@ -11,7 +11,10 @@ Oxpecker is a functional wrapper around ASP.NET Core Endpoint routing. Repositor
 
 This library is basically a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
-Medium introductory post: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
+Medium posts:
+* Introduction: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
+* About ViewEngine: https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c
+* Comparison with Blazor: https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99
 
 Oxpecker project is planned to be moved to `fsprojects` organization once it reaches 200 stars
 

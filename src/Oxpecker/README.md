@@ -91,7 +91,7 @@ Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing i
 ##### EndpointHandler vs EndpointMiddleware
 
 So, when should you define one or another? The answer lies in the responsibility of your handler:
- - If you want to **conditionally** _return response_  or _proceed_ further in pipeline use `EndpointMiddleware`. Good example are [Auth endpoint middlewares](#authentication-and-authorization) and [Preconditional endpoint middleware](#conditional-requests)
+ - If you want to **conditionally** _return response_  or _proceed_ further in pipeline use `EndpointMiddleware`. Good example is [Preconditional endpoint middleware](#conditional-requests)
  - If you want to execute some logic **after** the _next_ handler completes - use `EndpointMiddleware`
  - In other cases use `EndpointHandler`
 
