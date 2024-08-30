@@ -4,6 +4,8 @@
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine) `dotnet add package Oxpecker.ViewEngine`
 
+About ViewEngine: https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c
+
 Markup example:
 
 ```fsharp
