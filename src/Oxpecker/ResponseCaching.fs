@@ -42,9 +42,11 @@ module ResponseCaching =
                 headers.Vary <- vary.Value
 
             if varyByQueryKeys.IsSome then
-                let responseCachingFeature = ctx.Features.Get<IResponseCachingFeature>()
-                if isNotNull responseCachingFeature then
+                match ctx.Features.Get<IResponseCachingFeature>() with
+                | NonNull responseCachingFeature ->
                     responseCachingFeature.VaryByQueryKeys <- varyByQueryKeys.Value
+                | Null ->
+                    ()
 
             Task.CompletedTask
 

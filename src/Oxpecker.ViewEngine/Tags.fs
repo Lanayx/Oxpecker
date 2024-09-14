@@ -20,7 +20,7 @@ module Tags =
 
         /// Add an attribute to the element
         [<Extension>]
-        static member attr(this: #HtmlTag, name: string, value: string) =
+        static member attr(this: #HtmlTag, name: string, value: string | null) =
             if isNotNull value then
                 this.AddAttribute({ Name = name; Value = value })
             this

@@ -9,7 +9,7 @@ open Tools
 module Builder =
 
     [<Struct>]
-    type HtmlAttribute = { Name: string; Value: string }
+    type HtmlAttribute = { Name: string; Value: string | null }
 
     type HtmlElement =
         abstract member Render: StringBuilder -> unit

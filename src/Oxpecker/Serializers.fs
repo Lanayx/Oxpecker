@@ -10,7 +10,6 @@ open Microsoft.IO
 /// Interface defining JSON serialization methods.
 /// Use this interface to customize JSON serialization in Oxpecker.
 /// </summary>
-[<AllowNullLiteral>]
 type IJsonSerializer =
     abstract member Serialize<'T> : value: 'T * ctx: HttpContext * chunked: bool -> Task
     abstract member Deserialize<'T> : ctx: HttpContext -> Task<'T>

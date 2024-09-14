@@ -60,7 +60,7 @@ module RouteTemplateBuilder =
     // For more information please check:
     // https://github.com/aspnet/Mvc/issues/4599
 
-    let inline parse (c: char) (modifier: string option) (s: string) : obj =
+    let inline parse (c: char) (modifier: string option) (s: string) : objnull =
         try
             match c with
             | 's' -> s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase)
@@ -91,7 +91,7 @@ module RouteTemplateBuilder =
             MatchEvaluator(fun m ->
                 let vtype = m.Groups[1].Value[0] // First capture group is the variable type s, i, or O
                 let formatSpecifier = if m.Groups[2].Success then m.Groups[2].Value else ""
-                let paramName = parameters[index].Name
+                let paramName = parameters[index].Name |> string
                 index <- index + 1 // Increment index for next use
                 mappings.Add(
                     paramName,
