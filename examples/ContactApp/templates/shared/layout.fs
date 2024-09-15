@@ -1,5 +1,6 @@
 ﻿namespace ContactApp.templates.shared
 
+open System
 open Microsoft.AspNetCore.Http
 open ContactApp.Tools
 
@@ -25,7 +26,7 @@ module layout =
                             span(style="text-transform:uppercase;") { "contacts.app" }
                         }
                         h2() { "A Demo Contacts Application" }
-                        if isNotNull flashMessage then
+                        if String.IsNullOrEmpty flashMessage |> not then
                             div(class'="alert fadeOut") { flashMessage }
                     }
                     hr()

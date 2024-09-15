@@ -38,7 +38,7 @@ let add (contact: Contact) =
     newContact
 
 let find id =
-    contactDb.Find(fun c -> c.Id = id)
+    contactDb |> Seq.find (fun c -> c.Id = id)
 
 let update (contact: Contact) =
     let index = contactDb.FindIndex(fun c -> c.Id = contact.Id)

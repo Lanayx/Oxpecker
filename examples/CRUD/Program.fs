@@ -47,7 +47,7 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
 let configureApp (appBuilder: IApplicationBuilder) =
     let env = {
         DbClient = Database.Fake.fakeClient
-        Logger = appBuilder.ApplicationServices.GetService<ILogger>()
+        Logger = appBuilder.ApplicationServices.GetRequiredService<ILogger>()
     }
     appBuilder
         .UseRouting()

@@ -89,7 +89,7 @@ let handler11: EndpointHandler =
 
 let closedHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
-        if ctx.Request.Path.Value.Contains("closed") then
+        if ctx.Request.Path.Value |> Unchecked.nonNull |> _.Contains("closed") then
             ctx.SetStatusCode 401
             json {| Status = "Unauthorized" |} ctx
         else

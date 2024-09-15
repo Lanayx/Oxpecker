@@ -97,7 +97,7 @@ module SpanJson =
                         ctx.Response.Headers.ContentLength <- buffer.Count
                         if ctx.Request.Method <> HttpMethods.Head then
                             do! ctx.Response.Body.WriteAsync(buffer)
-                        ArrayPool<byte>.Shared.Return(buffer.Array)
+                        ArrayPool<byte>.Shared.Return(buffer.Array |> Unchecked.nonNull)
                     }
 
             member this.Deserialize(ctx) = failwith "Not implemented"

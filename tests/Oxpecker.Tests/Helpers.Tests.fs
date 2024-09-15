@@ -7,7 +7,8 @@ open Oxpecker.Helpers
 
 [<Fact>]
 let ``Test isNotNull`` () =
-    "sdf" |> isNotNull |> shouldEqual true
+    let x: string | null = "sdf"
+    x |> isNotNull |> shouldEqual true
     null |> isNotNull |> shouldEqual false
 
 [<Fact>]
