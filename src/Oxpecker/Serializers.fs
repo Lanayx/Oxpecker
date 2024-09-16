@@ -1,4 +1,6 @@
-﻿namespace Oxpecker
+#nowarn 3261
+
+namespace Oxpecker
 
 open System.IO
 open Microsoft.AspNetCore.Http

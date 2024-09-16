@@ -1,4 +1,4 @@
-﻿namespace Oxpecker.ViewEngine
+namespace Oxpecker.ViewEngine
 
 open System.Diagnostics.CodeAnalysis
 open Oxpecker.ViewEngine.Tools
@@ -37,28 +37,28 @@ module Tags =
     // global attributes
     type HtmlTag with
         member this.id
-            with set value = this.attr("id", value) |> ignore
+            with set (value: string | null) = this.attr("id", value) |> ignore
         member this.class'
-            with set value = this.attr("class", value) |> ignore
+            with set (value: string | null) = this.attr("class", value) |> ignore
         [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
         member this.style
-            with set value = this.attr("style", value) |> ignore
+            with set (value: string | null) = this.attr("style", value) |> ignore
         member this.lang
-            with set value = this.attr("lang", value) |> ignore
+            with set (value: string | null) = this.attr("lang", value) |> ignore
         member this.dir
-            with set value = this.attr("dir", value) |> ignore
+            with set (value: string | null) = this.attr("dir", value) |> ignore
         member this.tabindex
             with set (value: int) = this.attr("tabindex", string value) |> ignore
         member this.title
-            with set value = this.attr("title", value) |> ignore
+            with set (value: string | null) = this.attr("title", value) |> ignore
         member this.accesskey
             with set (value: char) = this.attr("accesskey", string value) |> ignore
         member this.contenteditable
             with set (value: bool) = this.attr("contenteditable", (if value then "true" else "false")) |> ignore
         member this.draggable
-            with set value = this.attr("draggable", value) |> ignore
+            with set (value: string | null) = this.attr("draggable", value) |> ignore
         member this.enterkeyhint
-            with set value = this.attr("enterkeyhint", value) |> ignore
+            with set (value: string | null) = this.attr("enterkeyhint", value) |> ignore
         member this.hidden
             with set (value: bool) =
                 if value then
@@ -68,7 +68,7 @@ module Tags =
                 if value then
                     this.attr("inert", "") |> ignore
         member this.inputmode
-            with set value = this.attr("inputmode", value) |> ignore
+            with set (value: string | null) = this.attr("inputmode", value) |> ignore
         member this.popover
             with set (value: bool) =
                 if value then
@@ -172,57 +172,57 @@ module Tags =
     type a() =
         inherit RegularNode("a")
         member this.href
-            with set value = this.attr("href", value) |> ignore
+            with set (value: string | null) = this.attr("href", value) |> ignore
         member this.rel
-            with set value = this.attr("rel", value) |> ignore
+            with set (value: string | null) = this.attr("rel", value) |> ignore
         member this.target
-            with set value = this.attr("target", value) |> ignore
+            with set (value: string | null) = this.attr("target", value) |> ignore
         member this.download
-            with set value = this.attr("download", value) |> ignore
+            with set (value: string | null) = this.attr("download", value) |> ignore
 
     type base'() =
         inherit VoidNode("base")
         member this.href
-            with set value = this.attr("href", value) |> ignore
+            with set (value: string | null) = this.attr("href", value) |> ignore
         member this.target
-            with set value = this.attr("target", value) |> ignore
+            with set (value: string | null) = this.attr("target", value) |> ignore
 
     type img() =
         inherit VoidNode("img")
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.alt
-            with set value = this.attr("alt", value) |> ignore
+            with set (value: string | null) = this.attr("alt", value) |> ignore
         member this.width
             with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
             with set (value: int) = this.attr("height", string value) |> ignore
         member this.srcset
-            with set value = this.attr("srcset", value) |> ignore
+            with set (value: string | null) = this.attr("srcset", value) |> ignore
         member this.referrerpolicy
-            with set value = this.attr("referrerpolicy", value) |> ignore
+            with set (value: string | null) = this.attr("referrerpolicy", value) |> ignore
         member this.crossorigin
-            with set value = this.attr("crossorigin", value) |> ignore
+            with set (value: string | null) = this.attr("crossorigin", value) |> ignore
         member this.sizes
-            with set value = this.attr("sizes", value) |> ignore
+            with set (value: string | null) = this.attr("sizes", value) |> ignore
 
     type form() =
         inherit RegularNode("form")
         member this.action
-            with set value = this.attr("action", value) |> ignore
+            with set (value: string | null) = this.attr("action", value) |> ignore
         member this.method
-            with set value = this.attr("method", value) |> ignore
+            with set (value: string | null) = this.attr("method", value) |> ignore
         member this.enctype
-            with set value = this.attr("enctype", value) |> ignore
+            with set (value: string | null) = this.attr("enctype", value) |> ignore
         member this.target
-            with set value = this.attr("target", value) |> ignore
+            with set (value: string | null) = this.attr("target", value) |> ignore
 
     type script() =
         inherit RegularNode("script")
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.async
             with set (value: bool) =
                 if value then
@@ -232,51 +232,51 @@ module Tags =
                 if value then
                     this.attr("defer", "") |> ignore
         member this.integrity
-            with set value = this.attr("integrity", value) |> ignore
+            with set (value: string | null) = this.attr("integrity", value) |> ignore
         member this.crossorigin
-            with set value = this.attr("crossorigin", value) |> ignore
+            with set (value: string | null) = this.attr("crossorigin", value) |> ignore
 
     type link() =
         inherit VoidNode("link")
         member this.rel
-            with set value = this.attr("rel", value) |> ignore
+            with set (value: string | null) = this.attr("rel", value) |> ignore
         member this.href
-            with set value = this.attr("href", value) |> ignore
+            with set (value: string | null) = this.attr("href", value) |> ignore
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.media
-            with set value = this.attr("media", value) |> ignore
+            with set (value: string | null) = this.attr("media", value) |> ignore
         member this.as'
-            with set value = this.attr("as", value) |> ignore
+            with set (value: string | null) = this.attr("as", value) |> ignore
         member this.sizes
-            with set value = this.attr("sizes", value) |> ignore
+            with set (value: string | null) = this.attr("sizes", value) |> ignore
 
     type html() =
         inherit RegularNode("html")
         member this.xmlns
-            with set value = this.attr("xmlns", value) |> ignore
+            with set (value: string | null) = this.attr("xmlns", value) |> ignore
 
     type meta() =
         inherit VoidNode("meta")
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.content
-            with set value = this.attr("content", value) |> ignore
+            with set (value: string | null) = this.attr("content", value) |> ignore
         member this.charset
-            with set value = this.attr("charset", value) |> ignore
+            with set (value: string | null) = this.attr("charset", value) |> ignore
         member this.httpEquiv
-            with set value = this.attr("http-equiv", value) |> ignore
+            with set (value: string | null) = this.attr("http-equiv", value) |> ignore
 
     type input() =
         inherit VoidNode("input")
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
         member this.placeholder
-            with set value = this.attr("placeholder", value) |> ignore
+            with set (value: string | null) = this.attr("placeholder", value) |> ignore
         member this.required
             with set (value: bool) =
                 if value then
@@ -286,15 +286,15 @@ module Tags =
                 if value then
                     this.attr("autofocus", "") |> ignore
         member this.autocomplete
-            with set value = this.attr("autocomplete", value) |> ignore
+            with set (value: string | null) = this.attr("autocomplete", value) |> ignore
         member this.min
-            with set value = this.attr("min", value) |> ignore
+            with set (value: string | null) = this.attr("min", value) |> ignore
         member this.max
-            with set value = this.attr("max", value) |> ignore
+            with set (value: string | null) = this.attr("max", value) |> ignore
         member this.step
-            with set value = this.attr("step", value) |> ignore
+            with set (value: string | null) = this.attr("step", value) |> ignore
         member this.pattern
-            with set value = this.attr("pattern", value) |> ignore
+            with set (value: string | null) = this.attr("pattern", value) |> ignore
         member this.readonly
             with set (value: bool) =
                 if value then
@@ -308,9 +308,9 @@ module Tags =
                 if value then
                     this.attr("multiple", "") |> ignore
         member this.accept
-            with set value = this.attr("accept", value) |> ignore
+            with set (value: string | null) = this.attr("accept", value) |> ignore
         member this.list
-            with set value = this.attr("list", value) |> ignore
+            with set (value: string | null) = this.attr("list", value) |> ignore
         member this.maxlength
             with set (value: int) = this.attr("maxlength", string value) |> ignore
         member this.minlength
@@ -318,29 +318,29 @@ module Tags =
         member this.size
             with set (value: int) = this.attr("size", string value) |> ignore
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.width
             with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
             with set (value: int) = this.attr("height", string value) |> ignore
         member this.alt
-            with set value = this.attr("alt", value) |> ignore
+            with set (value: string | null) = this.attr("alt", value) |> ignore
 
     type output() =
         inherit RegularNode("output")
         member this.for'
-            with set value = this.attr("for", value) |> ignore
+            with set (value: string | null) = this.attr("for", value) |> ignore
         member this.form
-            with set value = this.attr("form", value) |> ignore
+            with set (value: string | null) = this.attr("form", value) |> ignore
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
 
     type textarea() =
         inherit RegularNode("textarea")
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.placeholder
-            with set value = this.attr("placeholder", value) |> ignore
+            with set (value: string | null) = this.attr("placeholder", value) |> ignore
         member this.required
             with set (value: bool) =
                 if value then
@@ -362,18 +362,18 @@ module Tags =
         member this.cols
             with set (value: int) = this.attr("cols", string value) |> ignore
         member this.wrap
-            with set value = this.attr("wrap", value) |> ignore
+            with set (value: string | null) = this.attr("wrap", value) |> ignore
         member this.maxlength
             with set (value: int) = this.attr("maxlength", string value) |> ignore
 
     type button() =
         inherit RegularNode("button")
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
         member this.disabled
             with set (value: bool) =
                 if value then
@@ -386,7 +386,7 @@ module Tags =
     type select() =
         inherit RegularNode("select")
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.required
             with set (value: bool) =
                 if value then
@@ -409,7 +409,7 @@ module Tags =
     type option() =
         inherit RegularNode("option")
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
         member this.selected
             with set (value: bool) =
                 if value then
@@ -419,12 +419,12 @@ module Tags =
                 if value then
                     this.attr("disabled", "") |> ignore
         member this.label
-            with set value = this.attr("label", value) |> ignore
+            with set (value: string | null) = this.attr("label", value) |> ignore
 
     type optgroup() =
         inherit RegularNode("optgroup")
         member this.label
-            with set value = this.attr("label", value) |> ignore
+            with set (value: string | null) = this.attr("label", value) |> ignore
         member this.disabled
             with set (value: bool) =
                 if value then
@@ -433,23 +433,23 @@ module Tags =
     type label() =
         inherit RegularNode("label")
         member this.for'
-            with set value = this.attr("for", value) |> ignore
+            with set (value: string | null) = this.attr("for", value) |> ignore
 
     type style() =
         inherit RegularNode("style")
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.media
-            with set value = this.attr("media", value) |> ignore
+            with set (value: string | null) = this.attr("media", value) |> ignore
 
     type iframe() =
         inherit RegularNode("iframe")
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.sandbox
-            with set value = this.attr("sandbox", value) |> ignore
+            with set (value: string | null) = this.attr("sandbox", value) |> ignore
         member this.width
             with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
@@ -459,18 +459,18 @@ module Tags =
         member this.allowpaymentrequest
             with set (value: bool) = this.attr("allowpaymentrequest", (if value then "true" else "false")) |> ignore
         member this.loading
-            with set value = this.attr("loading", value) |> ignore
+            with set (value: string | null) = this.attr("loading", value) |> ignore
         member this.referrerpolicy
-            with set value = this.attr("referrerpolicy", value) |> ignore
+            with set (value: string | null) = this.attr("referrerpolicy", value) |> ignore
         member this.srcdoc
-            with set value = this.attr("srcdoc", value) |> ignore
+            with set (value: string | null) = this.attr("srcdoc", value) |> ignore
 
     type video() =
         inherit RegularNode("video")
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.poster
-            with set value = this.attr("poster", value) |> ignore
+            with set (value: string | null) = this.attr("poster", value) |> ignore
         member this.autoplay
             with set (value: bool) =
                 if value then
@@ -492,12 +492,12 @@ module Tags =
         member this.height
             with set (value: int) = this.attr("height", string value) |> ignore
         member this.preload
-            with set value = this.attr("preload", value) |> ignore
+            with set (value: string | null) = this.attr("preload", value) |> ignore
 
     type audio() =
         inherit RegularNode("audio")
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.autoplay
             with set (value: bool) =
                 if value then
@@ -518,15 +518,15 @@ module Tags =
     type source() =
         inherit VoidNode("source")
         member this.src
-            with set value = this.attr("src", value) |> ignore
+            with set (value: string | null) = this.attr("src", value) |> ignore
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.media
-            with set value = this.attr("media", value) |> ignore
+            with set (value: string | null) = this.attr("media", value) |> ignore
         member this.sizes
-            with set value = this.attr("sizes", value) |> ignore
+            with set (value: string | null) = this.attr("sizes", value) |> ignore
         member this.srcset
-            with set value = this.attr("srcset", value) |> ignore
+            with set (value: string | null) = this.attr("srcset", value) |> ignore
 
     type canvas() =
         inherit RegularNode("canvas")
@@ -538,9 +538,9 @@ module Tags =
     type object'() =
         inherit RegularNode("object")
         member this.data
-            with set value = this.attr("data", value) |> ignore
+            with set (value: string | null) = this.attr("data", value) |> ignore
         member this.type'
-            with set value = this.attr("type", value) |> ignore
+            with set (value: string | null) = this.attr("type", value) |> ignore
         member this.width
             with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
@@ -549,43 +549,43 @@ module Tags =
     type param() =
         inherit VoidNode("param")
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
 
     type data() =
         inherit RegularNode("data")
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
 
     type time() =
         inherit RegularNode("time")
         member this.datetime
-            with set value = this.attr("datetime", value) |> ignore
+            with set (value: string | null) = this.attr("datetime", value) |> ignore
 
     type progress() =
         inherit RegularNode("progress")
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
         member this.max
-            with set value = this.attr("max", value) |> ignore
+            with set (value: string | null) = this.attr("max", value) |> ignore
 
     type meter() =
         inherit RegularNode("meter")
         member this.form
-            with set value = this.attr("form", value) |> ignore
+            with set (value: string | null) = this.attr("form", value) |> ignore
         member this.value
-            with set value = this.attr("value", value) |> ignore
+            with set (value: string | null) = this.attr("value", value) |> ignore
         member this.min
-            with set value = this.attr("min", value) |> ignore
+            with set (value: string | null) = this.attr("min", value) |> ignore
         member this.max
-            with set value = this.attr("max", value) |> ignore
+            with set (value: string | null) = this.attr("max", value) |> ignore
         member this.low
-            with set value = this.attr("low", value) |> ignore
+            with set (value: string | null) = this.attr("low", value) |> ignore
         member this.high
-            with set value = this.attr("high", value) |> ignore
+            with set (value: string | null) = this.attr("high", value) |> ignore
         member this.optimum
-            with set value = this.attr("optimum", value) |> ignore
+            with set (value: string | null) = this.attr("optimum", value) |> ignore
 
     type details() =
         inherit RegularNode("details")
@@ -617,9 +617,9 @@ module Tags =
                 if value then
                     this.attr("disabled", "") |> ignore
         member this.form
-            with set value = this.attr("form", value) |> ignore
+            with set (value: string | null) = this.attr("form", value) |> ignore
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
 
     type legend() =
         inherit RegularNode("legend")
@@ -638,15 +638,15 @@ module Tags =
     type th() =
         inherit RegularNode("th")
         member this.abbr
-            with set value = this.attr("abbr", value) |> ignore
+            with set (value: string | null) = this.attr("abbr", value) |> ignore
         member this.colspan
             with set (value: int) = this.attr("colspan", string value) |> ignore
         member this.rowspan
             with set (value: int) = this.attr("rowspan", string value) |> ignore
         member this.headers
-            with set value = this.attr("headers", value) |> ignore
+            with set (value: string | null) = this.attr("headers", value) |> ignore
         member this.scope
-            with set value = this.attr("scope", value) |> ignore
+            with set (value: string | null) = this.attr("scope", value) |> ignore
     type td() =
         inherit RegularNode("td")
         member this.colspan
@@ -654,27 +654,27 @@ module Tags =
         member this.rowspan
             with set (value: int) = this.attr("rowspan", string value) |> ignore
         member this.headers
-            with set value = this.attr("headers", value) |> ignore
+            with set (value: string | null) = this.attr("headers", value) |> ignore
 
     type map() =
         inherit RegularNode("map")
         member this.name
-            with set value = this.attr("name", value) |> ignore
+            with set (value: string | null) = this.attr("name", value) |> ignore
     type area() =
         inherit VoidNode("area")
         member this.shape
-            with set value = this.attr("shape", value) |> ignore
+            with set (value: string | null) = this.attr("shape", value) |> ignore
         member this.coords
-            with set value = this.attr("coords", value) |> ignore
+            with set (value: string | null) = this.attr("coords", value) |> ignore
         member this.href
-            with set value = this.attr("href", value) |> ignore
+            with set (value: string | null) = this.attr("href", value) |> ignore
         member this.alt
-            with set value = this.attr("alt", value) |> ignore
+            with set (value: string | null) = this.attr("alt", value) |> ignore
         member this.download
-            with set value = this.attr("download", value) |> ignore
+            with set (value: string | null) = this.attr("download", value) |> ignore
         member this.target
-            with set value = this.attr("target", value) |> ignore
+            with set (value: string | null) = this.attr("target", value) |> ignore
         member this.rel
-            with set value = this.attr("rel", value) |> ignore
+            with set (value: string | null) = this.attr("rel", value) |> ignore
         member this.referrerpolicy
-            with set value = this.attr("referrerpolicy", value) |> ignore
+            with set (value: string | null) = this.attr("referrerpolicy", value) |> ignore
