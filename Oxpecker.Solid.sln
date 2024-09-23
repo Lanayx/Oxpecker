@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D504DE6F-D915-4F1D-B6C5-07786C0E9DDA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{0862A1EC-A3AD-4A83-908C-26B3D38FF20F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{6F9A18A3-ED93-48F0-A80A-6ABF9E17F0D4}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Solid", "src\Oxpecker.Solid\Oxpecker.Solid.fsproj", "{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Solid.FablePlugin", "src\Oxpecker.Solid.FablePlugin\Oxpecker.Solid.FablePlugin.fsproj", "{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC} = {D504DE6F-D915-4F1D-B6C5-07786C0E9DDA}
+		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3} = {D504DE6F-D915-4F1D-B6C5-07786C0E9DDA}
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
