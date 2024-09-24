@@ -10,6 +10,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Solid", "src\Oxpec
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Solid.FablePlugin", "src\Oxpecker.Solid.FablePlugin\Oxpecker.Solid.FablePlugin.fsproj", "{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Solid.Tests", "tests\Oxpecker.Solid.Tests\Oxpecker.Solid.Tests.fsproj", "{DE3D2630-42B0-4458-8438-F6922CDD4E98}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,6 +20,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC} = {D504DE6F-D915-4F1D-B6C5-07786C0E9DDA}
 		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3} = {D504DE6F-D915-4F1D-B6C5-07786C0E9DDA}
+		{DE3D2630-42B0-4458-8438-F6922CDD4E98} = {6F9A18A3-ED93-48F0-A80A-6ABF9E17F0D4}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -28,5 +31,9 @@ Global
 		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE3D2630-42B0-4458-8438-F6922CDD4E98}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE3D2630-42B0-4458-8438-F6922CDD4E98}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE3D2630-42B0-4458-8438-F6922CDD4E98}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE3D2630-42B0-4458-8438-F6922CDD4E98}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

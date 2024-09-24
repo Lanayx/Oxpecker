@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+        <GenerateProgramFile>false</GenerateProgramFile>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Cases\HelloWorld\HelloWorld.fs" />
+        <Content Include="Cases\HelloWorld\HelloWorld.fsproj" />
+        <Content Include="Cases\HelloWorld\HelloWorld.expected" />
+        <Compile Include="Tests.fs"/>
+        <Compile Include="Program.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
+        <PackageReference Include="Fable.Core" Version="4.3.0" />
+        <PackageReference Include="Fli" Version="1.111.10" />
+        <PackageReference Include="FsUnit.xUnit" Version="6.0.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+        <PackageReference Include="xunit" Version="2.5.3"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3"/>
+    </ItemGroup>
+
+</Project>
