@@ -1,5 +1,6 @@
 ﻿namespace Oxpecker.Solid
 
+open System
 open Fable
 open Fable.AST
 open Fable.AST.Fable
@@ -68,7 +69,9 @@ module internal rec AST =
     let getProps (callInfo: CallInfo) tagName : Props =
         let setPropertiesSeq = callInfo.Args |> List.tryPick (
             function
-            | Let ({ Name = "returnVal" }, _, Sequential expr) -> Some expr
+            | Let ({ Name = name }, _, Sequential expr)
+                when name.StartsWith("returnVal")
+                -> Some expr
             | _ -> None
         )
         match setPropertiesSeq with
@@ -78,7 +81,9 @@ module internal rec AST =
     let getChildren (callInfo: CallInfo) : Expr list =
         let setChildrenSeq = callInfo.Args |> List.choose (
             function
-            | Let ({ Name = "element" }, TagCall (callInfo, range), _) -> Some (callInfo, range)
+            | Let ({ Name = name }, TagCall (callInfo, range), _)
+                when name.StartsWith("element")
+                -> Some (callInfo, range)
             | _ -> None
         )
         match setChildrenSeq with

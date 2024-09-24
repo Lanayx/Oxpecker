@@ -1,13 +1,13 @@
 
 export function DeepNestedTags() {
-  return <body>
-    <div id="outer">
-      <div id="inner">
-        <h1>
-            Hello!
-        </h1>
-      </div>
-    </div>
-  </body>;
+    return <body>
+        <div id="outer">
+            <div id="inner">
+                <h1>
+                    Hello!
+                </h1>
+            </div>
+        </div>
+    </body>;
 }
 
