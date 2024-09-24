@@ -5,6 +5,7 @@ open System.IO
 open Xunit
 open FsUnitTyped
 open Fli
+open Oxpecker.Solid.Tests.Common
 
 [<Fact>]
 let ``Fable version`` () =
@@ -18,16 +19,8 @@ let ``Fable version`` () =
 
 [<Fact>]
 let ``Hello world`` () =
-    let dir = $"{__SOURCE_DIRECTORY__}/Cases/HelloWorld"
-    cli {
-        Shell CMD
-        WorkingDirectory dir
-        Command "dotnet fable"
-    }
-    |> Command.execute
-    |> Output.toExitCode
-    |> shouldEqual 0
+    runCase "HelloWorld"
 
-    let result = File.ReadAllText($"{dir}/HelloWorld.fs.js")
-    let expected = File.ReadAllText($"{dir}/HelloWorld.expected")
-    result |> shouldEqual expected
+[<Fact>]
+let ``Nested tags`` () =
+    runCase "NestedTags"

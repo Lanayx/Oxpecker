@@ -1,4 +1,4 @@
-﻿namespace Oxpecker.Solid.FablePlugin
+﻿namespace Oxpecker.Solid
 
 open Fable
 open Fable.AST
@@ -7,7 +7,7 @@ open Fable.AST.Fable
 [<assembly: ScanForPlugins>]
 do ()
 
-module rec AST =
+module internal rec AST =
     type PropInfo = string * Expr
     type Props = PropInfo list
 
@@ -181,7 +181,7 @@ module rec AST =
             expr
 
 
-type JSXComputationExpressionAttribute() =
+type SolidComponentAttribute() =
     inherit MemberDeclarationPluginAttribute()
 
     override _.FableMinimumVersion = "4.0"

@@ -12,6 +12,10 @@
         <Compile Include="Cases\HelloWorld\HelloWorld.fs" />
         <Content Include="Cases\HelloWorld\HelloWorld.fsproj" />
         <Content Include="Cases\HelloWorld\HelloWorld.expected" />
+        <Content Include="Cases\NestedTags\NestedTags.expected" />
+        <Compile Include="Cases\NestedTags\NestedTags.fs" />
+        <Content Include="Cases\NestedTags\NestedTags.fsproj" />
+        <Compile Include="Common.fs" />
         <Compile Include="Tests.fs"/>
         <Compile Include="Program.fs"/>
     </ItemGroup>
@@ -23,8 +27,15 @@
         <PackageReference Include="Fli" Version="1.111.10" />
         <PackageReference Include="FsUnit.xUnit" Version="6.0.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
-        <PackageReference Include="xunit" Version="2.5.3"/>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3"/>
+        <PackageReference Include="xunit" Version="2.9.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
     </ItemGroup>
 
 </Project>
