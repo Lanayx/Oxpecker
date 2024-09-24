@@ -10,7 +10,6 @@ let runCase caseName =
         Shell CMD
         WorkingDirectory dir
         Command "dotnet fable --noCache --exclude Oxpecker.Solid.FablePlugin"
-        WindowStyle Maximized
     }
     |> Command.execute
     |> Output.toExitCode

@@ -15,6 +15,9 @@
         <Content Include="Cases\NestedTags\NestedTags.expected" />
         <Compile Include="Cases\NestedTags\NestedTags.fs" />
         <Content Include="Cases\NestedTags\NestedTags.fsproj" />
+        <Content Include="Cases\DeepNestedTags\DeepNestedTags.expected" />
+        <Compile Include="Cases\DeepNestedTags\DeepNestedTags.fs" />
+        <Content Include="Cases\DeepNestedTags\DeepNestedTags.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="Tests.fs"/>
         <Compile Include="Program.fs"/>

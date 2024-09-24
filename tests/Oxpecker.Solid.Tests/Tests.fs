@@ -24,3 +24,7 @@ let ``Hello world`` () =
 [<Fact>]
 let ``Nested tags`` () =
     runCase "NestedTags"
+
+[<Fact>]
+let ``Deep nested tags`` () =
+    runCase "DeepNestedTags"
