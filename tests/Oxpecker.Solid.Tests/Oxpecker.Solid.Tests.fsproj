@@ -18,6 +18,9 @@
         <Content Include="Cases\DeepNestedTags\DeepNestedTags.expected" />
         <Compile Include="Cases\DeepNestedTags\DeepNestedTags.fs" />
         <Content Include="Cases\DeepNestedTags\DeepNestedTags.fsproj" />
+        <Content Include="Cases\EventHandler\EventHandler.expected" />
+        <Compile Include="Cases\EventHandler\EventHandler.fs" />
+        <Content Include="Cases\EventHandler\EventHandler.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="Tests.fs"/>
         <Compile Include="Program.fs"/>

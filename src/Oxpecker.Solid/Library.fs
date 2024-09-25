@@ -1,6 +1,7 @@
 ﻿module Oxpecker.Solid
 
 open System.Runtime.CompilerServices
+open Browser.Types
 
 [<Struct>]
 type HtmlAttribute = { Name: string; Value: obj }
@@ -37,7 +38,7 @@ type HtmlContainer with
 
     member inline _.YieldFrom(elements: #seq<#HtmlElement>) : HtmlContainerFun = ignore
 
-    member inline _.Yield(text: string) : HtmlContainerFun = fun _ -> text |> ignore
+    member inline _.Yield(text: string) : HtmlContainerFun = fun txt -> text |> ignore
 
 type HtmlContainerExtensions =
     [<Extension>]
@@ -47,9 +48,11 @@ type HtmlContainerExtensions =
 
 type HtmlTag with
     member this.id
-        with set _ = ()
+        with set (_: string) = ()
     member this.class'
-        with set _ = ()
+        with set (_: string) = ()
+    member this.onClick
+        with set (_: MouseEvent -> unit) = ()
 
 type head() = inherit RegularNode()
 type body() = inherit RegularNode()

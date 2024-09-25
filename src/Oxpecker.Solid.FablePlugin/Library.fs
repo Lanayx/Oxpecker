@@ -97,7 +97,7 @@ module internal rec AST =
     let getText (callInfo: CallInfo) : Expr list =
         let textSeq = callInfo.Args |> List.choose (
             function
-            | Lambda ({ Name = "_arg" }, TypeCast (body, Unit) , None) ->
+            | Lambda ({ Name = "txt" }, TypeCast (body, Unit) , None) ->
                 Some body
             | _ -> None
         )

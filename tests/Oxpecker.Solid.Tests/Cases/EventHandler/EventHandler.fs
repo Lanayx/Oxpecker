@@ -1,0 +1,15 @@
+module Oxpecker.Solid.Tests.Cases.EventHandler
+
+open Browser.Types
+open Oxpecker.Solid
+open Browser
+
+let clicked2 = fun (evt: MouseEvent) -> console.log(evt.``type``)
+
+[<SolidComponent>]
+let DeepNestedTags () =
+    div(onClick= fun _ -> console.log("clicked1")) {
+        h1(onClick = clicked2) {
+            "Hello"
+        }
+    }

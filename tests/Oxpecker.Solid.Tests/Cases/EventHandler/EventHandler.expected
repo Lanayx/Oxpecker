@@ -1,0 +1,18 @@
+import { some } from "./fable_modules/fable-library-js.4.21.0/Option.js";
+
+export function clicked2(evt) {
+    console.log(some(evt.type));
+}
+
+export function DeepNestedTags() {
+    return <div onClick={(_arg) => {
+            console.log(some("clicked1"));
+        }}>
+        <h1 onClick={(evt) => {
+                clicked2(evt);
+            }}>
+            Hello
+        </h1>
+    </div>;
+}
+
