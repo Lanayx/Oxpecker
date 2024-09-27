@@ -111,6 +111,10 @@ module internal rec AST =
                 when name.StartsWith("element") ->
            let newExpr = handleTagCall <| TagCall.NoChildren (tagName, exprs, range)
            newExpr :: currentList
+        | Let ({ Name = name }, TagConstructor (tagName, range), _)
+                when name.StartsWith("element") ->
+           let newExpr = handleTagCall <| TagCall.NoChildren (tagName, [], range)
+           newExpr :: currentList
         | Let ({ Name = first }, Let ({ Name = element }, expr, _), Let ({ Name = second }, next, _))
                 when first.StartsWith("first")
                      && second.StartsWith("second")
@@ -133,7 +137,8 @@ module internal rec AST =
 
     let getText currentList (expr: Expr) : Expr list =
         match expr with
-        | Lambda ({ Name = "txt" }, TypeCast (body, Unit) , None) ->
+        | Lambda ({ Name = name }, TypeCast (body, Unit) , None)
+            when name.StartsWith("txt") ->
             body:: currentList
         | _ ->
             currentList
