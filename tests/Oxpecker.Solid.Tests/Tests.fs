@@ -32,3 +32,7 @@ let ``Deep nested tags`` () =
 [<Fact>]
 let ``Event handler`` () =
     runCase "EventHandler"
+
+[<Fact>]
+let ``Flat nested tags`` () =
+    runCase "FlatNestedTags"

@@ -21,6 +21,9 @@
         <Content Include="Cases\EventHandler\EventHandler.expected" />
         <Compile Include="Cases\EventHandler\EventHandler.fs" />
         <Content Include="Cases\EventHandler\EventHandler.fsproj" />
+        <Content Include="Cases\FlatNestedTags\FlatNestedTags.expected" />
+        <Compile Include="Cases\FlatNestedTags\FlatNestedTags.fs" />
+        <Content Include="Cases\FlatNestedTags\FlatNestedTags.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="Tests.fs"/>
         <Compile Include="Program.fs"/>

@@ -12,19 +12,19 @@ module internal rec AST =
     type PropInfo = string * Expr
     type Props = PropInfo list
 
-    type TagInfo = string * CallInfo * SourceLocation option
+
 
     type TagCall =
-        | WithChildren of TagInfo
-        | NoChildren of TagInfo * Expr list
+        | WithChildren of string * CallInfo * SourceLocation option
+        | NoChildren of string * Expr list * SourceLocation option
 
     let (|TagConstructor|_|) (expr: Expr) =
         match expr with
-        | Call (Import (importInfo, LambdaType (Unit, DeclaredType (typ, [])), _), callInfo, _, range)
+        | Call (Import (importInfo, LambdaType (_, DeclaredType (typ, [])), _), _, _, range)
                 when importInfo.Selector.EndsWith("_$ctor")
                 && typ.FullName.StartsWith("Oxpecker.Solid") ->
             let tagName = typ.FullName.Split('.') |> Seq.last
-            Some (tagName, callInfo, range)
+            Some (tagName, range)
         | _ ->
             None
 
@@ -33,9 +33,9 @@ module internal rec AST =
         | Call (Import (importInfo, _, _), callInfo, _, range)
                 when importInfo.Selector.StartsWith("HtmlContainerExtensions_Run")  ->
             match callInfo.Args.Head with
-            | TagConstructor (tagName, _, _)->
+            | TagConstructor (tagName, _)->
                 Some (tagName, callInfo, range)
-            | Let ({ Name = name }, TagConstructor (tagName, _, _), _)
+            | Let ({ Name = name }, TagConstructor (tagName, _), _)
                     when name.StartsWith("returnVal") ->
                 Some (tagName, callInfo, range)
             | _ -> None
@@ -101,33 +101,42 @@ module internal rec AST =
         | None -> []
         | Some seq -> collectProps seq
 
-    let getChildren (callInfo: CallInfo) : Expr list =
-        Console.WriteLine("Get children")
-        Console.WriteLine($"%A{callInfo.Args}")
-        let setChildrenSeq = callInfo.Args |> List.choose (
-            function
-            | Let ({ Name = name }, TagBuilder (tagName, callInfo, range), _)
-                    when name.StartsWith("element") ->
-                Console.WriteLine("Found chilren")
-                Some <| TagCall.WithChildren (tagName, callInfo, range)
-            | _ -> None
-        )
-        match setChildrenSeq with
-        | [] -> []
-        | tagCalls ->
-            [
-                for tagCall in tagCalls do
-                    handleTagCall tagCall
-            ]
+    let getChildren currentList (expr: Expr): Expr list =
+        match expr with
+        | Let ({ Name = name }, TagBuilder (tagName, callInfo, range), _)
+                when name.StartsWith("element") ->
+           let newExpr = handleTagCall <| TagCall.WithChildren (tagName, callInfo, range)
+           newExpr :: currentList
+        | Let ({ Name = name }, Let (_, TagConstructor (tagName, range), Sequential exprs), _)
+                when name.StartsWith("element") ->
+           let newExpr = handleTagCall <| TagCall.NoChildren (tagName, exprs, range)
+           newExpr :: currentList
+        | Let ({ Name = first }, Let ({ Name = element }, expr, _), Let ({ Name = second }, next, _))
+                when first.StartsWith("first")
+                     && second.StartsWith("second")
+                     && element.StartsWith("element") ->
+            match expr with
+            | Let (_, TagConstructor (tagName, range), Sequential exprs) ->
+                let newExpr = handleTagCall (TagCall.NoChildren (tagName, exprs, range))
+                getChildren (newExpr :: currentList) next
+            | TagConstructor (tagName, range) ->
+                let newExpr = handleTagCall (TagCall.NoChildren (tagName, [], range))
+                getChildren (newExpr :: currentList) next
+            | TagBuilder callInfo ->
+                let newExpr = handleTagCall (TagCall.WithChildren callInfo)
+                getChildren (newExpr :: currentList) next
+            | expr ->
+                Console.WriteLine(expr)
+                currentList
+        | _ ->
+            currentList
 
-    let getText (callInfo: CallInfo) : Expr list =
-        let textSeq = callInfo.Args |> List.choose (
-            function
-            | Lambda ({ Name = "txt" }, TypeCast (body, Unit) , None) ->
-                Some body
-            | _ -> None
-        )
-        textSeq
+    let getText currentList (expr: Expr) : Expr list =
+        match expr with
+        | Lambda ({ Name = "txt" }, TypeCast (body, Unit) , None) ->
+            body:: currentList
+        | _ ->
+            currentList
 
     let listItemType =
         Type.Tuple (genericArgs = [ Type.String ; Type.Any ], isStruct = false)
@@ -148,11 +157,11 @@ module internal rec AST =
             match tagCall with
             | WithChildren (tagName, callInfo, range) ->
                 let props = getProps callInfo tagName
-                let childrenList = getChildren callInfo
-                let textList = getText callInfo
+                let childrenList = callInfo.Args |> List.fold getChildren []
+                let textList = callInfo.Args |> List.fold getText []
                 let childrenList = childrenList @ textList
                 tagName, props, childrenList, range
-            | NoChildren ((tagName, callInfo, range), propList) ->
+            | NoChildren (tagName, propList, range) ->
                 let props = collectProps propList
                 let childrenList = []
                 tagName, props, childrenList, range
@@ -211,8 +220,8 @@ module internal rec AST =
 
     let transform (expr: Expr) =
         match expr with
-        | Let (_, TagConstructor (tagName, callInfo, range), Sequential expr) ->
-            handleTagCall (TagCall.NoChildren ((tagName, callInfo, range), expr))
+        | Let (_, TagConstructor (tagName, range), Sequential exprs) ->
+            handleTagCall (TagCall.NoChildren (tagName, exprs, range))
         | Let (name, value, expr) ->
             Let (name, value, (transform expr))
         | Sequential expressions ->
@@ -224,8 +233,8 @@ module internal rec AST =
                     else
                         expr
             ))
-        | TagConstructor (tagName, callInfo, range) ->
-            handleTagCall (TagCall.NoChildren ((tagName, callInfo, range), []))
+        | TagConstructor (tagName, range) ->
+            handleTagCall (TagCall.NoChildren (tagName, [], range))
         | TagBuilder callInfo ->
             handleTagCall (TagCall.WithChildren callInfo)
         | _ ->
@@ -238,9 +247,9 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(compiler: PluginHelper, file: File, memberDecl: MemberDecl) =
-        // Console.WriteLine("!Start! MemberDecl");
+        // Console.WriteLine("!Start! MemberDecl")
         // Console.WriteLine(memberDecl.Body)
-        // Console.WriteLine("!End! MemberDecl");
+        // Console.WriteLine("!End! MemberDecl")
         let newBody = AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 

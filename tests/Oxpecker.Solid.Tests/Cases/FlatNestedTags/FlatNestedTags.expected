@@ -1,0 +1,14 @@
+
+export function FlatNestedTags() {
+    return <body>
+        <h1 id="one"></h1>
+        <div id="two">
+            2
+        </div>
+        <div>
+            3
+        </div>
+        <h1></h1>
+    </body>;
+}
+
