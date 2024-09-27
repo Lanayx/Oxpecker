@@ -14,4 +14,8 @@
     <Compile Include="HelloWorld.fs" />
   </ItemGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
+    </ItemGroup>
+
 </Project>
