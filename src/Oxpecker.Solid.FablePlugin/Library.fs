@@ -39,7 +39,7 @@ module internal rec AST =
             | _ -> None
         | _ -> None
 
-    let (|LetChild|_|) =
+    let (|LetElement|_|) =
         function
         | Let ({ Name = name }, _, _) when name.StartsWith("element") ->
             Some ()
@@ -55,7 +55,6 @@ module internal rec AST =
 
     let (|LetSingleTagWithProps|_|) =
         function
-        | Let (_, Let (_, SingleTag (tagName, range), Sequential exprs), _)
         | Let (_, SingleTag (tagName, range), Sequential exprs) ->
             TagCall.NoChildren (tagName, exprs, range) |> Some
         | _ ->
@@ -65,6 +64,14 @@ module internal rec AST =
         function
         | Let (_, SingleTag (tagName, range), _) ->
             TagCall.NoChildren (tagName, [], range) |> Some
+        | _ ->
+            None
+
+    let (|SimpleText|_|) =
+        function
+        | Lambda ({ Name = txt }, TypeCast (textBody, Unit), None)
+            when txt.StartsWith("txt") ->
+            Some textBody
         | _ ->
             None
 
@@ -130,16 +137,31 @@ module internal rec AST =
 
     let getChildren currentList (expr: Expr): Expr list =
         match expr with
-        | LetChild & LetRegularTag tagCall ->
+        | LetElement & LetRegularTag tagCall ->
            let newExpr = handleTagCall tagCall
            newExpr :: currentList
-        | LetChild & LetSingleTagWithProps tagCall ->
+        | LetElement & Let (_, LetSingleTagWithProps tagCall, _)  ->
            let newExpr = handleTagCall tagCall
            newExpr :: currentList
-        | LetChild & LetSingleTagNoProps tagCall ->
+        | LetElement & LetSingleTagNoProps tagCall ->
            let newExpr = handleTagCall tagCall
            newExpr :: currentList
-        | Let ({ Name = first }, LetChild & Let (_, expr, _), Let ({ Name = second }, next, _))
+        | SimpleText body ->
+            body :: currentList
+        // text following by tag
+        | Let ({ Name = second }, LetElement & LetSingleTagNoProps tagCall, Lambda ({ Name = builder },
+                Sequential (TypeCast (textBody, Unit)::_), _))
+                when second.StartsWith("second") && builder.StartsWith("builder") ->
+            let newExpr = handleTagCall tagCall
+            newExpr :: textBody :: currentList
+        // tag following by text
+        | Let ({ Name = first }, LetElement & LetSingleTagNoProps tagCall, Lambda ({ Name = builder }, Sequential [
+                    CurriedApply _; CurriedApply (Lambda ({ Name = txt }, TypeCast (textBody, Unit), Some second), _, _, _)
+                ], _))
+                when first.StartsWith("first") && builder.StartsWith("builder") && txt.StartsWith("txt") && second.StartsWith("second") ->
+            let newExpr = handleTagCall tagCall
+            textBody :: newExpr :: currentList
+        | Let ({ Name = first }, LetElement & Let (_, expr, _), Let ({ Name = second }, next, _))
                 when first.StartsWith("first") && second.StartsWith("second") ->
             match expr with
             | LetSingleTagWithProps tagCall ->
@@ -154,14 +176,6 @@ module internal rec AST =
             | expr ->
                 //Console.WriteLine(expr)
                 currentList
-        | _ ->
-            currentList
-
-    let getText currentList (expr: Expr) : Expr list =
-        match expr with
-        | Lambda ({ Name = name }, TypeCast (body, Unit) , None)
-            when name.StartsWith("txt") ->
-            body:: currentList
         | _ ->
             currentList
 
@@ -185,9 +199,7 @@ module internal rec AST =
             | WithChildren (tagName, callInfo, range) ->
                 let props = getProps callInfo tagName
                 let childrenList = callInfo.Args |> List.fold getChildren []
-                let textList = callInfo.Args |> List.fold getText []
-                let childrenWithTextList = childrenList @ textList
-                tagName, props, childrenWithTextList, range
+                tagName, props, childrenList, range
             | NoChildren (tagName, propList, range) ->
                 let props = collectProps propList
                 let childrenList = []
@@ -274,9 +286,9 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(compiler: PluginHelper, file: File, memberDecl: MemberDecl) =
-        // Console.WriteLine("!Start! MemberDecl")
-        // Console.WriteLine(memberDecl.Body)
-        // Console.WriteLine("!End! MemberDecl")
+        Console.WriteLine("!Start! MemberDecl")
+        Console.WriteLine(memberDecl.Body)
+        Console.WriteLine("!End! MemberDecl")
         let newBody = AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 

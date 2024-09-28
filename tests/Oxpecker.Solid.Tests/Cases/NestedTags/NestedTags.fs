@@ -4,6 +4,7 @@ open Oxpecker.Solid
 
 [<SolidComponent>]
 let NestedTags (id: int) =
+    let hello = "Hello!"
     div(id=string id, class'="testclass") {
-        h1() { "Hello!" }
+        h1() { hello }
     }
