@@ -25,7 +25,7 @@
         <Compile Include="Cases\FlatNestedTags\FlatNestedTags.fs" />
         <Content Include="Cases\FlatNestedTags\FlatNestedTags.fsproj" />
         <Compile Include="Common.fs" />
-        <Compile Include="Tests.fs"/>
+        <Compile Include="GeneralTests.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 

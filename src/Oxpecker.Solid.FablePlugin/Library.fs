@@ -12,13 +12,11 @@ module internal rec AST =
     type PropInfo = string * Expr
     type Props = PropInfo list
 
-
-
     type TagCall =
-        | WithChildren of string * CallInfo * SourceLocation option
-        | NoChildren of string * Expr list * SourceLocation option
+        | WithChildren of tagName:string * propsAndChildren:CallInfo * range:SourceLocation option
+        | NoChildren of tagName:string * props:Expr list * range:SourceLocation option
 
-    let (|TagConstructor|_|) (expr: Expr) =
+    let (|SingleTag|_|) (expr: Expr) =
         match expr with
         | Call (Import (importInfo, LambdaType (_, DeclaredType (typ, [])), _), _, _, range)
                 when importInfo.Selector.EndsWith("_$ctor")
@@ -28,18 +26,47 @@ module internal rec AST =
         | _ ->
             None
 
-    let (|TagBuilder|_|) (expr: Expr) =
+    let (|RegularTag|_|) (expr: Expr) =
         match expr with
         | Call (Import (importInfo, _, _), callInfo, _, range)
                 when importInfo.Selector.StartsWith("HtmlContainerExtensions_Run")  ->
             match callInfo.Args.Head with
-            | TagConstructor (tagName, _)->
+            | SingleTag (tagName, _)->
                 Some (tagName, callInfo, range)
-            | Let ({ Name = name }, TagConstructor (tagName, _), _)
+            | Let ({ Name = name }, SingleTag (tagName, _), _)
                     when name.StartsWith("returnVal") ->
                 Some (tagName, callInfo, range)
             | _ -> None
         | _ -> None
+
+    let (|LetChild|_|) =
+        function
+        | Let ({ Name = name }, _, _) when name.StartsWith("element") ->
+            Some ()
+        | _ ->
+            None
+
+    let (|LetRegularTag|_|) =
+        function
+        | Let (_, RegularTag (tagName, callInfo, range), _) ->
+            TagCall.WithChildren (tagName, callInfo, range) |> Some
+        | _ ->
+            None
+
+    let (|LetSingleTagWithProps|_|) =
+        function
+        | Let (_, Let (_, SingleTag (tagName, range), Sequential exprs), _)
+        | Let (_, SingleTag (tagName, range), Sequential exprs) ->
+            TagCall.NoChildren (tagName, exprs, range) |> Some
+        | _ ->
+            None
+
+    let (|LetSingleTagNoProps|_|) =
+        function
+        | Let (_, SingleTag (tagName, range), _) ->
+            TagCall.NoChildren (tagName, [], range) |> Some
+        | _ ->
+            None
 
     let jsxElementType =
         Type.DeclaredType (
@@ -103,34 +130,29 @@ module internal rec AST =
 
     let getChildren currentList (expr: Expr): Expr list =
         match expr with
-        | Let ({ Name = name }, TagBuilder (tagName, callInfo, range), _)
-                when name.StartsWith("element") ->
-           let newExpr = handleTagCall <| TagCall.WithChildren (tagName, callInfo, range)
+        | LetChild & LetRegularTag tagCall ->
+           let newExpr = handleTagCall tagCall
            newExpr :: currentList
-        | Let ({ Name = name }, Let (_, TagConstructor (tagName, range), Sequential exprs), _)
-                when name.StartsWith("element") ->
-           let newExpr = handleTagCall <| TagCall.NoChildren (tagName, exprs, range)
+        | LetChild & LetSingleTagWithProps tagCall ->
+           let newExpr = handleTagCall tagCall
            newExpr :: currentList
-        | Let ({ Name = name }, TagConstructor (tagName, range), _)
-                when name.StartsWith("element") ->
-           let newExpr = handleTagCall <| TagCall.NoChildren (tagName, [], range)
+        | LetChild & LetSingleTagNoProps tagCall ->
+           let newExpr = handleTagCall tagCall
            newExpr :: currentList
-        | Let ({ Name = first }, Let ({ Name = element }, expr, _), Let ({ Name = second }, next, _))
-                when first.StartsWith("first")
-                     && second.StartsWith("second")
-                     && element.StartsWith("element") ->
+        | Let ({ Name = first }, LetChild & Let (_, expr, _), Let ({ Name = second }, next, _))
+                when first.StartsWith("first") && second.StartsWith("second") ->
             match expr with
-            | Let (_, TagConstructor (tagName, range), Sequential exprs) ->
-                let newExpr = handleTagCall (TagCall.NoChildren (tagName, exprs, range))
+            | LetSingleTagWithProps tagCall ->
+                let newExpr = handleTagCall tagCall
                 getChildren (newExpr :: currentList) next
-            | TagConstructor (tagName, range) ->
+            | SingleTag (tagName, range) ->
                 let newExpr = handleTagCall (TagCall.NoChildren (tagName, [], range))
                 getChildren (newExpr :: currentList) next
-            | TagBuilder callInfo ->
+            | RegularTag callInfo ->
                 let newExpr = handleTagCall (TagCall.WithChildren callInfo)
                 getChildren (newExpr :: currentList) next
             | expr ->
-                Console.WriteLine(expr)
+                //Console.WriteLine(expr)
                 currentList
         | _ ->
             currentList
@@ -164,8 +186,8 @@ module internal rec AST =
                 let props = getProps callInfo tagName
                 let childrenList = callInfo.Args |> List.fold getChildren []
                 let textList = callInfo.Args |> List.fold getText []
-                let childrenList = childrenList @ textList
-                tagName, props, childrenList, range
+                let childrenWithTextList = childrenList @ textList
+                tagName, props, childrenWithTextList, range
             | NoChildren (tagName, propList, range) ->
                 let props = collectProps propList
                 let childrenList = []
@@ -225,8 +247,12 @@ module internal rec AST =
 
     let transform (expr: Expr) =
         match expr with
-        | Let (_, TagConstructor (tagName, range), Sequential exprs) ->
-            handleTagCall (TagCall.NoChildren (tagName, exprs, range))
+        | LetSingleTagWithProps tagCall ->
+            handleTagCall tagCall
+        | SingleTag (tagName, range) ->
+            handleTagCall (TagCall.NoChildren (tagName, [], range))
+        | RegularTag callInfo ->
+            handleTagCall (TagCall.WithChildren callInfo)
         | Let (name, value, expr) ->
             Let (name, value, (transform expr))
         | Sequential expressions ->
@@ -238,10 +264,6 @@ module internal rec AST =
                     else
                         expr
             ))
-        | TagConstructor (tagName, range) ->
-            handleTagCall (TagCall.NoChildren (tagName, [], range))
-        | TagBuilder callInfo ->
-            handleTagCall (TagCall.WithChildren callInfo)
         | _ ->
             expr
 

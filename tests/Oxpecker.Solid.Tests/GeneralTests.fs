@@ -1,7 +1,5 @@
-module Tests
+module GeneralTests
 
-open System
-open System.IO
 open Xunit
 open FsUnitTyped
 open Fli
