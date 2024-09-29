@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="NestedTags.fs" />
+    <Compile Include="Parameters.fs" />
   </ItemGroup>
 
   <ItemGroup>

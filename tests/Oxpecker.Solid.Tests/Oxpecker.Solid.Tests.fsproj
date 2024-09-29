@@ -12,9 +12,9 @@
         <Compile Include="Cases\HelloWorld\HelloWorld.fs" />
         <Content Include="Cases\HelloWorld\HelloWorld.fsproj" />
         <Content Include="Cases\HelloWorld\HelloWorld.expected" />
-        <Content Include="Cases\NestedTags\NestedTags.expected" />
-        <Compile Include="Cases\NestedTags\NestedTags.fs" />
-        <Content Include="Cases\NestedTags\NestedTags.fsproj" />
+        <Content Include="Cases\Parameters\Parameters.expected" />
+        <Compile Include="Cases\Parameters\Parameters.fs" />
+        <Content Include="Cases\Parameters\Parameters.fsproj" />
         <Content Include="Cases\DeepNestedTags\DeepNestedTags.expected" />
         <Compile Include="Cases\DeepNestedTags\DeepNestedTags.fs" />
         <Content Include="Cases\DeepNestedTags\DeepNestedTags.fsproj" />

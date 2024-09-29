@@ -1,4 +1,4 @@
-module Oxpecker.Solid.Tests.Cases.NestedTags
+module Oxpecker.Solid.Tests.Cases.Arguments
 
 open Oxpecker.Solid
 
@@ -6,5 +6,5 @@ open Oxpecker.Solid
 let NestedTags (id: int) =
     let hello = "Hello "
     div(id=string id, class'="testclass") {
-        h1() { hello }; "world!"
+        __() { hello }; "world!"
     }

@@ -20,8 +20,8 @@ let ``Hello world`` () =
     runCase "HelloWorld"
 
 [<Fact>]
-let ``Nested tags`` () =
-    runCase "NestedTags"
+let ``Parameters`` () =
+    runCase "Parameters"
 
 [<Fact>]
 let ``Deep nested tags`` () =

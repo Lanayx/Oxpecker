@@ -206,6 +206,7 @@ module internal rec AST =
                 let props = collectProps propList
                 let childrenList = []
                 tagName, props, childrenList, range
+        let tagName = if tagName = "__" then "" else tagName
 
         let propsXs =
             props
