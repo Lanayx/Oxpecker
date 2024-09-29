@@ -4,8 +4,9 @@ export function NestedTags(id) {
     return <div id={int32ToString(id)}
         class="testclass">
         <h1>
-            Hello!
+            Hello 
         </h1>
+        world!
     </div>;
 }
 
