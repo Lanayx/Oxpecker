@@ -148,19 +148,17 @@ module internal rec AST =
            newExpr :: currentList
         | SimpleText body ->
             body :: currentList
-        // text following by tag
-        | Let ({ Name = second }, LetElement & LetSingleTagNoProps tagCall, Lambda ({ Name = builder },
+        // text then tag
+        | Let ({ Name = second }, next, Lambda ({ Name = builder },
                 Sequential (TypeCast (textBody, Unit)::_), _))
                 when second.StartsWith("second") && builder.StartsWith("builder") ->
-            let newExpr = handleTagCall tagCall
-            newExpr :: textBody :: currentList
-        // tag following by text
-        | Let ({ Name = first }, LetElement & LetSingleTagNoProps tagCall, Lambda ({ Name = builder }, Sequential [
+            getChildren (textBody ::currentList) next
+        // tag then text
+        | Let ({ Name = first }, next, Lambda ({ Name = builder }, Sequential [
                     CurriedApply _; CurriedApply (Lambda ({ Name = txt }, TypeCast (textBody, Unit), Some second), _, _, _)
                 ], _))
                 when first.StartsWith("first") && builder.StartsWith("builder") && txt.StartsWith("txt") && second.StartsWith("second") ->
-            let newExpr = handleTagCall tagCall
-            textBody :: newExpr :: currentList
+            textBody :: (getChildren currentList next)
         | Let ({ Name = first }, LetElement & Let (_, expr, _), Let ({ Name = second }, next, _))
                 when first.StartsWith("first") && second.StartsWith("second") ->
             match expr with

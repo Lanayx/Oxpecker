@@ -1,6 +1,7 @@
 
 export function FlatNestedTags() {
     return <body>
+        zero
         <h1 id="one"></h1>
         <div id="two">
             2
@@ -9,6 +10,7 @@ export function FlatNestedTags() {
             3
         </div>
         <h1></h1>
+        five
     </body>;
 }
 
