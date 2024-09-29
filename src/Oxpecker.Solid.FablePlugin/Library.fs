@@ -107,23 +107,27 @@ module internal rec AST =
         | [] -> []
         | Sequential expressions :: rest ->
             collectProps rest @ collectProps expressions
-        | Call (Import (importInfo, _, _), callInfo, _, range) :: rest ->
+        | Call (Import (importInfo, _, _), callInfo, _, _) :: _ ->
             match importInfo.Kind with
-            | ImportKind.MemberImport (MemberRef(_, memberRefInfo)) when memberRefInfo.CompiledName.StartsWith("HtmlTag.set_") ->
-                let propName =
-                    // TODO: handle specific tag properties
-                    match memberRefInfo.CompiledName.Substring("HtmlTag.set_".Length) with
-                    | "class'" -> "class"
-                    | "type'" -> "type"
-                    | name -> name
-                let propValue = callInfo.Args.Head
-                [(propName, propValue)]
+            | ImportKind.MemberImport (MemberRef(entity, memberRefInfo)) when
+                    entity.FullName.StartsWith("Oxpecker.Solid") ->
+                let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
+                if setterIndex >= 0 then
+                    let propName =
+                        match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
+                        | "class'" -> "class"
+                        | "type'" -> "type"
+                        | name -> name
+                    let propValue = callInfo.Args.Head
+                    [(propName, propValue)]
+                else
+                    []
             | _ ->
                 []
         | _ :: rest ->
             collectProps rest
 
-    let getProps (callInfo: CallInfo) tagName : Props =
+    let getProps (callInfo: CallInfo) : Props =
         let setPropertiesSeq = callInfo.Args |> List.tryPick (
             function
             | Let ({ Name = name }, _, Sequential expr)
@@ -195,7 +199,7 @@ module internal rec AST =
         let tagName, props, children, range =
             match tagCall with
             | WithChildren (tagName, callInfo, range) ->
-                let props = getProps callInfo tagName
+                let props = getProps callInfo
                 let childrenList = callInfo.Args |> List.fold getChildren []
                 tagName, props, childrenList, range
             | NoChildren (tagName, propList, range) ->

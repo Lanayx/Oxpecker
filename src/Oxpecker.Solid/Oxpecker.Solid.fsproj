@@ -5,7 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Library.fs"/>
+        <Compile Include="Builder.fs" />
+        <Compile Include="Tags.fs" />
     </ItemGroup>
 
     <ItemGroup>

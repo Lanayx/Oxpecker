@@ -1,0 +1,26 @@
+namespace Oxpecker.Solid
+
+open Browser.Types
+
+[<AutoOpen>]
+module Tags =
+
+    /// Fragment (or template) node, only renders children, not itself
+    type __() =
+        inherit FragmentNode()
+
+    type HtmlTag with
+        member this.id  with set (_: string) = ()
+        member this.class' with set (_: string) = ()
+        member this.onClick with set (_: MouseEvent -> unit) = ()
+
+    type html() =
+        inherit RegularNode()
+        member this.xmlns with set (_: string) = ()
+
+    type head() = inherit RegularNode()
+    type body() = inherit RegularNode()
+    type div() = inherit RegularNode()
+    type h1() = inherit RegularNode()
+
+    type br() = inherit VoidNode()

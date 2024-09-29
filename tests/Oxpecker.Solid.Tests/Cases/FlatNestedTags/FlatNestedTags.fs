@@ -9,6 +9,6 @@ let FlatNestedTags () =
         h1(id="one")
         div(id="two") { "2" }
         div() { "3" }
-        h1()
+        br()
         "five"
     }

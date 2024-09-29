@@ -9,7 +9,7 @@ export function FlatNestedTags() {
         <div>
             3
         </div>
-        <h1></h1>
+        <br></br>
         five
     </body>;
 }
