@@ -22,7 +22,8 @@ module internal rec AST =
                 when importInfo.Selector.EndsWith("_$ctor")
                 && typ.FullName.StartsWith("Oxpecker.Solid") ->
             let tagName = typ.FullName.Split('.') |> Seq.last
-            Some (tagName, range)
+            let finalTagName = if tagName = "__" then "" else tagName
+            Some (finalTagName, range)
         | _ ->
             None
 
@@ -33,6 +34,12 @@ module internal rec AST =
             match callInfo.Args.Head with
             | SingleTag (tagName, _)->
                 Some (tagName, callInfo, range)
+            | Call (_, innerCallInfo, _, _) ->
+                match innerCallInfo.Args.Head with
+                | SingleTag (tagName, _) ->
+                    Some (tagName, callInfo, range)
+                | _ ->
+                    None
             | Let ({ Name = name }, SingleTag (tagName, _), _)
                     when name.StartsWith("returnVal") ->
                 Some (tagName, callInfo, range)
@@ -59,6 +66,15 @@ module internal rec AST =
             TagCall.NoChildren (tagName, exprs, range) |> Some
         | _ ->
             None
+
+    let (|CallSingleTagWithHandler|_|) (expr: Expr) =
+        match expr with
+        | Call (Import (importInfo, _, _), { Args = SingleTag (tagName, _) :: _ }, _, range)
+                when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+            TagCall.NoChildren (tagName, [expr], range) |> Some
+        | _ ->
+            None
+
 
     let (|LetSingleTagNoProps|_|) =
         function
@@ -102,11 +118,21 @@ module internal rec AST =
             range = None
         )
 
-    let rec collectProps (seqExpr: Expr list) =
+    let rec collectAttributes (seqExpr: Expr list) =
         match seqExpr with
         | [] -> []
         | Sequential expressions :: rest ->
-            collectProps rest @ collectProps expressions
+            collectAttributes rest @ collectAttributes expressions
+        | Call (Import (importInfo, _, _), { Args = [_ ; Value (StringConstant eventName, _) ; handler] }, _, _) :: _ ->
+            match importInfo.Kind with
+            | ImportKind.MemberImport (MemberRef(entity, memberRefInfo))  when
+                    entity.FullName.StartsWith("Oxpecker.Solid") ->
+                if memberRefInfo.CompiledName = "on" then
+                    [("on:" + eventName, handler)]
+                else
+                    []
+            | _ ->
+                []
         | Call (Import (importInfo, _, _), callInfo, _, _) :: _ ->
             match importInfo.Kind with
             | ImportKind.MemberImport (MemberRef(entity, memberRefInfo)) when
@@ -125,19 +151,18 @@ module internal rec AST =
             | _ ->
                 []
         | _ :: rest ->
-            collectProps rest
+            collectAttributes rest
 
-    let getProps (callInfo: CallInfo) : Props =
-        let setPropertiesSeq = callInfo.Args |> List.tryPick (
-            function
-            | Let ({ Name = name }, _, Sequential expr)
-                when name.StartsWith("returnVal")
-                -> Some expr
-            | _ -> None
-        )
-        match setPropertiesSeq with
-        | None -> []
-        | Some seq -> collectProps seq
+    let getAttributes currentList (expr: Expr): Props =
+        match expr with
+        | Let ({ Name = returnVal }, _, Sequential exprs)
+                when returnVal.StartsWith("returnVal") ->
+            collectAttributes exprs @ currentList
+        | Call (Import (importInfo, _, _), _, _, _)
+                when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+            collectAttributes [expr] @ currentList
+        | _ ->
+            currentList
 
     let getChildren currentList (expr: Expr): Expr list =
         match expr with
@@ -148,6 +173,9 @@ module internal rec AST =
            let newExpr = handleTagCall tagCall
            newExpr :: currentList
         | LetElement & LetSingleTagNoProps tagCall ->
+           let newExpr = handleTagCall tagCall
+           newExpr :: currentList
+        | LetElement & Let (_, CallSingleTagWithHandler tagCall, _) ->
            let newExpr = handleTagCall tagCall
            newExpr :: currentList
         | SimpleText body ->
@@ -199,14 +227,13 @@ module internal rec AST =
         let tagName, props, children, range =
             match tagCall with
             | WithChildren (tagName, callInfo, range) ->
-                let props = getProps callInfo
+                let props = callInfo.Args |> List.fold getAttributes []
                 let childrenList = callInfo.Args |> List.fold getChildren []
                 tagName, props, childrenList, range
             | NoChildren (tagName, propList, range) ->
-                let props = collectProps propList
+                let props = collectAttributes propList
                 let childrenList = []
                 tagName, props, childrenList, range
-        let tagName = if tagName = "__" then "" else tagName
 
         let propsXs =
             props
@@ -266,6 +293,8 @@ module internal rec AST =
             handleTagCall tagCall
         | SingleTag (tagName, range) ->
             handleTagCall (TagCall.NoChildren (tagName, [], range))
+        | CallSingleTagWithHandler tagCall ->
+            handleTagCall tagCall
         | RegularTag callInfo ->
             handleTagCall (TagCall.WithChildren callInfo)
         | Let (name, value, expr) ->

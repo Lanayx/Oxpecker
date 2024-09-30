@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <Compile Include="Builder.fs" />
+        <Compile Include="Solid.fs" />
         <Compile Include="Tags.fs" />
     </ItemGroup>
 

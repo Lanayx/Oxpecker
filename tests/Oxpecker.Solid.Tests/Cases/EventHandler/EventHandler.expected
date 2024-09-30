@@ -5,7 +5,7 @@ export function clicked2(evt) {
 }
 
 export function DeepNestedTags() {
-    return <div onClick={(_arg) => {
+    return <div onClick={(_arg_2) => {
             console.log(some("clicked1"));
         }}>
         <h1 onClick={(evt) => {
@@ -13,6 +13,14 @@ export function DeepNestedTags() {
             }}>
             Hello
         </h1>
+        <h2 on:click={(_arg) => {
+                console.log(some("clicked3"));
+            }}>
+            Hello
+        </h2>
+        <h3 on:click={(_arg_1) => {
+                console.log(some("clicked4"));
+            }}></h3>
     </div>;
 }
 
