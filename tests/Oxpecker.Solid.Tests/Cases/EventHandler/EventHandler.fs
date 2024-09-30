@@ -12,8 +12,12 @@ let DeepNestedTags () =
         h1(onClick = clicked2) {
             "Hello"
         }
-        h2().on("click", fun _ -> console.log("clicked3")) {
+        h2()
+            .on("click", fun _ -> console.log("clicked3"))
+            .on("change", fun _ -> console.log("changed")) {
             "Hello"
         }
-        h3().on("click", fun _ -> console.log("clicked4"))
+        h3()
+            .on("click", fun _ -> console.log("clicked4"))
+            .on("change", fun _ -> console.log("changed"))
     }

@@ -72,6 +72,12 @@ module internal rec AST =
         | Call (Import (importInfo, _, _), { Args = SingleTag (tagName, _) :: _ }, _, range)
                 when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
             TagCall.NoChildren (tagName, [expr], range) |> Some
+        | Call (Import (importInfo, _, _), { Args = CallSingleTagWithHandler tagCall :: _ }, _, range)
+                when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+            match tagCall with
+            | WithChildren (tagName, _, _)
+            | NoChildren (tagName, _, _) ->
+                TagCall.NoChildren (tagName, [expr], range) |> Some
         | _ ->
             None
 
@@ -123,12 +129,13 @@ module internal rec AST =
         | [] -> []
         | Sequential expressions :: rest ->
             collectAttributes rest @ collectAttributes expressions
-        | Call (Import (importInfo, _, _), { Args = [_ ; Value (StringConstant eventName, _) ; handler] }, _, _) :: _ ->
+        | Call (Import (importInfo, _, _), { Args = [rest ; Value (StringConstant eventName, _) ; handler] }, _, _) :: _ ->
+            Console.WriteLine(rest)
             match importInfo.Kind with
             | ImportKind.MemberImport (MemberRef(entity, memberRefInfo))  when
                     entity.FullName.StartsWith("Oxpecker.Solid") ->
                 if memberRefInfo.CompiledName = "on" then
-                    [("on:" + eventName, handler)]
+                    ("on:" + eventName, handler) :: collectAttributes [ rest ]
                 else
                     []
             | _ ->
@@ -318,9 +325,9 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(compiler: PluginHelper, file: File, memberDecl: MemberDecl) =
-        Console.WriteLine("!Start! MemberDecl")
-        Console.WriteLine(memberDecl.Body)
-        Console.WriteLine("!End! MemberDecl")
+        // Console.WriteLine("!Start! MemberDecl")
+        // Console.WriteLine(memberDecl.Body)
+        // Console.WriteLine("!End! MemberDecl")
         let newBody = AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 
