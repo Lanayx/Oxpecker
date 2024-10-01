@@ -1,7 +1,21 @@
-import { some } from "./fable_modules/fable-library-js.4.21.0/Option.js";
+import { createSignal } from "solid-js";
 
-export function helloWorld() {
-    console.log(some("Hello, World!"));
-    return <body></body>;
+export function Signal() {
+    const patternInput = createSignal(0);
+    const count = patternInput[0];
+    return <>
+        <p>
+            {`Count1 is ${count()}`}
+        </p>
+        <p>
+            Count2 is {count()}
+        </p>
+        <button class="button"
+            onClick={(_arg) => {
+                patternInput[1](count() + 1);
+            }}>
+            Click me!
+        </button>
+    </>;
 }
 

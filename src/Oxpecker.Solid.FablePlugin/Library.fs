@@ -185,6 +185,9 @@ module internal rec AST =
            newExpr :: currentList
         | TextNoSiblings body ->
             body :: currentList
+        // text with solid signals inside
+        | Let ({ Name = "text" }, body, TextNoSiblings _) ->
+            body :: currentList
         // text then tag
         | Let ({ Name = second }, next, Lambda ({ Name = builder }, Sequential (TypeCast (textBody, Unit)::_), _))
                 when second.StartsWith("second") && builder.StartsWith("builder") ->

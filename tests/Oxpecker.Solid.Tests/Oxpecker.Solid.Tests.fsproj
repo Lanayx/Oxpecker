@@ -24,6 +24,9 @@
         <Content Include="Cases\FlatNestedTags\FlatNestedTags.expected" />
         <Compile Include="Cases\FlatNestedTags\FlatNestedTags.fs" />
         <Content Include="Cases\FlatNestedTags\FlatNestedTags.fsproj" />
+        <Content Include="SolidCases\Signal\Signal.expected" />
+        <Compile Include="SolidCases\Signal\Signal.fs" />
+        <Content Include="SolidCases\Signal\Signal.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="Program.fs"/>
@@ -45,12 +48,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="SolidCases\Signal\Signal.expected" />
-      <Compile Include="SolidCases\Signal\Signal.fs" />
-      <Content Include="SolidCases\Signal\Signal.fsproj" />
     </ItemGroup>
 
 </Project>
