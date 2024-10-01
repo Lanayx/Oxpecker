@@ -47,4 +47,10 @@
       <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="SolidCases\Signal\Signal.expected" />
+      <Compile Include="SolidCases\Signal\Signal.fs" />
+      <Content Include="SolidCases\Signal\Signal.fsproj" />
+    </ItemGroup>
+
 </Project>

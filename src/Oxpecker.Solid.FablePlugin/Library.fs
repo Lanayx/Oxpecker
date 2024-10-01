@@ -21,7 +21,13 @@ module internal rec AST =
         | Call (Import (importInfo, LambdaType (_, DeclaredType (typ, [])), _), callInfo, _, range)
                 when condition importInfo ->
             let tagName = typ.FullName.Split('.') |> Seq.last
-            let finalTagName = if tagName = "__" then "" else tagName
+            let finalTagName =
+                if tagName = "__" then
+                    ""
+                elif tagName.EndsWith("'") then
+                    tagName.Substring(0, tagName.Length - 1)
+                else
+                    tagName
             Some (finalTagName, callInfo, range)
         | _ ->
             None
@@ -141,8 +147,7 @@ module internal rec AST =
                 if setterIndex >= 0 then
                     let propName =
                         match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
-                        | "class'" -> "class"
-                        | "type'" -> "type"
+                        | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
                         | name -> name
                     let propValue = callInfo.Args.Head
                     [(propName, propValue)]

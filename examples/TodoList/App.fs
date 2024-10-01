@@ -12,8 +12,12 @@ module App =
 
     [<SolidComponent>]
     let Counter2 () =
+        printfn "Evaluating function..."
+        let count, setCount = signal
+
         __() {
-            h1() { "Click me!!" }
+            p() { $"Count is {count()}" }
+            button(class'="button", onClick= fun _ -> count() + 1 |> setCount) { "Click me!" }
         }
 
     let Counter() =

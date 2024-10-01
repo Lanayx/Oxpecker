@@ -1,0 +1,7 @@
+import { some } from "./fable_modules/fable-library-js.4.21.0/Option.js";
+
+export function helloWorld() {
+    console.log(some("Hello, World!"));
+    return <body></body>;
+}
+

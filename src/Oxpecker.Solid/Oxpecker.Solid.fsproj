@@ -5,8 +5,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="IdeTweaks.fs" />
         <Compile Include="Builder.fs" />
-        <Compile Include="Solid.fs" />
+        <Compile Include="SolidBindings.fs" />
         <Compile Include="Tags.fs" />
     </ItemGroup>
 
