@@ -17,20 +17,20 @@ let ``Fable version`` () =
 
 [<Fact>]
 let ``Hello world`` () =
-    runCase "HelloWorld"
+    runGeneralCase "HelloWorld"
 
 [<Fact>]
 let ``Parameters`` () =
-    runCase "Parameters"
+    runGeneralCase "Parameters"
 
 [<Fact>]
 let ``Deep nested tags`` () =
-    runCase "DeepNestedTags"
+    runGeneralCase "DeepNestedTags"
 
 [<Fact>]
 let ``Event handler`` () =
-    runCase "EventHandler"
+    runGeneralCase "EventHandler"
 
 [<Fact>]
 let ``Flat nested tags`` () =
-    runCase "FlatNestedTags"
+    runGeneralCase "FlatNestedTags"

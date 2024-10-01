@@ -186,7 +186,8 @@ module internal rec AST =
         | TextNoSiblings body ->
             body :: currentList
         // text with solid signals inside
-        | Let ({ Name = "text" }, body, TextNoSiblings _) ->
+        | Let ({ Name = text }, body, TextNoSiblings _)
+                when text.StartsWith("text") ->
             body :: currentList
         // text then tag
         | Let ({ Name = second }, next, Lambda ({ Name = builder }, Sequential (TypeCast (textBody, Unit)::_), _))
@@ -198,7 +199,7 @@ module internal rec AST =
                 ], _))
                 when first.StartsWith("first") && builder.StartsWith("builder") && txt.StartsWith("txt") && second.StartsWith("second") ->
             textBody :: (getChildren currentList next)
-        | Let ({ Name = first }, LetElement & Let (_, expr, _), Let ({ Name = second }, next, _))
+        | Let ({ Name = first }, Let (_, expr, _), Let ({ Name = second }, next, _))
                 when first.StartsWith("first") && second.StartsWith("second") ->
             match expr with
             | LetTagNoChildrenWithProps tagInfo ->
@@ -211,8 +212,7 @@ module internal rec AST =
                 let newExpr = transformTagInfo (TagInfo.WithChildren callInfo)
                 getChildren (newExpr :: currentList) next
             | expr ->
-                //Console.WriteLine(expr)
-                currentList
+                getChildren (expr :: currentList) next
         | _ ->
             currentList
 

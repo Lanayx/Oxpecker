@@ -1,4 +1,4 @@
-module Oxpecker.Solid.Tests.Cases.HelloWorld
+module Oxpecker.Solid.Tests.Cases.Signal
 
 open Oxpecker.Solid
 

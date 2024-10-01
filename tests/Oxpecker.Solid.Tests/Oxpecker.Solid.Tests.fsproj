@@ -29,6 +29,7 @@
         <Content Include="SolidCases\Signal\Signal.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
+        <Compile Include="SolidTests.fs" />
         <Compile Include="Program.fs"/>
     </ItemGroup>
 

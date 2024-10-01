@@ -1,4 +1,5 @@
 import { createSignal } from "solid-js";
+import { int32ToString } from "./fable_modules/fable-library-js.4.21.0/Util.js";
 
 export function Signal() {
     const patternInput = createSignal(0);
@@ -8,7 +9,8 @@ export function Signal() {
             {`Count1 is ${count()}`}
         </p>
         <p>
-            Count2 is {count()}
+            Count2 is 
+            {int32ToString(count())}
         </p>
         <button class="button"
             onClick={(_arg) => {
