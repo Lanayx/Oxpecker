@@ -4,8 +4,8 @@ export function clicked2(evt) {
     console.log(some(evt.type));
 }
 
-export function DeepNestedTags() {
-    return <div onClick={(_arg_2) => {
+export function EventHandler() {
+    return <div onClick={(_arg_5) => {
             console.log(some("clicked1"));
         }}>
         <h1 onClick={(evt) => {
@@ -15,11 +15,20 @@ export function DeepNestedTags() {
         </h1>
         <h2 on:click={(_arg) => {
                 console.log(some("clicked3"));
+            }}
+            on:change={(_arg_1) => {
+                console.log(some("changed"));
+            }}
+            on:load={(_arg_2) => {
+                console.log(some("loaded"));
             }}>
             Hello
         </h2>
-        <h3 on:click={(_arg_1) => {
+        <h3 on:click={(_arg_3) => {
                 console.log(some("clicked4"));
+            }}
+            on:change={(_arg_4) => {
+                console.log(some("changed"));
             }}></h3>
     </div>;
 }
