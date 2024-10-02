@@ -2,4 +2,11 @@
 open App
 open Oxpecker.Solid
 
-render (App, document.getElementById "root")
+// HMR doesn't work in Root for some reason
+[<SolidComponent>]
+let Root() =
+    __() {
+        App()
+    }
+
+render (Root, document.getElementById "root")
