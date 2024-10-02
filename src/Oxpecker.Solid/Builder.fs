@@ -46,6 +46,8 @@ module Builder =
 
         member inline _.Yield(text: string) : HtmlContainerFun = fun txt -> text |> ignore
 
+        member inline _.Yield(text: int) : HtmlContainerFun = fun txt -> text |> ignore
+
     type HtmlContainerExtensions =
         [<Extension>]
         static member Run(this: #HtmlContainer, runExpr: HtmlContainerFun) =

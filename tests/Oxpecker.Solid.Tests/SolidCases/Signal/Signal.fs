@@ -8,6 +8,6 @@ let Signal () =
 
     __() {
         p() { $"Count1 is {count()}" }
-        p() { "Count2 is "; count() |> string }
+        p() { "Count2 is "; count() }
         button(class'="button", onClick= fun _ -> count() + 1 |> setCount) { "Click me!" }
     }

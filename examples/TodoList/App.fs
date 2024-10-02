@@ -9,7 +9,7 @@ module App =
     let Counter () =
         let count, setCount = createSignal 0
         div() {
-            p() { "Count is "; $"{count()}" }
+            p() { "Count is "; count() }
             button(class'="button", onClick= fun _ -> setCount(count() + 1)) { "Click me!" }
         }
 
