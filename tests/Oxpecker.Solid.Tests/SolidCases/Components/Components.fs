@@ -1,13 +1,18 @@
 module Oxpecker.Solid.Tests.Cases.Components
 
+open Fable.Core.JS
 open Oxpecker.Solid
 
 [<SolidComponent>]
-let Child () =
-    h1() { "Hello" }
+let Child (getText: Accessor<string>) =
+    h1(onClick = fun _ -> console.log(getText())) {
+        getText()
+    }
 
 [<SolidComponent>]
 let Parent () =
-    __() {
-        Child()
+    let getText, _ = createSignal "Hello"
+
+    div() {
+        Child(getText)
     }

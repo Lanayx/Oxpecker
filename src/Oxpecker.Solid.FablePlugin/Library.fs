@@ -35,8 +35,8 @@ module internal rec AST =
     let (|TagNoChildren|_|) (expr: Expr) =
         let condition = _.Selector.EndsWith("_$ctor")
         match expr with
-        | CallTag condition (finalTagName, _, range) ->
-            Some (finalTagName, range)
+        | CallTag condition (tagName, _, range) ->
+            Some (tagName, range)
         | _ ->
             None
 
@@ -129,7 +129,6 @@ module internal rec AST =
         | Sequential expressions :: rest ->
             collectAttributes rest @ collectAttributes expressions
         | Call (Import (importInfo, _, _), { Args = [rest ; Value (StringConstant eventName, _) ; handler] }, _, _) :: _ ->
-            Console.WriteLine(rest)
             match importInfo.Kind with
             | ImportKind.MemberImport (MemberRef(entity, memberRefInfo))  when
                     entity.FullName.StartsWith("Oxpecker.Solid") ->
@@ -155,6 +154,9 @@ module internal rec AST =
                     []
             | _ ->
                 []
+        | Set (IdentExpr({ Name = returnVal }), SetKind.FieldSet propName, _, handler, _) :: _
+                when returnVal.StartsWith("returnVal") ->
+            [(propName, handler)]
         | _ :: rest ->
             collectAttributes rest
 

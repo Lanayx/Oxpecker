@@ -5,17 +5,18 @@ open Oxpecker.Solid
 [<AutoOpen>]
 module App =
 
+    let count, setCount = createSignal 0
+
     [<SolidComponent>]
-    let Counter () =
-        let count, setCount = createSignal 0
+    let Counter (text: string, currentCount: Accessor<int>) =
         div() {
-            p() { "Count is "; count() }
-            button(class'="button", onClick= fun _ -> setCount(count() + 1)) { "Click me!" }
+            h1() { text }
+            p() { "Count is "; currentCount() }
+            button(class'="button", onClick= fun _ -> setCount(currentCount() + 1)) { "Click me!" }
         }
 
     [<SolidComponent>]
     let App() =
         div() {
-            h1() { "Hello world!" }
-            Counter()
+            Counter("Hello!", count)
         }
