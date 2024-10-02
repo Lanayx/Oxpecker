@@ -1,6 +1,5 @@
 ﻿open Browser
 open App
+open Oxpecker.Solid
 
-
-
-Solid.render (App, document.getElementById "root")
+render (App, document.getElementById "root")

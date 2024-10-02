@@ -13,7 +13,7 @@ module Bindings =
 [<AutoOpen>]
 type Bindings =
     [<ImportMember("solid-js/web")>]
-    static member render(f: unit -> HtmlElement, el: Element): unit = jsNative
+    static member render(f: unit -> #HtmlElement, el: #Element): unit = jsNative
 
     [<ImportMember("solid-js")>]
     static member createSignal(value: 'T): (unit -> 'T) * ('T -> unit) = jsNative

@@ -172,17 +172,19 @@ module internal rec AST =
     let getChildren currentList (expr: Expr): Expr list =
         match expr with
         | LetElement & LetTagWithChildren tagInfo ->
-           let newExpr = transformTagInfo tagInfo
-           newExpr :: currentList
+            let newExpr = transformTagInfo tagInfo
+            newExpr :: currentList
         | LetElement & Let (_, LetTagNoChildrenWithProps tagInfo, _)  ->
-           let newExpr = transformTagInfo tagInfo
-           newExpr :: currentList
+            let newExpr = transformTagInfo tagInfo
+            newExpr :: currentList
         | LetElement & LetTagNoChildrenNoProps tagInfo ->
-           let newExpr = transformTagInfo tagInfo
-           newExpr :: currentList
+            let newExpr = transformTagInfo tagInfo
+            newExpr :: currentList
         | LetElement & Let (_, CallTagNoChildrenWithHandler tagInfo, _) ->
-           let newExpr = transformTagInfo tagInfo
-           newExpr :: currentList
+            let newExpr = transformTagInfo tagInfo
+            newExpr :: currentList
+        | LetElement & Let (_, next, _) ->
+            next :: currentList
         | TextNoSiblings body ->
             body :: currentList
         // text with solid signals inside

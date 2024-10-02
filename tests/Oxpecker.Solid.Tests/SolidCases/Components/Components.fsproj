@@ -6,23 +6,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="App.fs" />
-    <Compile Include="Program.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
     <PackageReference Include="Fable.Core" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="package.json" />
-    <Content Include="index.html" />
+    <Compile Include="Components.fs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
-  </ItemGroup>
-
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
+    </ItemGroup>
 
 </Project>
