@@ -8,6 +8,9 @@
     "solid-js": "^1.8.22"
   },
   "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
     "vite": "^5.4.6",
     "vite-plugin-solid": "^2.10.2"
   }
