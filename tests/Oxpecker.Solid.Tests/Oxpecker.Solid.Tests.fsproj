@@ -30,6 +30,9 @@
         <Content Include="SolidCases\Components\Components.expected" />
         <Compile Include="SolidCases\Components\Components.fs" />
         <Content Include="SolidCases\Components\Components.fsproj" />
+        <Content Include="SolidCases\ForLoop\ForLoop.expected" />
+        <Compile Include="SolidCases\ForLoop\ForLoop.fs" />
+        <Content Include="SolidCases\ForLoop\ForLoop.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />

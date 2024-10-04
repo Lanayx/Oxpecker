@@ -1,10 +1,20 @@
 [<AutoOpen>]
 module Components.TodoList
 
+open System
 open Oxpecker.Solid
+
+let initialTasks = [|
+    {| Id = Guid.NewGuid(); Text = "Drink some coffee" |}
+    {| Id = Guid.NewGuid(); Text = "Create a TODO app" |}
+    {| Id = Guid.NewGuid(); Text = "Drink some more coffee" |}
+|]
 
 [<SolidComponent>]
 let TodoList() =
+    let getTasks, setTasks = createSignal initialTasks
+    let getNewTaskText, setNewTaskText = createSignal ""
+
     div(){
         h1() { "TODO" }
         div() {
@@ -15,6 +25,11 @@ let TodoList() =
             }
         }
         ol(id="todo-list") {
-            p() { "existing tasks will be shown here" }
+            For(each = getTasks()) {
+                fun (task: {| Id: Guid; Text: string |}) _ ->
+                    li() {
+                        task.Text
+                    }
+            }
         }
     }

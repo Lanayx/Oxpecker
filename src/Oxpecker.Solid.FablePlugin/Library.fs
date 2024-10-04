@@ -18,7 +18,7 @@ module internal rec AST =
 
     let (|CallTag|_|) condition =
         function
-        | Call (Import (importInfo, LambdaType (_, DeclaredType (typ, [])), _), callInfo, _, range)
+        | Call (Import (importInfo, LambdaType (_, DeclaredType (typ, _)), _), callInfo, _, range)
                 when condition importInfo ->
             let tagName = typ.FullName.Split('.') |> Seq.last
             let finalTagName =
@@ -26,6 +26,8 @@ module internal rec AST =
                     ""
                 elif tagName.EndsWith("'") then
                     tagName.Substring(0, tagName.Length - 1)
+                elif tagName.EndsWith("`1") then
+                    tagName.Substring(0, tagName.Length - 2)
                 else
                     tagName
             Some (finalTagName, callInfo, range)
@@ -90,8 +92,8 @@ module internal rec AST =
 
     let (|TextNoSiblings|_|) =
         function
-        | Lambda ({ Name = txt }, TypeCast (textBody, Unit), None)
-            when txt.StartsWith("txt") ->
+        | Lambda ({ Name = cont }, TypeCast (textBody, Unit), None)
+            when cont.StartsWith("cont") ->
             Some textBody
         | _ ->
             None
@@ -187,6 +189,10 @@ module internal rec AST =
             newExpr :: currentList
         | LetElement & Let (_, next, _) ->
             next :: currentList
+        // Lambda returning element
+        | Lambda ({ Name = cont }, TypeCast (Lambda(item, Lambda(index, next, _), _), _), _)
+                when cont.StartsWith("cont") ->
+            Delegate([item; index], transform next, None, []) :: currentList
         | TextNoSiblings body ->
             body :: currentList
         // text with solid signals inside
@@ -199,9 +205,9 @@ module internal rec AST =
             getChildren (textBody ::currentList) next
         // tag then text
         | Let ({ Name = first }, next, Lambda ({ Name = builder }, Sequential [
-                    CurriedApply _; CurriedApply (Lambda ({ Name = txt }, TypeCast (textBody, Unit), Some second), _, _, _)
+                    CurriedApply _; CurriedApply (Lambda ({ Name = cont }, TypeCast (textBody, Unit), Some second), _, _, _)
                 ], _))
-                when first.StartsWith("first") && builder.StartsWith("builder") && txt.StartsWith("txt") && second.StartsWith("second") ->
+                when first.StartsWith("first") && builder.StartsWith("builder") && cont.StartsWith("cont") && second.StartsWith("second") ->
             textBody :: (getChildren currentList next)
         | Let ({ Name = first }, Let (_, expr, _), Let ({ Name = second }, next, _))
                 when first.StartsWith("first") && second.StartsWith("second") ->

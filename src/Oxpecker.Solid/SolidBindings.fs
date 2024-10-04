@@ -14,6 +14,11 @@ module Bindings =
     type HtmlTag with
         member this.onClick with set (_: MouseEvent -> unit) = ()
 
+    type For<'T>() =
+        interface HtmlContainer
+        member this.each with set (value: 'T seq) = ()
+        member inline _.Yield(value: 'T -> int -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
+
 [<AutoOpen>]
 type Bindings =
     [<ImportMember("solid-js/web")>]

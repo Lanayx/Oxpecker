@@ -37,16 +37,11 @@ module Builder =
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun =
             delay()
 
-        member inline _.For(values: #seq<'T>, [<InlineIfLambda>] body: 'T -> HtmlContainerFun) : HtmlContainerFun =
-            ignore
-
         member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = ignore
 
-        member inline _.YieldFrom(elements: #seq<#HtmlElement>) : HtmlContainerFun = ignore
+        member inline _.Yield(text: string) : HtmlContainerFun = fun cont -> ignore text
 
-        member inline _.Yield(text: string) : HtmlContainerFun = fun txt -> text |> ignore
-
-        member inline _.Yield(text: int) : HtmlContainerFun = fun txt -> text |> ignore
+        member inline _.Yield(text: int) : HtmlContainerFun = fun cont -> ignore text
 
     type HtmlContainerExtensions =
         [<Extension>]

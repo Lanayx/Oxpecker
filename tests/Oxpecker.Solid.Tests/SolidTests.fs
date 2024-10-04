@@ -10,3 +10,7 @@ let ``Signal`` () =
 [<Fact>]
 let ``Components`` () =
     runSolidCase "Components"
+
+[<Fact>]
+let ``ForLoop`` () =
+    runSolidCase "ForLoop"
