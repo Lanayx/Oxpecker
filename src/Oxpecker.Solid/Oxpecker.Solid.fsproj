@@ -7,8 +7,8 @@
     <ItemGroup>
         <Compile Include="IdeTweaks.fs" />
         <Compile Include="Builder.fs" />
-        <Compile Include="SolidBindings.fs" />
         <Compile Include="Tags.fs" />
+        <Compile Include="SolidBindings.fs" />
         <Compile Include="Aria.fs" />
     </ItemGroup>
 
