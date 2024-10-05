@@ -74,12 +74,12 @@ module internal rec AST =
         | Call (Import (importInfo, _, _), { Args = TagNoChildren (tagName, _) :: _ }, _, range)
                 when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
             TagInfo.NoChildren (tagName, [expr], range) |> Some
-        | Call (Import (importInfo, _, _), { Args = CallTagNoChildrenWithHandler tagInfo :: _ }, _, range)
+        | Call (Import (importInfo, _, _), { Args = LetTagNoChildrenWithProps (NoChildren (tagName, props, _)) :: _ }, _, range)
                 when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
-            match tagInfo with
-            | WithChildren (tagName, _, _)
-            | NoChildren (tagName, _, _) ->
-                TagInfo.NoChildren (tagName, [expr], range) |> Some
+            TagInfo.NoChildren (tagName, expr :: props, range) |> Some
+        | Call (Import (importInfo, _, _), { Args = CallTagNoChildrenWithHandler (NoChildren (tagName, props, _)) :: _ }, _, range)
+                when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+            TagInfo.NoChildren (tagName, expr :: props, range) |> Some
         | _ ->
             None
 
@@ -130,17 +130,19 @@ module internal rec AST =
         | [] -> []
         | Sequential expressions :: rest ->
             collectAttributes rest @ collectAttributes expressions
-        | Call (Import (importInfo, _, _), { Args = [rest ; Value (StringConstant eventName, _) ; handler] }, _, _) :: _ ->
+        | Call (Import (importInfo, _, _), { Args = [_ ; Value (StringConstant eventName, _) ; handler] }, _, _) :: rest ->
+            let restResults = collectAttributes rest
             match importInfo.Kind with
             | ImportKind.MemberImport (MemberRef(entity, memberRefInfo))  when
                     entity.FullName.StartsWith("Oxpecker.Solid") ->
                 if memberRefInfo.CompiledName = "on" then
-                    ("on:" + eventName, handler) :: collectAttributes [ rest ]
+                    ("on:" + eventName, handler) :: restResults
                 else
-                    []
+                    restResults
             | _ ->
-                []
-        | Call (Import (importInfo, _, _), callInfo, _, _) :: _ ->
+                restResults
+        | Call (Import (importInfo, _, _), callInfo, _, _) :: rest ->
+            let restResults = collectAttributes rest
             match importInfo.Kind with
             | ImportKind.MemberImport (MemberRef(entity, memberRefInfo)) when
                     entity.FullName.StartsWith("Oxpecker.Solid") ->
@@ -152,14 +154,14 @@ module internal rec AST =
                         | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
                         | name -> name
                     let propValue = callInfo.Args.Head
-                    [(propName, propValue)]
+                    (propName, propValue) :: restResults
                 else
-                    []
+                    restResults
             | _ ->
-                []
-        | Set (IdentExpr({ Name = returnVal }), SetKind.FieldSet propName, _, handler, _) :: _
+                restResults
+        | Set (IdentExpr({ Name = returnVal }), SetKind.FieldSet propName, _, handler, _) :: rest
                 when returnVal.StartsWith("returnVal") ->
-            [(propName, handler)]
+            (propName, handler) :: collectAttributes rest
         | _ :: rest ->
             collectAttributes rest
 
@@ -168,9 +170,8 @@ module internal rec AST =
         | Let ({ Name = returnVal }, _, Sequential exprs)
                 when returnVal.StartsWith("returnVal") ->
             collectAttributes exprs @ currentList
-        | Call (Import (importInfo, _, _), _, _, _)
-                when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
-            collectAttributes [expr] @ currentList
+        | CallTagNoChildrenWithHandler (NoChildren (_, props, _)) ->
+            collectAttributes props @ currentList
         | _ ->
             currentList
 
@@ -190,7 +191,7 @@ module internal rec AST =
             newExpr :: currentList
         | LetElement & Let (_, next, _) ->
             next :: currentList
-        // Lambda returning element
+        // Lambda with two arguments returning element
         | Lambda ({ Name = cont }, TypeCast (Lambda(item, Lambda(index, next, _), _), _), _)
                 when cont.StartsWith("cont") ->
             Delegate([item; index], transform next, None, []) :: currentList

@@ -5,7 +5,7 @@ export function clicked2(evt) {
 }
 
 export function EventHandler() {
-    return <div onClick={(_arg_5) => {
+    return <div onClick={(_arg_6) => {
             console.log(some("clicked1"));
         }}>
         <h1 onClick={(evt) => {
@@ -24,11 +24,15 @@ export function EventHandler() {
             }}>
             Hello
         </h2>
-        <h3 on:click={(_arg_3) => {
+        <h3 id="test"
+            onClick={(_arg_3) => {
                 console.log(some("clicked4"));
             }}
             on:change={(_arg_4) => {
                 console.log(some("changed"));
+            }}
+            on:load={(_arg_5) => {
+                console.log(some("loaded"));
             }}></h3>
     </div>;
 }

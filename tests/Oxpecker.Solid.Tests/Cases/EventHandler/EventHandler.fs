@@ -18,7 +18,7 @@ let EventHandler () =
             .on("load", fun _ -> console.log("loaded")){
             "Hello"
         }
-        h3(id="test")
-            .on("click", fun _ -> console.log("clicked4"))
+        h3(id="test", onClick = fun _ -> console.log("clicked4"))
             .on("change", fun _ -> console.log("changed"))
+            .on("load", fun _ -> console.log("loaded"))
     }
