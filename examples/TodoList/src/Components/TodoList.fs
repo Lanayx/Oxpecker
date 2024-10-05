@@ -32,6 +32,29 @@ let TodoList() =
             setNewTaskText("")
         event.preventDefault()
 
+    let deleteTask id =
+        tasks()
+        |> Array.filter (fun task -> task.Id <> id)
+        |> setTasks
+
+    let moveTaskUp index =
+        if index > 0 then
+            let updatedTasks = tasks()
+            let currentTask = updatedTasks[index]
+            let previousTask = updatedTasks[index - 1]
+            updatedTasks[index] <- previousTask
+            updatedTasks[index - 1] <- currentTask
+            setTasks updatedTasks
+
+    let moveTaskDown index =
+        let updatedTasks = tasks()
+        if index < updatedTasks.Length then
+            let currentTask = updatedTasks[index]
+            let nextTask = updatedTasks[index + 1]
+            updatedTasks[index] <- nextTask
+            updatedTasks[index + 1] <- currentTask
+            setTasks updatedTasks
+
     article(ariaLabel="task list manager",
             class'="bg-neutral-900 p-5 rounded-lg shadow w-full max-w-md"){
         header(){
@@ -49,9 +72,22 @@ let TodoList() =
         ol(id="todo-list", ariaLive="polite", ariaLabel="task list",
            class'="list-none p-0") {
             For(each = tasks()) {
-                fun (task: Task) _ ->
+                fun (task: Task) index ->
                     li(class'= "flex justify-between items-center p-2.5 border-b border-neutral-700 last:border-b-0") {
                         span(class'="flex-1") { task.Text }
+                        let buttonClass' = "text-base ml-2.5 text-neutral-200 hover:text-blue-500"
+                        button(onClick = (fun _ -> deleteTask task.Id), type'="button", ariaLabel="Delete task",
+                               class'= $"{buttonClass'} text-red-500") {
+                            "🗑️"
+                        }
+                        button(onClick = (fun _ -> moveTaskUp index), type'="button", ariaLabel="Move task up",
+                               class'= $"{buttonClass'} text-green-500") {
+                            "⇧"
+                        }
+                        button(onClick = (fun _ -> moveTaskDown index), type'="button", ariaLabel="Move task down",
+                               class'= $"{buttonClass'} text-green-500") {
+                            "⇩"
+                        }
                     }
             }
         }
