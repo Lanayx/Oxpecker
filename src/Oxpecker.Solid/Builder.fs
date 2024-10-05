@@ -9,9 +9,9 @@ module Builder =
     type HtmlAttribute = { Name: string; Value: obj }
 
     type HtmlElement = interface end
-    type HtmlTag  =
+    type HtmlTag =
         inherit HtmlElement
-    type HtmlContainer  =
+    type HtmlContainer =
         inherit HtmlElement
 
     type RegularNode() =

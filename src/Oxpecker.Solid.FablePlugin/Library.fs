@@ -149,6 +149,7 @@ module internal rec AST =
                     let propName =
                         match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
                         | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
+                        | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
                         | name -> name
                     let propValue = callInfo.Args.Head
                     [(propName, propValue)]

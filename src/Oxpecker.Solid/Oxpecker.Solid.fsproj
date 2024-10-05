@@ -9,6 +9,7 @@
         <Compile Include="Builder.fs" />
         <Compile Include="SolidBindings.fs" />
         <Compile Include="Tags.fs" />
+        <Compile Include="Aria.fs" />
     </ItemGroup>
 
     <ItemGroup>

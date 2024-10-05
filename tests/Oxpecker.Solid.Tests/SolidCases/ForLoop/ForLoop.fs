@@ -6,9 +6,9 @@ open Oxpecker.Solid
 let ForLoop () =
     div() {
         For(each = ["one"; "two"; "three"]) {
-            fun item index ->
+            fun (item: string) index ->
                 h2(id = string index) {
-                    string item
+                    item
                 }
         }
     }
