@@ -23,7 +23,7 @@ module Bindings =
     type For<'T>() =
         interface HtmlContainer
         member this.each with set (value: 'T[]) = ()
-        member inline _.Yield(value: 'T -> int -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
+        member inline _.Yield(value: 'T -> Accessor<int> -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
 
 [<AutoOpen>]
 type Bindings =

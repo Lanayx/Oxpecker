@@ -38,22 +38,28 @@ let TodoList() =
         |> setTasks
 
     let moveTaskUp index =
+        let _tasks = tasks()
         if index > 0 then
-            let updatedTasks = tasks()
-            let currentTask = updatedTasks[index]
-            let previousTask = updatedTasks[index - 1]
-            updatedTasks[index] <- previousTask
-            updatedTasks[index - 1] <- currentTask
-            setTasks updatedTasks
+            _tasks
+            |> Array.mapi (fun i task ->
+                if i = index then
+                    _tasks[index - 1]
+                elif i = index - 1 then
+                    _tasks[index]
+                else task)
+            |> setTasks
 
     let moveTaskDown index =
-        let updatedTasks = tasks()
-        if index < updatedTasks.Length then
-            let currentTask = updatedTasks[index]
-            let nextTask = updatedTasks[index + 1]
-            updatedTasks[index] <- nextTask
-            updatedTasks[index + 1] <- currentTask
-            setTasks updatedTasks
+        let _tasks = tasks()
+        if index < _tasks.Length-1 then
+            _tasks
+            |> Array.mapi (fun i task ->
+                if i = index then
+                    _tasks[index + 1]
+                elif i = index + 1 then
+                    _tasks[index]
+                else task)
+            |> setTasks
 
     article(ariaLabel="task list manager",
             class'="bg-neutral-900 p-5 rounded-lg shadow w-full max-w-md"){
@@ -73,18 +79,18 @@ let TodoList() =
            class'="list-none p-0") {
             For(each = tasks()) {
                 fun (task: Task) index ->
+                    let buttonClass' = "text-base ml-2.5 hover:text-blue-500"
                     li(class'= "flex justify-between items-center p-2.5 border-b border-neutral-700 last:border-b-0") {
                         span(class'="flex-1") { task.Text }
-                        let buttonClass' = "text-base ml-2.5 text-neutral-200 hover:text-blue-500"
                         button(onClick = (fun _ -> deleteTask task.Id), type'="button", ariaLabel="Delete task",
                                class'= $"{buttonClass'} text-red-500") {
                             "🗑️"
                         }
-                        button(onClick = (fun _ -> moveTaskUp index), type'="button", ariaLabel="Move task up",
+                        button(onClick = (fun _ -> moveTaskUp (index())), type'="button", ariaLabel="Move task up",
                                class'= $"{buttonClass'} text-green-500") {
                             "⇧"
                         }
-                        button(onClick = (fun _ -> moveTaskDown index), type'="button", ariaLabel="Move task down",
+                        button(onClick = (fun _ -> moveTaskDown (index())), type'="button", ariaLabel="Move task down",
                                class'= $"{buttonClass'} text-green-500") {
                             "⇩"
                         }
