@@ -8,8 +8,6 @@ open Browser.Types
 open Fable.Core.JsInterop
 
 
-type Task = {| Id: Guid; Text: string |}
-
 let initialTasks = [|
     {| Id = Guid.NewGuid(); Text = "Drink some coffee" |}
     {| Id = Guid.NewGuid(); Text = "Create a TODO app" |}
@@ -79,22 +77,11 @@ let TodoList() =
            class'="list-none p-0") {
             For(each = tasks()) {
                 fun (task: Task) index ->
-                    let buttonClass' = "text-base ml-2.5 hover:text-blue-500"
-                    li(class'= "flex justify-between items-center p-2.5 border-b border-neutral-700 last:border-b-0") {
-                        span(class'="flex-1") { task.Text }
-                        button(onClick = (fun _ -> deleteTask task.Id), type'="button", ariaLabel="Delete task",
-                               class'= $"{buttonClass'} text-red-500") {
-                            "🗑️"
-                        }
-                        button(onClick = (fun _ -> moveTaskUp (index())), type'="button", ariaLabel="Move task up",
-                               class'= $"{buttonClass'} text-green-500") {
-                            "⇧"
-                        }
-                        button(onClick = (fun _ -> moveTaskDown (index())), type'="button", ariaLabel="Move task down",
-                               class'= $"{buttonClass'} text-green-500") {
-                            "⇩"
-                        }
-                    }
+                    TodoItem {|
+                        DeleteTask = fun () -> deleteTask task.Id
+                        MoveTaskUp = fun () -> moveTaskUp <| index()
+                        MoveTaskDown = fun () -> moveTaskDown <| index()
+                    |} task
             }
         }
     }

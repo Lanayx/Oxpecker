@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="src\Components\TodoItem.fs" />
     <Compile Include="src\Components\TodoList.fs" />
     <Compile Include="src\App.fs" />
     <Compile Include="src\Program.fs" />
