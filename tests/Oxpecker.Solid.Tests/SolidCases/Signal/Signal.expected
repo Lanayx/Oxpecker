@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 
-export function Signal() {
+export function Test() {
     const patternInput = createSignal(0);
     const count = patternInput[0];
     return <>

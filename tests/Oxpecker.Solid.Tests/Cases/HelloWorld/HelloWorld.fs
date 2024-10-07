@@ -4,6 +4,6 @@ open Browser
 open Oxpecker.Solid
 
 [<SolidComponent>]
-let helloWorld () =
+let Test () =
     console.log "Hello, World!"
     body()

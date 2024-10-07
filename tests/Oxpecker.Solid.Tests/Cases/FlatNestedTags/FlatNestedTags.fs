@@ -3,7 +3,7 @@ module Oxpecker.Solid.Tests.Cases.FlatNestedTags
 open Oxpecker.Solid
 
 [<SolidComponent>]
-let FlatNestedTags () =
+let Test () =
     body() {
         "zero"
         h1(id="one")

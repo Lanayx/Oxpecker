@@ -37,7 +37,7 @@ module Builder =
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun =
             delay()
 
-        member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = ignore
+        member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = fun cont -> ignore element
 
         member inline _.Yield(text: string) : HtmlContainerFun = fun cont -> ignore text
 

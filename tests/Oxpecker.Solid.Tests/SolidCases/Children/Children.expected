@@ -1,7 +1,7 @@
 import { some } from "./fable_modules/fable-library-js.4.21.0/Option.js";
 import { createSignal } from "solid-js";
 
-export function Component(getText) {
+export function Child(getText) {
     return <h1 onClick={(_arg) => {
             console.log(some(getText()));
         }}>
@@ -9,10 +9,10 @@ export function Component(getText) {
     </h1>;
 }
 
-export function Test() {
+export function Parent() {
     const patternInput = createSignal("Hello");
     return <div>
-        {Component(patternInput[0])}
+        {Child(patternInput[0])}
     </div>;
 }
 

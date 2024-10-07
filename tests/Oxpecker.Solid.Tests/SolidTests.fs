@@ -14,3 +14,7 @@ let ``Components`` () =
 [<Fact>]
 let ``ForLoop`` () =
     runSolidCase "ForLoop"
+
+[<Fact>]
+let ``Children`` () =
+    runSolidCase "Children"

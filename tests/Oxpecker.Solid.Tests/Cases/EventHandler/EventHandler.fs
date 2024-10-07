@@ -7,7 +7,7 @@ open Browser
 let clicked2 = fun (evt: MouseEvent) -> console.log(evt.``type``)
 
 [<SolidComponent>]
-let EventHandler () =
+let Test () =
     div(onClick = fun _ -> console.log("clicked1")) {
         h1(onClick = clicked2) {
             "Hello"

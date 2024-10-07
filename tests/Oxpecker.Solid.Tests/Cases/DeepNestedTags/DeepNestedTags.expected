@@ -1,5 +1,5 @@
 
-export function DeepNestedTags() {
+export function Test() {
     return <html xmlns="http://www.w3.org/1999/xhtml">
         <body>
             <div id="outer">

@@ -1,10 +1,10 @@
-module Oxpecker.Solid.Tests.Cases.Arguments
+module Oxpecker.Solid.Tests.Cases.Parameters
 
 open Oxpecker.Solid
 open Oxpecker.Solid.Aria
 
 [<SolidComponent>]
-let Parameters (id: int) =
+let Test (id: int) =
     let hello = "Hello "
     div(id=string id, class'="testclass", ariaLabelledBy="testlabel") {
         __() { hello }; "world!"

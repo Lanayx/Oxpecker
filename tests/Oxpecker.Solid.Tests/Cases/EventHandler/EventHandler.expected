@@ -4,7 +4,7 @@ export function clicked2(evt) {
     console.log(some(evt.type));
 }
 
-export function EventHandler() {
+export function Test() {
     return <div onClick={(_arg_6) => {
             console.log(some("clicked1"));
         }}>

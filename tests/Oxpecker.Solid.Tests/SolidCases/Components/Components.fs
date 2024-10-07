@@ -4,15 +4,15 @@ open Fable.Core.JS
 open Oxpecker.Solid
 
 [<SolidComponent>]
-let Child (getText: Accessor<string>) =
+let Component (getText: Accessor<string>) =
     h1(onClick = fun _ -> console.log(getText())) {
         getText()
     }
 
 [<SolidComponent>]
-let Parent () =
+let Test () =
     let getText, _ = createSignal "Hello"
 
     div() {
-        Child(getText)
+        Component(getText)
     }

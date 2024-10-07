@@ -1,6 +1,6 @@
 import { int32ToString } from "./fable_modules/fable-library-js.4.21.0/Util.js";
 
-export function Parameters(id) {
+export function Test(id) {
     return <div id={int32ToString(id)}
         class="testclass"
         aria-labelledby="testlabel">

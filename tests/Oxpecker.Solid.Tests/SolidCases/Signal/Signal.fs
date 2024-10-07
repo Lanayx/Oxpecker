@@ -3,7 +3,7 @@ module Oxpecker.Solid.Tests.Cases.Signal
 open Oxpecker.Solid
 
 [<SolidComponent>]
-let Signal () =
+let Test () =
     let count, setCount = createSignal 0
 
     __() {

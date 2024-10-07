@@ -1,5 +1,5 @@
 
-export function FlatNestedTags() {
+export function Test() {
     return <body>
         zero
         <h1 id="one"></h1>
