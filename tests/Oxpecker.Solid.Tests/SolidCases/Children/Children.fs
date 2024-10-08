@@ -12,7 +12,7 @@ let Component (hello: string) (children: #HtmlElement) =
 [<SolidComponent>]
 let Test () =
     div() {
-        Component "xxx" (__() {
+        Component "Hello" (__() {
             "World"
         })
     }
