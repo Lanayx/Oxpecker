@@ -205,12 +205,20 @@ module internal rec AST =
         | Let ({ Name = second }, next, Lambda ({ Name = builder }, Sequential (TypeCast (textBody, Unit)::_), _))
                 when second.StartsWith("second") && builder.StartsWith("builder") ->
             getChildren (textBody ::currentList) next
+        // parameter then another parameter
+        | CurriedApply (Lambda ({ Name = cont }, TypeCast (lastParameter, Unit), Some second), _, _, _)
+                when cont.StartsWith("cont") && second.StartsWith("second") ->
+            lastParameter :: currentList
+        | CurriedApply (Lambda ({ Name = builder }, Sequential [TypeCast (middleParameter, Unit); next], _), _, _, _)
+        | Lambda ({ Name = builder }, Sequential [ TypeCast (middleParameter, Unit); next ], _)
+                when builder.StartsWith("builder") ->
+            getChildren (middleParameter :: currentList) next
         // tag then text
-        | Let ({ Name = first }, next, Lambda ({ Name = builder }, Sequential [
-                    CurriedApply _; CurriedApply (Lambda ({ Name = cont }, TypeCast (textBody, Unit), Some second), _, _, _)
-                ], _))
-                when first.StartsWith("first") && builder.StartsWith("builder") && cont.StartsWith("cont") && second.StartsWith("second") ->
-            textBody :: (getChildren currentList next)
+        | Let ({ Name = first }, next1, Lambda ({ Name = builder }, Sequential [ CurriedApply _; next2 ], _))
+                when first.StartsWith("first") && builder.StartsWith("builder") ->
+            let next2Children = getChildren [] next2
+            let next1Children = getChildren [] next1
+            next2Children @ next1Children @ currentList
         | Let ({ Name = first }, Let (_, expr, _), Let ({ Name = second }, next, _))
                 when first.StartsWith("first") && second.StartsWith("second") ->
             match expr with
