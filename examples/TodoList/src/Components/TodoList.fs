@@ -76,7 +76,7 @@ let TodoList() =
         ol(id="todo-list", ariaLive="polite", ariaLabel="task list",
            class'="list-none p-0") {
             For(each = tasks()) {
-                fun (task: Task) index ->
+                yield fun task index ->
                     TodoItem {|
                         DeleteTask = fun () -> deleteTask task.Id
                         MoveTaskUp = fun () -> moveTaskUp <| index()

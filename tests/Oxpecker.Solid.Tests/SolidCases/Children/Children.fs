@@ -17,7 +17,7 @@ let Test () =
             i()
         }
         For(each = [|1..3|]) {
-            fun i _ ->
+            yield fun i _ ->
                 Component "Hello3" (Fragment() {
                     string i
                 })

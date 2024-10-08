@@ -7,6 +7,11 @@ export function Test() {
                 {item}
             </h2>}
         </For>
+        <Index each={["one", "two", "three"]}>
+            {(item_1, index_1) => <h2 id={int32ToString(index_1)}>
+                {item_1()}
+            </h2>}
+        </Index>
     </div>;
 }
 

@@ -12,8 +12,8 @@ let ``Components`` () =
     runSolidCase "Components"
 
 [<Fact>]
-let ``ForLoop`` () =
-    runSolidCase "ForLoop"
+let ``Iterators`` () =
+    runSolidCase "Iterators"
 
 [<Fact>]
 let ``Children`` () =

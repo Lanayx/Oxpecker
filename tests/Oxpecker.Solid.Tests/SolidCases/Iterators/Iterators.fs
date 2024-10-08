@@ -6,9 +6,15 @@ open Oxpecker.Solid
 let Test () =
     div() {
         For(each = [|"one"; "two"; "three"|]) {
-            fun (item: string) index ->
+            yield fun item index ->
                 h2(id = (index() |> string)) {
                     item
+                }
+        }
+        Index(each = [|"one"; "two"; "three"|]) {
+            yield fun item index ->
+                h2(id = (index |> string)) {
+                    item()
                 }
         }
     }

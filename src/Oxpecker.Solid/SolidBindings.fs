@@ -1,5 +1,6 @@
 namespace Oxpecker.Solid
 
+open System.Runtime.CompilerServices
 open Browser.Types
 open Fable.Core
 
@@ -21,9 +22,29 @@ module Bindings =
         member this.onSubmit with set (_: Event -> unit) = ()
 
     type For<'T>() =
-        interface HtmlContainer
+        interface HtmlElement
         member this.each with set (value: 'T[]) = ()
+        member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: 'T -> Accessor<int> -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
+
+    type Index<'T>() =
+        interface HtmlElement
+        member this.each with set (value: 'T[]) = ()
+        member inline _.Zero() : HtmlContainerFun = ignore
+        member inline _.Yield(value: Accessor<'T> -> int -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
+
+    type Extensions =
+
+        [<Extension>]
+        static member Run(this: For<'T>, runExpr: HtmlContainerFun) =
+            runExpr Unchecked.defaultof<_>
+            this
+
+        [<Extension>]
+        static member Run(this: Index<'T>, runExpr: HtmlContainerFun) =
+            runExpr Unchecked.defaultof<_>
+            this
+
 
 [<AutoOpen>]
 type Bindings =

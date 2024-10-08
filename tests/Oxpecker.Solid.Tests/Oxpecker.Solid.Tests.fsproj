@@ -30,12 +30,12 @@
         <Content Include="SolidCases\Components\Components.expected" />
         <Compile Include="SolidCases\Components\Components.fs" />
         <Content Include="SolidCases\Components\Components.fsproj" />
-        <Content Include="SolidCases\ForLoop\ForLoop.expected" />
-        <Compile Include="SolidCases\ForLoop\ForLoop.fs" />
-        <Content Include="SolidCases\ForLoop\ForLoop.fsproj" />
         <Content Include="SolidCases\Children\Children.fsproj" />
         <Compile Include="SolidCases\Children\Children.fs" />
         <Content Include="SolidCases\Children\Children.expected" />
+        <Content Include="SolidCases\Iterators\Iterators.fsproj" />
+        <Compile Include="SolidCases\Iterators\Iterators.fs" />
+        <Content Include="SolidCases\Iterators\Iterators.expected" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />

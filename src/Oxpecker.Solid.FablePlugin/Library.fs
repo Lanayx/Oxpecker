@@ -22,7 +22,7 @@ module internal rec AST =
                 when condition importInfo ->
             let tagName = typ.FullName.Split('.') |> Seq.last
             let finalTagName =
-                if tagName = "__" then
+                if tagName = "Fragment" then
                     ""
                 elif tagName.EndsWith("'") then
                     tagName.Substring(0, tagName.Length - 1)
@@ -43,7 +43,9 @@ module internal rec AST =
             None
 
     let (|TagWithChildren|_|) (expr: Expr) =
-        let condition = _.Selector.StartsWith("HtmlContainerExtensions_Run")
+        let condition = fun importInfo ->
+            importInfo.Selector.StartsWith("HtmlContainerExtensions_Run")
+            || importInfo.Selector.StartsWith("BindingsModule_Extensions_Run")
         match expr with
         | CallTag condition tagCallInfo -> Some tagCallInfo
         | _ ->  None
