@@ -4,7 +4,7 @@ open Oxpecker.ViewEngine
 open ContactApp.templates.shared
 
 let html (contact: ContactDTO) =
-    __() {
+    Fragment() {
         form(action="/contacts/new", method="post") {
             fieldset() {
                 legend() { "Contact Values" }

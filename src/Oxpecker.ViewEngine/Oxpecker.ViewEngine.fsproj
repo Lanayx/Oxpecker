@@ -18,9 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.14.0</Version>
-        <PackageVersion>0.14.0</PackageVersion>
-        <PackageReleaseNotes>Exposed interface methods on tags as normal methods as well</PackageReleaseNotes>
+        <Version>0.14.1</Version>
+        <PackageVersion>0.14.1</PackageVersion>
+        <PackageReleaseNotes>Renamed __ tag to Fragment</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="8.0.8" />

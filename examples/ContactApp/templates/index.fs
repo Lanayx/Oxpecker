@@ -30,7 +30,7 @@ let archiveUi (archiver: Archiver) =
     }
 
 let rows page (contacts: Contact[]) =
-    __() {
+    Fragment() {
         for contact in contacts do
             tr() {
                 td() { input(type'="checkbox", name="selected_contact_ids", value= $"{contact.Id}") }
@@ -62,7 +62,7 @@ let rows page (contacts: Contact[]) =
     }
 
 let html q page (contacts: Contact[]) archiver =
-    __() {
+    Fragment() {
         archiveUi archiver
         form(action="/contacts", method="get") {
             label(for'="search") { "Search Term" }

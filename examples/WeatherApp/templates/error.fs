@@ -15,7 +15,7 @@ let html (ctx: HttpContext) =
         | activity -> activity.Id
     let showRequestId = requestId |> String.IsNullOrWhiteSpace |> not
 
-    __(){
+    Fragment(){
         h1(class'="text-danger") { "Error." }
         h2(class'="text-danger") { "An error occurred while processing your request." }
         if showRequestId then
