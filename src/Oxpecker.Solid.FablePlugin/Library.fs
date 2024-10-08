@@ -190,15 +190,8 @@ module internal rec AST =
             let newExpr = transformTagInfo tagInfo
             newExpr :: currentList
         | LetElement & Let (_, next, _) ->
-            match next with
-            // Pass children to the component
-            | Call (callee, callInfo, typ, range) ->
-                let newCallInfo = {
-                    callInfo with
-                        Args = callInfo.Args |> List.map transform
-                }
-                Call (callee, newCallInfo, typ, range) :: currentList
-            | _ ->  next :: currentList
+            let newExpr = transform next
+            newExpr :: currentList
         // Lambda with two arguments returning element
         | Lambda ({ Name = cont }, TypeCast (Lambda(item, Lambda(index, next, _), _), _), _)
                 when cont.StartsWith("cont") ->
@@ -240,7 +233,8 @@ module internal rec AST =
                 let newExpr = transformTagInfo (TagInfo.WithChildren callInfo)
                 getChildren (newExpr :: currentList) next
             | expr ->
-                getChildren (expr :: currentList) next
+                let newExpr = transform expr
+                getChildren (newExpr :: currentList) next
         | _ ->
             currentList
 
@@ -343,6 +337,13 @@ module internal rec AST =
                     else
                         expr
             ))
+        // transform children passed to component function call
+        | Call (callee, callInfo, typ, range) ->
+            let newCallInfo = {
+                callInfo with
+                    Args = callInfo.Args |> List.map transform
+            }
+            Call (callee, newCallInfo, typ, range)
         | _ ->
             expr
 

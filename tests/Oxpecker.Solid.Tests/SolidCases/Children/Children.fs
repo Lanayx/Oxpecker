@@ -12,7 +12,14 @@ let Component (hello: string) (children: #HtmlElement) =
 [<SolidComponent>]
 let Test () =
     div() {
-        Component "Hello" (__() {
-            "World"
-        })
+        Component "Hello1" <| br()
+        Component "Hello2" <| __() {
+            i()
+        }
+        For(each = [|1..3|]) {
+            fun i _ ->
+                Component "Hello3" (__() {
+                    string i
+                })
+        }
     }
