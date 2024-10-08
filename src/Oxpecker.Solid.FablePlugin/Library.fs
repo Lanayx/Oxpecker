@@ -156,7 +156,11 @@ module internal rec AST =
                         | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
                         | name -> name
                     let propValue = callInfo.Args.Head
-                    (propName, propValue) :: restResults
+                    match propValue with
+                    | TypeCast (expr, DeclaredType ({ FullName = "Oxpecker.Solid.Builder.HtmlElement" }, _)) ->
+                        (propName, transform expr) :: restResults
+                    | _ ->
+                        (propName, propValue) :: restResults
                 else
                     restResults
             | _ ->
@@ -179,7 +183,7 @@ module internal rec AST =
 
     let getChildren currentList (expr: Expr): Expr list =
         match expr with
-        | LetElement & LetTagWithChildren tagInfo ->
+        | LetTagWithChildren tagInfo ->
             let newExpr = transformTagInfo tagInfo
             newExpr :: currentList
         | LetElement & Let (_, LetTagNoChildrenWithProps tagInfo, _)  ->

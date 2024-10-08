@@ -1,4 +1,4 @@
-module Oxpecker.Solid.Tests.Cases.ForLoop
+module Oxpecker.Solid.Tests.Cases.Iterators
 
 open Oxpecker.Solid
 

@@ -11,12 +11,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="README.md" />
     <Content Include="public\checkmark-square.svg" />
     <Compile Include="src\Components\TodoItem.fs" />
     <Compile Include="src\Components\TodoList.fs" />
     <Compile Include="src\App.fs" />
     <Compile Include="src\Program.fs" />
-    <Content Include="README.md" />
     <Content Include="src\index.css" />
     <Content Include="package.json" />
     <Content Include="index.html" />

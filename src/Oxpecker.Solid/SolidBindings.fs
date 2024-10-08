@@ -33,6 +33,31 @@ module Bindings =
         member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: Accessor<'T> -> int -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
 
+    type Show() =
+        interface HtmlContainer
+        member this.when' with set (value: bool) = ()
+        member this.fallback with set (value: HtmlElement) = ()
+
+    type Match() =
+        interface HtmlContainer
+        member this.when' with set (value: bool) = ()
+
+    type Switch() =
+        interface HtmlElement
+        member this.fallback with set (value: HtmlElement) = ()
+        member inline _.Combine
+            ([<InlineIfLambda>] first: HtmlContainerFun, [<InlineIfLambda>] second: HtmlContainerFun)
+            : HtmlContainerFun =
+                fun builder ->
+                    first builder
+                    second builder
+
+        member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun =
+            delay()
+        member inline _.Zero() : HtmlContainerFun = ignore
+        member inline _.Yield(value: Match) : HtmlContainerFun = fun cont -> ignore value
+
+
     type Extensions =
 
         [<Extension>]
@@ -42,6 +67,11 @@ module Bindings =
 
         [<Extension>]
         static member Run(this: Index<'T>, runExpr: HtmlContainerFun) =
+            runExpr Unchecked.defaultof<_>
+            this
+
+        [<Extension>]
+        static member Run(this: Switch, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
 

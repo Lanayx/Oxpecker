@@ -18,3 +18,7 @@ let ``Iterators`` () =
 [<Fact>]
 let ``Children`` () =
     runSolidCase "Children"
+
+[<Fact>]
+let ``Conditional`` () =
+    runSolidCase "Conditional"

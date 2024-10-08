@@ -36,6 +36,9 @@
         <Content Include="SolidCases\Iterators\Iterators.fsproj" />
         <Compile Include="SolidCases\Iterators\Iterators.fs" />
         <Content Include="SolidCases\Iterators\Iterators.expected" />
+        <Content Include="SolidCases\Conditional\Conditional.expected" />
+        <Compile Include="SolidCases\Conditional\Conditional.fs" />
+        <Content Include="SolidCases\Conditional\Conditional.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />
