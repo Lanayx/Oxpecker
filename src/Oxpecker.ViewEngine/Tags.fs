@@ -1,5 +1,6 @@
 ﻿namespace Oxpecker.ViewEngine
 
+open System
 open System.Diagnostics.CodeAnalysis
 open Oxpecker.ViewEngine.Tools
 open System.Runtime.CompilerServices
@@ -10,8 +11,12 @@ module Tags =
 
     open Oxpecker.ViewEngine.Builder
 
-    /// Fragment (or template) node, only renders children, not itself
+    [<Obsolete("Use Fragment instead of __")>]
     type __() =
+        inherit FragmentNode()
+
+    /// Fragment (or template) node, only renders children, not itself
+    type Fragment() =
         inherit FragmentNode()
 
     /// Set of html extensions that keep original type

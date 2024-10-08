@@ -23,7 +23,7 @@
         <PackageReleaseNotes>Updated Oxpecker.ViewEngine dependency</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.14.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.14.1" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

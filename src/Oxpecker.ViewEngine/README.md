@@ -166,10 +166,10 @@ let x = span(
 
 ### Fragments
 
-Sometimes you need to group several elements together without wrapping them in `div` or similar. You can use `__` special tag for that:
+Sometimes you need to group several elements together without wrapping them in `div` or similar. You can use `Fragment` special tag for that:
 
 ```fsharp
-let onlyChildren = __() {
+let onlyChildren = Fragment() {
     span() { "one" }
     span() { "two" }
 }

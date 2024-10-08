@@ -74,12 +74,12 @@ let ``Aria test`` () =
 [<Fact>]
 let ``Only children test`` () =
     let result =
-        __() {
+        Fragment() {
             div(id = "1") { "Hello" }
-            __() {
+            Fragment() {
                 div(id = "2") { "World" }
                 div(id = "3") {
-                    __()
+                    Fragment()
                     "!"
                 }
             }

@@ -5,7 +5,7 @@ open ContactApp.Models
 open ContactApp.templates.shared
 
 let html (contact: Contact) =
-    __() {
+    Fragment() {
         h1() { $"{contact.First} {contact.Last}" }
 
         div() {

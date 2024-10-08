@@ -18,7 +18,7 @@ module layout =
         a(href = attrs.Href, class' = finalClass)
 
     let navMenu (ctx: HttpContext) =
-        __() {
+        Fragment() {
             div(class'="nav-top-row ps-3 navbar navbar-dark"){
                 div(class'="container-fluid"){
                     a(class'="navbar-brand", href="") { "OxpeckerApp" }
