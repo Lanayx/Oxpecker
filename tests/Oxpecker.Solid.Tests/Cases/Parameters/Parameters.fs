@@ -7,5 +7,5 @@ open Oxpecker.Solid.Aria
 let Test (id: int) =
     let hello = "Hello "
     div(id=string id, class'="testclass", ariaLabelledBy="testlabel") {
-        __() { hello }; "world!"
+        Fragment() { hello }; "world!"
     }

@@ -8,7 +8,7 @@ importAll "./index.css"
 // HMR doesn't work in Root for some reason
 [<SolidComponent>]
 let Root() =
-    __() {
+    Fragment() {
         App()
     }
 

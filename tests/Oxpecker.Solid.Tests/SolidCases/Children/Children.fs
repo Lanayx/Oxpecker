@@ -13,12 +13,12 @@ let Component (hello: string) (children: #HtmlElement) =
 let Test () =
     div() {
         Component "Hello1" <| br()
-        Component "Hello2" <| __() {
+        Component "Hello2" <| Fragment() {
             i()
         }
         For(each = [|1..3|]) {
             fun i _ ->
-                Component "Hello3" (__() {
+                Component "Hello3" (Fragment() {
                     string i
                 })
         }

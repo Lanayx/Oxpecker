@@ -8,7 +8,7 @@ open JetBrains.Annotations
 module Tags =
 
     /// Fragment (or template) node, only renders children, not itself
-    type __() =
+    type Fragment() =
         inherit FragmentNode()
 
     /// Set of html extensions that keep original type
