@@ -6,7 +6,7 @@ open ContactApp.Models
 open ContactApp.templates.shared
 
 let html (contact: ContactDTO) =
-    __() {
+    Fragment() {
         form(action= $"/contacts/{contact.id}/edit", method="post") {
             fieldset() {
                 legend() { "Contact Values" }
