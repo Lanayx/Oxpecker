@@ -28,14 +28,13 @@ module Builder =
         member inline _.Combine
             ([<InlineIfLambda>] first: HtmlContainerFun, [<InlineIfLambda>] second: HtmlContainerFun)
             : HtmlContainerFun =
-                fun builder ->
-                    first builder
-                    second builder
+            fun builder ->
+                first builder
+                second builder
 
         member inline _.Zero() : HtmlContainerFun = ignore
 
-        member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun =
-            delay()
+        member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
 
         member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = fun cont -> ignore element
 
