@@ -1,5 +1,6 @@
 namespace Oxpecker.Solid
 
+open System
 open System.Runtime.CompilerServices
 open Browser.Types
 open JetBrains.Annotations
@@ -47,6 +48,10 @@ module Tags =
         member this.popover with set (value: string) = ()
         member this.spellcheck with set (value: bool) = ()
         member this.translate with set (value: string) = ()
+        member this.autocapitalize with set (value: string) = ()
+        member this.is with set (value: string) = ()
+        member this.part with set (value: string) = ()
+        member this.slot with set (value: string) = ()
 
     type head() = inherit RegularNode()
     type body() = inherit RegularNode()
@@ -68,10 +73,12 @@ module Tags =
     type li() = inherit RegularNode()
     type p() = inherit RegularNode()
     type span() = inherit RegularNode()
+    type small() = inherit RegularNode()
     type strong() = inherit RegularNode()
     type em() = inherit RegularNode()
     type caption() = inherit RegularNode()
     type nav() = inherit RegularNode()
+    type search() = inherit RegularNode()
     type i() = inherit RegularNode()
     type b() = inherit RegularNode()
     type u() = inherit RegularNode()
@@ -97,9 +104,13 @@ module Tags =
     type a() =
         inherit RegularNode()
         member this.href with set (value: string) = ()
+        member this.hreflang with set (value: string) = ()
         member this.rel with set (value: string) = ()
         member this.target with set (value: string) = ()
         member this.download with set (value: string) = ()
+        member this.ping with set (value: string) = ()
+        member this.type' with set (value: string) = ()
+        member this.referrerpolicy with set (value: string) = ()
 
     type base'() =
         inherit VoidNode()
@@ -116,6 +127,12 @@ module Tags =
         member this.referrerpolicy with set (value: string) = ()
         member this.crossorigin with set (value: string) = ()
         member this.sizes with set (value: string) = ()
+        member this.usemap with set (value: string) = ()
+        member this.ismap with set (value: bool) = ()
+        member this.decoding with set (value: string) = ()
+        member this.loading with set (value: string) = ()
+        member this.fetchpriority with set (value: string) = ()
+        member this.elementtiming with set (value: string) = ()
 
     type form() =
         inherit RegularNode()
@@ -123,6 +140,11 @@ module Tags =
         member this.method with set (value: string) = ()
         member this.enctype with set (value: string) = ()
         member this.target with set (value: string) = ()
+        member this.acceptCharset with set (value: string) = () //TODO
+        member this.autocomplete with set (value: string) = ()
+        member this.name with set (value: string) = ()
+        member this.novalidate with set (value: bool) = ()
+        member this.rel with set (value: string) = ()
 
     type script() =
         inherit RegularNode()
@@ -132,6 +154,9 @@ module Tags =
         member this.defer with set (value: bool) = ()
         member this.integrity with set (value: string) = ()
         member this.crossorigin with set (value: string) = ()
+        member this.nomodule with set (value: bool) = ()
+        member this.nonce with set (value: string) = ()
+        member this.referrerpolicy with set (value: string) = ()
 
     type link() =
         inherit VoidNode()
@@ -141,6 +166,14 @@ module Tags =
         member this.media with set (value: string) = ()
         member this.as' with set (value: string) = ()
         member this.sizes with set (value: string) = ()
+        member this.crossorigin with set (value: string) = ()
+        member this.integrity with set (value: string) = ()
+        member this.referrerpolicy with set (value: string) = ()
+        member this.disabled with set (value: bool) = ()
+        member this.hreflang with set (value: string) = ()
+        member this.imagesizes with set (value: string) = ()
+        member this.imagesrcset with set (value: string) = ()
+        member this.title with set (value: string) = ()
 
     type html() =
         inherit RegularNode()
@@ -178,6 +211,16 @@ module Tags =
         member this.width with set (value: int) = ()
         member this.height with set (value: int) = ()
         member this.alt with set (value: string) = ()
+        member this.checked' with set (value: bool) = ()
+        member this.dirname with set (value: string) = ()
+        member this.form with set (value: string) = ()
+        member this.formaction with set (value: string) = ()
+        member this.formenctype with set (value: string) = ()
+        member this.formmethod with set (value: string) = ()
+        member this.formnovalidate with set (value: bool) = ()
+        member this.formtarget with set (value: string) = ()
+        member this.inputmode with set (value: string) = ()
+        member this.capture with set (value: string) = ()
 
     type output() =
         inherit RegularNode()
@@ -191,12 +234,17 @@ module Tags =
         member this.placeholder with set (value: string) = ()
         member this.required with set (value: bool) = ()
         member this.autofocus with set (value: bool) = ()
+        member this.autocomplete with set (value: string) = ()
         member this.readonly with set (value: bool) = ()
         member this.disabled with set (value: bool) = ()
         member this.rows with set (value: int) = ()
         member this.cols with set (value: int) = ()
         member this.wrap with set (value: string) = ()
         member this.maxlength with set (value: int) = ()
+        member this.minlength with set (value: int) = ()
+        member this.dirname with set (value: string) = ()
+        member this.form with set (value: string) = ()
+
 
     type button() =
         inherit RegularNode()
@@ -205,15 +253,25 @@ module Tags =
         member this.value with set (value: string) = ()
         member this.disabled with set (value: bool) = ()
         member this.autofocus with set (value: bool) = ()
+        member this.form with set (value: string) = ()
+        member this.formaction with set (value: string) = ()
+        member this.formenctype with set (value: string) = ()
+        member this.formmethod with set (value: string) = ()
+        member this.formnovalidate with set (value: bool) = ()
+        member this.formtarget with set (value: string) = ()
+        member this.popovertarget with set (value: string) = ()
+        member this.popovertargetaction with set (value: string) = ()
 
     type select() =
         inherit RegularNode()
         member this.name with set (value: string) = ()
         member this.required with set (value: bool) = ()
         member this.autofocus with set (value: bool) = ()
+        member this.autocomplete with set (value: string) = ()
         member this.disabled with set (value: bool) = ()
         member this.multiple with set (value: bool) = ()
         member this.size with set (value: int) = ()
+        member this.form with set (value: string) = ()
 
     type option() =
         inherit RegularNode()
@@ -243,6 +301,7 @@ module Tags =
         member this.sandbox with set (value: string) = ()
         member this.width with set (value: int) = ()
         member this.height with set (value: int) = ()
+        member this.allow with set (value: string) = ()
         member this.loading with set (value: string) = ()
         member this.referrerpolicy with set (value: string) = ()
         member this.srcdoc with set (value: string) = ()
@@ -253,19 +312,28 @@ module Tags =
         member this.poster with set (value: string) = ()
         member this.autoplay with set (value: bool) = ()
         member this.controls with set (value: bool) = ()
+        member this.playsinline with set (value: bool) = ()
+        member this.controlsList with set (value: string) = ()
+        member this.crossorigin with set (value: string) = ()
         member this.loop with set (value: bool) = ()
         member this.muted with set (value: bool) = ()
         member this.width with set (value: int) = ()
         member this.height with set (value: int) = ()
         member this.preload with set (value: string) = ()
+        member this.disableremoteplayback with set (value: bool) = ()
+        member this.disablepictureinpicture with set (value: bool) = ()
 
     type audio() =
         inherit RegularNode()
         member this.src with set (value: string) = ()
         member this.autoplay with set (value: bool) = ()
         member this.controls with set (value: bool) = ()
+        member this.controlsList with set (value: string) = ()
+        member this.crossorigin with set (value: string) = ()
+        member this.preload with set (value: string) = ()
         member this.loop with set (value: bool) = ()
         member this.muted with set (value: bool) = ()
+        member this.disableremoteplayback with set (value: bool) = ()
 
     type source() =
         inherit VoidNode()
@@ -368,3 +436,31 @@ module Tags =
         member this.target with set (value: string) = ()
         member this.rel with set (value: string) = ()
         member this.referrerpolicy with set (value: string) = ()
+        member this.ping with set (value: string) = ()
+
+    type aside() = inherit RegularNode()
+    type bdi() = inherit RegularNode()
+    type bdo() = inherit RegularNode()
+    type col() =
+        inherit VoidNode()
+        member this.span with set (value: int) = ()
+    type colgroup() =
+        inherit RegularNode()
+        member this.span with set (value: int) = ()
+    type dd() = inherit RegularNode()
+    type dl() = inherit RegularNode()
+    type dt() = inherit RegularNode()
+    type embed() =
+        inherit VoidNode()
+        member this.src with set (value: string) = ()
+        member this.type' with set (value: string) = ()
+        member this.width with set (value: int) = ()
+        member this.height with set (value: int) = ()
+    type figcaption() = inherit RegularNode()
+    type figure() = inherit RegularNode()
+    type kbd() = inherit RegularNode()
+    type mark() = inherit RegularNode()
+    type picture() = inherit RegularNode()
+    type samp() = inherit RegularNode()
+    type var() = inherit RegularNode()
+    type wbr() = inherit RegularNode()
