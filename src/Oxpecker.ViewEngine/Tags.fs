@@ -887,4 +887,3 @@ module Tags =
         inherit RegularNode("var")
     type wbr() =
         inherit VoidNode("wbr")
-
