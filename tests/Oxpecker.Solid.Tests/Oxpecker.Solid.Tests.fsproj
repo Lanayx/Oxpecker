@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+
+        <IsPackable>false</IsPackable>
+        <GenerateProgramFile>false</GenerateProgramFile>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Cases\HelloWorld\HelloWorld.fs" />
+        <Content Include="Cases\HelloWorld\HelloWorld.fsproj" />
+        <Content Include="Cases\HelloWorld\HelloWorld.expected" />
+        <Content Include="Cases\Parameters\Parameters.expected" />
+        <Compile Include="Cases\Parameters\Parameters.fs" />
+        <Content Include="Cases\Parameters\Parameters.fsproj" />
+        <Content Include="Cases\DeepNestedTags\DeepNestedTags.expected" />
+        <Compile Include="Cases\DeepNestedTags\DeepNestedTags.fs" />
+        <Content Include="Cases\DeepNestedTags\DeepNestedTags.fsproj" />
+        <Content Include="Cases\EventHandler\EventHandler.expected" />
+        <Compile Include="Cases\EventHandler\EventHandler.fs" />
+        <Content Include="Cases\EventHandler\EventHandler.fsproj" />
+        <Content Include="Cases\FlatNestedTags\FlatNestedTags.expected" />
+        <Compile Include="Cases\FlatNestedTags\FlatNestedTags.fs" />
+        <Content Include="Cases\FlatNestedTags\FlatNestedTags.fsproj" />
+        <Content Include="SolidCases\Signal\Signal.expected" />
+        <Compile Include="SolidCases\Signal\Signal.fs" />
+        <Content Include="SolidCases\Signal\Signal.fsproj" />
+        <Content Include="SolidCases\Components\Components.expected" />
+        <Compile Include="SolidCases\Components\Components.fs" />
+        <Content Include="SolidCases\Components\Components.fsproj" />
+        <Content Include="SolidCases\Children\Children.fsproj" />
+        <Compile Include="SolidCases\Children\Children.fs" />
+        <Content Include="SolidCases\Children\Children.expected" />
+        <Content Include="SolidCases\Iterators\Iterators.fsproj" />
+        <Compile Include="SolidCases\Iterators\Iterators.fs" />
+        <Content Include="SolidCases\Iterators\Iterators.expected" />
+        <Content Include="SolidCases\Conditional\Conditional.expected" />
+        <Compile Include="SolidCases\Conditional\Conditional.fs" />
+        <Content Include="SolidCases\Conditional\Conditional.fsproj" />
+        <Compile Include="Common.fs" />
+        <Compile Include="GeneralTests.fs" />
+        <Compile Include="SolidTests.fs" />
+        <Compile Include="Program.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.0" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
+        <PackageReference Include="Fable.Core" Version="4.3.0" />
+        <PackageReference Include="Fli" Version="1.111.10" />
+        <PackageReference Include="FsUnit.xUnit" Version="6.0.1" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+        <PackageReference Include="xunit" Version="2.9.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
+    </ItemGroup>
+
+
+</Project>

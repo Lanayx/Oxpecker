@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="IdeTweaks.fs" />
+        <Compile Include="Builder.fs" />
+        <Compile Include="Tags.fs" />
+        <Compile Include="SolidBindings.fs" />
+        <Compile Include="Aria.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Oxpecker.Solid.FablePlugin\Oxpecker.Solid.FablePlugin.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
+    </ItemGroup>
+
+</Project>

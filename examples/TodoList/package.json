@@ -1,0 +1,18 @@
+{
+  "private": "true",
+  "scripts": {
+    "postinstall": "dotnet tool restore",
+    "start": "dotnet fable watch --exclude Oxpecker.Solid.FablePlugin --noCache --extension .jsx --run vite",
+    "build": "dotnet fable --exclude Oxpecker.Solid.FablePlugin --noCache --extension .jsx --run vite build"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.22"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "vite": "^5.4.6",
+    "vite-plugin-solid": "^2.10.2"
+  }
+}
