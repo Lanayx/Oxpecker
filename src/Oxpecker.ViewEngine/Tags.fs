@@ -362,8 +362,6 @@ module Tags =
                     this.attr("autofocus", "") |> ignore
         member this.autocomplete
             with set value = this.attr("autocomplete", value) |> ignore
-        member this.autocapitalize
-            with set value = this.attr("autocapitalize", value) |> ignore
         member this.min
             with set value = this.attr("min", value) |> ignore
         member this.max

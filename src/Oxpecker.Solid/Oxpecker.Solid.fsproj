@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <PackageTags>fable-javascript</PackageTags>
+        <FablePackageType>binding</FablePackageType>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <PackageId>Oxpecker.Solid</PackageId>
+        <Title>Oxpecker.Solid</Title>
+        <RootNamespace>Oxpecker.Solid</RootNamespace>
+        <AssemblyName>Oxpecker.Solid</AssemblyName>
+        <Company>F# community</Company>
+        <Description>F# web framework built on top of Solid.js</Description>
+        <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker</PackageProjectUrl>
+        <PackageIcon>oxpecker-128.png</PackageIcon>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Oxpecker;F#;FSharp;Functional;js;Web;Framework;Solid;Solidjs</PackageTags>
+        <Authors>Vladimir Shchur</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Version>0.0.1</Version>
+        <PackageVersion>0.0.1</PackageVersion>
+        <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\" />
+        <Compile Include="IdeTweaks.fs" />
+        <Compile Include="Builder.fs" />
+        <Compile Include="Tags.fs" />
+        <Compile Include="SolidBindings.fs" />
+        <Compile Include="Aria.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Oxpecker.Solid.FablePlugin\Oxpecker.Solid.FablePlugin.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
+      <PackageReference Include="Fable.Package.SDK" Version="1.1.0">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="README.md" />
+    </ItemGroup>
+
+</Project>

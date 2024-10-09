@@ -1,6 +1,8 @@
 #ignore preconditional tests with long arrays
 tests/Oxpecker.Tests/Preconditional.Tests.fs
 tests/Oxpecker.Tests/Streaming.Tests.fs
+tests/Oxpecker.Solid.Tests
 examples/ContactApp
 examples/WeatherApp
 examples/Empty
+examples/TodoList

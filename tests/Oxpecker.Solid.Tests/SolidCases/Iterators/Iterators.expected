@@ -1,0 +1,17 @@
+import { int32ToString } from "./fable_modules/fable-library-js.4.21.0/Util.js";
+
+export function Test() {
+    return <div>
+        <For each={["one", "two", "three"]}>
+            {(item, index) => <h2 id={int32ToString(index())}>
+                {item}
+            </h2>}
+        </For>
+        <Index each={["one", "two", "three"]}>
+            {(item_1, index_1) => <h2 id={int32ToString(index_1)}>
+                {item_1()}
+            </h2>}
+        </Index>
+    </div>;
+}
+

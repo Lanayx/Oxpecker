@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <PackageId>Oxpecker.Solid.FablePlugin</PackageId>
+        <Title>Oxpecker.Solid.FablePlugin</Title>
+        <RootNamespace>Oxpecker.Solid</RootNamespace>
+        <AssemblyName>Oxpecker.Solid.FablePlugin</AssemblyName>
+        <Company>F# community</Company>
+        <Description>Fable plugin to make Oxpecker.Solid work</Description>
+        <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker</PackageProjectUrl>
+        <PackageIcon>oxpecker-128.png</PackageIcon>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>Oxpecker;F#;FSharp;Plugin;js;Compiler;Fable;Solid;Solidjs</PackageTags>
+        <Authors>Vladimir Shchur</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <Version>0.0.1</Version>
+        <PackageVersion>0.0.1</PackageVersion>
+        <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Fable.AST" Version="4.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
+        <None Include="README.md" Pack="true" PackagePath="\" />
+        <Compile Include="Library.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="README.md" />
+    </ItemGroup>
+
+</Project>
