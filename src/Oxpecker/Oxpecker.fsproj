@@ -14,7 +14,7 @@
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Functional;Http;Web;Framework;Micro;Service</PackageTags>
-        <Authors>Vladimir Shchur, F# community</Authors>
+        <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
