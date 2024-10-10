@@ -14,7 +14,7 @@
         <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
-        <PackageTags>Oxpecker;F#;FSharp;Plugin;js;Compiler;Fable;Solid;Solidjs</PackageTags>
+        <PackageTags>Oxpecker;F#;FSharp;Plugin;fable-javascript;Compiler;Fable;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
