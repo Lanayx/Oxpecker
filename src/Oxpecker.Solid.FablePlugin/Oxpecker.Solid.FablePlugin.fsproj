@@ -17,8 +17,6 @@
         <PackageTags>Oxpecker;F#;FSharp;Plugin;fable-javascript;Compiler;Fable;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Version>0.0.1</Version>
         <PackageVersion>0.0.1</PackageVersion>
         <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
