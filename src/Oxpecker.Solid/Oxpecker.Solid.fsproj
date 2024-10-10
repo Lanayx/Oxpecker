@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <PackageTags>fable-javascript</PackageTags>
         <FablePackageType>binding</FablePackageType>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
         <PackageId>Oxpecker.Solid</PackageId>
@@ -16,7 +15,7 @@
         <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
-        <PackageTags>Oxpecker;F#;FSharp;Functional;js;Web;Framework;Solid;Solidjs</PackageTags>
+        <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
