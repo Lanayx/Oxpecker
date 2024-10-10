@@ -2,8 +2,8 @@
   "private": "true",
   "scripts": {
     "postinstall": "dotnet tool restore",
-    "start": "dotnet fable watch --exclude Oxpecker.Solid.FablePlugin --noCache --extension .jsx --run vite",
-    "build": "dotnet fable --exclude Oxpecker.Solid.FablePlugin --noCache --extension .jsx --run vite build"
+    "start": "dotnet fable watch --extension .jsx --run vite",
+    "build": "dotnet fable--extension .jsx --run vite build"
   },
   "dependencies": {
     "solid-js": "^1.8.22"

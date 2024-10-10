@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <FablePackageType>binding</FablePackageType>
+        <FablePackageType>library</FablePackageType>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
         <PackageId>Oxpecker.Solid</PackageId>
         <Title>Oxpecker.Solid</Title>
@@ -20,8 +20,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.0.1</Version>
-        <PackageVersion>0.0.1</PackageVersion>
+        <Version>0.0.2</Version>
+        <PackageVersion>0.0.2</PackageVersion>
         <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
     </PropertyGroup>
 
@@ -35,9 +35,6 @@
         <Compile Include="Aria.fs" />
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Oxpecker.Solid.FablePlugin\Oxpecker.Solid.FablePlugin.fsproj" />
-    </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
@@ -45,6 +42,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
+      <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.0.1" />
     </ItemGroup>
 
     <ItemGroup>
