@@ -1,4 +1,4 @@
-import { some } from "./fable_modules/fable-library-js.4.21.0/Option.js";
+import { some } from "./fable_modules/fable-library-js.4.22.0/Option.js";
 
 export function clicked2(evt) {
     console.log(some(evt.type));
