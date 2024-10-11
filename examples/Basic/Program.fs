@@ -153,8 +153,6 @@ let endpoints = [
         routef "/text/{%s}" text
         |> configureEndpoint _.WithName("GetText")
         |> addOpenApiSimple<unit, string>
-        routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
-        routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         route "/x" (bindQuery handler4)
         routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
@@ -186,6 +184,8 @@ let endpoints = [
     subRoute "/sub1" [
         GET [ subRoute "/sub2" [ MY_HEADER <| route "/test" handler1 ] ]
         CLOSED <| POST [ route "/sub2/test" handler1 ]
+        routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
+        routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
     ]
     CLOSED <| route "/auth/x" (text "Not closed")
     CLOSED
