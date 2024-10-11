@@ -3,6 +3,7 @@ namespace Oxpecker.Solid
 open System.Runtime.CompilerServices
 open Browser.Types
 open Fable.Core
+open System
 
 type Setter<'T> = 'T -> unit
 type Accessor<'T> = unit -> 'T
@@ -84,10 +85,85 @@ module Bindings =
             this
 
 
+    [<RequireQualifiedAccess; StringEnum>]
+    type SolidResourceState =
+        /// Hasn't started loading, no value yet
+        | Unresolved
+        /// It's loading, no value yet
+        | Pending
+        /// Finished loading, has value
+        | Ready
+        /// It's re-loading, `latest` has value
+        | Refreshing
+        /// Finished loading with an error, no value
+        | Errored
+
+    type SolidResource<'T> =
+        /// Attention, will be undefined while loading
+        [<Emit("$0()")>]
+        abstract current: 'T
+        abstract state: SolidResourceState
+        abstract loading: bool
+        abstract error: exn option
+        /// Unlike `current`, it keeps the latest value while re-loading
+        /// Attention, will be undefined until first value has been loaded
+        abstract latest: 'T
+
+    type SolidResourceManager<'T> =
+        abstract mutate: 'T -> 'T
+        abstract refetch: unit -> JS.Promise<'T>
+
+    type SolidStore<'T> =
+        [<Emit("$0")>]
+        abstract Value: 'T
+
+    type SolidStoreSetter<'T> =
+        [<Emit("$0($1)")>]
+        abstract Update: 'T -> unit
+        [<Emit("$0($1)")>]
+        abstract Update: ('T -> 'T) -> unit
+        [<Emit("$0(...$1)")>]
+        abstract UpdatePath: obj[] -> unit
+
+    type SolidStorePath<'T, 'Value>(setter: SolidStoreSetter<'T>, path: obj[]) =
+        member _.Setter = setter
+        member _.Path = path
+        member inline this.Map(map: 'Value -> 'Value2) =
+            SolidStorePath<'T, 'Value2>(this.Setter, Experimental.namesofLambda map |> Array.map box |> Array.append this.Path)
+        member this.Update(value: 'Value): unit = this.Setter.UpdatePath(Array.append this.Path [|value|])
+        member this.Update(updater: 'Value -> 'Value): unit = this.Setter.UpdatePath(Array.append this.Path [|updater|])
+
 [<AutoOpen>]
 type Bindings =
+
     [<ImportMember("solid-js/web")>]
-    static member render(f: unit -> #HtmlElement, el: #Element) : unit = jsNative
+    static member render(code: unit -> #HtmlElement, element: #Element) : unit = jsNative
 
     [<ImportMember("solid-js")>]
     static member createSignal(value: 'T) : Signal<'T> = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member createMemo(value: unit -> 'T): (unit -> 'T) = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member createEffect(effect: unit -> unit): unit = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member createEffect(effect: 'T -> 'T, initialValue: 'T): unit = jsNative
+
+    /// Fetcher will be called immediately
+    [<ImportMember("solid-js"); ParamObject(fromIndex=1)>]
+    static member createResource(fetcher: unit -> JS.Promise<'T>, ?initialValue: 'T): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+
+    /// Fetcher will be called only when source signal returns `Some('U)`
+    [<ImportMember("solid-js"); ParamObject(fromIndex=2)>]
+    static member createResource(source: unit -> 'U option, fetcher: 'U -> JS.Promise<'T>, ?initialValue: 'T): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member createRoot(fn: (* dispose *) Action -> 'T): 'T = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member createUniqueId(): string = jsNative
+
+    [<ImportMember("solid-js/store")>]
+    static member createStore(store: 'T): SolidStore<'T> * SolidStoreSetter<'T> = jsNative
