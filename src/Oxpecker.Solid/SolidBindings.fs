@@ -129,9 +129,14 @@ module Bindings =
         member _.Setter = setter
         member _.Path = path
         member inline this.Map(map: 'Value -> 'Value2) =
-            SolidStorePath<'T, 'Value2>(this.Setter, Experimental.namesofLambda map |> Array.map box |> Array.append this.Path)
-        member this.Update(value: 'Value): unit = this.Setter.UpdatePath(Array.append this.Path [|value|])
-        member this.Update(updater: 'Value -> 'Value): unit = this.Setter.UpdatePath(Array.append this.Path [|updater|])
+            SolidStorePath<'T, 'Value2>(
+                this.Setter,
+                Experimental.namesofLambda map |> Array.map box |> Array.append this.Path
+            )
+        member this.Update(value: 'Value) : unit =
+            this.Setter.UpdatePath(Array.append this.Path [| value |])
+        member this.Update(updater: 'Value -> 'Value) : unit =
+            this.Setter.UpdatePath(Array.append this.Path [| updater |])
 
 [<AutoOpen>]
 type Bindings =
@@ -143,27 +148,33 @@ type Bindings =
     static member createSignal(value: 'T) : Signal<'T> = jsNative
 
     [<ImportMember("solid-js")>]
-    static member createMemo(value: unit -> 'T): (unit -> 'T) = jsNative
+    static member createMemo(value: unit -> 'T) : (unit -> 'T) = jsNative
 
     [<ImportMember("solid-js")>]
-    static member createEffect(effect: unit -> unit): unit = jsNative
+    static member createEffect(effect: unit -> unit) : unit = jsNative
 
     [<ImportMember("solid-js")>]
-    static member createEffect(effect: 'T -> 'T, initialValue: 'T): unit = jsNative
+    static member createEffect(effect: 'T -> 'T, initialValue: 'T) : unit = jsNative
 
     /// Fetcher will be called immediately
-    [<ImportMember("solid-js"); ParamObject(fromIndex=1)>]
-    static member createResource(fetcher: unit -> JS.Promise<'T>, ?initialValue: 'T): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+    [<ImportMember("solid-js"); ParamObject(fromIndex = 1)>]
+    static member createResource
+        (fetcher: unit -> JS.Promise<'T>, ?initialValue: 'T)
+        : SolidResource<'T> * SolidResourceManager<'T> =
+        jsNative
 
     /// Fetcher will be called only when source signal returns `Some('U)`
-    [<ImportMember("solid-js"); ParamObject(fromIndex=2)>]
-    static member createResource(source: unit -> 'U option, fetcher: 'U -> JS.Promise<'T>, ?initialValue: 'T): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+    [<ImportMember("solid-js"); ParamObject(fromIndex = 2)>]
+    static member createResource
+        (source: unit -> 'U option, fetcher: 'U -> JS.Promise<'T>, ?initialValue: 'T)
+        : SolidResource<'T> * SolidResourceManager<'T> =
+        jsNative
 
     [<ImportMember("solid-js")>]
-    static member createRoot(fn: (* dispose *) Action -> 'T): 'T = jsNative
+    static member createRoot(fn (* dispose *) : Action -> 'T) : 'T = jsNative
 
     [<ImportMember("solid-js")>]
-    static member createUniqueId(): string = jsNative
+    static member createUniqueId() : string = jsNative
 
     [<ImportMember("solid-js/store")>]
-    static member createStore(store: 'T): SolidStore<'T> * SolidStoreSetter<'T> = jsNative
+    static member createStore(store: 'T) : SolidStore<'T> * SolidStoreSetter<'T> = jsNative
