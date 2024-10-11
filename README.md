@@ -34,12 +34,15 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - IResult support
 - Many useful **HttpContext** extensions
 
-## Examples:
+## Get started:
 - [Empty template](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Empty)
+
+## Examples:
 - [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Basic)
 - [Full CRUD example with functional DI](https://github.com/Lanayx/Oxpecker/blob/develop/examples/CRUD)
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/develop/examples/WeatherApp)
+- [SPA application (TODO list) without backend](https://github.com/Lanayx/Oxpecker/tree/develop/examples/TodoList)
 
 ## Documentation links:
 
@@ -53,4 +56,4 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 
 **develop** is a development branch, projects are linked with each other using project references. Use this branch to send PRs.
 
-**main** is a production branch, projects are linked with each other using nuget packages. Packages are published from this branch.
+**main** is a production branch, projects and examples are linked with each other using nuget (or npm) packages. Packages are published from this branch.
