@@ -24,6 +24,9 @@
         <Content Include="Cases\FlatNestedTags\FlatNestedTags.expected" />
         <Compile Include="Cases\FlatNestedTags\FlatNestedTags.fs" />
         <Content Include="Cases\FlatNestedTags\FlatNestedTags.fsproj" />
+        <Content Include="Cases\CustomAttributes\CustomAttributes.expected" />
+        <Compile Include="Cases\CustomAttributes\CustomAttributes.fs" />
+        <Content Include="Cases\CustomAttributes\CustomAttributes.fsproj" />
         <Content Include="SolidCases\Signal\Signal.expected" />
         <Compile Include="SolidCases\Signal\Signal.fs" />
         <Content Include="SolidCases\Signal\Signal.fsproj" />

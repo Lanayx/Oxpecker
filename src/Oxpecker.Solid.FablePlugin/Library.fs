@@ -1,4 +1,4 @@
-﻿namespace Oxpecker.Solid
+namespace Oxpecker.Solid
 
 open System
 open Fable
@@ -69,21 +69,33 @@ module internal rec AST =
                    Args = TagNoChildren(tagName, _) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+               range) when
+            importInfo.Selector.StartsWith("HtmlElementExtensions_on")
+            || importInfo.Selector.StartsWith("HtmlElementExtensions_attr")
+            || importInfo.Selector.StartsWith("HtmlElementExtensions_data")
+            ->
             TagInfo.NoChildren(tagName, [ expr ], range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = LetTagNoChildrenWithProps(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+               range) when
+            importInfo.Selector.StartsWith("HtmlElementExtensions_on")
+            || importInfo.Selector.StartsWith("HtmlElementExtensions_attr")
+            || importInfo.Selector.StartsWith("HtmlElementExtensions_data")
+            ->
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+               range) when
+            importInfo.Selector.StartsWith("HtmlElementExtensions_on")
+            || importInfo.Selector.StartsWith("HtmlElementExtensions_attr")
+            || importInfo.Selector.StartsWith("HtmlElementExtensions_data")
+            ->
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | _ -> None
 
@@ -136,10 +148,11 @@ module internal rec AST =
             | ImportKind.MemberImport(MemberRef(entity, memberRefInfo)) when
                 entity.FullName.StartsWith("Oxpecker.Solid")
                 ->
-                if memberRefInfo.CompiledName = "on" then
-                    ("on:" + eventName, handler) :: restResults
-                else
-                    restResults
+                match memberRefInfo.CompiledName with
+                | "on" -> ("on:" + eventName, handler) :: restResults
+                | "data" -> ("data-" + eventName, handler) :: restResults
+                | "attr" -> (eventName, handler) :: restResults
+                | _ -> restResults
             | _ -> restResults
         | Call(Import(importInfo, _, _), callInfo, _, _) :: rest ->
             let restResults = collectAttributes rest

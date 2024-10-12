@@ -34,3 +34,7 @@ let ``Event handler`` () =
 [<Fact>]
 let ``Flat nested tags`` () =
     runGeneralCase "FlatNestedTags"
+
+[<Fact>]
+let ``Custom attributes`` () =
+    runGeneralCase "CustomAttributes"
