@@ -113,30 +113,53 @@ module Bindings =
         abstract mutate: 'T -> 'T
         abstract refetch: unit -> JS.Promise<'T>
 
-    type SolidStore<'T> =
-        [<Emit("$0")>]
-        abstract Value: 'T
-
     type SolidStoreSetter<'T> =
+        /// Replace old store value with new
         [<Emit("$0($1)")>]
-        abstract Update: 'T -> unit
+        abstract Update: newValue: 'T -> unit
+        /// Update store specifying updater function from old value to new value
         [<Emit("$0($1)")>]
-        abstract Update: ('T -> 'T) -> unit
+        abstract Update: updater: ('T -> 'T) -> unit
+        /// Update store using native solid path syntax
         [<Emit("$0(...$1)")>]
-        abstract UpdatePath: obj[] -> unit
+        abstract UpdatePath: pathArgs: obj[] -> unit
 
     type SolidStorePath<'T, 'Value>(setter: SolidStoreSetter<'T>, path: obj[]) =
         member _.Setter = setter
         member _.Path = path
+        /// Choose the store item that should be updated
         member inline this.Map(map: 'Value -> 'Value2) =
             SolidStorePath<'T, 'Value2>(
                 this.Setter,
                 Experimental.namesofLambda map |> Array.map box |> Array.append this.Path
             )
+        /// Update store item using new value
         member this.Update(value: 'Value) : unit =
             this.Setter.UpdatePath(Array.append this.Path [| value |])
+        /// Update store item specifying updater function from old value to new value
         member this.Update(updater: 'Value -> 'Value) : unit =
             this.Setter.UpdatePath(Array.append this.Path [| updater |])
+
+    [<AutoOpen>]
+    module SolidExtensions =
+
+        type SolidStoreSetter<'T> with
+            /// Access more convenient way of updating store items
+            member this.Path = SolidStorePath<'T, 'T>(this, [||])
+
+    [<Runtime.CompilerServices.Extension>]
+    type SolidStorePathExtensions =
+
+        /// Select store item by index
+        [<Runtime.CompilerServices.Extension>]
+        static member inline Item(this: SolidStorePath<'T, 'Value array>, index: int) =
+            SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| index |])
+
+        /// Select store item by predicate
+        [<Runtime.CompilerServices.Extension>]
+        static member inline Find(this: SolidStorePath<'T, 'Value array>, predicate: 'Value -> bool) =
+            SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| predicate |])
+
 
 [<AutoOpen>]
 type Bindings =
@@ -177,4 +200,4 @@ type Bindings =
     static member createUniqueId() : string = jsNative
 
     [<ImportMember("solid-js/store")>]
-    static member createStore(store: 'T) : SolidStore<'T> * SolidStoreSetter<'T> = jsNative
+    static member createStore(store: 'T) : 'T * SolidStoreSetter<'T> = jsNative
