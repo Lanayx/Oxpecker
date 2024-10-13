@@ -167,6 +167,9 @@ type Bindings =
     [<ImportMember("solid-js/web")>]
     static member render(code: unit -> #HtmlElement, element: #Element) : unit = jsNative
 
+    [<ImportMember("solid-js/web")>]
+    static member renderToString(fn: (unit -> #HtmlElement)) : string = jsNative
+
     [<ImportMember("solid-js")>]
     static member createSignal(value: 'T) : Signal<'T> = jsNative
 
@@ -201,3 +204,41 @@ type Bindings =
 
     [<ImportMember("solid-js/store")>]
     static member createStore(store: 'T) : 'T * SolidStoreSetter<'T> = jsNative
+
+    [<ImportMember("solid-js/store")>]
+    static member reconcile<'T, 'U>(value: 'T) : ('U -> 'T) = jsNative
+
+    [<ImportMember("solid-js/store")>]
+    static member produce<'T>(fn: ('T -> unit)) : ('T -> 'T) = jsNative
+
+    [<ImportMember("solid-js/store")>]
+    static member unwrap<'T>(item: 'T) : 'T = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member batch<'T>(fn: (unit -> 'T)) : 'T = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member catchError<'T>(tryFn: (unit -> 'T), onError: (obj -> unit)) : 'T = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member onCleanup(fn: (unit -> unit)) : unit = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member onMount(fn: (unit -> unit)) : unit = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member useTransition() : (unit -> bool) * ((unit -> unit) -> JS.Promise<unit>) = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member startTransition() : ((unit -> unit) -> JS.Promise<unit>) = jsNative
+
+    [<ImportMember("solid-js")>]
+    static member untrack<'T>(fn: Accessor<'T>) : 'T = jsNative
+
+    /// Component should be decorated by `ExportDefaultAttribute`. Use in combination with `lazy'`.
+    [<Emit("import($0)")>]
+    static member importComponent(path: string) : JS.Promise<HtmlElement> = jsNative
+
+    /// Component lazy loading. Use in combination with `importComponent`
+    [<Import("lazy", "solid-js"); JS.RemoveSurroundingArgs>]
+    static member lazy'(import: unit -> JS.Promise<HtmlElement>) : HtmlElement = jsNative
