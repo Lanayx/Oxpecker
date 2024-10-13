@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <Compile Include="Cases\HelloWorld\HelloWorld.fs" />
+        <Compile Include="SolidCases\Suspense\Suspense.fs" />
         <Content Include="Cases\HelloWorld\HelloWorld.fsproj" />
         <Content Include="Cases\HelloWorld\HelloWorld.expected" />
         <Content Include="Cases\Parameters\Parameters.expected" />
@@ -49,9 +50,15 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Include="SolidCases\Suspense\Suspense.expected" />
+      <None Include="SolidCases\Suspense\Suspense.fsproj" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0" />
         <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
         <PackageReference Include="Fable.Core" Version="4.3.0" />
+        <PackageReference Include="Fable.Promise" Version="3.2.0" />
         <PackageReference Include="Fli" Version="1.111.10" />
         <PackageReference Include="FsUnit.xUnit" Version="6.0.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />

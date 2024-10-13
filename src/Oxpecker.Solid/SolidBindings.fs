@@ -66,6 +66,26 @@ module Bindings =
         member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: Match) : HtmlContainerFun = fun cont -> ignore value
 
+    type Suspense() =
+        interface HtmlContainer
+        member this.fallback
+            with set (value: HtmlElement) = ()
+
+    type SuspenseList() =
+        interface HtmlContainer
+        member this.revealOrder
+            with set (value: string) = ()
+        member this.tail
+            with set (value: string) = ()
+        member this.fallback
+            with set (value: HtmlElement) = ()
+
+    type Portal() =
+        interface HtmlContainer
+        member this.mount
+            with set (value: Element) = ()
+        member this.useShadow
+            with set (value: bool) = ()
 
     type Extensions =
 
@@ -83,7 +103,6 @@ module Bindings =
         static member Run(this: Switch, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
-
 
     [<RequireQualifiedAccess; StringEnum>]
     type SolidResourceState =
@@ -240,5 +259,5 @@ type Bindings =
     static member importComponent(path: string) : JS.Promise<HtmlElement> = jsNative
 
     /// Component lazy loading. Use in combination with `importComponent`
-    [<Import("lazy", "solid-js"); JS.RemoveSurroundingArgs>]
+    [<Import("lazy", "solid-js")>]
     static member lazy'(import: unit -> JS.Promise<HtmlElement>) : HtmlElement = jsNative
