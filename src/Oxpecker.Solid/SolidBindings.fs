@@ -16,13 +16,259 @@ module Bindings =
     type HtmlTag with
         member this.onClick
             with set (_: MouseEvent -> unit) = ()
+        member this.onDblClick
+            with set (_: MouseEvent -> unit) = ()
+        member this.onBlur
+            with set (_: FocusEvent -> unit) = ()
+        member this.onFocus
+            with set (_: FocusEvent -> unit) = ()
+        member this.onContextMenu
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseDown
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseUp
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseEnter
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseLeave
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseOver
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseOut
+            with set (_: MouseEvent -> unit) = ()
+        member this.onMouseMove
+            with set (_: MouseEvent -> unit) = ()
+        member this.onWheel
+            with set (_: WheelEvent -> unit) = ()
+        member this.onKeyDown
+            with set (_: KeyboardEvent -> unit) = ()
+        member this.onKeyUp
+            with set (_: KeyboardEvent -> unit) = ()
+        member this.onKeyPress
+            with set (_: KeyboardEvent -> unit) = ()
+        member this.onDrag
+            with set (_: DragEvent -> unit) = ()
+        member this.onDragEnd
+            with set (_: DragEvent -> unit) = ()
+        member this.onDragEnter
+            with set (_: DragEvent -> unit) = ()
+        member this.onDragLeave
+            with set (_: DragEvent -> unit) = ()
+        member this.onDragOver
+            with set (_: DragEvent -> unit) = ()
+        member this.onDragStart
+            with set (_: DragEvent -> unit) = ()
+        member this.onDrop
+            with set (_: DragEvent -> unit) = ()
+        member this.onScroll
+            with set (_: Event -> unit) = ()
+        member this.onPointerDown
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerMove
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerUp
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerCancel
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerEnter
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerLeave
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerOver
+            with set (_: PointerEvent -> unit) = ()
+        member this.onPointerOut
+            with set (_: PointerEvent -> unit) = ()
+        member this.onGotPointerCapture
+            with set (_: PointerEvent -> unit) = ()
+        member this.onLostPointerCapture
+            with set (_: PointerEvent -> unit) = ()
+        member this.onAnimationStart
+            with set (_: AnimationEvent -> unit) = ()
+        member this.onAnimationEnd
+            with set (_: AnimationEvent -> unit) = ()
+        member this.onAnimationIteration
+            with set (_: AnimationEvent -> unit) = ()
+        member this.onTransitionEnd
+            with set (_: TransitionEvent -> unit) = ()
+        member this.onTransitionRun
+            with set (_: TransitionEvent -> unit) = ()
+        member this.onTransitionStart
+            with set (_: TransitionEvent -> unit) = ()
+        member this.onTransitionCancel
+            with set (_: TransitionEvent -> unit) = ()
+        member this.onTouchStart
+            with set (_: TouchEvent -> unit) = ()
+        member this.onTouchMove
+            with set (_: TouchEvent -> unit) = ()
+        member this.onTouchEnd
+            with set (_: TouchEvent -> unit) = ()
+        member this.onTouchCancel
+            with set (_: TouchEvent -> unit) = ()
+
+    type form with
+        member this.onSubmit
+            with set (_: Event -> unit) = ()
+        member this.onReset
+            with set (_: Event -> unit) = ()
 
     type input with
         member this.onChange
             with set (_: Event -> unit) = ()
+        member this.onInvalid
+            with set (_: Event -> unit) = ()
+        member this.onInput
+            with set (_: UIEvent -> unit) = ()
+        member this.onSelect
+            with set (_: Event -> unit) = ()
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onLoad
+            with set (_: Event -> unit) = ()
 
-    type form with
-        member this.onSubmit
+    type select with
+        member this.onChange
+            with set (_: Event -> unit) = ()
+
+    type textarea with
+        member this.onChange
+            with set (_: Event -> unit) = ()
+        member this.onInput
+            with set (_: UIEvent -> unit) = ()
+        member this.onSelect
+            with set (_: Event -> unit) = ()
+
+    type details with
+        member this.onToggle
+            with set (_: Event -> unit) = ()
+
+    type img with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type object' with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type link with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type script with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type style with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type body with
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type iframe with
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type embed with
+        member this.onLoad
+            with set (_: Event -> unit) = ()
+
+    type audio with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onPlay
+            with set (_: Event -> unit) = ()
+        member this.onPause
+            with set (_: Event -> unit) = ()
+        member this.onEnded
+            with set (_: Event -> unit) = ()
+        member this.onVolumeChange
+            with set (_: Event -> unit) = ()
+        member this.onSeeked
+            with set (_: Event -> unit) = ()
+        member this.onSeeking
+            with set (_: Event -> unit) = ()
+        member this.onTimeUpdate
+            with set (_: Event -> unit) = ()
+        member this.onDurationChange
+            with set (_: Event -> unit) = ()
+        member this.onRateChange
+            with set (_: Event -> unit) = ()
+        member this.onCanPlay
+            with set (_: Event -> unit) = ()
+        member this.onCanPlayThrough
+            with set (_: Event -> unit) = ()
+        member this.onStalled
+            with set (_: Event -> unit) = ()
+        member this.onWaiting
+            with set (_: Event -> unit) = ()
+        member this.onEmptied
+            with set (_: Event -> unit) = ()
+        member this.onLoadedData
+            with set (_: Event -> unit) = ()
+        member this.onLoadedMetadata
+            with set (_: Event -> unit) = ()
+        member this.onLoadStart
+            with set (_: Event -> unit) = ()
+        member this.onProgress
+            with set (_: ProgressEvent -> unit) = ()
+        member this.onSuspend
+            with set (_: Event -> unit) = ()
+        member this.onAbort
+            with set (_: Event -> unit) = ()
+
+    type video with
+        member this.onError
+            with set (_: Event -> unit) = ()
+        member this.onPlay
+            with set (_: Event -> unit) = ()
+        member this.onPause
+            with set (_: Event -> unit) = ()
+        member this.onEnded
+            with set (_: Event -> unit) = ()
+        member this.onVolumeChange
+            with set (_: Event -> unit) = ()
+        member this.onSeeked
+            with set (_: Event -> unit) = ()
+        member this.onSeeking
+            with set (_: Event -> unit) = ()
+        member this.onTimeUpdate
+            with set (_: Event -> unit) = ()
+        member this.onDurationChange
+            with set (_: Event -> unit) = ()
+        member this.onRateChange
+            with set (_: Event -> unit) = ()
+        member this.onCanPlay
+            with set (_: Event -> unit) = ()
+        member this.onCanPlayThrough
+            with set (_: Event -> unit) = ()
+        member this.onStalled
+            with set (_: Event -> unit) = ()
+        member this.onWaiting
+            with set (_: Event -> unit) = ()
+        member this.onEmptied
+            with set (_: Event -> unit) = ()
+        member this.onLoadedData
+            with set (_: Event -> unit) = ()
+        member this.onLoadedMetadata
+            with set (_: Event -> unit) = ()
+        member this.onLoadStart
+            with set (_: Event -> unit) = ()
+        member this.onProgress
+            with set (_: ProgressEvent -> unit) = ()
+        member this.onSuspend
+            with set (_: Event -> unit) = ()
+        member this.onAbort
             with set (_: Event -> unit) = ()
 
     type For<'T>() =
