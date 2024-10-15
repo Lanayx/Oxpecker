@@ -69,27 +69,21 @@ module internal rec AST =
                    Args = TagNoChildren(tagName, _) :: _
                },
                _,
-               range) when
-            importInfo.Selector.StartsWith("HtmlElementExtensions_") // on, attr, data, ref
-            ->
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") ->  // on, attr, data, ref
             TagInfo.NoChildren(tagName, [ expr ], range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = LetTagNoChildrenWithProps(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when
-            importInfo.Selector.StartsWith("HtmlElementExtensions_") // on, attr, data, ref
-            ->
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") ->  // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when
-            importInfo.Selector.StartsWith("HtmlElementExtensions_") // on, attr, data, ref
-            ->
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") ->  // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | _ -> None
 
@@ -127,10 +121,12 @@ module internal rec AST =
             range = None
         )
 
-    
+
     let private (|EventHandler|_|) callInfo =
         match callInfo with
-        | { Args = [ _; Value(StringConstant eventName, _); handler ] } -> Some (eventName, handler)
+        | {
+              Args = [ _; Value(StringConstant eventName, _); handler ]
+          } -> Some(eventName, handler)
         | _ -> None
 
     let rec collectAttributes (exprs: Expr list) =
@@ -142,13 +138,13 @@ module internal rec AST =
             match importInfo.Kind with
             | ImportKind.MemberImport(MemberRef(entity, memberRefInfo)) when
                 entity.FullName.StartsWith("Oxpecker.Solid")
-                ->                
+                ->
                 match memberRefInfo.CompiledName, callInfo with
-                | "on", EventHandler (eventName, handler) -> ("on:" + eventName, handler) :: restResults
-                | "data", EventHandler (eventName, handler) -> ("data-" + eventName, handler) :: restResults
-                | "attr", EventHandler (eventName, handler) -> (eventName, handler) :: restResults
+                | "on", EventHandler(eventName, handler) -> ("on:" + eventName, handler) :: restResults
+                | "data", EventHandler(eventName, handler) -> ("data-" + eventName, handler) :: restResults
+                | "attr", EventHandler(eventName, handler) -> (eventName, handler) :: restResults
                 | "ref", { Args = [ _; identExpr ] } -> ("ref", identExpr) :: restResults
-                | _ -> 
+                | _ ->
                     let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
                     if setterIndex >= 0 then
                         let propName =

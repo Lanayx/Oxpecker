@@ -31,7 +31,7 @@ module Tags =
         /// Referenced native HTML element
         [<Extension>]
         static member ref(this: #HtmlTag, el: #Element) = this
-        
+
         /// Referenced native HTML element (before connecting to DOM)
         [<Extension>]
         static member ref(this: #HtmlTag, el: #Element -> unit) = this
