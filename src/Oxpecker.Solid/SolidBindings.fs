@@ -104,6 +104,26 @@ module Bindings =
             with set (_: TouchEvent -> unit) = ()
         member this.onTouchCancel
             with set (_: TouchEvent -> unit) = ()
+        member this.onCopy
+            with set (_: ClipboardEvent -> unit) = ()
+        member this.onCut
+            with set (_: ClipboardEvent -> unit) = ()
+        member this.onPaste
+            with set (_: ClipboardEvent -> unit) = ()
+        member this.onCompositionStart
+            with set (_: CompositionEvent -> unit) = ()
+        member this.onCompositionEnd
+            with set (_: CompositionEvent -> unit) = ()
+        member this.onCompositionUpdate
+            with set (_: CompositionEvent -> unit) = ()
+        member this.onFocusIn
+            with set (_: FocusEvent -> unit) = ()
+        member this.onFocusOut
+            with set (_: FocusEvent -> unit) = ()
+        member this.onEncrypted
+            with set (_: Event -> unit) = ()
+        member this.onDragExit
+            with set (_: DragEvent -> unit) = ()
 
     type form with
         member this.onSubmit

@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <Compile Include="Cases\HelloWorld\HelloWorld.fs" />
+        <Compile Include="SolidCases\Refs\Refs.fs" />
         <Compile Include="SolidCases\Suspense\Suspense.fs" />
         <Content Include="Cases\HelloWorld\HelloWorld.fsproj" />
         <Content Include="Cases\HelloWorld\HelloWorld.expected" />
@@ -50,6 +51,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Include="SolidCases\Refs\Refs.expected" />
+      <None Include="SolidCases\Refs\Refs.fsproj" />
       <None Include="SolidCases\Suspense\Suspense.expected" />
       <None Include="SolidCases\Suspense\Suspense.fsproj" />
     </ItemGroup>

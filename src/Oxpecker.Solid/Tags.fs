@@ -28,6 +28,14 @@ module Tags =
         [<Extension>]
         static member data(this: #HtmlTag, name: string, value: string) = this
 
+        /// Referenced native HTML element
+        [<Extension>]
+        static member ref(this: #HtmlTag, el: #Element) = this
+        
+        /// Referenced native HTML element (before connecting to DOM)
+        [<Extension>]
+        static member ref(this: #HtmlTag, el: #Element -> unit) = this
+
     // global attributes
     type HtmlTag with
         member this.id
