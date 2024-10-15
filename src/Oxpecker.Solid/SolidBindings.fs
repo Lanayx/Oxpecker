@@ -307,7 +307,6 @@ module Bindings =
             fun builder ->
                 first builder
                 second builder
-
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
         member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: Match) : HtmlContainerFun = fun cont -> ignore value
@@ -332,6 +331,11 @@ module Bindings =
             with set (value: Element) = ()
         member this.useShadow
             with set (value: bool) = ()
+
+    type ErrorBoundary() =
+        interface HtmlContainer
+        member this.fallback
+            with set (value: HtmlElement) = ()
 
     type Extensions =
 
