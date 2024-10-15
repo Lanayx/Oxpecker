@@ -69,21 +69,21 @@ module internal rec AST =
                    Args = TagNoChildren(tagName, _) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") ->  // on, attr, data, ref
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, [ expr ], range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = LetTagNoChildrenWithProps(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") ->  // on, attr, data, ref
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") ->  // on, attr, data, ref
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | _ -> None
 
