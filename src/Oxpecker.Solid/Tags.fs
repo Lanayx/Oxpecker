@@ -36,6 +36,18 @@ module Tags =
         [<Extension>]
         static member ref(this: #HtmlTag, el: #Element -> unit) = this
 
+        /// Usage `elem.style(createObj ["color", "green"; "background-color", state.myColor ])`
+        [<Extension>]
+        static member style'(this: #HtmlTag, styleObj: obj) = this
+
+        /// Usage `elem.classList(createObj ["active", true; "disabled", state.disabled ])`
+        [<Extension>]
+        static member classList(this: #HtmlTag, classListObj: obj) = this
+
+        /// Adds or removes attribute without value
+        [<Extension>]
+        static member bool(this: #HtmlTag, name: string, value: bool) = this
+
     // global attributes
     type HtmlTag with
         member this.id

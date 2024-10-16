@@ -141,9 +141,12 @@ module internal rec AST =
                 ->
                 match memberRefInfo.CompiledName, callInfo with
                 | "on", EventHandler(eventName, handler) -> ("on:" + eventName, handler) :: restResults
+                | "bool", EventHandler(eventName, handler) -> ("bool:" + eventName, handler) :: restResults
                 | "data", EventHandler(eventName, handler) -> ("data-" + eventName, handler) :: restResults
                 | "attr", EventHandler(eventName, handler) -> (eventName, handler) :: restResults
                 | "ref", { Args = [ _; identExpr ] } -> ("ref", identExpr) :: restResults
+                | "style'", { Args = [ _; identExpr ] } -> ("style", identExpr) :: restResults
+                | "classList", { Args = [ _; identExpr ] } -> ("classList", identExpr) :: restResults
                 | _ ->
                     let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
                     if setterIndex >= 0 then
