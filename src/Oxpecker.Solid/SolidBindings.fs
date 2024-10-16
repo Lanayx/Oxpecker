@@ -125,6 +125,12 @@ module Bindings =
         member this.onDragExit
             with set (_: DragEvent -> unit) = ()
 
+    type RegularNode with
+        member this.textContent
+            with set (value: string) = ()
+        member this.innerHTML
+            with set (value: string) = ()
+
     type form with
         member this.onSubmit
             with set (_: Event -> unit) = ()
