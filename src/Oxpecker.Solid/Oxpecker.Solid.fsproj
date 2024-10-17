@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
@@ -18,8 +18,6 @@
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Version>0.0.2</Version>
         <PackageVersion>0.0.2</PackageVersion>
         <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
@@ -37,6 +35,7 @@
 
 
     <ItemGroup>
+      <PackageReference Include="Fable.Core" Version="4.3.0" />
       <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
       <PackageReference Include="Fable.Package.SDK" Version="1.1.0">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

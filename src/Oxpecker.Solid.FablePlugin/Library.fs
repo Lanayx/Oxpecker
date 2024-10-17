@@ -1,4 +1,4 @@
-﻿namespace Oxpecker.Solid
+namespace Oxpecker.Solid
 
 open System
 open Fable
@@ -69,21 +69,21 @@ module internal rec AST =
                    Args = TagNoChildren(tagName, _) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, [ expr ], range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = LetTagNoChildrenWithProps(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)) :: _
                },
                _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_on") ->
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | _ -> None
 
@@ -121,49 +121,50 @@ module internal rec AST =
             range = None
         )
 
+
+    let private (|EventHandler|_|) callInfo =
+        match callInfo with
+        | {
+              Args = [ _; Value(StringConstant eventName, _); handler ]
+          } -> Some(eventName, handler)
+        | _ -> None
+
     let rec collectAttributes (exprs: Expr list) =
         match exprs with
         | [] -> []
         | Sequential expressions :: rest -> collectAttributes rest @ collectAttributes expressions
-        | Call(Import(importInfo, _, _),
-               {
-                   Args = [ _; Value(StringConstant eventName, _); handler ]
-               },
-               _,
-               _) :: rest ->
-            let restResults = collectAttributes rest
-            match importInfo.Kind with
-            | ImportKind.MemberImport(MemberRef(entity, memberRefInfo)) when
-                entity.FullName.StartsWith("Oxpecker.Solid")
-                ->
-                if memberRefInfo.CompiledName = "on" then
-                    ("on:" + eventName, handler) :: restResults
-                else
-                    restResults
-            | _ -> restResults
         | Call(Import(importInfo, _, _), callInfo, _, _) :: rest ->
             let restResults = collectAttributes rest
             match importInfo.Kind with
             | ImportKind.MemberImport(MemberRef(entity, memberRefInfo)) when
                 entity.FullName.StartsWith("Oxpecker.Solid")
                 ->
-                let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
-                if setterIndex >= 0 then
-                    let propName =
-                        match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
-                        | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
-                        | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
-                        | name -> name
-                    let propValue = callInfo.Args.Head
-                    match propValue with
-                    | TypeCast(expr,
-                               DeclaredType({
-                                                FullName = "Oxpecker.Solid.Builder.HtmlElement"
-                                            },
-                                            _)) -> (propName, transform expr) :: restResults
-                    | _ -> (propName, propValue) :: restResults
-                else
-                    restResults
+                match memberRefInfo.CompiledName, callInfo with
+                | "on", EventHandler(eventName, handler) -> ("on:" + eventName, handler) :: restResults
+                | "bool", EventHandler(eventName, handler) -> ("bool:" + eventName, handler) :: restResults
+                | "data", EventHandler(eventName, handler) -> ("data-" + eventName, handler) :: restResults
+                | "attr", EventHandler(eventName, handler) -> (eventName, handler) :: restResults
+                | "ref", { Args = [ _; identExpr ] } -> ("ref", identExpr) :: restResults
+                | "style'", { Args = [ _; identExpr ] } -> ("style", identExpr) :: restResults
+                | "classList", { Args = [ _; identExpr ] } -> ("classList", identExpr) :: restResults
+                | _ ->
+                    let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
+                    if setterIndex >= 0 then
+                        let propName =
+                            match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
+                            | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
+                            | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
+                            | name -> name
+                        let propValue = callInfo.Args.Head
+                        match propValue with
+                        | TypeCast(expr,
+                                   DeclaredType({
+                                                    FullName = "Oxpecker.Solid.Builder.HtmlElement"
+                                                },
+                                                _)) -> (propName, transform expr) :: restResults
+                        | _ -> (propName, propValue) :: restResults
+                    else
+                        restResults
             | _ -> restResults
         | Set(IdentExpr({ Name = returnVal }), SetKind.FieldSet propName, _, handler, _) :: rest when
             returnVal.StartsWith("returnVal")

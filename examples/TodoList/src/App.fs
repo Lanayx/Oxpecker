@@ -6,3 +6,4 @@ open Components
 [<SolidComponent>]
 let App() =
     TodoList()
+    //TodoListStore()

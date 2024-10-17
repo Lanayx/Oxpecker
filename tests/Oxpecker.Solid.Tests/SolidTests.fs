@@ -22,3 +22,11 @@ let ``Children`` () =
 [<Fact>]
 let ``Conditional`` () =
     runSolidCase "Conditional"
+
+[<Fact>]
+let ``Suspense`` () =
+    runSolidCase "Suspense"
+
+[<Fact>]
+let ``Refs`` () =
+    runSolidCase "Refs"

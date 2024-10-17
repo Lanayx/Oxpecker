@@ -6,7 +6,7 @@ open Oxpecker.Solid
 open Oxpecker.Solid.Aria
 
 
-type Task = {| Id: Guid; Text: string |}
+type Task = {| Id: string; Text: string |}
 type Actions = {| DeleteTask: unit -> unit; MoveTaskUp: unit -> unit; MoveTaskDown: unit -> unit |}
 
 [<SolidComponent>]
