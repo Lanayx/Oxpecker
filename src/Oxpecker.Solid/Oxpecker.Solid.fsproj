@@ -12,7 +12,7 @@
         <Description>F# web framework built on top of Solid.js</Description>
         <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.Solid</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>

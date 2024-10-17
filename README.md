@@ -11,7 +11,7 @@
 
 Oxpecker is a library started as functional wrapper around ASP.NET Core Endpoint routing, but now providing fullstack capabilities with Htmx and Solid integrations. Repository contains both main project and other related packages.
 
-This server library part is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
+The server part of the Oxpecker library is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
 Medium posts:
 * Introduction: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
