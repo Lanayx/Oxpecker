@@ -8,6 +8,7 @@
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
     <PackageReference Include="Fable.Core" Version="4.3.0" />
+    <PackageReference Include="Oxpecker.Solid" Version="0.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,10 +19,6 @@
     <Content Include="src\index.css" />
     <Content Include="package.json" />
     <Content Include="index.html" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
   </ItemGroup>
 
 </Project>

@@ -67,7 +67,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid" Version="0.0.2" />
+        <PackageReference Include="Oxpecker.Solid" Version="0.1.0" />
     </ItemGroup>
 
 
