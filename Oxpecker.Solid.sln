@@ -14,6 +14,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Oxpecker.Solid.Tests", "tes
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TodoList", "examples\TodoList\TodoList.fsproj", "{9AFF5FDA-3D80-4E95-AFE0-E95AC4B24B1B}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EmptySolid", "examples\EmptySolid\EmptySolid.fsproj", "{3F2E646C-83F9-43DC-9131-3EC327E10CB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,6 +26,7 @@ Global
 		{8632CB9E-1E48-47DB-A8D0-081915CC6AB3} = {D504DE6F-D915-4F1D-B6C5-07786C0E9DDA}
 		{DE3D2630-42B0-4458-8438-F6922CDD4E98} = {6F9A18A3-ED93-48F0-A80A-6ABF9E17F0D4}
 		{9AFF5FDA-3D80-4E95-AFE0-E95AC4B24B1B} = {0862A1EC-A3AD-4A83-908C-26B3D38FF20F}
+		{3F2E646C-83F9-43DC-9131-3EC327E10CB1} = {0862A1EC-A3AD-4A83-908C-26B3D38FF20F}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E36E84B5-F251-4A10-B2E0-9841D4CDAABC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -42,5 +45,9 @@ Global
 		{9AFF5FDA-3D80-4E95-AFE0-E95AC4B24B1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9AFF5FDA-3D80-4E95-AFE0-E95AC4B24B1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9AFF5FDA-3D80-4E95-AFE0-E95AC4B24B1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F2E646C-83F9-43DC-9131-3EC327E10CB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F2E646C-83F9-43DC-9131-3EC327E10CB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F2E646C-83F9-43DC-9131-3EC327E10CB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F2E646C-83F9-43DC-9131-3EC327E10CB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

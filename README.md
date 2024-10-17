@@ -6,17 +6,17 @@
 * [Oxpecker.ViewEngine Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
 * [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
 * [Oxpecker.OpenApi Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
+* [Oxpecker.Solid Nuget package](https://www.nuget.org/packages/Oxpecker.Solid)
+* [Oxpecker.Solid.FablePlugin Nuget package](https://www.nuget.org/packages/Oxpecker.Solid.FablePlugin)
 
-Oxpecker is a functional wrapper around ASP.NET Core Endpoint routing. Repository contains both main project and other related packages.
+Oxpecker is a library started as functional wrapper around ASP.NET Core Endpoint routing, but now providing fullstack capabilities with Htmx and Solid integrations. Repository contains both main project and other related packages.
 
-This library is basically a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
+This server library part is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
 Medium posts:
 * Introduction: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
 * About ViewEngine: https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c
 * Comparison with Blazor: https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99
-
-Oxpecker project is planned to be moved to `fsprojects` organization once it reaches 200 stars
 
 ## Features:
 
@@ -35,7 +35,8 @@ Oxpecker project is planned to be moved to `fsprojects` organization once it rea
 - Many useful **HttpContext** extensions
 
 ## Get started:
-- [Empty template](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Empty)
+- [Empty template](https://github.com/Lanayx/Oxpecker/blob/main/examples/Empty)
+- [Empty Solid template](https://github.com/Lanayx/Oxpecker/blob/main/examples/EmptySolid)
 
 ## Examples:
 - [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Basic)
