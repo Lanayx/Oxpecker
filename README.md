@@ -51,6 +51,7 @@ Medium posts:
 * [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.ViewEngine/README.md)
 * [Oxpecker.Htmx Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.Htmx/README.md)
 * [Oxpecker.OpenApi Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.OpenApi/README.md)
+* [Oxpecker.Solid Readme](https://github.com/Lanayx/Oxpecker/blob/develop/src/Oxpecker.Solid/README.md)
 * [Migration from Giraffe](https://github.com/Lanayx/Oxpecker/blob/develop/MigrateFromGiraffe.md)
 
 ## develop vs main branch:

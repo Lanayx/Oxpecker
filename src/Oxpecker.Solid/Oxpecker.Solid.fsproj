@@ -18,8 +18,8 @@
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.0.1</Version>
-        <PackageVersion>0.0.1</PackageVersion>
+        <Version>0.1.0</Version>
+        <PackageVersion>0.1.0</PackageVersion>
         <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
     </PropertyGroup>
 
