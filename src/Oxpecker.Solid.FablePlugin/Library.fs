@@ -332,6 +332,7 @@ module internal rec AST =
                     Args = callInfo.Args |> List.map transform
             }
             Call(callee, newCallInfo, typ, range)
+        | TypeCast(expr, DeclaredType _) -> transform expr
         | _ -> expr
 
 
