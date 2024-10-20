@@ -105,8 +105,9 @@ module internal rec AST =
 
     let (|LibraryTagImport|_|) (expr: Expr) =
         match expr with
-        | Call(Import({ Kind = UserImport false }, Any, _) as imp, _, DeclaredType (typ, []), range)
-            when typ.FullName.StartsWith("Oxpecker.Solid") ->
+        | Call(Import({ Kind = UserImport false }, Any, _) as imp, _, DeclaredType(typ, []), range) when
+            typ.FullName.StartsWith("Oxpecker.Solid")
+            ->
             Some(imp, range)
         | _ -> None
 
@@ -124,8 +125,7 @@ module internal rec AST =
             info = {
                 Selector = "create"
                 Path = "@fable-org/fable-library-js/JSX.js"
-                Kind =
-                    ImportKind.UserImport false
+                Kind = ImportKind.UserImport false
             },
             typ = Type.Any,
             range = None
@@ -255,29 +255,25 @@ module internal rec AST =
                 let newExpr = transform expr
                 getChildren (newExpr :: currentList) next
         // router cases
-        | Call (Get (IdentExpr _, FieldGet _, Any, _), {
-                    Args = args
-                }, _, _) ->
+        | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
             match args with
-            | [ Call (Import ({ Selector = "uncurry2" }, Any, None), {
-                        Args = [ Lambda(_, body, _) ]
-                    }, _, _) ] ->
+            | [ Call(Import({ Selector = "uncurry2" }, Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
                 getChildren currentList body
-            | [ LibraryTagImport (imp, _) ] ->
+            | [ LibraryTagImport(imp, _) ] ->
                 let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None))
                 newExpr :: currentList
             | [ Let(_, LibraryTagImport(imp, _), Sequential exprs) ] ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren (LibraryImport imp, exprs, None))
+                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None))
                 newExpr :: currentList
-            | [ Let(_, Let (_, LibraryTagImport(imp, _), Sequential exprs), TagWithChildren (_, callInfo, _)) ] ->
-                let newExpr = transformTagInfo(TagInfo.Combined (LibraryImport imp, exprs, callInfo, None))
+            | [ Let(_, Let(_, LibraryTagImport(imp, _), Sequential exprs), TagWithChildren(_, callInfo, _)) ] ->
+                let newExpr =
+                    transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None))
                 newExpr :: currentList
             | [ next1; next2 ] ->
                 let next2Children = getChildren [] next2
                 let next1Children = getChildren [] next1
                 next2Children @ next1Children @ currentList
-            | [ expr ] ->
-                expr :: currentList
+            | [ expr ] -> expr :: currentList
             | _ -> currentList
 
         | _ -> currentList
@@ -366,14 +362,13 @@ module internal rec AST =
         | TagNoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range))
         | CallTagNoChildrenWithHandler tagCall -> transformTagInfo tagCall
         | TagWithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo)
-        | LibraryTagImport (imp, range) ->
-            transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
-        | Let (_, LibraryTagImport (imp, range), TagWithChildren ( _, callInfo, _)) ->
-            transformTagInfo(TagInfo.WithChildren (LibraryImport imp, callInfo, range))
-        | Let (_, LibraryTagImport (imp, range), Sequential exprs) ->
+        | LibraryTagImport(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
+        | Let(_, LibraryTagImport(imp, range), TagWithChildren(_, callInfo, _)) ->
+            transformTagInfo(TagInfo.WithChildren(LibraryImport imp, callInfo, range))
+        | Let(_, LibraryTagImport(imp, range), Sequential exprs) ->
             transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, range))
-        | Let (_, Let (_, LibraryTagImport(imp, range), Sequential exprs), TagWithChildren ( _, callInfo, _)) ->
-            transformTagInfo(TagInfo.Combined (LibraryImport imp, exprs, callInfo, range))
+        | Let(_, Let(_, LibraryTagImport(imp, range), Sequential exprs), TagWithChildren(_, callInfo, _)) ->
+            transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, range))
         | Let(name, value, expr) -> Let(name, value, (transform expr))
         | Sequential expressions ->
             // transform only the last expression

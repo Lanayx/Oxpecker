@@ -1,4 +1,5 @@
 namespace Oxpecker.Solid.Router
+
 #nowarn "46" // suppress warning about component being reserved
 open System.Runtime.CompilerServices
 open Fable.Core
@@ -7,8 +8,8 @@ open Oxpecker.Solid
 [<AutoOpen>]
 module Bindings =
 
-    [<Import("Route","@solidjs/router")>]
-    type Route () =
+    [<Import("Route", "@solidjs/router")>]
+    type Route() =
         interface HtmlElement
         member this.path
             with set (value: string) = ()
@@ -26,26 +27,17 @@ module Bindings =
 
     [<AllowNullLiteral>]
     [<Global>]
-    type RootProps
-        [<ParamObject; Emit("$0")>]
-        (
-            children: HtmlElement
-        ) =
+    type RootProps [<ParamObject; Emit("$0")>] (children: HtmlElement) =
         member val children: HtmlElement = jsNative with get, set
 
     [<AllowNullLiteral>]
     [<Global>]
-    type RootConfig
-        [<ParamObject; Emit("$0")>]
-        (
-            path: string,
-            component: HtmlElement
-        ) =
+    type RootConfig [<ParamObject; Emit("$0")>] (path: string, component: HtmlElement) =
         member val path: string = jsNative with get, set
         member val component: HtmlElement = jsNative with get, set
 
-    [<Import("Router","@solidjs/router")>]
-    type Router () =
+    [<Import("Router", "@solidjs/router")>]
+    type Router() =
         interface HtmlElement
         member this.root
             with set (value: RootProps -> HtmlElement) = ()
@@ -80,4 +72,3 @@ type Bindings =
 
     [<ImportMember("@solidjs/router")>]
     static member redirect(path: string, options) : unit = jsNative
-
