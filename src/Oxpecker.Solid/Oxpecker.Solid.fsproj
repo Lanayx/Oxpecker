@@ -30,6 +30,7 @@
         <Compile Include="Builder.fs" />
         <Compile Include="Tags.fs" />
         <Compile Include="SolidBindings.fs" />
+        <Compile Include="SolidRouterBindings.fs" />
         <Compile Include="Aria.fs" />
     </ItemGroup>
 
@@ -40,10 +41,6 @@
     <ItemGroup>
       <PackageReference Include="Fable.Core" Version="4.3.0" />
       <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
-      <PackageReference Include="Fable.Package.SDK" Version="1.1.0">
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        <PrivateAssets>all</PrivateAssets>
-      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

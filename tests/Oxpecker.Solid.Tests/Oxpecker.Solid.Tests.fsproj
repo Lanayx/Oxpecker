@@ -47,6 +47,11 @@
         <Compile Include="SolidCases\Suspense\Suspense.fs" />
         <None Include="SolidCases\Suspense\Suspense.expected" />
         <None Include="SolidCases\Suspense\Suspense.fsproj" />
+        <Content Include="SolidCases\Router\Router.expected" />
+        <Compile Include="SolidCases\Router\App1.fs" />
+        <Compile Include="SolidCases\Router\App2.fs" />
+        <Compile Include="SolidCases\Router\Router.fs" />
+        <Content Include="SolidCases\Router\Router.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />

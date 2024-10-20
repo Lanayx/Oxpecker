@@ -30,3 +30,7 @@ let ``Suspense`` () =
 [<Fact>]
 let ``Refs`` () =
     runSolidCase "Refs"
+
+[<Fact>]
+let ``Router`` () =
+    runSolidCase "Router"
