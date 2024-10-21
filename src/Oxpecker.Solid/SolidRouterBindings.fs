@@ -134,6 +134,11 @@ module Bindings =
     type HashRouter() =
         inherit Router()
 
+    [<AllowNullLiteral>]
+    [<Global>]
+    type PreloadData [<ParamObject; Emit("$0")>] (preloadData: bool) =
+        member val preloadData: bool = jsNative with get, set
+
     type Extensions =
         [<Extension>]
         static member Run(this: Router, runExpr: HtmlContainerFun) =
@@ -174,28 +179,28 @@ module Bindings =
 type Bindings =
 
     [<ImportMember("@solidjs/router")>]
-    static member useNavigate(): Navigator = jsNative
+    static member useNavigate() : Navigator = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useLocation(): Location = jsNative
+    static member useLocation() : Location = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useIsRouting(): (unit -> bool) = jsNative
+    static member useIsRouting() : (unit -> bool) = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useMatch(fn: unit -> string, ?matchFilters: obj): (unit -> bool) = jsNative
+    static member useMatch(fn: unit -> string, ?matchFilters: obj) : (unit -> bool) = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useParams(): obj = jsNative
+    static member useParams() : obj = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useBeforeLeave(listener: BeforeLeaveEventArgs -> unit): unit = jsNative
+    static member useBeforeLeave(listener: BeforeLeaveEventArgs -> unit) : unit = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useCurrentMatches(): unit -> RouteMatch[] = jsNative
+    static member useCurrentMatches() : unit -> RouteMatch[] = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member usePreloadRoute(): string -> {| preloadData: bool |} -> unit = jsNative
+    static member usePreloadRoute() : string -> PreloadData -> unit = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member useSearchParams(): Signal<obj> = jsNative
+    static member useSearchParams() : Signal<obj> = jsNative
