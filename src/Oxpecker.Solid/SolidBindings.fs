@@ -5,12 +5,13 @@ open Browser.Types
 open Fable.Core
 open System
 
-type Setter<'T> = 'T -> unit
-type Accessor<'T> = unit -> 'T
-type Signal<'T> = Accessor<'T> * Setter<'T>
 
 [<AutoOpen>]
 module Bindings =
+
+    type Setter<'T> = 'T -> unit
+    type Accessor<'T> = unit -> 'T
+    type Signal<'T> = Accessor<'T> * Setter<'T>
 
     /// Solid on* event handlers
     type HtmlTag with
