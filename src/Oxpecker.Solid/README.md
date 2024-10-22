@@ -2,6 +2,8 @@
 
 Fable bindings for the **Solid.js** and **Solid-router.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
 
+Introduction post: https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34
+
 [Nuget package](https://www.nuget.org/packages/Oxpecker.Solid) `dotnet add package Oxpecker.Solid`
 
 Markup example:
