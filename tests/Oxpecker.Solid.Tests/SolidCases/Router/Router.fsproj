@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,7 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="HelloWorld.fs" />
+    <Compile Include="App1.fs" />
+    <Compile Include="App2.fs" />
+    <Compile Include="Router.fs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,15 +1,16 @@
 ﻿open Browser
 open App
 open Oxpecker.Solid
+open Oxpecker.Solid.Router
 open Fable.Core.JsInterop
 
 importAll "./index.css"
 
-// HMR doesn't work in Root for some reason
 [<SolidComponent>]
-let Root() =
-    Fragment() {
-        App()
+let appRouter() =
+    Router() {
+        Route(path="/", component'=App)
+        Route(path="/about", component'=About)
     }
 
-render (Root, document.getElementById "root")
+render (appRouter, document.getElementById "root")

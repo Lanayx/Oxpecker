@@ -6,8 +6,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
-    <PackageReference Include="Fable.Core" Version="4.3.0" />
     <PackageReference Include="Fable.Promise" Version="3.2.0" />
   </ItemGroup>
 
@@ -15,8 +13,8 @@
     <Compile Include="Suspense.fs" />
   </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
+  </ItemGroup>
 
 </Project>

@@ -5,12 +5,13 @@ open Browser.Types
 open Fable.Core
 open System
 
-type Setter<'T> = 'T -> unit
-type Accessor<'T> = unit -> 'T
-type Signal<'T> = Accessor<'T> * Setter<'T>
 
 [<AutoOpen>]
 module Bindings =
+
+    type Setter<'T> = 'T -> unit
+    type Accessor<'T> = unit -> 'T
+    type Signal<'T> = Accessor<'T> * Setter<'T>
 
     /// Solid on* event handlers
     type HtmlTag with
@@ -133,7 +134,7 @@ module Bindings =
 
     type form with
         member this.onSubmit
-            with set (_: Event -> unit) = ()
+            with set (_: SubmitEvent -> unit) = ()
         member this.onReset
             with set (_: Event -> unit) = ()
 
@@ -143,7 +144,7 @@ module Bindings =
         member this.onInvalid
             with set (_: Event -> unit) = ()
         member this.onInput
-            with set (_: UIEvent -> unit) = ()
+            with set (_: InputEvent -> unit) = ()
         member this.onSelect
             with set (_: Event -> unit) = ()
         member this.onError
@@ -159,13 +160,13 @@ module Bindings =
         member this.onChange
             with set (_: Event -> unit) = ()
         member this.onInput
-            with set (_: UIEvent -> unit) = ()
+            with set (_: InputEvent -> unit) = ()
         member this.onSelect
             with set (_: Event -> unit) = ()
 
     type details with
         member this.onToggle
-            with set (_: Event -> unit) = ()
+            with set (_: ToggleEvent -> unit) = ()
 
     type img with
         member this.onError

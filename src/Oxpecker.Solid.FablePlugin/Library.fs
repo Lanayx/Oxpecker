@@ -12,9 +12,15 @@ module internal rec AST =
     type PropInfo = string * Expr
     type Props = PropInfo list
 
+    type TagSource =
+        | AutoImport of tagName: string
+        | LibraryImport of imp: Expr
+
     type TagInfo =
-        | WithChildren of tagName: string * propsAndChildren: CallInfo * range: SourceLocation option
-        | NoChildren of tagName: string * props: Expr list * range: SourceLocation option
+        | WithChildren of tagName: TagSource * propsAndChildren: CallInfo * range: SourceLocation option
+        | NoChildren of tagName: TagSource * props: Expr list * range: SourceLocation option
+        | Combined of tagName: TagSource * props: Expr list * propsAndChildren: CallInfo * range: SourceLocation option
+
 
     let (|CallTag|_|) condition =
         function
@@ -29,7 +35,7 @@ module internal rec AST =
                     tagName.Substring(0, tagName.Length - 2)
                 else
                     tagName
-            Some(finalTagName, callInfo, range)
+            Some(AutoImport finalTagName, callInfo, range)
         | _ -> None
 
     let (|TagNoChildren|_|) (expr: Expr) =
@@ -97,6 +103,14 @@ module internal rec AST =
         | Lambda({ Name = cont }, TypeCast(textBody, Unit), None) when cont.StartsWith("cont") -> Some textBody
         | _ -> None
 
+    let (|LibraryTagImport|_|) (expr: Expr) =
+        match expr with
+        | Call(Import({ Kind = UserImport false }, Any, _) as imp, _, DeclaredType(typ, []), range) when
+            typ.FullName.StartsWith("Oxpecker.Solid")
+            ->
+            Some(imp, range)
+        | _ -> None
+
     let jsxElementType =
         Type.DeclaredType(
             ref = {
@@ -111,11 +125,7 @@ module internal rec AST =
             info = {
                 Selector = "create"
                 Path = "@fable-org/fable-library-js/JSX.js"
-                Kind =
-                    ImportKind.LibraryImport {
-                        IsInstanceMember = false
-                        IsModuleMember = true
-                    }
+                Kind = ImportKind.UserImport false
             },
             typ = Type.Any,
             range = None
@@ -166,9 +176,13 @@ module internal rec AST =
                     else
                         restResults
             | _ -> restResults
-        | Set(IdentExpr({ Name = returnVal }), SetKind.FieldSet propName, _, handler, _) :: rest when
+        | Set(IdentExpr({ Name = returnVal }), SetKind.FieldSet name, _, handler, _) :: rest when
             returnVal.StartsWith("returnVal")
             ->
+            let propName =
+                match name with
+                | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
+                | name -> name
             (propName, handler) :: collectAttributes rest
         | _ :: rest -> collectAttributes rest
 
@@ -240,6 +254,28 @@ module internal rec AST =
             | expr ->
                 let newExpr = transform expr
                 getChildren (newExpr :: currentList) next
+        // router cases
+        | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
+            match args with
+            | [ Call(Import({ Selector = "uncurry2" }, Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
+                getChildren currentList body
+            | [ LibraryTagImport(imp, _) ] ->
+                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None))
+                newExpr :: currentList
+            | [ Let(_, LibraryTagImport(imp, _), Sequential exprs) ] ->
+                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None))
+                newExpr :: currentList
+            | [ Let(_, Let(_, LibraryTagImport(imp, _), Sequential exprs), TagWithChildren(_, callInfo, _)) ] ->
+                let newExpr =
+                    transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None))
+                newExpr :: currentList
+            | [ next1; next2 ] ->
+                let next2Children = getChildren [] next2
+                let next1Children = getChildren [] next1
+                next2Children @ next1Children @ currentList
+            | [ expr ] -> expr :: currentList
+            | _ -> currentList
+
         | _ -> currentList
 
     let listItemType =
@@ -262,6 +298,10 @@ module internal rec AST =
             | NoChildren(tagName, propList, range) ->
                 let props = collectAttributes propList
                 let childrenList = []
+                tagName, props, childrenList, range
+            | Combined(tagName, propList, callInfo, range) ->
+                let props = collectAttributes propList
+                let childrenList = callInfo.Args |> List.fold getChildren []
                 tagName, props, childrenList, range
 
         let propsXs =
@@ -297,12 +337,16 @@ module internal rec AST =
             )
         let finalList = childrenXs :: propsXs
         let propsExpr = convertExprListToExpr finalList
+        let tag =
+            match tagName with
+            | AutoImport tagName -> Value(StringConstant tagName, None)
+            | LibraryImport imp -> imp
 
         Call(
             callee = importJsxCreate,
             info = {
                 ThisArg = None
-                Args = [ Value(StringConstant tagName, None); propsExpr ]
+                Args = [ tag; propsExpr ]
                 SignatureArgTypes = []
                 GenericArgs = []
                 MemberRef = None
@@ -318,6 +362,13 @@ module internal rec AST =
         | TagNoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range))
         | CallTagNoChildrenWithHandler tagCall -> transformTagInfo tagCall
         | TagWithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo)
+        | LibraryTagImport(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
+        | Let(_, LibraryTagImport(imp, range), TagWithChildren(_, callInfo, _)) ->
+            transformTagInfo(TagInfo.WithChildren(LibraryImport imp, callInfo, range))
+        | Let(_, LibraryTagImport(imp, range), Sequential exprs) ->
+            transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, range))
+        | Let(_, Let(_, LibraryTagImport(imp, range), Sequential exprs), TagWithChildren(_, callInfo, _)) ->
+            transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, range))
         | Let(name, value, expr) -> Let(name, value, (transform expr))
         | Sequential expressions ->
             // transform only the last expression
@@ -332,6 +383,7 @@ module internal rec AST =
                     Args = callInfo.Args |> List.map transform
             }
             Call(callee, newCallInfo, typ, range)
+        | TypeCast(expr, DeclaredType _) -> transform expr
         | _ -> expr
 
 

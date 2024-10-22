@@ -6,7 +6,8 @@
     "build": "dotnet fable--extension .jsx --run vite build"
   },
   "dependencies": {
-    "solid-js": "^1.8.22"
+    "solid-js": "^1.8.22",
+    "@solidjs/router": "^0.14.10"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",

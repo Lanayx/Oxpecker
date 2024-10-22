@@ -1,6 +1,6 @@
 # Oxpecker.Solid
 
-Fable bindings for the Solid.js library based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
+Fable bindings for the **Solid.js** and **Solid-router.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.Solid) `dotnet add package Oxpecker.Solid`
 
@@ -74,8 +74,35 @@ setStore // store setter
 Again, just as in the original implementation in `Fable.Solid`, resource is a special object, so instead of JS `resource()` call, you'll need to use `resource.current` in F#.
 
 
+
+### Router
+
+Router namespace is `Oxpecker.Solid.Router`. It contains router related components and functions. To render a router you still need to decorate router function with `SolidComponent` attribute:
+```fsharp
+open Oxpecker.Solid.Router
+
+[<SolidComponent>]
+let MyRouter () =
+    Router() {
+        Route(path="/", component'=Home)
+        Route(path="/about", component'=About)
+    }
+
+render (MyRouter, document.getElementById "root")
+```
+
 ### Aria
 
 Similar to the original Oxpecker.ViewEngine additional Aria attributes reside in a separate module, so you need to write `open Oxpecker.Solid.Aria` to access them.
 
 
+### Lazy
+For components lazy loading you'll need to use `lazy'` function together with another `importComponent` function.
+```fsharp
+lazy'(fun () -> importComponent("./ComponentA"))
+```
+will be translated to
+
+```js
+lazy(() => import("./ComponentA"))
+```

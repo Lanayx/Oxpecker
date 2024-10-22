@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-
         <IsPackable>false</IsPackable>
         <GenerateProgramFile>false</GenerateProgramFile>
         <IsTestProject>true</IsTestProject>
@@ -48,6 +47,11 @@
         <Compile Include="SolidCases\Suspense\Suspense.fs" />
         <None Include="SolidCases\Suspense\Suspense.expected" />
         <None Include="SolidCases\Suspense\Suspense.fsproj" />
+        <Content Include="SolidCases\Router\Router.expected" />
+        <Compile Include="SolidCases\Router\App1.fs" />
+        <Compile Include="SolidCases\Router\App2.fs" />
+        <Compile Include="SolidCases\Router\Router.fs" />
+        <Content Include="SolidCases\Router\Router.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />
@@ -56,7 +60,7 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0" />
-        <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
         <PackageReference Include="Fable.Core" Version="4.3.0" />
         <PackageReference Include="Fable.Promise" Version="3.2.0" />
         <PackageReference Include="Fli" Version="1.111.10" />
