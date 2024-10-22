@@ -200,7 +200,7 @@ type Bindings =
     static member useCurrentMatches() : unit -> RouteMatch[] = jsNative
 
     [<ImportMember("@solidjs/router")>]
-    static member usePreloadRoute() : string -> PreloadData -> unit = jsNative
+    static member usePreloadRoute() : (string -> PreloadData) -> unit = jsNative
 
     [<ImportMember("@solidjs/router")>]
     static member useSearchParams() : Signal<obj> = jsNative

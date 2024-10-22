@@ -7,10 +7,10 @@ open Fable.Core.JsInterop
 importAll "./index.css"
 
 [<SolidComponent>]
-let myRouter() =
+let appRouter() =
     Router() {
         Route(path="/", component'=App)
         Route(path="/about", component'=About)
     }
 
-render (myRouter, document.getElementById "root")
+render (appRouter, document.getElementById "root")

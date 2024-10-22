@@ -18,9 +18,9 @@
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.1.0</Version>
-        <PackageVersion>0.1.0</PackageVersion>
-        <PackageReleaseNotes>Initial commit</PackageReleaseNotes>
+        <Version>0.2.0</Version>
+        <PackageVersion>0.2.0</PackageVersion>
+        <PackageReleaseNotes>Solid router support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -40,7 +40,11 @@
 
     <ItemGroup>
       <PackageReference Include="Fable.Core" Version="4.3.0" />
-      <PackageReference Include="Fable.Browser.Dom" Version="2.17.0" />
+      <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
+      <PackageReference Include="Fable.Package.SDK" Version="1.3.0">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
