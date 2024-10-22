@@ -2,14 +2,7 @@
 
 ![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
 
-* [Oxpecker Nuget package](https://www.nuget.org/packages/Oxpecker)
-* [Oxpecker.ViewEngine Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
-* [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
-* [Oxpecker.OpenApi Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
-* [Oxpecker.Solid Nuget package](https://www.nuget.org/packages/Oxpecker.Solid)
-* [Oxpecker.Solid.FablePlugin Nuget package](https://www.nuget.org/packages/Oxpecker.Solid.FablePlugin)
-
-Oxpecker is a library started as functional wrapper around ASP.NET Core Endpoint routing, but now providing fullstack capabilities with Htmx and Solid integrations. Repository contains both main project and other related packages.
+**Oxpecker** is a library started as functional wrapper around **ASP.NET Core Endpoint routing**, but now providing fullstack capabilities with **Htmx** and **Solid.js** integrations. Repository is a monorepo with all related projects included and documentation located in Readme files per project.
 
 The server part of the Oxpecker library is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
@@ -59,3 +52,12 @@ Medium posts:
 **develop** is a development branch, projects are linked with each other using project references. Use this branch to send PRs.
 
 **main** is a production branch, projects and examples are linked with each other using nuget (or npm) packages. Packages are published from this branch.
+
+## Packages
+
+* [Oxpecker Nuget package](https://www.nuget.org/packages/Oxpecker)
+* [Oxpecker.ViewEngine Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
+* [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
+* [Oxpecker.OpenApi Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
+* [Oxpecker.Solid Nuget package](https://www.nuget.org/packages/Oxpecker.Solid)
+* [Oxpecker.Solid.FablePlugin Nuget package](https://www.nuget.org/packages/Oxpecker.Solid.FablePlugin)
