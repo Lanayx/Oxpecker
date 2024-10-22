@@ -10,6 +10,7 @@ Medium posts:
 * Introduction: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
 * About ViewEngine: https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c
 * Comparison with Blazor: https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99
+* Oxpecker.Solid introduction: https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34
 
 ## Features:
 
