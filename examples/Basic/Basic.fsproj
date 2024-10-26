@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.14.1" />
+        <PackageReference Include="Oxpecker" Version="0.14.2" />
         <PackageReference Include="Oxpecker.OpenApi" Version="0.1.0" />
         <PackageReference Include="Oxpecker.Htmx" Version="0.1.2" />
         <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
