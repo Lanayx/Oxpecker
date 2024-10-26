@@ -6,12 +6,12 @@ open System.IO
 open System.Text
 open Oxpecker.ViewEngine.Tools
 
-let inline private toStringBuilder (view: HtmlElement) =
+let inline private toStringBuilder (view: #HtmlElement) =
     let sb = StringBuilderPool.Get()
     view.Render sb
     sb
 
-let inline private toHtmlDocStringBuilder (view: HtmlElement) =
+let inline private toHtmlDocStringBuilder (view: #HtmlElement) =
     let sb = StringBuilderPool.Get()
     sb.AppendLine("<!DOCTYPE html>") |> ignore
     view.Render sb
@@ -25,35 +25,35 @@ let inline private copyStringBuilderToBytes (sb: StringBuilder) =
     bytes
 
 /// Render HtmlElement to normal UTF16 string
-let toString (view: HtmlElement) =
+let toString (view: #HtmlElement) =
     let sb = toStringBuilder view
     let result = sb.ToString()
     StringBuilderPool.Return(sb)
     result
 
 /// Render HtmlElement to normal UTF16 string with DOCTYPE prefix
-let toHtmlDocString (view: HtmlElement) =
+let toHtmlDocString (view: #HtmlElement) =
     let sb = toHtmlDocStringBuilder view
     let result = sb.ToString()
     StringBuilderPool.Return(sb)
     result
 
 /// Render HTMLElement to UTF8 encoded bytes
-let toBytes (view: HtmlElement) =
+let toBytes (view: #HtmlElement) =
     let sb = toStringBuilder view
     let result = copyStringBuilderToBytes sb
     StringBuilderPool.Return(sb)
     result
 
 /// Render HTMLElement to UTF8 encoded bytes with DOCTYPE prefix
-let toHtmlDocBytes (view: HtmlElement) =
+let toHtmlDocBytes (view: #HtmlElement) =
     let sb = toHtmlDocStringBuilder view
     let result = copyStringBuilderToBytes sb
     StringBuilderPool.Return(sb)
     result
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toStreamAsync (stream: Stream) (view: HtmlElement) =
+let toStreamAsync (stream: Stream) (view: #HtmlElement) =
     let sb = toStringBuilder view
     let streamWriter = new StreamWriter(stream, leaveOpen = true)
     task {
@@ -65,7 +65,7 @@ let toStreamAsync (stream: Stream) (view: HtmlElement) =
     }
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toHtmlDocStreamAsync (stream: Stream) (view: HtmlElement) =
+let toHtmlDocStreamAsync (stream: Stream) (view: #HtmlElement) =
     let sb = toHtmlDocStringBuilder view
     let streamWriter = new StreamWriter(stream, leaveOpen = true)
     task {
@@ -77,7 +77,7 @@ let toHtmlDocStreamAsync (stream: Stream) (view: HtmlElement) =
     }
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
+let toTextWriterAsync (textWriter: TextWriter) (view: #HtmlElement) =
     let sb = toStringBuilder view
     task {
         try
@@ -87,7 +87,7 @@ let toTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
     }
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toHtmlDocTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
+let toHtmlDocTextWriterAsync (textWriter: TextWriter) (view: #HtmlElement) =
     let sb = toHtmlDocStringBuilder view
     task {
         try
