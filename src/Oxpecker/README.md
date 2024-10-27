@@ -684,25 +684,25 @@ let fooHandler first last age : EndpointHandler =
         |> text) ctx
 
 let webApp = [
-    routef "/foo/{%s}/{%s}/{%i}" fooHandler
+    routef "/foo/{%s:maxlength(8)}/{%s}/{%i}" fooHandler
     routef "/bar/{%O:guid}" (fun (guid: Guid) -> text (string guid))
 ]
 ```
 
-The `routef` http handler takes two parameters - a format string and an `EndpointHandler` function.
+The `routef` http handler takes two parameters - a format string and an `EndpointHandler` function. The built-in ASP.NET [route constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints) are fully supported as well.
 
 The format string supports the following format chars:
 
-| Format Char | Type                                                                                                                    |
-|-------------|-------------------------------------------------------------------------------------------------------------------------|
-| `%b`        | `bool`                                                                                                                  |
-| `%c`        | `char`                                                                                                                  |
-| `%s`        | `string`                                                                                                                |
-| `%i`        | `int`                                                                                                                   |
-| `%d`        | `int64`                                                                                                                 |
-| `%f`        | `float`/`double`                                                                                                        |
-| `%u`        | `uint64`                                                                                                                |
-| `%O`        | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+| Format Char | Type             |
+|-------------|------------------|
+| `%b`        | `bool`           |
+| `%c`        | `char`           |
+| `%s`        | `string`         |
+| `%i`        | `int`            |
+| `%d`        | `int64`          |
+| `%f`        | `float`/`double` |
+| `%u`        | `uint64`         |
+| `%O:guid`   | `Guid`           |
 
 _Note_: `routef` handler can only handle up to 5 route parameters. It's not recommended to use more than 3 parameters in a route, but if you really need a lot, you can use `route` with `EndpointHandler` function that utilizes `.TryGetRouteValue` extension.
 

@@ -124,10 +124,10 @@ routef "/hello/%s/%O" (fun (a, b) -> doSomething a b)
 routef "/hello/{%s}/{%O:guid}" (fun a b -> doSomething a b)
 ```
 
-| Format Char | Giraffe | Oxpecker                                                                                                                |
-|-------------|---------|-------------------------------------------------------------------------------------------------------------------------|
-| `%O`        | `Guid` (including short GUIDs*) | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
-| `%u`        | `uint64` (formatted as a short ID*)  | `uint64` (regular format)                                                                                            |
+| Format Char | Giraffe | Oxpecker                                                                                                                  |
+|-------------|---------|---------------------------------------------------------------------------------------------------------------------------|
+| `%O`        | `Guid` (including short GUIDs*) | `Guid` (requires [guid constraint](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+| `%u`        | `uint64` (formatted as a short ID*)  | `uint64` (regular format)                                                                                                 |
 
 Short ID and short GUID support was removed, however it could be added later as a `%O` custom constraint if needed.
 
