@@ -1,4 +1,4 @@
-import { int32ToString } from "./fable_modules/fable-library-js.4.22.0/Util.js";
+import { int32ToString } from "./fable_modules/fable-library-js.4.23.0/Util.js";
 
 export function Test(id) {
     return <div id={int32ToString(id)}
