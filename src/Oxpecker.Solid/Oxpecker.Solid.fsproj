@@ -18,9 +18,9 @@
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.2.0</Version>
-        <PackageVersion>0.2.0</PackageVersion>
-        <PackageReleaseNotes>Solid router support</PackageReleaseNotes>
+        <Version>0.2.1</Version>
+        <PackageVersion>0.2.1</PackageVersion>
+        <PackageReleaseNotes>Fable output got minimized</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

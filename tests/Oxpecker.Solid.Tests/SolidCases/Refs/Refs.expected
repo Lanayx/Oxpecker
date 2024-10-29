@@ -1,6 +1,6 @@
-import { defaultOf } from "./fable_modules/fable-library-js.4.22.0/Util.js";
+import { defaultOf } from "./fable_modules/fable-library-js.4.23.0/Util.js";
 import { onMount } from "solid-js";
-import { some } from "./fable_modules/fable-library-js.4.22.0/Option.js";
+import { some } from "./fable_modules/fable-library-js.4.23.0/Option.js";
 
 export function Test() {
     const htmlCanvas = defaultOf();
