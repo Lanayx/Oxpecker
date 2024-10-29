@@ -1,7 +1,9 @@
 namespace JetBrains.Annotations
 
 open System
+open Fable.Core
 
+[<Erase>]
 type internal InjectedLanguage =
     | CSS = 0
     | HTML = 1
@@ -12,8 +14,12 @@ type internal InjectedLanguage =
 [<AttributeUsage(AttributeTargets.Parameter
                  ||| AttributeTargets.Field
                  ||| AttributeTargets.Property)>]
+[<Erase>]
 type internal LanguageInjectionAttribute(injectedLanguage: InjectedLanguage) =
     inherit Attribute()
+    [<Erase>]
     member x.InjectedLanguage = injectedLanguage
+    [<Erase>]
     member val Prefix = "" with get, set
+    [<Erase>]
     member val Suffix = "" with get, set

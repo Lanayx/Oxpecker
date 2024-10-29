@@ -15,317 +15,453 @@ module Bindings =
 
     /// Solid on* event handlers
     type HtmlTag with
+        [<Erase>]
         member this.onClick
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onDblClick
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onBlur
             with set (_: FocusEvent -> unit) = ()
+        [<Erase>]
         member this.onFocus
             with set (_: FocusEvent -> unit) = ()
+        [<Erase>]
         member this.onContextMenu
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseDown
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseUp
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseEnter
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseLeave
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseOver
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseOut
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onMouseMove
             with set (_: MouseEvent -> unit) = ()
+        [<Erase>]
         member this.onWheel
             with set (_: WheelEvent -> unit) = ()
+        [<Erase>]
         member this.onKeyDown
             with set (_: KeyboardEvent -> unit) = ()
+        [<Erase>]
         member this.onKeyUp
             with set (_: KeyboardEvent -> unit) = ()
+        [<Erase>]
         member this.onKeyPress
             with set (_: KeyboardEvent -> unit) = ()
+        [<Erase>]
         member this.onDrag
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onDragEnd
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onDragEnter
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onDragLeave
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onDragOver
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onDragStart
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onDrop
             with set (_: DragEvent -> unit) = ()
+        [<Erase>]
         member this.onScroll
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onPointerDown
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerMove
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerUp
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerCancel
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerEnter
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerLeave
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerOver
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onPointerOut
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onGotPointerCapture
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onLostPointerCapture
             with set (_: PointerEvent -> unit) = ()
+        [<Erase>]
         member this.onAnimationStart
             with set (_: AnimationEvent -> unit) = ()
+        [<Erase>]
         member this.onAnimationEnd
             with set (_: AnimationEvent -> unit) = ()
+        [<Erase>]
         member this.onAnimationIteration
             with set (_: AnimationEvent -> unit) = ()
+        [<Erase>]
         member this.onTransitionEnd
             with set (_: TransitionEvent -> unit) = ()
+        [<Erase>]
         member this.onTransitionRun
             with set (_: TransitionEvent -> unit) = ()
+        [<Erase>]
         member this.onTransitionStart
             with set (_: TransitionEvent -> unit) = ()
+        [<Erase>]
         member this.onTransitionCancel
             with set (_: TransitionEvent -> unit) = ()
+        [<Erase>]
         member this.onTouchStart
             with set (_: TouchEvent -> unit) = ()
+        [<Erase>]
         member this.onTouchMove
             with set (_: TouchEvent -> unit) = ()
+        [<Erase>]
         member this.onTouchEnd
             with set (_: TouchEvent -> unit) = ()
+        [<Erase>]
         member this.onTouchCancel
             with set (_: TouchEvent -> unit) = ()
+        [<Erase>]
         member this.onCopy
             with set (_: ClipboardEvent -> unit) = ()
+        [<Erase>]
         member this.onCut
             with set (_: ClipboardEvent -> unit) = ()
+        [<Erase>]
         member this.onPaste
             with set (_: ClipboardEvent -> unit) = ()
+        [<Erase>]
         member this.onCompositionStart
             with set (_: CompositionEvent -> unit) = ()
+        [<Erase>]
         member this.onCompositionEnd
             with set (_: CompositionEvent -> unit) = ()
+        [<Erase>]
         member this.onCompositionUpdate
             with set (_: CompositionEvent -> unit) = ()
+        [<Erase>]
         member this.onFocusIn
             with set (_: FocusEvent -> unit) = ()
+        [<Erase>]
         member this.onFocusOut
             with set (_: FocusEvent -> unit) = ()
+        [<Erase>]
         member this.onEncrypted
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onDragExit
             with set (_: DragEvent -> unit) = ()
 
     type RegularNode with
+        [<Erase>]
         member this.textContent
             with set (value: string) = ()
+        [<Erase>]
         member this.innerHTML
             with set (value: string) = ()
 
     type form with
+        [<Erase>]
         member this.onSubmit
             with set (_: SubmitEvent -> unit) = ()
+        [<Erase>]
         member this.onReset
             with set (_: Event -> unit) = ()
 
     type input with
+        [<Erase>]
         member this.onChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onInvalid
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onInput
             with set (_: InputEvent -> unit) = ()
+        [<Erase>]
         member this.onSelect
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type select with
+        [<Erase>]
         member this.onChange
             with set (_: Event -> unit) = ()
 
     type textarea with
+        [<Erase>]
         member this.onChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onInput
             with set (_: InputEvent -> unit) = ()
+        [<Erase>]
         member this.onSelect
             with set (_: Event -> unit) = ()
 
     type details with
+        [<Erase>]
         member this.onToggle
             with set (_: ToggleEvent -> unit) = ()
 
     type img with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type object' with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type link with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type script with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type style with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type body with
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type iframe with
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type embed with
+        [<Erase>]
         member this.onLoad
             with set (_: Event -> unit) = ()
 
     type audio with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onPlay
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onPause
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onEnded
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onVolumeChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onSeeked
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onSeeking
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onTimeUpdate
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onDurationChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onRateChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onCanPlay
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onCanPlayThrough
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onStalled
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onWaiting
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onEmptied
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoadedData
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoadedMetadata
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoadStart
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onProgress
             with set (_: ProgressEvent -> unit) = ()
+        [<Erase>]
         member this.onSuspend
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onAbort
             with set (_: Event -> unit) = ()
 
     type video with
+        [<Erase>]
         member this.onError
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onPlay
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onPause
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onEnded
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onVolumeChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onSeeked
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onSeeking
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onTimeUpdate
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onDurationChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onRateChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onCanPlay
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onCanPlayThrough
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onStalled
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onWaiting
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onEmptied
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoadedData
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoadedMetadata
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onLoadStart
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onProgress
             with set (_: ProgressEvent -> unit) = ()
+        [<Erase>]
         member this.onSuspend
             with set (_: Event -> unit) = ()
+        [<Erase>]
         member this.onAbort
             with set (_: Event -> unit) = ()
 
+    [<Erase>]
     type For<'T>() =
         interface HtmlElement
+        [<Erase>]
         member this.each
             with set (value: 'T[]) = ()
         member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: 'T -> Accessor<int> -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
 
+    [<Erase>]
     type Index<'T>() =
         interface HtmlElement
+        [<Erase>]
         member this.each
             with set (value: 'T[]) = ()
         member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: Accessor<'T> -> int -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
 
+    [<Erase>]
     type Show() =
         interface HtmlContainer
+        [<Erase>]
         member this.when'
             with set (value: bool) = ()
+        [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
 
+    [<Erase>]
     type Match() =
         interface HtmlContainer
+        [<Erase>]
         member this.when'
             with set (value: bool) = ()
 
+    [<Erase>]
     type Switch() =
         interface HtmlElement
+        [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
         member inline _.Combine
@@ -338,45 +474,57 @@ module Bindings =
         member inline _.Zero() : HtmlContainerFun = ignore
         member inline _.Yield(value: Match) : HtmlContainerFun = fun cont -> ignore value
 
+    [<Erase>]
     type Suspense() =
         interface HtmlContainer
+        [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
 
+    [<Erase>]
     type SuspenseList() =
         interface HtmlContainer
+        [<Erase>]
         member this.revealOrder
             with set (value: string) = ()
+        [<Erase>]
         member this.tail
             with set (value: string) = ()
+        [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
 
+    [<Erase>]
     type Portal() =
         interface HtmlContainer
+        [<Erase>]
         member this.mount
             with set (value: Element) = ()
+        [<Erase>]
         member this.useShadow
             with set (value: bool) = ()
 
+    [<Erase>]
     type ErrorBoundary() =
         interface HtmlContainer
+        [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
 
+    [<Erase>]
     type Extensions =
 
-        [<Extension>]
+        [<Extension; Erase>]
         static member Run(this: For<'T>, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
 
-        [<Extension>]
+        [<Extension; Erase>]
         static member Run(this: Index<'T>, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
 
-        [<Extension>]
+        [<Extension; Erase>]
         static member Run(this: Switch, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
@@ -443,21 +591,22 @@ module Bindings =
             /// Access more convenient way of updating store items
             member this.Path = SolidStorePath<'T, 'T>(this, [||])
 
-    [<Runtime.CompilerServices.Extension>]
+    [<Extension; Erase>]
     type SolidStorePathExtensions =
 
         /// Select store item by index
-        [<Runtime.CompilerServices.Extension>]
+        [<Extension; Erase>]
         static member inline Item(this: SolidStorePath<'T, 'Value array>, index: int) =
             SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| index |])
 
         /// Select store item by predicate
-        [<Runtime.CompilerServices.Extension>]
+        [<Extension; Erase>]
         static member inline Find(this: SolidStorePath<'T, 'Value array>, predicate: 'Value -> bool) =
             SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| predicate |])
 
 
 [<AutoOpen>]
+[<Erase>]
 type Bindings =
 
     [<ImportMember("solid-js/web")>]

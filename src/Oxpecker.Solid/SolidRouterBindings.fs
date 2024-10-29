@@ -139,43 +139,56 @@ module Bindings =
     type PreloadData [<ParamObject; Emit("$0")>] (preloadData: bool) =
         member val preloadData: bool = jsNative with get, set
 
+    [<Erase>]
     type Extensions =
-        [<Extension>]
+        [<Extension; Erase>]
         static member Run(this: Router, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
 
-        [<Extension>]
+        [<Extension; Erase>]
         static member Run(this: Route, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
 
+    [<Erase>]
     type A() =
         inherit RegularNode()
+        [<Erase>]
         member this.href
             with set (value: string) = ()
+        [<Erase>]
         member this.noScroll
             with set (value: bool) = ()
+        [<Erase>]
         member this.replace
             with set (value: bool) = ()
+        [<Erase>]
         member this.state
             with set (value: obj) = ()
+        [<Erase>]
         member this.activeClass
             with set (value: string) = ()
+        [<Erase>]
         member this.inactiveClass
             with set (value: string) = ()
+        [<Erase>]
         member this.end'
             with set (value: bool) = ()
 
+    [<Erase>]
     type Navigate() =
         inherit RegularNode()
+        [<Erase>]
         member this.href
             with set (value: string) = ()
+        [<Erase>]
         member this.state
             with set (value: obj) = ()
 
 
 [<AutoOpen>]
+[<Erase>]
 type Bindings =
 
     [<ImportMember("@solidjs/router")>]

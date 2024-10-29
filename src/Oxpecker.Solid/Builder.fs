@@ -1,11 +1,13 @@
 ﻿namespace Oxpecker.Solid
 
 open System.Runtime.CompilerServices
+open Fable.Core
 
 [<AutoOpen>]
 module Builder =
 
     [<Struct>]
+    [<Erase>]
     type HtmlAttribute = { Name: string; Value: obj }
 
     type HtmlElement = interface end
@@ -14,11 +16,16 @@ module Builder =
     type HtmlContainer =
         inherit HtmlElement
 
+    [<Erase>]
     type RegularNode() =
         interface HtmlTag
         interface HtmlContainer
+
+    [<Erase>]
     type FragmentNode() =
         interface HtmlContainer
+
+    [<Erase>]
     type VoidNode() =
         interface HtmlTag
 
@@ -42,8 +49,9 @@ module Builder =
 
         member inline _.Yield(text: int) : HtmlContainerFun = fun cont -> ignore text
 
+    [<Erase>]
     type HtmlContainerExtensions =
-        [<Extension>]
+        [<Extension; Erase>]
         static member Run(this: #HtmlContainer, runExpr: HtmlContainerFun) =
             runExpr this
             this
