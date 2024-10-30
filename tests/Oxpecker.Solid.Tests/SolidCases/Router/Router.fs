@@ -10,6 +10,7 @@ let Root (props: RootProps) : HtmlElement =
     Fragment() {
         h1() { "Root header" }
         props.children
+        A(href="/about") { "About" }
     }
 
 [<SolidComponent>]

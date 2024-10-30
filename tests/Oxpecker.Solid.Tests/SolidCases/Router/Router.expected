@@ -1,4 +1,4 @@
-import { Route, Router } from "@solidjs/router";
+import { Route, Router, A } from "@solidjs/router";
 import { App1 } from "./App1.fs.js";
 import { App2 } from "./App2.fs.js";
 import { lazy } from "solid-js";
@@ -9,6 +9,9 @@ export function Root(props) {
             Root header
         </h1>
         {props.children}
+        <A href="/about">
+            About
+        </A>
     </>;
 }
 

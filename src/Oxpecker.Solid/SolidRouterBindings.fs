@@ -75,12 +75,16 @@ module Bindings =
     [<Import("Route", "@solidjs/router")>]
     type Route() =
         interface HtmlElement
+        [<Erase>]
         member this.path
             with set (value: string) = ()
+        [<Erase>]
         member this.component'
             with set (value: unit -> HtmlElement) = ()
+        [<Erase>]
         member this.matchFilters
             with set (value: obj) = ()
+        [<Erase>]
         member this.preload
             with set (value: RoutePreloadFunc) = ()
         member inline _.Combine
@@ -107,16 +111,22 @@ module Bindings =
     [<Import("Router", "@solidjs/router")>]
     type Router() =
         interface HtmlElement
+        [<Erase>]
         member this.root
             with set (value: RootProps -> HtmlElement) = ()
+        [<Erase>]
         member this.base'
             with set (value: string) = ()
+        [<Erase>]
         member this.actionBase
             with set (value: string) = ()
+        [<Erase>]
         member this.preload
             with set (value: bool) = ()
+        [<Erase>]
         member this.explicitLinks
             with set (value: bool) = ()
+        [<Erase>]
         member this.url
             with set (value: string) = ()
         member inline _.Combine
@@ -151,7 +161,7 @@ module Bindings =
             runExpr Unchecked.defaultof<_>
             this
 
-    [<Erase>]
+    [<Import("A", "@solidjs/router")>]
     type A() =
         inherit RegularNode()
         [<Erase>]
@@ -176,7 +186,7 @@ module Bindings =
         member this.end'
             with set (value: bool) = ()
 
-    [<Erase>]
+    [<Import("Navigate", "@solidjs/router")>]
     type Navigate() =
         inherit RegularNode()
         [<Erase>]
