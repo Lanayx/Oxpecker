@@ -25,17 +25,22 @@ module internal rec AST =
     let (|CallTag|_|) condition =
         function
         | Call(Import(importInfo, LambdaType(_, DeclaredType(typ, _)), _), callInfo, _, range) when condition importInfo ->
-            let tagName = typ.FullName.Split('.') |> Seq.last
-            let finalTagName =
-                if tagName = "Fragment" then
-                    ""
-                elif tagName.EndsWith("'") then
-                    tagName.Substring(0, tagName.Length - 1)
-                elif tagName.EndsWith("`1") then
-                    tagName.Substring(0, tagName.Length - 2)
-                else
-                    tagName
-            Some(AutoImport finalTagName, callInfo, range)
+            let tagImport =
+                match callInfo.Args with
+                | Let(_, LibraryTagImport(imp, _), _) :: _ -> LibraryImport imp
+                | _ ->
+                    let tagName = typ.FullName.Split('.') |> Seq.last
+                    let finalTagName =
+                        if tagName = "Fragment" then
+                            ""
+                        elif tagName.EndsWith("'") then
+                            tagName.Substring(0, tagName.Length - 1)
+                        elif tagName.EndsWith("`1") then
+                            tagName.Substring(0, tagName.Length - 2)
+                        else
+                            tagName
+                    AutoImport finalTagName
+            Some(tagImport, callInfo, range)
         | _ -> None
 
     let (|TagNoChildren|_|) (expr: Expr) =

@@ -17,9 +17,9 @@
         <PackageTags>Oxpecker;F#;FSharp;Plugin;fable-javascript;Compiler;Fable;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.2.0</Version>
-        <PackageVersion>0.2.0</PackageVersion>
-        <PackageReleaseNotes>Solid router support</PackageReleaseNotes>
+        <Version>0.2.2</Version>
+        <PackageVersion>0.2.2</PackageVersion>
+        <PackageReleaseNotes>Fixed jsx for Solid A element</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
