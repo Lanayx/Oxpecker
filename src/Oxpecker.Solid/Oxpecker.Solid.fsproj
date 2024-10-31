@@ -42,7 +42,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         <PrivateAssets>all</PrivateAssets>
       </PackageReference>
-      <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.2.0" />
+      <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.2.2" />
     </ItemGroup>
 
     <ItemGroup>
