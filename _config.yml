@@ -1,0 +1,22 @@
+# _config.yml
+title: "Oxpecker github page"
+
+readme_index:
+  enabled: true
+  remove_originals: false
+  with_frontmatter: true
+
+remote_theme: pages-themes/primer@v0.6.0
+
+# Add these theme-specific settings
+defaults:
+  -
+    scope:
+      path: "" # Apply to all files
+    values:
+      layout: "default" # Use the default layout from the theme
+
+plugins:
+  - jekyll-readme-index
+  - jekyll-remote-theme
+  - jekyll-seo-tag

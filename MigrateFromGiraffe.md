@@ -1,3 +1,7 @@
+---
+render_with_liquid: false
+---
+
 # Migration From Giraffe
 
 While Oxpecker is mostly oriented at developers building brand-new projects, some people might want to migrate their Giraffe applications to Oxpecker to get better support.
@@ -115,6 +119,7 @@ ctx.Write <| TypedResults.Ok myObject
 - Route parameters **must** now be enclosed in curly braces
 - Route parameters are now curried
 - Some format characters were changed
+
 
 ```fsharp
 // Giraffe
