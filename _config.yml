@@ -16,6 +16,8 @@ defaults:
     values:
       layout: "default" # Use the default layout from the theme
 
+repository: Lanayx/Oxpecker
+
 plugins:
   - jekyll-readme-index
   - jekyll-remote-theme
