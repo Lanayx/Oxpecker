@@ -20,3 +20,4 @@ plugins:
   - jekyll-readme-index
   - jekyll-remote-theme
   - jekyll-seo-tag
+  - jekyll-github-metadata
