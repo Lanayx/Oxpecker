@@ -1,5 +1,5 @@
 # _config.yml
-title: "Oxpecker github page"
+title: "Oxpecker"
 
 readme_index:
   enabled: true
@@ -8,7 +8,6 @@ readme_index:
 
 remote_theme: pages-themes/primer@v0.6.0
 
-# Add these theme-specific settings
 defaults:
   -
     scope:
@@ -16,7 +15,8 @@ defaults:
     values:
       layout: "default" # Use the default layout from the theme
 
-repository: Lanayx/Oxpecker
+include:
+  - "**/*.md"
 
 plugins:
   - jekyll-readme-index
