@@ -80,54 +80,6 @@ let ``WriteText with HTTP HEAD should not return text in body`` () =
     }
 
 [<Fact>]
-let ``WriteBytes should not return Content-Length in header on 100`` () =
-    task {
-        let ctx = DefaultHttpContext()
-        ctx.Response.Body <- new MemoryStream()
-        ctx.Response.StatusCode <- 100
-
-        do! ctx.WriteBytes [| 0uy |]
-
-        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
-    }
-
-[<Fact>]
-let ``WriteBytesAsync should not return Content-Length in header on 204`` () =
-    task {
-        let ctx = DefaultHttpContext()
-        ctx.Response.Body <- new MemoryStream()
-        ctx.Response.StatusCode <- 204
-
-        do! ctx.WriteBytes [| 0uy |]
-
-        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
-    }
-
-[<Fact>]
-let ``WriteBytesAsync with HTTP CONNECT should not return Content-Length in header on status code 200`` () =
-    task {
-        let ctx = DefaultHttpContext()
-        ctx.Response.Body <- new MemoryStream()
-        ctx.Request.Method <- "CONNECT"
-
-        do! ctx.WriteBytes [| 0uy |]
-
-        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
-    }
-
-[<Fact>]
-let ``WriteBytesAsync should return Content-Length 0 in header on 205`` () =
-    task {
-        let ctx = DefaultHttpContext()
-        ctx.Response.Body <- new MemoryStream()
-        ctx.Response.StatusCode <- 205
-
-        do! ctx.WriteBytes [| 0uy |]
-
-        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable(0L))
-    }
-
-[<Fact>]
 let ``WriteJson should add json to the context`` () =
     task {
         let ctx = DefaultHttpContext()

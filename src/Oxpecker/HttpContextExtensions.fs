@@ -287,7 +287,7 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
-        let sb = Tools.StringBuilderPool.Get()
+        let sb = Tools.StringBuilderPool.Get().AppendLine("<!DOCTYPE html>")
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         if ctx.Request.Method <> HttpMethods.Head then
             let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
