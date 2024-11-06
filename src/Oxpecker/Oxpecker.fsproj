@@ -18,8 +18,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.14.1</Version>
-        <PackageVersion>0.14.1</PackageVersion>
+        <Version>0.14.3</Version>
+        <PackageVersion>0.14.3</PackageVersion>
         <PackageReleaseNotes>Refactoring: WriteHtmlView now uses pooling.</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
