@@ -24,7 +24,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.15.1" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.15.2" />
     </ItemGroup>
 
 </Project>

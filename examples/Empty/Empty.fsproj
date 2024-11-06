@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.14.2" />
+        <PackageReference Include="Oxpecker" Version="0.14.3" />
     </ItemGroup>
 
 </Project>

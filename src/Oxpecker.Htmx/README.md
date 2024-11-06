@@ -1,3 +1,5 @@
+---
+---
 # Oxpecker.Htmx
 
 `Oxpecker.Htmx` extends `Oxpecker.ViewEngine` package with HTMX attributes and headers.

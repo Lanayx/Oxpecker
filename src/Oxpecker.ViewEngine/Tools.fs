@@ -1,4 +1,4 @@
-﻿module internal Oxpecker.ViewEngine.Tools
+﻿module Oxpecker.ViewEngine.Tools
 
 open Microsoft.Extensions.ObjectPool
 
@@ -9,15 +9,15 @@ let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
 /// </summary>
 /// <param name="x">The object to validate against `null`.</param>
 /// <returns>Returns true if the object is not null otherwise false.</returns>
-let inline isNotNull x = not(isNull x)
+let inline internal isNotNull x = not(isNull x)
 
 [<AllowNullLiteral>]
-type CustomQueueItem<'T>(value: 'T) =
+type internal CustomQueueItem<'T>(value: 'T) =
     member this.Value = value
     member val Next = Unchecked.defaultof<CustomQueueItem<'T>> with get, set
 
 [<Struct>]
-type CustomQueue<'T> =
+type internal CustomQueue<'T> =
     val mutable Head: CustomQueueItem<'T>
     val mutable Tail: CustomQueueItem<'T>
     member this.Enqueue(value: 'T) =

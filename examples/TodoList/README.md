@@ -9,6 +9,7 @@ Ported from the React tutorial: https://devblogs.microsoft.com/visualstudio/crea
 
 - F# (Fable + ViewEngine plugin)
 - Solid.js
+- Solid router
 - HMR (Hot Module Replacement)
 - Oxpecker ViewEngine (modified for frontend)
 - Tailwind CSS

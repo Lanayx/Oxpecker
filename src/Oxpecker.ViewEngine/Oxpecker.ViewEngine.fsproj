@@ -18,9 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.15.1</Version>
-        <PackageVersion>0.15.1</PackageVersion>
-        <PackageReleaseNotes>Converted HtmlElement parameter to #HtmlElement in render functions</PackageReleaseNotes>
+        <Version>0.15.2</Version>
+        <PackageVersion>0.15.2</PackageVersion>
+        <PackageReleaseNotes>Exposed ViewEngine tools</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />

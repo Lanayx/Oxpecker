@@ -18,9 +18,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.14.2</Version>
-        <PackageVersion>0.14.2</PackageVersion>
-        <PackageReleaseNotes>Updated ViewEngine dependency</PackageReleaseNotes>
+        <Version>0.14.3</Version>
+        <PackageVersion>0.14.3</PackageVersion>
+        <PackageReleaseNotes>Refactoring: WriteHtmlView now uses pooling.</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
@@ -30,7 +30,7 @@
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="0.15.1" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="0.15.2" />
     </ItemGroup>
     <ItemGroup>
         <Compile Include="AssemblyInfo.fs" />

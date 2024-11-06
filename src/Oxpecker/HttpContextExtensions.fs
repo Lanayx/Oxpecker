@@ -217,31 +217,14 @@ type HttpContextExtensions() =
         ctx.SetHttpHeader(HeaderNames.ContentType, contentType)
 
     /// <summary>
-    /// Writes a byte array to the body of the HTTP response and sets the HTTP Content-Length header accordingly.<br />
-    /// <br />
-    /// There are exceptions to be taken care of according to the RFC.<br />
-    /// 1. Don't send Content-Length headers on 1xx and 204 responses and on 2xx responses to CONNECT requests (https://httpwg.org/specs/rfc7230.html#rfc.section.3.3.2)<br />
-    /// 2. Don't send non-zero Content-Length headers for 205 responses (https://httpwg.org/specs/rfc7231.html#rfc.section.6.3.6)<br />
-    /// <br />
-    /// Since .NET 7 these rules are enforced by Kestrel (https://github.com/dotnet/aspnetcore/pull/43103)
+    /// Writes a byte array to the body of the HTTP response and sets the HTTP Content-Length header accordingly.
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="bytes">The byte array to be sent back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteBytes(ctx: HttpContext, bytes: byte array) =
-        let statusCode = ctx.Response.StatusCode
-        let skipContentLengthHeader =
-            is1xxStatusCode statusCode
-            || statusCode = StatusCodes.Status204NoContent
-            || (ctx.Request.Method = HttpMethods.Connect && is2xxStatusCode statusCode)
-        if not skipContentLengthHeader then
-            let contentLength =
-                if statusCode = StatusCodes.Status205ResetContent then
-                    0L
-                else
-                    bytes.LongLength
-            ctx.Response.ContentLength <- contentLength
+        ctx.Response.ContentLength <- bytes.LongLength
         if ctx.Request.Method <> HttpMethods.Head then
             ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
         else
@@ -304,9 +287,27 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
-        let bytes = Render.toHtmlDocBytes htmlView
+        let sb = Tools.StringBuilderPool.Get().AppendLine("<!DOCTYPE html>")
         ctx.Response.ContentType <- "text/html; charset=utf-8"
-        ctx.WriteBytes bytes
+        if ctx.Request.Method <> HttpMethods.Head then
+            let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
+            task {
+                use _ = textWriter :> IAsyncDisposable
+                try
+                    htmlView.Render(sb)
+                    ctx.Response.ContentLength <- sb.Length
+                    return! textWriter.WriteAsync(sb)
+                finally
+                    Tools.StringBuilderPool.Return(sb)
+            }
+            :> Task
+        else
+            try
+                htmlView.Render(sb)
+                ctx.Response.ContentLength <- sb.Length
+                Task.CompletedTask
+            finally
+                Tools.StringBuilderPool.Return(sb)
 
     /// <summary>
     /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>

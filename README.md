@@ -1,3 +1,6 @@
+---
+---
+
 # Oxpecker
 
 ![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
@@ -7,10 +10,10 @@
 The server part of the Oxpecker library is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
 Medium posts:
-* Introduction: https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918
-* About ViewEngine: https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c
-* Comparison with Blazor: https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99
-* Oxpecker.Solid introduction: https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34
+* [Oxpecker Introduction](https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918)
+* [7 reasons to try Oxpecker.ViewEngine](https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c)
+* [Oxpecker vs Blazor](https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99)
+* [Oxpecker.Solid introduction](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
 
 ## Features:
 
@@ -41,12 +44,12 @@ Medium posts:
 
 ## Documentation links:
 
-* [Oxpecker Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker/README.md)
-* [Oxpecker.ViewEngine Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.ViewEngine/README.md)
-* [Oxpecker.Htmx Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.Htmx/README.md)
-* [Oxpecker.OpenApi Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.OpenApi/README.md)
-* [Oxpecker.Solid Readme](https://github.com/Lanayx/Oxpecker/blob/main/src/Oxpecker.Solid/README.md)
-* [Migration from Giraffe](https://github.com/Lanayx/Oxpecker/blob/main/MigrateFromGiraffe.md)
+* [Oxpecker](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
+* [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
+* [Oxpecker.Htmx Readme](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
+* [Oxpecker.OpenApi Readme](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
+* [Oxpecker.Solid Readme](https://lanayx.github.io/Oxpecker/src/Oxpecker.Solid/)
+* [Migration from Giraffe](https://lanayx.github.io/Oxpecker/MigrateFromGiraffe)
 
 ## develop vs main branch:
 

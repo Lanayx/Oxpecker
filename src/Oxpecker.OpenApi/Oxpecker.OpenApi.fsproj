@@ -30,7 +30,7 @@
         <Compile Include="Routing.fs" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.14.2" />
+        <PackageReference Include="Oxpecker" Version="0.14.3" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
     </ItemGroup>
 
