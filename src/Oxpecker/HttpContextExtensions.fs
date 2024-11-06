@@ -299,7 +299,8 @@ type HttpContextExtensions() =
                     return! textWriter.WriteAsync(sb)
                 finally
                     Tools.StringBuilderPool.Return(sb)
-            } :> Task
+            }
+            :> Task
         else
             Tools.StringBuilderPool.Return(sb)
             Task.CompletedTask
