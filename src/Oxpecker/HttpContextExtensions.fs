@@ -288,22 +288,26 @@ type HttpContextExtensions() =
     [<Extension>]
     static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
         let sb = Tools.StringBuilderPool.Get()
-        htmlView.Render(sb)
         ctx.Response.ContentType <- "text/html; charset=utf-8"
-        ctx.Response.ContentLength <- sb.Length
         if ctx.Request.Method <> HttpMethods.Head then
             let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
             task {
                 use _ = textWriter :> IAsyncDisposable
                 try
+                    htmlView.Render(sb)
+                    ctx.Response.ContentLength <- sb.Length
                     return! textWriter.WriteAsync(sb)
                 finally
                     Tools.StringBuilderPool.Return(sb)
             }
             :> Task
         else
-            Tools.StringBuilderPool.Return(sb)
-            Task.CompletedTask
+            try
+                htmlView.Render(sb)
+                ctx.Response.ContentLength <- sb.Length
+                Task.CompletedTask
+            finally
+                Tools.StringBuilderPool.Return(sb)
 
     /// <summary>
     /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
