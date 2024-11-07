@@ -31,12 +31,12 @@ let ``Tools.HtmlEncode and WebUtility.HtmlEncode are exactly the same`` () =
           <tr><td>11</td><td><script>alert("This should not be displayed in a browser alert box.");</script></td></tr>
           <tr><td>4</td><td>A bad random number generator: 1, 1, 1, 1, 1, 4.33e+67, 1, 1, 1</td></tr>
           <tr><td>5</td><td>A computer program does what you tell it to do, not what you want it to do.</td></tr>
-          <tr><td>2</td><td>A computer scientist is someone who fixes things that aren't broken.</td></tr>
+          <tr><td>2</td><td>`@#$%^&*()_+=-,/|\}{[]  ~.</td></tr>
           <tr><td>8</td><td>A list is only as strong as its weakest link. — Donald Knuth</td></tr>
-          <tr><td>0</td><td>Additional fortune added at request time.</td></tr>
-          <tr><td>3</td><td>After enough decimal places, nobody gives a damn.</td></tr>
-          <tr><td>7</td><td>Any program that runs right is obsolete.</td></tr>
-          <tr><td>10</td><td>Computers make very fast, very accurate mistakes.</td></tr>
+          <tr><td>0</td><td>Съешь ещё этих мягких французских булок, да выпей чаю.</td></tr>
+          <tr><td>3</td><td>"Hello 𝓦orld!"</td></tr>
+          <tr><td>7</td><td>😀😄😵‍💫</td></tr>
+          <tr><td>10</td><td>联合国中文日</td></tr>
           <tr><td>6</td><td>Emacs is a nice operating system, but I prefer UNIX. — Tom Christaensen</td></tr>
           <tr><td>9</td><td>Feature: A bug with seniority.</td></tr>
           <tr><td>1</td><td>fortune: No such file or directory</td></tr>
