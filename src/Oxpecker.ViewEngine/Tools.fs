@@ -52,17 +52,11 @@ let HtmlEncode (sb: StringBuilder) (string: string) =
     for i = 0 to string.Length - 1 do
         let ch = string.[i]
         if ch <= '>' then
-            if '<' = ch then
-                sb.Append "&lt;" |> ignore
-            elif '>' = ch then
-                sb.Append "&gt;" |> ignore
-            elif '"' = ch then
-                sb.Append "&quot;" |> ignore
-            elif '\'' = ch then
-                sb.Append "&#39;" |> ignore
-            elif '&' = ch then
-                sb.Append "&amp;" |> ignore
-            else
-                sb.Append ch |> ignore
+            if '<' = ch then sb.Append "&lt;" |> ignore
+            elif '>' = ch then sb.Append "&gt;" |> ignore
+            elif '"' = ch then sb.Append "&quot;" |> ignore
+            elif '\'' = ch then sb.Append "&#39;" |> ignore
+            elif '&' = ch then sb.Append "&amp;" |> ignore
+            else sb.Append ch |> ignore
         else
             sb.Append ch |> ignore

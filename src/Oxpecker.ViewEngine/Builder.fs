@@ -88,7 +88,7 @@ module Builder =
 
     /// Text node that will be HTML-escaped
     type RegularTextNode(text: string) =
-        member this.Render(sb: StringBuilder) =  HtmlEncode sb text
+        member this.Render(sb: StringBuilder) = HtmlEncode sb text
         interface HtmlElement with
             member this.Render sb = this.Render sb
 
