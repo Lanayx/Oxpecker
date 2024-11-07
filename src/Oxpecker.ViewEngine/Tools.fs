@@ -39,7 +39,6 @@ type internal CustomQueue<'T> =
                 next <- next.Next
         }
 
-    static member Empty = CustomQueue()
 
 /// <summary>
 /// Lighter version of WebUtility.HtmlEncode made for StringBuilder
