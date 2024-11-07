@@ -1,5 +1,7 @@
 ﻿module Oxpecker.ViewEngine.Tools
 
+open System
+open System.Text
 open Microsoft.Extensions.ObjectPool
 
 let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
@@ -36,3 +38,25 @@ type internal CustomQueue<'T> =
                 yield next.Value
                 next <- next.Next
         }
+
+/// <summary>
+/// Lighter version of WebUtility.HtmlEncode made for StringBuilder
+/// Implemented as per RFC
+/// https://datatracker.ietf.org/doc/html/rfc1866#section-3.2.1
+/// </summary>
+/// <param name="sb">StringBuilder to write encoded chars to</param>
+/// <param name="string">String to write to StringBuilder</param>
+let HtmlEncode (sb: StringBuilder) (string: string) =
+    for i = 0 to string.Length - 1 do
+        let ch = string.[i]
+        if ch <= '>' then
+            match ch with
+            | '<' -> sb.Append "&lt;"
+            | '>' -> sb.Append "&gt;"
+            | '"' -> sb.Append "&quot;"
+            | '\'' -> sb.Append "&#39;"
+            | '&' -> sb.Append "&amp;"
+            | c -> sb.Append c
+            |> ignore
+        else
+            sb.Append ch |> ignore
