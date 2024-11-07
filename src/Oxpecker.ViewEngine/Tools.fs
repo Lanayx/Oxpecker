@@ -47,6 +47,7 @@ type internal CustomQueue<'T> =
 /// <param name="sb">StringBuilder to write encoded chars to</param>
 /// <param name="string">String to write to StringBuilder</param>
 let HtmlEncode (sb: StringBuilder) (string: string) =
+    let string = string.AsSpan()
     for i = 0 to string.Length - 1 do
         let ch = string.[i]
         if ch <= '>' then
