@@ -39,6 +39,8 @@ type internal CustomQueue<'T> =
                 next <- next.Next
         }
 
+    static member Empty = CustomQueue()
+
 /// <summary>
 /// Lighter version of WebUtility.HtmlEncode made for StringBuilder
 /// Implemented as per RFC
@@ -51,13 +53,17 @@ let HtmlEncode (sb: StringBuilder) (string: string) =
     for i = 0 to string.Length - 1 do
         let ch = string.[i]
         if ch <= '>' then
-            match ch with
-            | '<' -> sb.Append "&lt;"
-            | '>' -> sb.Append "&gt;"
-            | '"' -> sb.Append "&quot;"
-            | '\'' -> sb.Append "&#39;"
-            | '&' -> sb.Append "&amp;"
-            | c -> sb.Append c
-            |> ignore
+            if '<' = ch then
+                sb.Append "&lt;" |> ignore
+            elif '>' = ch then
+                sb.Append "&gt;" |> ignore
+            elif '"' = ch then
+                sb.Append "&quot;" |> ignore
+            elif '\'' = ch then
+                sb.Append "&#39;" |> ignore
+            elif '&' = ch then
+                sb.Append "&amp;" |> ignore
+            else
+                sb.Append ch |> ignore
         else
             sb.Append ch |> ignore
