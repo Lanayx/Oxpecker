@@ -38,3 +38,7 @@ let ``Flat nested tags`` () =
 [<Fact>]
 let ``Custom attributes`` () =
     runGeneralCase "CustomAttributes"
+
+[<Fact>]
+let ``Custom tags`` () =
+    runGeneralCase "CustomTags"

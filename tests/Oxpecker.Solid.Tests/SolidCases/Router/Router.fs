@@ -1,9 +1,9 @@
-module Oxpecker.Solid.Tests.Cases.Router
+module Oxpecker.Solid.Tests.SolidCases.Router
 
 open Oxpecker.Solid
 open Oxpecker.Solid.Router
-open Oxpecker.Solid.Tests.SolidCases.Router.App1
-open Oxpecker.Solid.Tests.SolidCases.Router.App2
+open Oxpecker.Solid.Tests.SolidCases.App1
+open Oxpecker.Solid.Tests.SolidCases.App2
 
 [<SolidComponent>]
 let Root (props: RootProps) : HtmlElement =
