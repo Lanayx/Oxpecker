@@ -281,6 +281,20 @@ module internal rec AST =
             | [ expr ] -> expr :: currentList
             | _ -> currentList
 
+        | Let({
+                  Name = name
+                  Range = range
+                  Type = DeclaredType({ FullName = fullName }, [])
+              },
+              _,
+              _) when
+            ((not <| name.StartsWith("returnVal")) && (not <| name.StartsWith("element")))
+            && fullName.StartsWith("Oxpecker.Solid")
+            ->
+            match range with
+            | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
+            | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
+
         | _ -> currentList
 
     let listItemType =
@@ -397,11 +411,11 @@ type SolidComponentAttribute() =
 
     override _.FableMinimumVersion = "4.0"
 
-    override this.Transform(compiler: PluginHelper, file: File, memberDecl: MemberDecl) =
+    override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
         // Console.WriteLine("!Start! MemberDecl")
         // Console.WriteLine(memberDecl.Body)
         // Console.WriteLine("!End! MemberDecl")
         let newBody = AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 
-    override _.TransformCall(_ph: PluginHelper, _mb: MemberFunctionOrValue, expr: Expr) : Expr = expr
+    override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr

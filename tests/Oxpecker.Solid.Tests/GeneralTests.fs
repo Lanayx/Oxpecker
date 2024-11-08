@@ -42,3 +42,17 @@ let ``Custom attributes`` () =
 [<Fact>]
 let ``Custom tags`` () =
     runGeneralCase "CustomTags"
+
+[<Fact>]
+let ``Let bindings`` () =
+    let dir = $"{__SOURCE_DIRECTORY__}/Cases/LetBindings"
+    let output =
+        cli {
+            Shell CMD
+            WorkingDirectory dir
+            Command "dotnet fable --noCache --exclude Oxpecker.Solid.FablePlugin"
+        }
+        |> Command.execute
+    output |> Output.toExitCode |> shouldEqual 1
+    output |> Output.toText |> shouldContainText """`let` binding inside HTML CE can't be converted to JSX:line 9"""
+
