@@ -39,6 +39,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [subRoute](#subroute)
       - [addMetadata](#addmetadata)
       - [configureEndpoint](#configureendpoint)
+      - [Catch-all route](#catch-all-route)
     - [Query Strings](#query-strings)
     - [Model Binding](#model-binding)
       - [Binding JSON](#binding-json)
@@ -763,6 +764,19 @@ let webApp =
           |> configureEndpoint
              _.WithMetadata("foo")
               .WithDisplayName("Foo")
+    ]
+```
+
+#### Catch-all route
+
+You can leverage the [templating system](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-8.0#route-templates) of ASP.NET core routing with Oxpecker to define catch-all routes with both `route` and `routef` functions by using asterisk * or double asterisk **:
+
+```fsharp
+let webApp =
+    GET [
+        route "/foo/{*bar}" (fun ctx ->
+            text (ctx.TryGetRouteValue("bar") |> Option.defaultValue "") ctx)
+        routef "/moo/{**%s}" (fun bar -> text bar)
     ]
 ```
 

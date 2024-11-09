@@ -1,4 +1,4 @@
-module Oxpecker.Solid.Tests.SolidCases.Router.App2
+module Oxpecker.Solid.Tests.SolidCases.App2
 
 open Fable.Core
 open Oxpecker.Solid

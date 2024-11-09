@@ -26,6 +26,12 @@
         <Compile Include="Cases\CustomAttributes\CustomAttributes.fs" />
         <None Include="Cases\CustomAttributes\CustomAttributes.expected" />
         <None Include="Cases\CustomAttributes\CustomAttributes.fsproj" />
+        <Compile Include="Cases\CustomTags\MyTag.fs" />
+        <Compile Include="Cases\CustomTags\CustomTags.fs" />
+        <None Include="Cases\CustomTags\CustomTags.expected" />
+        <None Include="Cases\CustomTags\CustomTags.fsproj" />
+        <Compile Include="Cases\LetBindings\LetBindings.fs" />
+        <None Include="Cases\LetBindings\LetBindings.fsproj" />
         <Compile Include="SolidCases\Signal\Signal.fs" />
         <None Include="SolidCases\Signal\Signal.expected" />
         <None Include="SolidCases\Signal\Signal.fsproj" />
