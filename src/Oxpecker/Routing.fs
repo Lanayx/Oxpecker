@@ -79,7 +79,7 @@ module RouteTemplateBuilder =
             raise
             <| RouteParseException($"Url segment value '%s{s}' has invalid format", ex)
 
-    let placeholderPattern = Regex("\{%([sibcdfuO])(:[^}]+)?\}")
+    let placeholderPattern = Regex("\{(\*{0,2})%([sibcdfuO])(:[^}]+)?\}")
     // This function should convert to route template and mappings
     // "api/{%s}/{%i}" -> ("api/{x}/{y}", [("x", 's', None); ("y", 'i', None)])
     // "api/{%O:guid}/{%s}" -> ("api/{x:guid}/{y}", [("x", 'O', Some "guid"); ("y", 's', None)])
@@ -89,8 +89,9 @@ module RouteTemplateBuilder =
 
         let placeholderEvaluator =
             MatchEvaluator(fun m ->
-                let vtype = m.Groups[1].Value[0] // First capture group is the variable type s, i, or O
-                let formatSpecifier = if m.Groups[2].Success then m.Groups[2].Value else ""
+                let slug = m.Groups[1].Value
+                let vtype = m.Groups[2].Value[0] // Second capture group is the variable type s, i, or O
+                let formatSpecifier = if m.Groups[3].Success then m.Groups[3].Value else ""
                 let paramName = parameters[index].Name
                 index <- index + 1 // Increment index for next use
                 mappings.Add(
@@ -101,7 +102,7 @@ module RouteTemplateBuilder =
                     else
                         Some <| formatSpecifier.TrimStart(':')
                 )
-                $"{{{paramName}{formatSpecifier}}}" // Construct the new placeholder
+                $"{{%s{slug}%s{paramName}%s{formatSpecifier}}}" // Construct the new placeholder
             )
 
         let newRoute = placeholderPattern.Replace(pathValue, placeholderEvaluator)

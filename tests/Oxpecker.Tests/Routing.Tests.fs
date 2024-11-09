@@ -2,6 +2,7 @@
 
 open System
 open System.Net
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
@@ -262,6 +263,25 @@ let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
         resultString |> shouldEqual "Not found"
     }
 
+
+[<Fact>]
+let ``routef: GET "/foo/bar/baz/qux" returns "bar/baz/qux"`` () =
+    task {
+        let endpoints = [ GET [ routef "/foo/{**%s}" text; routef "/moo/{*%s}" text ] ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! result1 = client.GetAsync("/foo/bar/baz/qux")
+        let! result1String = result1.Content.ReadAsStringAsync()
+
+        let! result2 = client.GetAsync("/moo/bar/baz/qux")
+        let! result2String = result2.Content.ReadAsStringAsync()
+
+        result1.StatusCode |> shouldEqual HttpStatusCode.OK
+        result2.StatusCode |> shouldEqual HttpStatusCode.OK
+        result1String |> shouldEqual "bar/baz/qux"
+        result2String |> shouldEqual "bar/baz/qux"
+    }
 
 // ---------------------------------
 // subRoute Tests
