@@ -1,6 +1,8 @@
 ﻿module Oxpecker.ViewEngine.Tools
 
 open System
+open System.Numerics
+open System.Runtime.CompilerServices
 open System.Text
 open Microsoft.Extensions.ObjectPool
 
@@ -39,24 +41,69 @@ type internal CustomQueue<'T> =
                 next <- next.Next
         }
 
+let unicodeReplacementChar: char = char 65533
+let HIGH_SURROGATE_START = int '\ud800'
+let LOW_SURROGATE_START = int '\uDC00'
+let UnicodeReplacementChar = '\uFFFD'
+let lt = int '>'
 
-/// <summary>
-/// Lighter version of WebUtility.HtmlEncode made for StringBuilder
-/// Implemented as per RFC
-/// https://datatracker.ietf.org/doc/html/rfc1866#section-3.2.1
-/// </summary>
-/// <param name="sb">StringBuilder to write encoded chars to</param>
-/// <param name="string">String to write to StringBuilder</param>
+
+let inline haveUnencodedChars (s: string) =
+    let mutable i = 0
+    let mutable notTrue = false
+
+    while not notTrue do
+        let mutable c = s.[i]
+        let ci: int = Unsafe.As &c
+        let mutable b = lt > ci
+        notTrue <- b
+        i <- i + 1
+
+    notTrue
+
 let HtmlEncode (sb: StringBuilder) (string: string) =
-    let string = string.AsSpan()
-    for i = 0 to string.Length - 1 do
-        let ch = string.[i]
-        if ch <= '>' then
-            if '<' = ch then sb.Append "&lt;" |> ignore
-            elif '>' = ch then sb.Append "&gt;" |> ignore
-            elif '"' = ch then sb.Append "&quot;" |> ignore
-            elif '\'' = ch then sb.Append "&#39;" |> ignore
-            elif '&' = ch then sb.Append "&amp;" |> ignore
-            else sb.Append ch |> ignore
-        else
-            sb.Append ch |> ignore
+    if string |> haveUnencodedChars then
+        let string = string.AsSpan()
+
+        let mutable i = 0
+        while i < string.Length do
+            let mutable ch = string.[i]
+            if ch <= '>' then
+                if '<' = ch then sb.Append "&lt;" |> ignore
+                elif '>' = ch then sb.Append "&gt;" |> ignore
+                elif '"' = ch then sb.Append "&quot;" |> ignore
+                elif '\'' = ch then sb.Append "&#39;" |> ignore
+                elif '&' = ch then sb.Append "&amp;" |> ignore
+                else sb.Append ch |> ignore
+                i <- i + 1
+            else
+                let mutable valueToEncode: int = -1
+                if Char.IsSurrogate ch then
+                    let mutable slice = string.Slice(i, 2)
+                    let left = slice.[0]
+                    let right = slice.[1]
+
+                    if not(Char.IsSurrogatePair(left, right)) then
+                        sb.Append UnicodeReplacementChar |> ignore
+
+                    let mutable scalarValue: int =
+                        (((int left - HIGH_SURROGATE_START) * 0x400)
+                         + (int right - LOW_SURROGATE_START)
+                         + 65536)
+
+                    i <- i + 2
+
+                    if scalarValue >= 65536 then
+                        valueToEncode <- scalarValue
+                    else
+                        ch <- Unsafe.As &scalarValue
+
+                if valueToEncode >= 0 then
+                    sb.Append "&#" |> ignore
+                    sb.Append valueToEncode |> ignore
+                    sb.Append ';' |> ignore
+                else
+                    sb.Append ch |> ignore
+                    i <- i + 1
+    else
+        sb.Append string |> ignore
