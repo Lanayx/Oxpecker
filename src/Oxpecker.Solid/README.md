@@ -55,13 +55,23 @@ With this library you can forget about props and special helpers created for man
 
 These elements are used to iterate over a list of items (you can read about the difference [here](https://www.solidjs.com/guides/faq#why-shouldnt-i-use-map-in-my-template-and-whats-the-difference-between-for-and-index)). You'll need to use `yield` keyword before the iterating function because currently F# computation expressions don't allow for implicit `yield` for functions.
 
+### Custom elements
+Custom elements can be useful for integration with Web Component based libraries. You can create one by inheriting from `RegularNode` (or `VoidNode`):
+```fsharp
+type MyTag () =
+    inherit RegularNode()
+    member this.myAttr
+        with set (value: string) = ()
+```
+Make sure you put your custom element type definition in a seperate module (not to the same module with its usage) for compiler plugin to transform it correctly.
+
 ### Context
 
 This library doesn't provide support for React-like context. I strongly believe it's an antipattern, and encourage you to use global signals or stores instead.
 
 ### Special JSX attributes
 
-Note that `attr:`, `on:`, `bool:`, `ref` attributes are exposed as F# methods in the API: `elem.on(...)`, `elem.attr(...)` etc. Also, `style` and `class'` are attributes when accepting `string`, while `style'` and `classList` are methods when accepting `object`.
+Note that `attr:`, `on:`, `bool:`, `ref` attributes are exposed as F# methods in the API: `elem.on(...)`, `elem.attr(...)` etc. Also, `style` and `class'` are attributes when accepting `string`, while `style'` and `classList` are methods when accepting `object` (to be used with [createObj](https://fable.io/docs/javascript/features.html#createobj)).
 
 ### Store
 
