@@ -6,17 +6,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Models.fs" />
-        <Compile Include="Database.fs" />
+        <Compile Include="Abstractions.fs" />
         <Compile Include="Services.fs" />
         <Compile Include="Env.fs" />
+        <Compile Include="Database.fs" />
         <Compile Include="Handlers.fs" />
         <Compile Include="Program.fs"/>
         <Content Include="README.md" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
+      <ProjectReference Include="..\..\..\src\Oxpecker\Oxpecker.fsproj" />
+      <ProjectReference Include="..\Shared\Shared.fsproj" />
     </ItemGroup>
 
     <ItemGroup>

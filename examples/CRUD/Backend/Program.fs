@@ -1,7 +1,7 @@
-﻿module CRUD.Program
+﻿module Backend.Program
 
 open System.Threading.Tasks
-open CRUD.Env
+open Backend.Env
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.DependencyInjection
@@ -19,6 +19,7 @@ let getEndpoints env = [
         PUT [ routef "/{%O:guid}" <| Handlers.updateOrder env ]
         DELETE [ routef "/{%O:guid}" <| Handlers.deleteOrder env ]
     ]
+    route "/product" <| Handlers.getProducts env
 ]
 
 let notFoundHandler (ctx: HttpContext) =
@@ -51,12 +52,17 @@ let configureApp (appBuilder: IApplicationBuilder) =
     }
     appBuilder
         .UseRouting()
+        .UseCors()
         .Use(errorHandler)
         .UseOxpecker(getEndpoints env)
         .Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
-    services.AddRouting().AddOxpecker() |> ignore
+    services
+        .AddCors(fun options -> options.AddDefaultPolicy(fun policy ->
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader() |> ignore))
+        .AddRouting()
+        .AddOxpecker() |> ignore
 
 [<EntryPoint>]
 let main args =

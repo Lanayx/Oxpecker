@@ -1,6 +1,6 @@
-﻿module CRUD.Env
+﻿module Backend.Env
 
-open CRUD.Models
+open Backend.Abstractions
 open Microsoft.Extensions.Logging
 
 type Env = {
