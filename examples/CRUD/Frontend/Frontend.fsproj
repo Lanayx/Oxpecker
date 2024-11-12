@@ -15,6 +15,9 @@
   <ItemGroup>
     <Content Include="README.md" />
     <Content Include="public\oxpecker-128.png" />
+    <Compile Include="src\Shared\Data.fs" />
+    <Compile Include="src\Components\CreateOrderButton.fs" />
+    <Compile Include="src\Components\Orders.fs" />
     <Compile Include="src\App.fs" />
     <Compile Include="src\Program.fs" />
     <Content Include="src\index.css" />

@@ -37,7 +37,7 @@ Medium posts:
 
 ## Examples:
 - [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/develop/examples/Basic)
-- [Full CRUD example with functional DI](https://github.com/Lanayx/Oxpecker/blob/develop/examples/CRUD)
+- [Fullstack CRUD example with functional DI on backend](https://github.com/Lanayx/Oxpecker/blob/develop/examples/CRUD)
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/develop/examples/WeatherApp)
 - [SPA application (TODO list) without backend](https://github.com/Lanayx/Oxpecker/tree/develop/examples/TodoList)

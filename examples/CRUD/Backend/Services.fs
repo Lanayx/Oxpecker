@@ -57,8 +57,8 @@ module OrderService =
                     Items = order.Items
                     CreatedAt = DateTime.UtcNow
                 }
-                let! result = env.CreateOrder newOrder
-                return Ok result
+                let! _ = env.CreateOrder newOrder
+                return Ok newOrder.OrderId
             else
                 return Error (String.concat ", " errors)
         }

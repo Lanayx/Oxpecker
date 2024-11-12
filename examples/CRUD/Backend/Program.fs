@@ -19,7 +19,9 @@ let getEndpoints env = [
         PUT [ routef "/{%O:guid}" <| Handlers.updateOrder env ]
         DELETE [ routef "/{%O:guid}" <| Handlers.deleteOrder env ]
     ]
-    route "/product" <| Handlers.getProducts env
+    GET [
+        route "/product" <| Handlers.getProducts env
+    ]
 ]
 
 let notFoundHandler (ctx: HttpContext) =

@@ -54,7 +54,7 @@ let createOrder env (ctx: HttpContext) =
         let! newOrder = ctx.BindJson<NewOrder>()
         let! result = OrderService.createOrder operationEnv newOrder
         match result with
-        | Ok _ -> return! ctx.Write <| Created()
+        | Ok orderId -> return! ctx.Write <| Ok {| OrderId = orderId |}
         | Error error ->
             env.Logger.LogError(error)
             return! ctx.Write <| BadRequest {| Error = error |}

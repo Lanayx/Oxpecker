@@ -37,7 +37,6 @@ input, button, select, textarea {
     display: block;
     width: 100%;
     padding: 10px;
-    margin: 10px 0;
     border: 1px solid #ced4da;
     border-radius: 4px;
 }
