@@ -1,11 +1,11 @@
-﻿module CRUD.Handlers
+﻿module Backend.Handlers
 
 open System
 open System.Threading.Tasks
-open CRUD.Database
-open CRUD.Env
-open CRUD.Models
-open CRUD.Services
+open Backend.Database
+open Backend.Env
+open Shared
+open Backend.Services
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
 open Oxpecker
@@ -25,12 +25,9 @@ type OperationEnv(env: Env) =
         member this.UpdateOrder order = OrderRepository.updateOrder env order
     interface IDeleteOrder with
         member this.DeleteOrder id = OrderRepository.deleteOrder env id
+    interface IGetProducts with
+        member this.GetProducts() = ProductRepository.getProducts env
 
-type OrderDTO = {
-    ProductId: Guid
-    Amount: uint
-    Description: string
-}
 
 
 let getOrders env (ctx: HttpContext) =
@@ -54,17 +51,10 @@ let getOrderDetails env id (ctx: HttpContext) =
 let createOrder env (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
-        let! dto = ctx.BindJson<OrderDTO>()
-        let order = {
-            OrderId = % Guid.NewGuid()
-            ProductId = %dto.ProductId
-            Amount = dto.Amount
-            CreatedAt = DateTime.UtcNow
-            Description = dto.Description
-        }
-        let! result = OrderService.createOrder operationEnv order
+        let! newOrder = ctx.BindJson<NewOrder>()
+        let! result = OrderService.createOrder operationEnv newOrder
         match result with
-        | Ok _ -> return! ctx.Write <| Created()
+        | Ok orderId -> return! ctx.Write <| Ok {| OrderId = orderId |}
         | Error error ->
             env.Logger.LogError(error)
             return! ctx.Write <| BadRequest {| Error = error |}
@@ -74,14 +64,7 @@ let createOrder env (ctx: HttpContext) =
 let updateOrder env (id: Guid) (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
-        let! dto = ctx.BindJson<OrderDTO>()
-        let order = {
-            OrderId = %id
-            ProductId = %dto.ProductId
-            Amount = dto.Amount
-            CreatedAt = DateTime.UtcNow
-            Description = dto.Description
-        }
+        let! order = ctx.BindJson<Order>()
         let! result = OrderService.updateOrder operationEnv order
         match result with
         | Ok _ -> return! ctx.Write <| NoContent()
@@ -100,5 +83,13 @@ let deleteOrder env id (ctx: HttpContext) =
         | Error error ->
             env.Logger.LogError(error)
             return! ctx.Write <| NotFound {| Error = error |}
+    }
+    :> Task
+
+let getProducts env (ctx: HttpContext) =
+    task {
+        let operationEnv = OperationEnv(env)
+        let! result = ProductService.getProducts operationEnv
+        return! ctx.Write <| Ok result
     }
     :> Task

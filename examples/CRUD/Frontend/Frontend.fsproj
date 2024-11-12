@@ -9,22 +9,28 @@
   <ItemGroup>
     <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
     <PackageReference Include="Fable.Core" Version="4.3.0" />
+    <PackageReference Include="Thoth.Fetch" Version="3.0.1" />
     <PackageReference Include="Oxpecker.Solid" Version="0.2.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="README.md" />
-    <Content Include="public\checkmark-square.svg" />
-    <Compile Include="src\Components\TodoItem.fs" />
-    <Compile Include="src\Components\TodoList.fs" />
+    <Content Include="public\oxpecker-128.png" />
+    <Compile Include="src\Shared\Data.fs" />
+    <Compile Include="src\Components\CreateOrderButton.fs" />
+    <Compile Include="src\Components\Orders.fs" />
     <Compile Include="src\App.fs" />
     <Compile Include="src\Program.fs" />
     <Content Include="src\index.css" />
     <Content Include="package.json" />
     <Content Include="index.html" />
-    <Content Include="tailwind.config.js" />
-    <Content Include="vite.config.ts" />
+    <TypeScriptCompile Include="vite.config.ts" />
     <Content Include="postcss.config.js" />
+    <Content Include="tailwind.config.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Shared.fsproj" />
   </ItemGroup>
 
 </Project>

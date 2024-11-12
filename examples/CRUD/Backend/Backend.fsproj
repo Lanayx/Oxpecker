@@ -6,10 +6,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Models.fs" />
-        <Compile Include="Database.fs" />
+        <Compile Include="Abstractions.fs" />
         <Compile Include="Services.fs" />
         <Compile Include="Env.fs" />
+        <Compile Include="Database.fs" />
         <Compile Include="Handlers.fs" />
         <Compile Include="Program.fs"/>
         <Content Include="README.md" />
@@ -18,6 +18,10 @@
     <ItemGroup>
         <PackageReference Include="Oxpecker" Version="0.15.0" />
         <PackageReference Include="FSharp.UMX" Version="1.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Shared\Shared.fsproj" />
     </ItemGroup>
 
 </Project>

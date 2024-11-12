@@ -5,7 +5,7 @@
 
 ![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
 
-**Oxpecker** is a library started as functional wrapper around **ASP.NET Core Endpoint routing**, but now providing fullstack capabilities with **Htmx** and **Solid.js** integrations. Repository is a monorepo with all related projects included and documentation located in Readme files per project.
+**Oxpecker** is a library started as functional wrapper around **ASP.NET Core Endpoint routing**, but now providing fullstack capabilities with **Htmx** and **Solid.js** integrations. Repository is a monorepo with all related projects included and documentation located in *README.md* files per project. As of November 2024, Oxpecker is the fastest .NET web framework in several categories [in the TechEmpower benchmark](https://www.techempower.com/benchmarks/#section=test&runid=6ef367d2-de5c-464a-b3fa-2c3cf4ba1f8f&hw=ph&test=db&p=zik0zi-zik0zj-zik0zj-zik0zj-zik0zj-1kv)
 
 The server part of the Oxpecker library is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
@@ -37,7 +37,7 @@ Medium posts:
 
 ## Examples:
 - [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/main/examples/Basic)
-- [Full CRUD example with functional DI](https://github.com/Lanayx/Oxpecker/blob/main/examples/CRUD)
+- [Fullstack CRUD example with functional DI on backend](https://github.com/Lanayx/Oxpecker/blob/main/examples/CRUD)
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/main/examples/WeatherApp)
 - [SPA application (TODO list) without backend](https://github.com/Lanayx/Oxpecker/tree/main/examples/TodoList)
