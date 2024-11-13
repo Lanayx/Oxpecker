@@ -1,22 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Program.fs"/>
+        <Compile Include="Program.fs" />
         <Content Include="README.md" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Oxpecker.OpenApi\Oxpecker.OpenApi.fsproj" />
-      <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
-      <ProjectReference Include="..\..\src\Oxpecker.Htmx\Oxpecker.Htmx.fsproj" />
-      <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.1" />
+        <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Oxpecker.OpenApi\Oxpecker.OpenApi.fsproj" />
+        <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
+        <ProjectReference Include="..\..\src\Oxpecker.Htmx\Oxpecker.Htmx.fsproj" />
     </ItemGroup>
 
 </Project>

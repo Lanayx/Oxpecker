@@ -15,13 +15,13 @@
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Functional;Http;Web;Framework;Micro;Service</PackageTags>
-        <Authors>Vladimir Shchur, F# community</Authors>
+        <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.14.0</Version>
-        <PackageVersion>0.14.0</PackageVersion>
-        <PackageReleaseNotes>Refactoring: JsonSerializer and ModelBinder API aligned.</PackageReleaseNotes>
+        <Version>0.15.0</Version>
+        <PackageVersion>0.15.0</PackageVersion>
+        <PackageReleaseNotes>Support for catch-all route with routef</PackageReleaseNotes>
     </PropertyGroup>
     <PropertyGroup>
         <WarningLevel>3</WarningLevel>
@@ -30,6 +30,7 @@
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Update="FSharp.Core" Version="9.0.100"/>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
     </ItemGroup>
     <ItemGroup>
@@ -50,6 +51,6 @@
         <Compile Include="Middleware.fs" />
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
+        <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
     </ItemGroup>
 </Project>

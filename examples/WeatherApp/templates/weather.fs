@@ -29,7 +29,7 @@ let data (forecasts: WeatherForecast[]) =
 let html (ctx: HttpContext) =
     ctx.Items["Title"] <- "Weather"
 
-    __(){
+    Fragment(){
         h1() { "Weather" }
         p() { "This component demonstrates showing data." }
         p(hxGet="/weatherData", hxTrigger="load", hxSwap="outerHTML"){

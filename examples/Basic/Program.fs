@@ -138,7 +138,7 @@ let MY_HEADER endpoint =
 let NO_RESPONSE_CACHE = applyBefore noResponseCaching
 let RESPONSE_CACHE =
     let cacheDirective =
-        CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true)
+        CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10.0), Public = true)
         |> Some
     applyBefore <| responseCaching cacheDirective None None
 
@@ -153,14 +153,12 @@ let endpoints = [
         routef "/text/{%s}" text
         |> configureEndpoint _.WithName("GetText")
         |> addOpenApiSimple<unit, string>
-        routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
-        routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         route "/x" (bindQuery handler4)
         routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
         routef "/xx/{%s}/{%s}" (setHeaderMw "foo" "xx" >>=>+ (bindQuery <<+ handler5))
         route "/abc" (json {| X = "Y" |})
-        route "/cbd/{**x}" (json {| X = "Z" |})
+        routef "/cbd/{**%s}" (fun s -> json {| X = s |})
         route "streamJson" streamingJson
         route "streamHtml1" streamingHtml1
         route "streamHtml2" streamingHtml2
@@ -186,6 +184,8 @@ let endpoints = [
     subRoute "/sub1" [
         GET [ subRoute "/sub2" [ MY_HEADER <| route "/test" handler1 ] ]
         CLOSED <| POST [ route "/sub2/test" handler1 ]
+        routef "/{%s}" (setHeaderMw "foo" "moo" >>=> handler0)
+        routef "/{%s}/{%i}" (setHeaderMw "foo" "var" >>=>+ handler2)
     ]
     CLOSED <| route "/auth/x" (text "Not closed")
     CLOSED

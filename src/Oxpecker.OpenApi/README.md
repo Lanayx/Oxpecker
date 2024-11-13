@@ -1,3 +1,6 @@
+---
+render_with_liquid: false
+---
 # Oxpecker.OpenApi
 
 `Oxpecker.OpenApi` extends `Oxpecker` framework with functionality to automatically generate OpenApi spec from code.

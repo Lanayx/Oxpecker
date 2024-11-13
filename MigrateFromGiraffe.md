@@ -1,3 +1,7 @@
+---
+render_with_liquid: false
+---
+
 # Migration From Giraffe
 
 While Oxpecker is mostly oriented at developers building brand-new projects, some people might want to migrate their Giraffe applications to Oxpecker to get better support.
@@ -116,6 +120,7 @@ ctx.Write <| TypedResults.Ok myObject
 - Route parameters are now curried
 - Some format characters were changed
 
+
 ```fsharp
 // Giraffe
 routef "/hello/%s/%O" (fun (a, b) -> doSomething a b)
@@ -124,10 +129,10 @@ routef "/hello/%s/%O" (fun (a, b) -> doSomething a b)
 routef "/hello/{%s}/{%O:guid}" (fun a b -> doSomething a b)
 ```
 
-| Format Char | Giraffe | Oxpecker                                                                                                                |
-|-------------|---------|-------------------------------------------------------------------------------------------------------------------------|
-| `%O`        | `Guid` (including short GUIDs*) | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
-| `%u`        | `uint64` (formatted as a short ID*)  | `uint64` (regular format)                                                                                            |
+| Format Char | Giraffe | Oxpecker                                                                                                                  |
+|-------------|---------|---------------------------------------------------------------------------------------------------------------------------|
+| `%O`        | `Guid` (including short GUIDs*) | `Guid` (requires [guid constraint](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+| `%u`        | `uint64` (formatted as a short ID*)  | `uint64` (regular format)                                                                                                 |
 
 Short ID and short GUID support was removed, however it could be added later as a `%O` custom constraint if needed.
 

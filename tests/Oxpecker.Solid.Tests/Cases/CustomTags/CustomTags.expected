@@ -1,0 +1,11 @@
+import { minValue, day } from "./fable_modules/fable-library-js.4.23.0/Date.js";
+import { int32ToString } from "./fable_modules/fable-library-js.4.23.0/Util.js";
+
+export function Test() {
+    let copyOfStruct_1;
+    return <MyTag myAttr="foo">
+        {"Hello " + ((copyOfStruct_1 = day(minValue()), int32ToString(copyOfStruct_1)))}
+        <MyTag></MyTag>
+    </MyTag>;
+}
+

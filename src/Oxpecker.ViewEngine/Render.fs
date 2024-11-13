@@ -6,17 +6,6 @@ open System.IO
 open System.Text
 open Oxpecker.ViewEngine.Tools
 
-let inline private toStringBuilder (view: HtmlElement) =
-    let sb = StringBuilderPool.Get()
-    view.Render sb
-    sb
-
-let inline private toHtmlDocStringBuilder (view: HtmlElement) =
-    let sb = StringBuilderPool.Get()
-    sb.AppendLine("<!DOCTYPE html>") |> ignore
-    view.Render sb
-    sb
-
 let inline private copyStringBuilderToBytes (sb: StringBuilder) =
     let chArray = ArrayPool<char>.Shared.Rent(sb.Length)
     sb.CopyTo(0, chArray, 0, sb.Length)
@@ -25,72 +14,88 @@ let inline private copyStringBuilderToBytes (sb: StringBuilder) =
     bytes
 
 /// Render HtmlElement to normal UTF16 string
-let toString (view: HtmlElement) =
-    let sb = toStringBuilder view
-    let result = sb.ToString()
-    StringBuilderPool.Return(sb)
-    result
+let toString (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    try
+        view.Render sb
+        sb.ToString()
+    finally
+        StringBuilderPool.Return(sb)
 
 /// Render HtmlElement to normal UTF16 string with DOCTYPE prefix
-let toHtmlDocString (view: HtmlElement) =
-    let sb = toHtmlDocStringBuilder view
-    let result = sb.ToString()
-    StringBuilderPool.Return(sb)
-    result
+let toHtmlDocString (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    sb.AppendLine("<!DOCTYPE html>") |> ignore
+    try
+        view.Render sb
+        sb.ToString()
+    finally
+        StringBuilderPool.Return(sb)
 
 /// Render HTMLElement to UTF8 encoded bytes
-let toBytes (view: HtmlElement) =
-    let sb = toStringBuilder view
-    let result = copyStringBuilderToBytes sb
-    StringBuilderPool.Return(sb)
-    result
+let toBytes (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    try
+        view.Render sb
+        copyStringBuilderToBytes sb
+    finally
+        StringBuilderPool.Return(sb)
 
 /// Render HTMLElement to UTF8 encoded bytes with DOCTYPE prefix
-let toHtmlDocBytes (view: HtmlElement) =
-    let sb = toHtmlDocStringBuilder view
-    let result = copyStringBuilderToBytes sb
-    StringBuilderPool.Return(sb)
-    result
+let toHtmlDocBytes (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    sb.AppendLine("<!DOCTYPE html>") |> ignore
+    try
+        view.Render sb
+        copyStringBuilderToBytes sb
+    finally
+        StringBuilderPool.Return(sb)
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toStreamAsync (stream: Stream) (view: HtmlElement) =
-    let sb = toStringBuilder view
+let toStreamAsync (stream: Stream) (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
     let streamWriter = new StreamWriter(stream, leaveOpen = true)
     task {
+        use _ = streamWriter :> IAsyncDisposable
         try
-            use _ = streamWriter :> IAsyncDisposable
+            view.Render sb
             return! streamWriter.WriteAsync(sb)
         finally
             StringBuilderPool.Return(sb)
     }
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toHtmlDocStreamAsync (stream: Stream) (view: HtmlElement) =
-    let sb = toHtmlDocStringBuilder view
+let toHtmlDocStreamAsync (stream: Stream) (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    sb.AppendLine("<!DOCTYPE html>") |> ignore
     let streamWriter = new StreamWriter(stream, leaveOpen = true)
     task {
+        use _ = streamWriter :> IAsyncDisposable
         try
-            use _ = streamWriter :> IAsyncDisposable
+            view.Render sb
             return! streamWriter.WriteAsync(sb)
         finally
             StringBuilderPool.Return(sb)
     }
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
-    let sb = toStringBuilder view
+let toTextWriterAsync (textWriter: TextWriter) (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
     task {
         try
+            view.Render sb
             return! textWriter.WriteAsync(sb)
         finally
             StringBuilderPool.Return(sb)
     }
 
 /// Render HTMLElement to stream using UTF8 stream writer
-let toHtmlDocTextWriterAsync (textWriter: TextWriter) (view: HtmlElement) =
-    let sb = toHtmlDocStringBuilder view
+let toHtmlDocTextWriterAsync (textWriter: TextWriter) (view: #HtmlElement) =
+    let sb = StringBuilderPool.Get()
+    sb.AppendLine("<!DOCTYPE html>") |> ignore
     task {
         try
+            view.Render sb
             return! textWriter.WriteAsync(sb)
         finally
             StringBuilderPool.Return(sb)

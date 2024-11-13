@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
+    <PackageReference Include="Fable.Core" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="README.md" />
+    <Content Include="public\checkmark-square.svg" />
+    <Compile Include="src\Components\TodoItem.fs" />
+    <Compile Include="src\Components\TodoList.fs" />
+    <Compile Include="src\App.fs" />
+    <Compile Include="src\Program.fs" />
+    <Content Include="src\index.css" />
+    <Content Include="package.json" />
+    <Content Include="index.html" />
+    <Content Include="tailwind.config.js" />
+    <Content Include="vite.config.ts" />
+    <Content Include="postcss.config.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Oxpecker.Solid\Oxpecker.Solid.fsproj" />
+  </ItemGroup>
+
+</Project>

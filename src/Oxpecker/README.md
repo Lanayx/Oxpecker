@@ -1,3 +1,6 @@
+---
+render_with_liquid: false
+---
 # Oxpecker
 
 Oxpecker is an F# framework based on ASP.NET Core Endpoint routing (similar to Minimal APIs, so they are competitors) with easy to comprehend API, mostly inherited from Giraffe framework.
@@ -36,6 +39,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [subRoute](#subroute)
       - [addMetadata](#addmetadata)
       - [configureEndpoint](#configureendpoint)
+      - [Catch-all route](#catch-all-route)
     - [Query Strings](#query-strings)
     - [Model Binding](#model-binding)
       - [Binding JSON](#binding-json)
@@ -684,25 +688,25 @@ let fooHandler first last age : EndpointHandler =
         |> text) ctx
 
 let webApp = [
-    routef "/foo/{%s}/{%s}/{%i}" fooHandler
+    routef "/foo/{%s:maxlength(8)}/{%s}/{%i}" fooHandler
     routef "/bar/{%O:guid}" (fun (guid: Guid) -> text (string guid))
 ]
 ```
 
-The `routef` http handler takes two parameters - a format string and an `EndpointHandler` function.
+The `routef` http handler takes two parameters - a format string and an `EndpointHandler` function. The built-in ASP.NET [route constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints) are fully supported as well.
 
 The format string supports the following format chars:
 
-| Format Char | Type                                                                                                                    |
-|-------------|-------------------------------------------------------------------------------------------------------------------------|
-| `%b`        | `bool`                                                                                                                  |
-| `%c`        | `char`                                                                                                                  |
-| `%s`        | `string`                                                                                                                |
-| `%i`        | `int`                                                                                                                   |
-| `%d`        | `int64`                                                                                                                 |
-| `%f`        | `float`/`double`                                                                                                        |
-| `%u`        | `uint64`                                                                                                                |
-| `%O`        | `Any object` (with [constraints](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing#route-constraints)) |
+| Format Char | Type             |
+|-------------|------------------|
+| `%b`        | `bool`           |
+| `%c`        | `char`           |
+| `%s`        | `string`         |
+| `%i`        | `int`            |
+| `%d`        | `int64`          |
+| `%f`        | `float`/`double` |
+| `%u`        | `uint64`         |
+| `%O:guid`   | `Guid`           |
 
 _Note_: `routef` handler can only handle up to 5 route parameters. It's not recommended to use more than 3 parameters in a route, but if you really need a lot, you can use `route` with `EndpointHandler` function that utilizes `.TryGetRouteValue` extension.
 
@@ -760,6 +764,19 @@ let webApp =
           |> configureEndpoint
              _.WithMetadata("foo")
               .WithDisplayName("Foo")
+    ]
+```
+
+#### Catch-all route
+
+You can leverage the [templating system](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing?view=aspnetcore-8.0#route-templates) of ASP.NET core routing with Oxpecker to define catch-all routes with both `route` and `routef` functions by using asterisk * or double asterisk **:
+
+```fsharp
+let webApp =
+    GET [
+        route "/foo/{*bar}" (fun ctx ->
+            text (ctx.TryGetRouteValue("bar") |> Option.defaultValue "") ctx)
+        routef "/moo/{**%s}" (fun bar -> text bar)
     ]
 ```
 

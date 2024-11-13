@@ -1,0 +1,42 @@
+import { Route, Router, A } from "@solidjs/router";
+import { App1 } from "./App1.fs.js";
+import { App2 } from "./App2.fs.js";
+import { lazy } from "solid-js";
+
+export function Root(props) {
+    return <>
+        <h1>
+            Root header
+        </h1>
+        {props.children}
+        <A href="/about">
+            About
+        </A>
+    </>;
+}
+
+export function Test1() {
+    return <Router root={Root}>
+        <Route></Route>
+        <Route path="/def">
+            <Route path="/inner"
+                component={App1}></Route>
+        </Route>
+        <Route path="/ghi"
+            component={App2}></Route>
+    </Router>;
+}
+
+export function Test2() {
+    const routes = [{
+        path: "/app1",
+        component: lazy(() => (import("/App1"))),
+    }, {
+        path: "/app2",
+        component: lazy(() => (import("/App2"))),
+    }];
+    return <Router>
+        {routes}
+    </Router>;
+}
+

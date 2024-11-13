@@ -1,0 +1,39 @@
+import { createResource } from "solid-js";
+import { PromiseBuilder__Delay_62FBFDE1, PromiseBuilder__Run_212F1D4B } from "./fable_modules/Fable.Promise.3.2.0/Promise.fs.js";
+import { promise } from "./fable_modules/Fable.Promise.3.2.0/PromiseImpl.fs.js";
+
+export function Test() {
+    const patternInput = createResource(() => PromiseBuilder__Run_212F1D4B(promise, PromiseBuilder__Delay_62FBFDE1(promise, () => (Promise.resolve(["Post1", "Post2"])))), {});
+    const patternInput_1 = createResource(() => PromiseBuilder__Run_212F1D4B(promise, PromiseBuilder__Delay_62FBFDE1(promise, () => (Promise.resolve(["Trivia1", "Trivia2"])))), {});
+    return <SuspenseList revealOrder="forwards"
+        tail="collapsed">
+        <Portal mount={document.getElementById("postsHeader")}>
+            <h2>
+                Posts
+            </h2>
+        </Portal>
+        <Suspense fallback={<h2>
+                Loading posts...
+            </h2>}>
+            <ul>
+                <For each={patternInput[0]()}>
+                    {(post, _arg) => <li>
+                        {post}
+                    </li>}
+                </For>
+            </ul>
+        </Suspense>
+        <Suspense fallback={<h2>
+                Loading trivia...
+            </h2>}>
+            <ul>
+                <For each={patternInput_1[0]()}>
+                    {(trivia_1, _arg_1) => <li>
+                        {trivia_1}
+                    </li>}
+                </For>
+            </ul>
+        </Suspense>
+    </SuspenseList>;
+}
+

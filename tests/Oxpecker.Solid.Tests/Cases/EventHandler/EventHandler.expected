@@ -1,0 +1,39 @@
+import { some } from "./fable_modules/fable-library-js.4.23.0/Option.js";
+
+export function clicked2(evt) {
+    console.log(some(evt.type));
+}
+
+export function Test() {
+    return <div onClick={(_arg_6) => {
+            console.log(some("clicked1"));
+        }}>
+        <h1 onClick={(evt) => {
+                clicked2(evt);
+            }}>
+            Hello
+        </h1>
+        <h2 on:click={(_arg) => {
+                console.log(some("clicked3"));
+            }}
+            on:change={(_arg_1) => {
+                console.log(some("changed"));
+            }}
+            on:load={(_arg_2) => {
+                console.log(some("loaded"));
+            }}>
+            Hello
+        </h2>
+        <h3 id="test"
+            onClick={(_arg_3) => {
+                console.log(some("clicked4"));
+            }}
+            on:change={(_arg_4) => {
+                console.log(some("changed"));
+            }}
+            on:load={(_arg_5) => {
+                console.log(some("loaded"));
+            }}></h3>
+    </div>;
+}
+

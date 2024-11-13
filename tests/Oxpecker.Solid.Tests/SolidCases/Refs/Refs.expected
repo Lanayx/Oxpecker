@@ -1,0 +1,18 @@
+import { defaultOf } from "./fable_modules/fable-library-js.4.23.0/Util.js";
+import { onMount } from "solid-js";
+import { some } from "./fable_modules/fable-library-js.4.23.0/Option.js";
+
+export function Test() {
+    const htmlCanvas = defaultOf();
+    onMount(() => {
+        console.log(some(htmlCanvas.height + htmlCanvas.width));
+    });
+    return <div ref={(_arg) => {
+            console.log(some("before mounted"));
+        }}>
+        <canvas width={256}
+            height={256}
+            ref={htmlCanvas}></canvas>
+    </div>;
+}
+
