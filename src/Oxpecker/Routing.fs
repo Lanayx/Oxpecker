@@ -92,7 +92,7 @@ module RouteTemplateBuilder =
                 let slug = m.Groups[1].Value
                 let vtype = m.Groups[2].Value[0] // Second capture group is the variable type s, i, or O
                 let formatSpecifier = if m.Groups[3].Success then m.Groups[3].Value else ""
-                let paramName = parameters[index].Name
+                let paramName = parameters[index].Name |> string
                 index <- index + 1 // Increment index for next use
                 mappings.Add(
                     paramName,
