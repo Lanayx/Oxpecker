@@ -18,9 +18,9 @@
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.2.2</Version>
-        <PackageVersion>0.2.2</PackageVersion>
-        <PackageReleaseNotes>Fixed jsx for Solid A element</PackageReleaseNotes>
+        <Version>0.3.0</Version>
+        <PackageVersion>0.3.0</PackageVersion>
+        <PackageReleaseNotes>Support for match and if expressions</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

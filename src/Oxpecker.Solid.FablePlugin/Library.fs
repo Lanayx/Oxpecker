@@ -243,7 +243,8 @@ module internal rec AST =
             let next2Children = getChildren [] next2
             let next1Children = getChildren [] next1
             next2Children @ next1Children @ currentList
-        | Let({ Name = first }, Let(_, expr, _), Let({ Name = second }, next, _)) when
+        | Let({ Name = first }, Let(_, expr, _), Let({ Name = second }, next, _))
+        | Let({ Name = first }, expr, Let({ Name = second }, next, _)) when
             first.StartsWith("first") && second.StartsWith("second")
             ->
             match expr with
@@ -259,6 +260,12 @@ module internal rec AST =
             | expr ->
                 let newExpr = transform expr
                 getChildren (newExpr :: currentList) next
+        | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
+            IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range)
+            :: currentList
+        | DecisionTree(decisionTree, targets) ->
+            DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
+            :: currentList
         // router cases
         | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
             match args with
@@ -280,7 +287,6 @@ module internal rec AST =
                 next2Children @ next1Children @ currentList
             | [ expr ] -> expr :: currentList
             | _ -> currentList
-
         | Let({
                   Name = name
                   Range = range
@@ -288,13 +294,13 @@ module internal rec AST =
               },
               _,
               _) when
-            ((not <| name.StartsWith("returnVal")) && (not <| name.StartsWith("element")))
-            && fullName.StartsWith("Oxpecker.Solid")
+            ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
+             || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
+            |> not
             ->
             match range with
             | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
             | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
-
         | _ -> currentList
 
     let listItemType =
@@ -377,10 +383,13 @@ module internal rec AST =
 
     let transform (expr: Expr) =
         match expr with
-        | LetTagNoChildrenWithProps tagCall -> transformTagInfo tagCall
+        | LetTagNoChildrenWithProps tagCall
+        | LetElement & Let(_, LetTagNoChildrenWithProps tagCall, _) -> transformTagInfo tagCall
         | TagNoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range))
         | CallTagNoChildrenWithHandler tagCall -> transformTagInfo tagCall
+        | LetTagNoChildrenNoProps tagCall -> transformTagInfo tagCall
         | TagWithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo)
+        | LetTagWithChildren tagCall -> transformTagInfo tagCall
         | LibraryTagImport(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
         | Let(_, LibraryTagImport(imp, range), TagWithChildren(_, callInfo, _)) ->
             transformTagInfo(TagInfo.WithChildren(LibraryImport imp, callInfo, range))
@@ -402,6 +411,11 @@ module internal rec AST =
                     Args = callInfo.Args |> List.map transform
             }
             Call(callee, newCallInfo, typ, range)
+        | TextNoSiblings body -> body
+        | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
+            IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range)
+        | DecisionTree(decisionTree, targets) ->
+            DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
         | TypeCast(expr, DeclaredType _) -> transform expr
         | _ -> expr
 
