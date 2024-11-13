@@ -17,9 +17,9 @@
         <PackageTags>Oxpecker;F#;FSharp;Plugin;fable-javascript;Compiler;Fable;Solid;Solidjs</PackageTags>
         <Authors>Vladimir Shchur</Authors>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.2.3</Version>
-        <PackageVersion>0.2.3</PackageVersion>
-        <PackageReleaseNotes>Explicit error on let bindings</PackageReleaseNotes>
+        <Version>0.3.0</Version>
+        <PackageVersion>0.3.0</PackageVersion>
+        <PackageReleaseNotes>Support for match and if expressions</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
