@@ -4,6 +4,11 @@
         <TargetFramework>net8.0</TargetFramework>
         <IsPackable>false</IsPackable>
     </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.1" />
+    </ItemGroup>
 
     <ItemGroup>
         <Compile Include="Program.fs"/>
@@ -14,8 +19,6 @@
       <ProjectReference Include="..\..\src\Oxpecker.OpenApi\Oxpecker.OpenApi.fsproj" />
       <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
       <ProjectReference Include="..\..\src\Oxpecker.Htmx\Oxpecker.Htmx.fsproj" />
-      <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-      <PackageReference Include="Swashbuckle.AspNetCore" Version="6.7.1" />
     </ItemGroup>
 
 </Project>
