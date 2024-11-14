@@ -242,16 +242,13 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseRouting()
         .Use(errorHandler)
         .UseOxpecker(endpoints)
-        .UseSwagger() // for generating OpenApi spec
-        .UseSwaggerUI() // for viewing Swagger UI
         .Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddEndpointsApiExplorer() // use the API Explorer to discover and describe endpoints
-        .AddSwaggerGen() // swagger dependencies
+        .AddOpenApi()
     |> ignore
 
 
@@ -261,5 +258,6 @@ let main args =
     configureServices builder.Services
     let app = builder.Build()
     configureApp app
+    app.MapOpenApi() |> ignore
     app.Run()
     0

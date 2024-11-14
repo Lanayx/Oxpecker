@@ -13,7 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="7.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
     </ItemGroup>
 
     <ItemGroup>
