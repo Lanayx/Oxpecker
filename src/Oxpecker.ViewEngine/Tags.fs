@@ -11,10 +11,6 @@ module Tags =
 
     open Oxpecker.ViewEngine.Builder
 
-    [<Obsolete("Use Fragment instead of __")>]
-    type __() =
-        inherit FragmentNode()
-
     /// Fragment (or template) node, only renders children, not itself
     type Fragment() =
         inherit FragmentNode()
