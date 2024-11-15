@@ -29,7 +29,7 @@ module Builder =
             while isNotNull next do
                 let attr = next.Value
                 sb.Append(' ').Append(attr.Name).Append("=\"") |> ignore
-                HtmlEncode sb attr.Value
+                HTMLEncoding.encodeCharsInto sb attr.Value
                 sb.Append('"') |> ignore
                 next <- next.Next
             sb.Append('>') |> ignore
@@ -88,7 +88,7 @@ module Builder =
 
     /// Text node that will be HTML-escaped
     type RegularTextNode(text: string) =
-        member this.Render(sb: StringBuilder) = HtmlEncode sb text
+        member this.Render(sb: StringBuilder) = HTMLEncoding.encodeCharsInto sb text
         interface HtmlElement with
             member this.Render sb = this.Render sb
 
