@@ -22,7 +22,7 @@ let ``Empty custom queue works well`` () =
     result |> shouldEqual [||]
 
 [<Fact>]
-let ``Tools.HtmlEncode and WebUtility.HtmlEncode are exactly the same`` () =
+let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the same`` () =
     let unencodedFortunes =
         """<!doctype html><html>
           <head><title>Fortunes</title></head>
@@ -47,5 +47,15 @@ let ``Tools.HtmlEncode and WebUtility.HtmlEncode are exactly the same`` () =
 
     let sb = StringBuilder()
     HTMLEncoding.encodeCharsInto sb unencodedFortunes
+
+    encodedFortunes |> shouldEqual(sb.ToString())
+
+
+[<Fact>]
+let ``HTMLEncoding.encodeCharsInto append skipped string`` () =
+    let encodedFortunes = WebUtility.HtmlEncode "test"
+
+    let sb = StringBuilder()
+    HTMLEncoding.encodeCharsInto sb "test"
 
     encodedFortunes |> shouldEqual(sb.ToString())

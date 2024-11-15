@@ -47,21 +47,22 @@ module HTMLEncoding =
 
     let haveUnencodedChars (str: string) =
         let rec loop n =
-            let mutable ch = str.[n]
             if n >= str.Length then
                 -1
-            elif ch <= '>' then
-                if '<' = ch then n
-                elif '>' = ch || '"' = ch || '\'' = ch || '&' = ch then n
-                else loop(n + 1)
-            elif ch >= char 160 && ch < char 256 then
-                n
-            elif Char.IsSurrogate ch then
-                n
             else
-                loop(n + 1)
+                let mutable ch = str.[n]
+                if ch <= '>' then
+                    if '<' = ch then n
+                    elif '>' = ch || '"' = ch || '\'' = ch || '&' = ch then n
+                    else loop(n + 1)
+                elif ch >= char 160 && ch < char 256 then
+                    n
+                elif Char.IsSurrogate ch then
+                    n
+                else
+                    loop(n + 1)
 
-        loop 0 > 0
+        loop 0 <> -1
 
     let GetNextUnicodeScalarValueFromUtf16Surrogate (string: string) (index: int) : int =
         let mutable slice = string.AsSpan().Slice(index, 2)
@@ -116,3 +117,6 @@ module HTMLEncoding =
 
         if haveUnencodedChars string then
             loop 0
+
+        else sb.Append string |> ignore
+
