@@ -2,6 +2,7 @@
 
 open System.Net
 open System.Text
+open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Tools
 open Xunit
 open FsUnitTyped
@@ -44,18 +45,14 @@ let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the sam
           </table></body></html>"""
 
     let encodedFortunes = WebUtility.HtmlEncode unencodedFortunes
-
     let sb = StringBuilder()
-    HTMLEncoding.encodeCharsInto sb unencodedFortunes
+    CustomWebUtility.htmlEncode unencodedFortunes sb
 
-    encodedFortunes |> shouldEqual(sb.ToString())
+    sb.ToString() |> shouldEqual encodedFortunes
 
 
 [<Fact>]
-let ``HTMLEncoding.encodeCharsInto append skipped string`` () =
-    let encodedFortunes = WebUtility.HtmlEncode "test"
+let ``indexOfHtmlEncodingChars works correctly`` () =
+    CustomWebUtility.indexOfHtmlEncodingChars "test" |> shouldEqual -1
+    CustomWebUtility.indexOfHtmlEncodingChars "test<sd" |> shouldEqual 4
 
-    let sb = StringBuilder()
-    HTMLEncoding.encodeCharsInto sb "test"
-
-    encodedFortunes |> shouldEqual(sb.ToString())

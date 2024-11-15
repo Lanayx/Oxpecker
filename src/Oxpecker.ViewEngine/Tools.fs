@@ -1,6 +1,7 @@
 ﻿module Oxpecker.ViewEngine.Tools
 
 open System
+open System.Globalization
 open System.Text
 open Microsoft.Extensions.ObjectPool
 
@@ -39,84 +40,101 @@ type internal CustomQueue<'T> =
                 next <- next.Next
         }
 
-module HTMLEncoding =
-    let unicodeReplacementChar = 65533
-    let HIGH_SURROGATE_START = int '\ud800'
-    let LOW_SURROGATE_START = int '\uDC00'
-    let UnicodeReplacementChar = '\uFFFD'
+module CustomWebUtility =
 
-    let haveUnencodedChars (str: string) =
-        let rec loop n =
-            if n >= str.Length then
-                -1
+    // Constants
+    [<Literal>]
+    let private HIGH_SURROGATE_START = '\uD800'
+    [<Literal>]
+    let private LOW_SURROGATE_START = '\uDC00'
+    [<Literal>]
+    let private LOW_SURROGATE_END = '\uDFFF'
+    [<Literal>]
+    let private UNICODE_PLANE00_END = 0x00FFFF
+    [<Literal>]
+    let private UNICODE_PLANE01_START = 0x10000
+    [<Literal>]
+    let private UNICODE_PLANE16_END = 0x10FFFF
+
+    [<Literal>]
+    let private UnicodeReplacementChar = '\uFFFD'
+    [<Literal>]
+    let private MaxInt32Digits = 10
+
+    // Helper function to get the next Unicode scalar value from UTF-16 surrogate pairs
+    let private getNextUnicodeScalarValueFromUtf16Surrogate (input: ReadOnlySpan<char>) (i: byref<int>) : int =
+        let highSurrogate = input[i]
+        if i + 1 < input.Length then
+            let lowSurrogate = input[i + 1]
+            if Char.IsLowSurrogate(lowSurrogate) then
+                i <- i + 1 // Advance the index as we've consumed two chars
+                Char.ConvertToUtf32(highSurrogate, lowSurrogate)
             else
-                let mutable ch = str.[n]
-                if ch <= '>' then
-                    if '<' = ch then n
-                    elif '>' = ch || '"' = ch || '\'' = ch || '&' = ch then n
-                    else loop(n + 1)
-                elif ch >= char 160 && ch < char 256 then
-                    n
-                elif Char.IsSurrogate ch then
-                    n
-                else
-                    loop(n + 1)
-
-        loop 0 <> -1
-
-    let GetNextUnicodeScalarValueFromUtf16Surrogate (string: string) (index: int) : int =
-        let mutable slice = string.AsSpan().Slice(index, 2)
-        let mutable left = slice.[0]
-        let mutable right = slice.[1]
-
-        if string.Length - index <= 1 || not(Char.IsSurrogatePair(left, right)) then
-            unicodeReplacementChar
+                int UnicodeReplacementChar
         else
-            (((int left - HIGH_SURROGATE_START) * 0x400)
-             + (int right - LOW_SURROGATE_START)
-             + 65536)
+            int UnicodeReplacementChar
 
-
-    let encodeCharsInto (sb: StringBuilder) (string: string) =
-        let rec loop i =
-            if i >= string.Length then
-                ()
+    // Function to encode HTML entities
+    let private htmlEncodeInner (input: ReadOnlySpan<char>) (sb: StringBuilder) : unit =
+        let mutable i = 0
+        while i < input.Length do
+            let ch = input[i]
+            if ch <= '>' then
+                if '<' = ch then sb.Append "&lt;"
+                elif '>' = ch then sb.Append "&gt;"
+                elif '"' = ch then sb.Append "&quot;"
+                elif '\'' = ch then sb.Append "&#39;"
+                elif '&' = ch then sb.Append "&amp;"
+                else sb.Append ch
+                |> ignore
             else
-                let mutable ch = string.[i]
-                if ch <= '>' then
-                    if '<' = ch then sb.Append "&lt;"
-                    elif '>' = ch then sb.Append "&gt;"
-                    elif '"' = ch then sb.Append "&quot;"
-                    elif '\'' = ch then sb.Append "&#39;"
-                    elif '&' = ch then sb.Append "&amp;"
-                    else sb.Append ch
-                    |> ignore
-                    loop(i + 1)
-                else
-                    let mutable valueToEncode = -1
-                    let mutable incr = 1
-
-                    if ch >= char 160 && ch < char 256 then
-                        valueToEncode <- int ch
-                    else if Char.IsSurrogate ch then
-                        let mutable scalarValue = GetNextUnicodeScalarValueFromUtf16Surrogate string i
-                        incr <- incr + 1
-
-                        if scalarValue >= 65536 then
-                            valueToEncode <- scalarValue
-                        else
-                            ch <- char scalarValue
-
-                    if valueToEncode >= 0 then
-                        sb.Append("&#").Append(valueToEncode).Append ';'
+                let mutable valueToEncode = -1 // Set to >= 0 if needs to be encoded
+                if ch >= '\u00A0' && ch < '\u0100' then
+                    valueToEncode <- int ch
+                elif Char.IsSurrogate(ch) then
+                    let mutable scalarValue = getNextUnicodeScalarValueFromUtf16Surrogate input &i
+                    if scalarValue >= UNICODE_PLANE01_START then
+                        valueToEncode <- scalarValue
                     else
-                        sb.Append ch
-                    |> ignore
+                        // Don't encode BMP characters (like U+FFFD)
+                        sb.Append(char scalarValue) |> ignore
+                if valueToEncode >= 0 then
+                    sb.Append("&#")
+                      .Append(valueToEncode)
+                      .Append(';') |> ignore
+                else
+                    sb.Append(ch) |> ignore
+            i <- i + 1
 
-                    loop(i + incr)
+    // Function to find the index of characters that need HTML encoding
+    let internal indexOfHtmlEncodingChars (input: string) : int =
+        let rec loop i =
+            if i < input.Length then
+                let ch = input[i]
+                if ch <= '>' then
+                    if ch = '<' || ch = '>' || ch = '"' || ch = '\'' || ch = '&' then
+                        i
+                    else
+                        loop (i + 1)
+                elif ch >= '\u00A0' && ch < '\u0100' then
+                    i
+                elif Char.IsSurrogate(ch) then
+                    i
+                else
+                    loop (i + 1)
+            else
+                -1
+        loop 0
 
-        if haveUnencodedChars string then
-            loop 0
 
-        else sb.Append string |> ignore
-
+    let htmlEncode (value: string) (sb: StringBuilder) =
+        if isNull value then
+            sb.Append(value) |> ignore
+        else
+            match indexOfHtmlEncodingChars value with
+            | -1 ->
+                sb.Append(value) |> ignore
+            | index ->
+                let value = value.AsSpan()
+                sb.Append(value.Slice(0, index)) |> ignore
+                htmlEncodeInner (value.Slice(index)) sb

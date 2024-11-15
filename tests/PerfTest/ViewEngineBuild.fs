@@ -1,6 +1,10 @@
 ﻿namespace PerfTest
 
+open System.Net
+open System.Text
 open BenchmarkDotNet.Attributes
+open Oxpecker.ViewEngine
+open Oxpecker.ViewEngine.Tools
 
 module OxpeckerViewBuild =
     open Oxpecker.ViewEngine
@@ -66,11 +70,16 @@ type ViewEngineBuild() =
     // | BuildFalcoView    | 836.7 ns | 6.20 ns | 5.49 ns | 0.7763 |   3.17 KB |
 
 
-    [<Benchmark>]
-    member this.BuildOxpeckerView() = OxpeckerViewBuild.get()
+    let testText = (Seq.init 10000 (fun _ -> "Some long error text")) |> String.concat "<script/>"
 
     [<Benchmark>]
-    member this.BuildGiraffeView() = GiraffeViewBuild.get()
+    member this.WebUtility() =
+        let sb = StringBuilder()
+        WebUtility.HtmlEncode testText
+        |> sb.Append
+        |> ignore
 
     [<Benchmark>]
-    member this.BuildFalcoView() = FalcoViewBuild.get()
+    member this.Tools() =
+        let sb = StringBuilder()
+        CustomWebUtility.htmlEncode testText sb
