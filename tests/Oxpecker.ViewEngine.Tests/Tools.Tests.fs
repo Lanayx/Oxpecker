@@ -46,6 +46,6 @@ let ``Tools.HtmlEncode and WebUtility.HtmlEncode are exactly the same`` () =
     let encodedFortunes = WebUtility.HtmlEncode unencodedFortunes
 
     let sb = StringBuilder()
-    HtmlEncode sb unencodedFortunes
+    HTMLEncoding.encodeCharsInto sb unencodedFortunes
 
     encodedFortunes |> shouldEqual(sb.ToString())
