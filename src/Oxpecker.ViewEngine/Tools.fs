@@ -44,35 +44,31 @@ module CustomWebUtility =
 
     // Constants
     [<Literal>]
-    let private HIGH_SURROGATE_START = '\uD800'
-    [<Literal>]
-    let private LOW_SURROGATE_START = '\uDC00'
-    [<Literal>]
-    let private LOW_SURROGATE_END = '\uDFFF'
-    [<Literal>]
-    let private UNICODE_PLANE00_END = 0x00FFFF
-    [<Literal>]
     let private UNICODE_PLANE01_START = 0x10000
     [<Literal>]
-    let private UNICODE_PLANE16_END = 0x10FFFF
+    let private UnicodeReplacementChar = 0xFFFD
 
-    [<Literal>]
-    let private UnicodeReplacementChar = '\uFFFD'
-    [<Literal>]
-    let private MaxInt32Digits = 10
+    let private getNextUnicodeScalarValueFromUtf16Surrogate (input: ReadOnlySpan<char>) (index: byref<int>) : int =
 
-    // Helper function to get the next Unicode scalar value from UTF-16 surrogate pairs
-    let private getNextUnicodeScalarValueFromUtf16Surrogate (input: ReadOnlySpan<char>) (i: byref<int>) : int =
-        let highSurrogate = input[i]
-        if i + 1 < input.Length then
-            let lowSurrogate = input[i + 1]
-            if Char.IsLowSurrogate(lowSurrogate) then
-                i <- i + 1 // Advance the index as we've consumed two chars
-                Char.ConvertToUtf32(highSurrogate, lowSurrogate)
-            else
-                int UnicodeReplacementChar
+        if input.Length - index <= 1 then
+            // Not enough characters to form a surrogate pair
+            UnicodeReplacementChar
         else
-            int UnicodeReplacementChar
+            let leadingSurrogate = input[index]
+            let trailingSurrogate = input[index + 1]
+
+            if leadingSurrogate >= '\uD800' && leadingSurrogate <= '\uDBFF' &&
+               trailingSurrogate >= '\uDC00' && trailingSurrogate <= '\uDFFF' then
+                // Consume the trailing surrogate
+                index <- index + 1
+
+                // Calculate the Unicode scalar value
+                ((int leadingSurrogate - 0xD800) <<< 10)
+                + (int trailingSurrogate - 0xDC00)
+                + 0x10000
+            else
+                // Unmatched surrogate
+                UnicodeReplacementChar
 
     // Function to encode HTML entities
     let private htmlEncodeInner (input: ReadOnlySpan<char>) (sb: StringBuilder) : unit =
@@ -87,8 +83,9 @@ module CustomWebUtility =
                 elif '&' = ch then sb.Append "&amp;"
                 else sb.Append ch
                 |> ignore
+                i <- i + 1
             else
-                let mutable valueToEncode = -1 // Set to >= 0 if needs to be encoded
+                let mutable valueToEncode = -1
                 if ch >= '\u00A0' && ch < '\u0100' then
                     valueToEncode <- int ch
                 elif Char.IsSurrogate(ch) then
@@ -104,7 +101,8 @@ module CustomWebUtility =
                       .Append(';') |> ignore
                 else
                     sb.Append(ch) |> ignore
-            i <- i + 1
+                let mutable x = 1 // dirty hack for performance
+                i <- i + x
 
     // Function to find the index of characters that need HTML encoding
     let internal indexOfHtmlEncodingChars (input: string) : int =
