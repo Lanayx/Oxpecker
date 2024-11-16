@@ -57,8 +57,12 @@ module CustomWebUtility =
             let leadingSurrogate = input[index]
             let trailingSurrogate = input[index + 1]
 
-            if leadingSurrogate >= '\uD800' && leadingSurrogate <= '\uDBFF' &&
-               trailingSurrogate >= '\uDC00' && trailingSurrogate <= '\uDFFF' then
+            if
+                leadingSurrogate >= '\uD800'
+                && leadingSurrogate <= '\uDBFF'
+                && trailingSurrogate >= '\uDC00'
+                && trailingSurrogate <= '\uDFFF'
+            then
                 // Consume the trailing surrogate
                 index <- index + 1
 
@@ -96,9 +100,7 @@ module CustomWebUtility =
                         // Don't encode BMP characters (like U+FFFD)
                         sb.Append(char scalarValue) |> ignore
                 if valueToEncode >= 0 then
-                    sb.Append("&#")
-                      .Append(valueToEncode)
-                      .Append(';') |> ignore
+                    sb.Append("&#").Append(valueToEncode).Append(';') |> ignore
                 else
                     sb.Append(ch) |> ignore
                 let mutable x = 1 // dirty hack for performance
@@ -113,13 +115,13 @@ module CustomWebUtility =
                     if ch = '<' || ch = '>' || ch = '"' || ch = '\'' || ch = '&' then
                         i
                     else
-                        loop (i + 1)
+                        loop(i + 1)
                 elif ch >= '\u00A0' && ch < '\u0100' then
                     i
                 elif Char.IsSurrogate(ch) then
                     i
                 else
-                    loop (i + 1)
+                    loop(i + 1)
             else
                 -1
         loop 0
@@ -130,8 +132,7 @@ module CustomWebUtility =
             sb.Append(value) |> ignore
         else
             match indexOfHtmlEncodingChars value with
-            | -1 ->
-                sb.Append(value) |> ignore
+            | -1 -> sb.Append(value) |> ignore
             | index ->
                 let value = value.AsSpan()
                 sb.Append(value.Slice(0, index)) |> ignore
