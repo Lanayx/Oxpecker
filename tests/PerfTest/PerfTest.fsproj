@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <Compile Include="ViewEngineBuild.fs" />
+        <Compile Include="WebUtilityEncode.fs" />
         <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="JSON.fs" />

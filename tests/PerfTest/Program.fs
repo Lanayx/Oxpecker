@@ -3,6 +3,6 @@ open PerfTest
 
 [<EntryPoint>]
 let main args =
-    let summary = BenchmarkRunner.Run<ViewEngineBuild>()
+    let summary = BenchmarkRunner.Run<WebUtilityEncode>()
 
     0
