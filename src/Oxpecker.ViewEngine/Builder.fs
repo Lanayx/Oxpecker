@@ -28,13 +28,9 @@ module Builder =
             let mutable next = attributes.Head
             while isNotNull next do
                 let attr = next.Value
-                sb
-                    .Append(' ')
-                    .Append(attr.Name)
-                    .Append("=\"")
-                    .Append(WebUtility.HtmlEncode(attr.Value))
-                    .Append('"')
-                |> ignore
+                sb.Append(' ').Append(attr.Name).Append("=\"") |> ignore
+                CustomWebUtility.htmlEncode attr.Value sb
+                sb.Append('"') |> ignore
                 next <- next.Next
             sb.Append('>') |> ignore
 
@@ -92,8 +88,7 @@ module Builder =
 
     /// Text node that will be HTML-escaped
     type RegularTextNode(text: string) =
-        member this.Render(sb: StringBuilder) =
-            text |> WebUtility.HtmlEncode |> sb.Append |> ignore
+        member this.Render(sb: StringBuilder) = CustomWebUtility.htmlEncode text sb
         interface HtmlElement with
             member this.Render sb = this.Render sb
 
