@@ -41,28 +41,44 @@ type internal CustomQueue<'T> =
         }
 
 module CustomWebUtility =
-    let HIGH_SURROGATE_START = int '\ud800'
-    let LOW_SURROGATE_START = int '\uDC00'
-    let UnicodeReplacementChar = int '\uFFFD'
+
+    // Constants
+    [<Literal>]
+    let private HIGH_SURROGATE_START = '\uD800'
+    [<Literal>]
+    let private LOW_SURROGATE_START = '\uDC00'
+    [<Literal>]
+    let private LOW_SURROGATE_END = '\uDFFF'
+    [<Literal>]
+    let private UNICODE_PLANE00_END = 0x00FFFF
+    [<Literal>]
+    let private UNICODE_PLANE01_START = 0x10000
+    [<Literal>]
+    let private UNICODE_PLANE16_END = 0x10FFFF
+
+    [<Literal>]
+    let private UnicodeReplacementChar = '\uFFFD'
+    [<Literal>]
+    let private MaxInt32Digits = 10
 
     // Helper function to get the next Unicode scalar value from UTF-16 surrogate pairs
-    let private getNextUnicodeScalarValueFromUtf16Surrogate (input: ReadOnlySpan<char>) (index: int) : int =
-        let mutable slice = input.Slice(index, 2)
-        let mutable left = slice.[0]
-        let mutable right = slice.[1]
-
-        if input.Length - index <= 1 || not(Char.IsSurrogatePair(left, right)) then
-            UnicodeReplacementChar
+    let private getNextUnicodeScalarValueFromUtf16Surrogate (input: ReadOnlySpan<char>) (i: byref<int>) : int =
+        let highSurrogate = input[i]
+        if i + 1 < input.Length then
+            let lowSurrogate = input[i + 1]
+            if Char.IsLowSurrogate(lowSurrogate) then
+                i <- i + 1 // Advance the index as we've consumed two chars
+                Char.ConvertToUtf32(highSurrogate, lowSurrogate)
+            else
+                int UnicodeReplacementChar
         else
-            (((int left - HIGH_SURROGATE_START) * 0x400)
-             + (int right - LOW_SURROGATE_START)
-             + 65536)
+            int UnicodeReplacementChar
 
     // Function to encode HTML entities
     let private htmlEncodeInner (input: ReadOnlySpan<char>) (sb: StringBuilder) : unit =
         let mutable i = 0
         while i < input.Length do
-            let mutable ch = input[i]
+            let ch = input[i]
             if ch <= '>' then
                 if '<' = ch then sb.Append "&lt;"
                 elif '>' = ch then sb.Append "&gt;"
@@ -71,28 +87,24 @@ module CustomWebUtility =
                 elif '&' = ch then sb.Append "&amp;"
                 else sb.Append ch
                 |> ignore
-                i <- i + 1
             else
-                let mutable valueToEncode = -1
-                let mutable incr = 1
-
-                if ch >= char 160 && ch < char 256 then
+                let mutable valueToEncode = -1 // Set to >= 0 if needs to be encoded
+                if ch >= '\u00A0' && ch < '\u0100' then
                     valueToEncode <- int ch
-                else if Char.IsSurrogate ch then
-                    let mutable scalarValue = getNextUnicodeScalarValueFromUtf16Surrogate input i
-                    incr <- incr + 1
-
-                    if scalarValue >= 65536 then
+                elif Char.IsSurrogate(ch) then
+                    let mutable scalarValue = getNextUnicodeScalarValueFromUtf16Surrogate input &i
+                    if scalarValue >= UNICODE_PLANE01_START then
                         valueToEncode <- scalarValue
                     else
-                        ch <- char scalarValue
-
+                        // Don't encode BMP characters (like U+FFFD)
+                        sb.Append(char scalarValue) |> ignore
                 if valueToEncode >= 0 then
-                    sb.Append("&#").Append(valueToEncode).Append ';'
+                    sb.Append("&#")
+                      .Append(valueToEncode)
+                      .Append(';') |> ignore
                 else
-                    sb.Append ch
-                |> ignore
-                i <- i + incr
+                    sb.Append(ch) |> ignore
+            i <- i + 1
 
     // Function to find the index of characters that need HTML encoding
     let internal indexOfHtmlEncodingChars (input: string) : int =
