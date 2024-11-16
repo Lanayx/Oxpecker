@@ -2,6 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <Nullable>enable</Nullable>
         <PackageId>Oxpecker.Htmx</PackageId>
         <Title>Oxpecker.Htmx</Title>
         <RootNamespace>Oxpecker.Htmx</RootNamespace>
@@ -18,9 +19,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.1.2</Version>
-        <PackageVersion>0.1.2</PackageVersion>
-        <PackageReleaseNotes>Updated Oxpecker.ViewEngine dependency</PackageReleaseNotes>
+        <Version>1.0.0</Version>
+        <PackageVersion>1.0.0</PackageVersion>
+        <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

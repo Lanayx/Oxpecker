@@ -25,15 +25,15 @@ module Configuration =
     let internal unitType = typeof<unit>
 
     type RequestBody(?requestType: Type, ?contentTypes: string array, ?isOptional: bool) =
-        let requestType = requestType |> Option.defaultValue null
+        let requestType = requestType |> Option.toObj
         let contentTypes = contentTypes |> Option.defaultValue [| "application/json" |]
         let isOptional = isOptional |> Option.defaultValue false
         member this.ToAttribute() =
             AcceptsMetadata(contentTypes, requestType, isOptional)
 
     type ResponseBody(?responseType: Type, ?contentTypes: string array, ?statusCode: int) =
-        let responseType = responseType |> Option.defaultValue null
-        let contentTypes = contentTypes |> Option.defaultValue null
+        let responseType = responseType |> Option.toObj
+        let contentTypes = contentTypes |> Option.toObj
         let statusCode = statusCode |> Option.defaultValue 200
         member this.ToAttribute() =
             ProducesResponseTypeMetadata(statusCode, responseType, contentTypes)

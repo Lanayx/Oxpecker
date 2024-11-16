@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <IsPackable>false</IsPackable>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -11,17 +12,17 @@
         <Compile Include="Env.fs" />
         <Compile Include="Database.fs" />
         <Compile Include="Handlers.fs" />
-        <Compile Include="Program.fs"/>
+        <Compile Include="Program.fs" />
         <Content Include="README.md" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\..\src\Oxpecker\Oxpecker.fsproj" />
-      <ProjectReference Include="..\Shared\Shared.fsproj" />
+        <ProjectReference Include="..\..\..\src\Oxpecker\Oxpecker.fsproj" />
+        <ProjectReference Include="..\Shared\Shared.fsproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FSharp.UMX" Version="1.1.0" />
+        <PackageReference Include="FSharp.UMX" Version="1.1.0" />
     </ItemGroup>
 
 </Project>

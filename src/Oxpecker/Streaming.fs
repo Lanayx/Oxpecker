@@ -36,7 +36,7 @@ module internal RangeHelper =
     ///
     let parseRange (request: HttpRequest) =
         let rawRangeHeader = request.Headers[HeaderNames.Range]
-        if StringValues.IsNullOrEmpty(rawRangeHeader) then
+        if rawRangeHeader.Count = 0 then
             None
         // Perf: Check for a single entry before parsing it.
         // The spec allows for multiple ranges but we choose not to support them because the client may request
@@ -46,9 +46,9 @@ module internal RangeHelper =
             None
         else
             let range = request.GetTypedHeaders().Range
-            if isNull range then None
-            elif isNull range.Ranges then None
-            else Some range.Ranges
+            match range with
+            | Null -> None
+            | NonNull r -> Some r.Ranges
 
     /// <summary>
     /// Validates if the provided set of ranges can be satisfied with the given contentLength.
@@ -63,7 +63,7 @@ module internal RangeHelper =
             Error "Range exceeds content length (which is zero)."
         else
             // Normalize the range
-            let range = ranges.SingleOrDefault()
+            let range = ranges.Single()
             match range.From.HasValue with
             | true ->
                 if range.From.Value >= contentLength then
@@ -105,18 +105,21 @@ module internal RangeHelper =
         =
         let ifRange = request.GetTypedHeaders().IfRange
 
-        if isNull ifRange then
-            true
-        elif isNotNull ifRange.EntityTag then
-            match eTag with
-            | None -> false
-            | Some x -> ifRange.EntityTag.Compare(x, true)
-        elif ifRange.LastModified.HasValue then
-            match lastModified with
-            | None -> false
-            | Some x -> x <= ifRange.LastModified.Value
-        else
-            true
+        match ifRange with
+        | Null -> true
+        | NonNull ifRange ->
+            match ifRange.EntityTag with
+            | NonNull entityTag ->
+                match eTag with
+                | None -> false
+                | Some x -> entityTag.Compare(x, true)
+            | Null ->
+                if ifRange.LastModified.HasValue then
+                    match lastModified with
+                    | None -> false
+                    | Some x -> x <= ifRange.LastModified.Value
+                else
+                    true
 
 // ---------------------------
 // HttpContext extensions

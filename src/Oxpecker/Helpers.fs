@@ -55,3 +55,8 @@ module Helpers =
     /// <param name="statusCode">The HTTP status code.</param>
     /// <returns>Returns true if the status code is between 500 and 599.</returns>
     let is5xxStatusCode (statusCode: int) = 500 <= statusCode && statusCode <= 599
+
+    /// <summary>
+    /// Boxes value with return type obj (not objnull).
+    /// </summary>
+    let inline boxv<'a when 'a: struct> (v: 'a) = box v |> Unchecked.nonNull

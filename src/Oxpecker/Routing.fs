@@ -64,15 +64,15 @@ module RouteTemplateBuilder =
         try
             match c with
             | 's' -> s.Replace("%2F", "/", StringComparison.OrdinalIgnoreCase)
-            | 'i' -> int s |> box
-            | 'b' -> bool.Parse s |> box
-            | 'c' -> char s[0] |> box
-            | 'd' -> int64 s |> box
-            | 'f' -> float s |> box
-            | 'u' -> uint64 s |> box
+            | 'i' -> int s |> boxv
+            | 'b' -> bool.Parse s |> boxv
+            | 'c' -> char s[0] |> boxv
+            | 'd' -> int64 s |> boxv
+            | 'f' -> float s |> boxv
+            | 'u' -> uint64 s |> boxv
             | 'O' ->
                 match modifier with
-                | Some "guid" -> Guid.Parse s |> box
+                | Some "guid" -> Guid.Parse s |> boxv
                 | _ -> s
             | _ -> s
         with :? FormatException as ex ->
@@ -92,7 +92,7 @@ module RouteTemplateBuilder =
                 let slug = m.Groups[1].Value
                 let vtype = m.Groups[2].Value[0] // Second capture group is the variable type s, i, or O
                 let formatSpecifier = if m.Groups[3].Success then m.Groups[3].Value else ""
-                let paramName = parameters[index].Name
+                let paramName = parameters[index].Name |> string
                 index <- index + 1 // Increment index for next use
                 mappings.Add(
                     paramName,
