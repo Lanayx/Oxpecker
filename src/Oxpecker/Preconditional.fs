@@ -38,7 +38,7 @@ type HttpContext with
         HttpMethods.IsHead this.Request.Method || HttpMethods.IsGet this.Request.Method
 
     member private this.ValidateIfMatch (eTag: EntityTagHeaderValue option) (requestHeaders: RequestHeaders) =
-        match isNotNull requestHeaders.IfMatch && requestHeaders.IfMatch.Any() with
+        match requestHeaders.IfMatch.Any() with
         | false -> NoConditionsSpecified
         | true ->
             match eTag with
@@ -69,7 +69,7 @@ type HttpContext with
                 | false -> ConditionFailed
 
     member private this.ValidateIfNoneMatch (eTag: EntityTagHeaderValue option) (requestHeaders: RequestHeaders) =
-        match isNotNull requestHeaders.IfNoneMatch && requestHeaders.IfNoneMatch.Any() with
+        match requestHeaders.IfNoneMatch.Any() with
         | false -> NoConditionsSpecified
         | true ->
             match eTag with
@@ -99,7 +99,6 @@ type HttpContext with
                 | true -> AllConditionsMet
                 | false -> ResourceNotModified
 
-[<Extension>]
 type PreconditionExtensions() =
     /// <summary>
     /// Validates the following conditional HTTP headers of the HTTP request:

@@ -478,15 +478,15 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
         let mutable innerMetadata = Unchecked.defaultof<EndpointMetadataCollection>
         let endpoints = [
             route "/" (fun ctx ->
-                rootMetadata <- ctx.GetEndpoint().Metadata
+                rootMetadata <- ctx.GetEndpoint() |> Unchecked.nonNull |> _.Metadata
                 ctx.WriteText "")
             GET [
                 route "/get" (fun ctx ->
-                    getMetadata <- ctx.GetEndpoint().Metadata
+                    getMetadata <- ctx.GetEndpoint() |> Unchecked.nonNull |> _.Metadata
                     ctx.WriteText "Hello World")
                 subRoute "/api" [
                     routef "/inner" (fun ctx ->
-                        innerMetadata <- ctx.GetEndpoint().Metadata
+                        innerMetadata <- ctx.GetEndpoint() |> Unchecked.nonNull |> _.Metadata
                         ctx.WriteText "Hi")
                 ]
                 |> configureEndpoint _.ShortCircuit()

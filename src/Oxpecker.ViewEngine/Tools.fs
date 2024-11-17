@@ -1,7 +1,6 @@
-﻿module Oxpecker.ViewEngine.Tools
+module Oxpecker.ViewEngine.Tools
 
 open System
-open System.Globalization
 open System.Text
 open Microsoft.Extensions.ObjectPool
 
@@ -127,13 +126,14 @@ module CustomWebUtility =
         loop 0
 
 
-    let htmlEncode (value: string) (sb: StringBuilder) =
-        if isNull value then
+    let htmlEncode (value: string | null) (sb: StringBuilder) =
+        match value with
+        | Null ->
             sb.Append(value) |> ignore
-        else
+        | NonNull value ->
             match indexOfHtmlEncodingChars value with
             | -1 -> sb.Append(value) |> ignore
             | index ->
                 let value = value.AsSpan()
                 sb.Append(value.Slice(0, index)) |> ignore
-                htmlEncodeInner (value.Slice(index)) sb
+                htmlEncodeInner (value.Slice index) sb

@@ -7,7 +7,7 @@ render_with_liquid: false
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi) `dotnet add package Oxpecker.OpenApi`
 
-Two usages:
+Usages example:
 
 ```fsharp
 open Oxpecker
@@ -34,13 +34,16 @@ let endpoints = [
             |> configureEndpoint _.WithName("GetProduct")
             |> addOpenApiSimple<int, Product>
     ]
+    // such route won't work with OpenAPI, since HTTP method is not specified
+    route "/hello" <| text "Hello, world!"
 ]
 
 ```
 
-## Documentation:
 
-### Integration
+## Configuration
+
+### ASP.NET Core 8
 
 Since `Oxpecker.OpenApi` works on top of `Microsoft.AspNetCore.OpenApi` and `Swashbuckle.AspNetCore` packages, you need to do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi):
 
@@ -51,7 +54,7 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseRouting()
         .Use(errorHandler)
         .UseOxpecker(endpoints)
-        .UseSwagger() // for generating OpenApi spec
+        .UseSwagger() // for json OpenAPI endpoint
         .UseSwaggerUI() // for viewing Swagger UI
         .Run(notFoundHandler)
 
@@ -62,9 +65,51 @@ let configureServices (services: IServiceCollection) =
         .AddEndpointsApiExplorer() // use the API Explorer to discover and describe endpoints
         .AddSwaggerGen() // swagger dependencies
     |> ignore
+
+[<EntryPoint>]
+let main args =
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+    let app = builder.Build()
+    configureApp app
+    app.Run()
+    0
 ```
 
-To make endpoints discoverable by Swagger, you need to call one of the following functions: `addOpenApi` or `addOpenApiSimple` on the endpoint.
+### ASP.NET Core 9
+
+Since `Oxpecker.OpenApi` works on top of `Microsoft.AspNetCore.OpenApi` and `Swashbuckle.AspNetCore` packages, you need to do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi):
+
+```fsharp
+
+let configureApp (appBuilder: IApplicationBuilder) =
+    appBuilder
+        .UseRouting()
+        .Use(errorHandler)
+        .UseOxpecker(endpoints)
+        .Run(notFoundHandler)
+
+let configureServices (services: IServiceCollection) =
+    services
+        .AddRouting()
+        .AddOxpecker()
+        .AddOpenApi() // OpenAPI dependencies
+    |> ignore
+
+[<EntryPoint>]
+let main args =
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+    let app = builder.Build()
+    configureApp app
+    app.MapOpenApi() |> ignore // for json OpenAPI endpoint
+    app.Run()
+    0
+```
+
+## APIs
+
+To make endpoints discoverable by OpenApi, you need to call one of the following functions: `addOpenApi` or `addOpenApiSimple` on the endpoint.
 
 _NOTE: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically._
 

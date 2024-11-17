@@ -2,7 +2,8 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
+        <Nullable>enable</Nullable>
         <PackageId>Oxpecker.OpenApi</PackageId>
         <Title>Oxpecker.OpenApi</Title>
         <RootNamespace>Oxpecker.OpenApi</RootNamespace>
@@ -19,12 +20,12 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.1.1</Version>
-        <PackageVersion>0.1.1</PackageVersion>
-        <PackageReleaseNotes>Added logo</PackageReleaseNotes>
+        <Version>1.0.0</Version>
+        <PackageVersion>1.0.0</PackageVersion>
+        <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.11" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

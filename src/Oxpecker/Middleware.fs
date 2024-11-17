@@ -8,7 +8,6 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.DependencyInjection.Extensions
 open Microsoft.Extensions.Logging
 
-[<Extension>]
 type ApplicationBuilderExtensions() =
 
     /// <summary>
@@ -25,7 +24,6 @@ type ApplicationBuilderExtensions() =
     static member UseOxpecker(builder: IApplicationBuilder, endpoint: Endpoint) =
         builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoint endpoint)
 
-[<Extension>]
 type ServiceCollectionExtensions() =
     /// <summary>
     /// Adds default Oxpecker services to the ASP.NET Core service container.
@@ -40,11 +38,5 @@ type ServiceCollectionExtensions() =
         svc.TryAddSingleton<ILogger>(fun sp ->
             let loggerFactory = sp.GetRequiredService<ILoggerFactory>()
             let webApp = sp.GetRequiredService<IWebHostEnvironment>()
-            // see https://github.com/dotnet/aspnetcore/blob/main/src/DefaultBuilder/src/WebApplication.cs
-            let categoryName =
-                if isNull webApp then
-                    nameof WebApplication
-                else
-                    webApp.ApplicationName
-            loggerFactory.CreateLogger categoryName)
+            loggerFactory.CreateLogger webApp.ApplicationName)
         svc
