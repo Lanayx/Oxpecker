@@ -17,7 +17,7 @@ let getContacts: EndpointHandler =
             let result =
                 ContactService.searchContact search
                 |> Seq.toArray
-            match ctx.TryGetHeaderValue HxHeader.Request.Trigger with
+            match ctx.TryGetHeaderValue HxRequestHeader.Trigger with
             | Some "search" ->
                 ctx.WriteHtmlView (index.rows page result)
             | _ ->
@@ -85,7 +85,7 @@ let deleteContact id: EndpointHandler =
     fun ctx ->
         task {
             ContactService.delete id |> ignore
-            match ctx.TryGetHeaderValue HxHeader.Request.Trigger with
+            match ctx.TryGetHeaderValue HxRequestHeader.Trigger with
             | Some "delete-btn" ->
                 flash "Deleted Contact!" ctx
                 ctx.Response.Redirect("/contacts")
