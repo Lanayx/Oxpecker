@@ -8,7 +8,6 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.DependencyInjection.Extensions
 open Microsoft.Extensions.Logging
 
-[<Extension>]
 type ApplicationBuilderExtensions() =
 
     /// <summary>
@@ -25,7 +24,6 @@ type ApplicationBuilderExtensions() =
     static member UseOxpecker(builder: IApplicationBuilder, endpoint: Endpoint) =
         builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoint endpoint)
 
-[<Extension>]
 type ServiceCollectionExtensions() =
     /// <summary>
     /// Adds default Oxpecker services to the ASP.NET Core service container.

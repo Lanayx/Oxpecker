@@ -1,4 +1,4 @@
-﻿[<AutoOpen>]
+[<AutoOpen>]
 module Oxpecker.Streaming
 
 open System
@@ -8,7 +8,6 @@ open System.Runtime.CompilerServices
 open System.Collections.Generic
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
-open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
 // ---------------------------
@@ -39,10 +38,10 @@ module internal RangeHelper =
         if rawRangeHeader.Count = 0 then
             None
         // Perf: Check for a single entry before parsing it.
-        // The spec allows for multiple ranges but we choose not to support them because the client may request
+        // The spec allows for multiple ranges, but we choose not to support them because the client may request
         // very strange ranges (e.g. each byte separately, overlapping ranges, etc.) that could negatively
         // impact the server. Ignore the header and serve the response normally.
-        elif (rawRangeHeader.Count > 1 || rawRangeHeader[0].IndexOf(',') >= 0) then
+        elif (rawRangeHeader.Count > 1 || (rawRangeHeader[0] |> string).IndexOf(',') >= 0) then
             None
         else
             let range = request.GetTypedHeaders().Range
@@ -125,7 +124,6 @@ module internal RangeHelper =
 // HttpContext extensions
 // ---------------------------
 
-[<Extension>]
 type StreamingExtensions() =
 
     [<Extension>]

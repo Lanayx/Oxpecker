@@ -7,8 +7,6 @@ open ContactApp.Models
 open Microsoft.AspNetCore.Http
 open Oxpecker
 
-let isNotNull x = not (isNull x)
-
 let getFlashedMessage (ctx: HttpContext) =
     match ctx.Items.TryGetValue("message") with
     | true, msg ->

@@ -99,7 +99,6 @@ type HttpContext with
                 | true -> AllConditionsMet
                 | false -> ResourceNotModified
 
-[<Extension>]
 type PreconditionExtensions() =
     /// <summary>
     /// Validates the following conditional HTTP headers of the HTTP request:

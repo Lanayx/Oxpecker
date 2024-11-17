@@ -1,6 +1,5 @@
 ﻿namespace Oxpecker.ViewEngine
 
-open System
 open System.Diagnostics.CodeAnalysis
 open Oxpecker.ViewEngine.Tools
 open System.Runtime.CompilerServices

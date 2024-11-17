@@ -1,4 +1,4 @@
-﻿namespace Oxpecker
+namespace Oxpecker
 
 open Microsoft.IO
 
@@ -7,13 +7,6 @@ module Helpers =
 
     /// <summary>Default single RecyclableMemoryStreamManager.</summary>
     let internal recyclableMemoryStreamManager = Lazy<RecyclableMemoryStreamManager>()
-
-    /// <summary>
-    /// Checks if an object is not null.
-    /// </summary>
-    /// <param name="x">The object to validate against `null`.</param>
-    /// <returns>Returns true if the object is not null otherwise false.</returns>
-    let inline isNotNull x = not(isNull x)
 
     /// Same as << but with two arguments
     let inline (<<+) func2 func1 x y = func2(func1 x y)

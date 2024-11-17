@@ -197,7 +197,7 @@ let ``ValidatePreconditions with If-Unmodified-Since is equal to lastModified`` 
     ctx.Request.GetTypedHeaders().IfUnmodifiedSince <- Nullable(DateTimeOffset.Parse "Sat, 01 Jan 2000 00:00:00 GMT")
 
     let result =
-        ctx.ValidatePreconditions(None, (Some(DateTimeOffset.Parse "Sat, 01 Jan 2000 00:00:00 GMT")))
+        ctx.ValidatePreconditions(None, Some(DateTimeOffset.Parse "Sat, 01 Jan 2000 00:00:00 GMT"))
 
     match result with
     | AllConditionsMet -> ()

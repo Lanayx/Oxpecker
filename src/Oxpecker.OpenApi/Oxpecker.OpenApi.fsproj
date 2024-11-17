@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <WarningsAsErrors>3239;0025</WarningsAsErrors>
+        <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
         <Nullable>enable</Nullable>
         <PackageId>Oxpecker.OpenApi</PackageId>
         <Title>Oxpecker.OpenApi</Title>
