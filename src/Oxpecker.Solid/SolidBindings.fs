@@ -429,7 +429,9 @@ module Bindings =
         [<Erase>]
         member this.each
             with set (value: 'T[]) = ()
+        [<Erase>]
         member inline _.Zero() : HtmlContainerFun = ignore
+        [<Erase>]
         member inline _.Yield(value: 'T -> Accessor<int> -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
 
     [<Erase>]
@@ -438,7 +440,9 @@ module Bindings =
         [<Erase>]
         member this.each
             with set (value: 'T[]) = ()
+        [<Erase>]
         member inline _.Zero() : HtmlContainerFun = ignore
+        [<Erase>]
         member inline _.Yield(value: Accessor<'T> -> int -> #HtmlElement) : HtmlContainerFun = fun cont -> ignore value
 
     [<Erase>]
@@ -464,14 +468,18 @@ module Bindings =
         [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
+        [<Erase>]
         member inline _.Combine
             ([<InlineIfLambda>] first: HtmlContainerFun, [<InlineIfLambda>] second: HtmlContainerFun)
             : HtmlContainerFun =
             fun builder ->
                 first builder
                 second builder
+        [<Erase>]
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
+        [<Erase>]
         member inline _.Zero() : HtmlContainerFun = ignore
+        [<Erase>]
         member inline _.Yield(value: Match) : HtmlContainerFun = fun cont -> ignore value
 
     [<Erase>]

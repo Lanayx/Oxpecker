@@ -87,14 +87,18 @@ module Bindings =
         [<Erase>]
         member this.preload
             with set (value: RoutePreloadFunc) = ()
+        [<Erase>]
         member inline _.Combine
             ([<InlineIfLambda>] first: HtmlContainerFun, [<InlineIfLambda>] second: HtmlContainerFun)
             : HtmlContainerFun =
             fun builder ->
                 first builder
                 second builder
+        [<Erase>]
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
+        [<Erase>]
         member inline _.Zero() : HtmlContainerFun = ignore
+        [<Erase>]
         member inline _.Yield(value: Route) : HtmlContainerFun = fun cont -> ignore value
 
     [<AllowNullLiteral>]
@@ -129,15 +133,20 @@ module Bindings =
         [<Erase>]
         member this.url
             with set (value: string) = ()
+        [<Erase>]
         member inline _.Combine
             ([<InlineIfLambda>] first: HtmlContainerFun, [<InlineIfLambda>] second: HtmlContainerFun)
             : HtmlContainerFun =
             fun builder ->
                 first builder
                 second builder
+        [<Erase>]
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
+        [<Erase>]
         member inline _.Zero() : HtmlContainerFun = ignore
+        [<Erase>]
         member inline _.Yield(value: Route) : HtmlContainerFun = fun cont -> ignore value
+        [<Erase>]
         member inline _.Yield(value: RootConfig[]) : HtmlContainerFun = fun cont -> ignore value
 
     [<Import("HashRouter", "@solidjs/router")>]

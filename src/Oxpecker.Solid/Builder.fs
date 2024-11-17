@@ -39,14 +39,19 @@ module Builder =
                 first builder
                 second builder
 
+        [<Erase>]
         member inline _.Zero() : HtmlContainerFun = ignore
 
+        [<Erase>]
         member inline _.Delay([<InlineIfLambda>] delay: unit -> HtmlContainerFun) : HtmlContainerFun = delay()
 
+        [<Erase>]
         member inline _.Yield(element: #HtmlElement) : HtmlContainerFun = fun cont -> ignore element
 
+        [<Erase>]
         member inline _.Yield(text: string) : HtmlContainerFun = fun cont -> ignore text
 
+        [<Erase>]
         member inline _.Yield(text: int) : HtmlContainerFun = fun cont -> ignore text
 
     [<Erase>]
