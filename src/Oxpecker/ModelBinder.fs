@@ -9,7 +9,6 @@ open Microsoft.Extensions.Primitives
 /// Interface defining Form and Query parsing methods.
 /// Use this interface to customize Form and Query parsing in Oxpecker.
 /// </summary>
-[<AllowNullLiteral>]
 type IModelBinder =
     abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
@@ -52,25 +51,25 @@ module internal ModelParser =
             FSharpValue.MakeUnion(cases[1], [| value |])
 
     /// Returns either a successfully parsed object `'T` or a `string` error message containing the parsing error.
-    let rec private parseValue (t: Type) (rawValues: StringValues) (culture: CultureInfo) : Result<obj, string> =
+    let rec private parseValue (t: Type) (rawValues: StringValues) (culture: CultureInfo) : Result<obj | null, string> =
 
         // First establish some basic type information:
         let isGeneric = t.IsGeneric()
         let isList, isOption, genArgType =
             match isGeneric with
             | true -> t.IsFSharpList(), t.IsFSharpOption(), t.GetGenericType()
-            | false -> false, false, null
+            | false -> false, false, Unchecked.defaultof<Type>
 
         if t.IsArray then
-            let arrArgType = t.GetElementType()
+            let arrArgType = t.GetElementType() |> Unchecked.nonNull
             let arrLen = rawValues.Count
             let arr = Array.CreateInstance(arrArgType, arrLen)
             if arrLen = 0 then
-                Ok(arr :> obj)
+                Ok(box arr)
             else
                 let items, _, error =
                     Array.fold
-                        (fun (items: Array, idx: int, error: string option) (rawValue: string) ->
+                        (fun (items: Array, idx: int, error: string option) (rawValue: string | null) ->
                             let nIdx = idx + 1
                             match error with
                             | Some _ -> arr, nIdx, error
@@ -84,7 +83,7 @@ module internal ModelParser =
                         (rawValues.ToArray())
                 match error with
                 | Some err -> Error err
-                | None -> Ok(items :> obj)
+                | None -> Ok(box items)
         elif isList then
             let cases = FSharpType.GetUnionCases t
             let emptyList = FSharpValue.MakeUnion(cases[0], [||])
@@ -94,7 +93,7 @@ module internal ModelParser =
                 let consCase = cases[1]
                 let items, error =
                     Array.foldBack
-                        (fun (rawValue: string) (items: obj, error: string option) ->
+                        (fun (rawValue: string | null) (items: obj | null, error: string option) ->
                             match error with
                             | Some _ -> emptyList, error
                             | None ->
@@ -142,6 +141,13 @@ module internal ModelParser =
             with _ ->
                 $"Could not parse value '%s{rawValue}' to type %s{t.ToString()}." |> Error
 
+
+    [<RequireQualifiedAccess>]
+    type internal ParseResult =
+        | Success of obj
+        | Error of string
+        | Skip
+
     let rec internal parseModel<'T>
         (model: 'T)
         (culture: CultureInfo)
@@ -169,15 +175,18 @@ module internal ModelParser =
                             match data.TryGetValue(prop.Name) with
                             | false, _ ->
                                 match getValueForArrayOfGenericType culture data prop with
-                                | Some v -> Ok v
+                                | Some v -> ParseResult.Success v
                                 | None ->
                                     match getValueForComplexType culture data prop with
-                                    | Some v -> Ok v
+                                    | Some v -> ParseResult.Success v
                                     | None ->
                                         match getValueForMissingProperty prop.PropertyType with
-                                        | Some v -> Ok v
-                                        | None -> Ok null
-                            | true, rawValue -> parseValue prop.PropertyType rawValue culture
+                                        | Some v -> ParseResult.Success v
+                                        | None -> ParseResult.Skip
+                            | true, rawValue ->
+                                match parseValue prop.PropertyType rawValue culture with
+                                | Ok v -> ParseResult.Success v
+                                | Error e -> ParseResult.Error e
 
                         // Check if a value was able to get successfully parsed.
                         // If there was an error then return the error.
@@ -185,9 +194,9 @@ module internal ModelParser =
                         // but don't return an error so that the parsing of other properties can continue.
                         // If a value was successfully parsed, then set the value on the property of the model.
                         match parsingResult with
-                        | Error err -> Some err
-                        | Ok null -> None
-                        | Ok value ->
+                        | ParseResult.Error err -> Some err
+                        | ParseResult.Skip -> None
+                        | ParseResult.Success value ->
                             prop.SetValue(model, value, null)
                             None)
                 None
@@ -230,14 +239,14 @@ module internal ModelParser =
                 let model = Activator.CreateInstance(prop.PropertyType)
                 let res = parseModel model culture dictData
                 match res with
-                | Ok o -> o |> Some
+                | Ok o -> o |> Option.ofObj
                 | Error _ -> None
             | true ->
                 let genericType = prop.PropertyType.GetGenericType()
                 let model = Activator.CreateInstance(genericType)
                 let res = parseModel model culture dictData
                 match res with
-                | Ok o -> prop.PropertyType.MakeSomeCase(o) |> Some
+                | Ok o -> prop.PropertyType.MakeSomeCase(o) |> Option.ofObj
                 | Error _ -> None
         else
             None
@@ -291,7 +300,7 @@ module internal ModelParser =
                 else
                     Array.CreateInstance(innerType, 0)
 
-            arrayOfObjects |> box |> Some
+            arrayOfObjects |> box |> Option.ofObj
         else
             None
 

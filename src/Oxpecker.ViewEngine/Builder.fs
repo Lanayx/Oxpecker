@@ -1,6 +1,5 @@
-﻿namespace Oxpecker.ViewEngine
+namespace Oxpecker.ViewEngine
 
-open System.Net
 open System.Runtime.CompilerServices
 open System.Text
 open Tools
@@ -9,7 +8,7 @@ open Tools
 module Builder =
 
     [<Struct>]
-    type HtmlAttribute = { Name: string; Value: string }
+    type HtmlAttribute = { Name: string; Value: string | null }
 
     type HtmlElement =
         abstract member Render: StringBuilder -> unit
@@ -28,13 +27,9 @@ module Builder =
             let mutable next = attributes.Head
             while isNotNull next do
                 let attr = next.Value
-                sb
-                    .Append(' ')
-                    .Append(attr.Name)
-                    .Append("=\"")
-                    .Append(WebUtility.HtmlEncode(attr.Value))
-                    .Append('"')
-                |> ignore
+                sb.Append(' ').Append(attr.Name).Append("=\"") |> ignore
+                sb |> CustomWebUtility.htmlEncode attr.Value
+                sb.Append('"') |> ignore
                 next <- next.Next
             sb.Append('>') |> ignore
 
@@ -91,14 +86,13 @@ module Builder =
             member this.AddAttribute attribute = this.AddAttribute attribute
 
     /// Text node that will be HTML-escaped
-    type RegularTextNode(text: string) =
-        member this.Render(sb: StringBuilder) =
-            text |> WebUtility.HtmlEncode |> sb.Append |> ignore
+    type RegularTextNode(text: string | null) =
+        member this.Render(sb: StringBuilder) = sb |> CustomWebUtility.htmlEncode text
         interface HtmlElement with
             member this.Render sb = this.Render sb
 
     /// Text node that will NOT be HTML-escaped
-    type RawTextNode(text: string) =
+    type RawTextNode(text: string | null) =
         member this.Render(sb: StringBuilder) = text |> sb.Append |> ignore
         interface HtmlElement with
             member this.Render sb = this.Render sb
@@ -133,7 +127,7 @@ module Builder =
                 for element in elements do
                     builder.AddChild(element)
 
-        member inline _.Yield(text: string) : HtmlContainerFun = _.AddChild(RegularTextNode text)
+        member inline _.Yield(text: string | null) : HtmlContainerFun = _.AddChild(RegularTextNode text)
 
     type HtmlContainerExtensions =
         [<Extension>]

@@ -3,7 +3,6 @@
 open System
 open System.Runtime.CompilerServices
 
-[<Extension>]
 type DateTimeExtensions() =
 
     /// <summary>

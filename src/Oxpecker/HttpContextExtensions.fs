@@ -23,8 +23,6 @@ type RouteParseException(message: string, ex) =
 type ModelBindException(message: string, ex) =
     inherit Exception(message, ex)
 
-
-[<Extension>]
 type HttpContextExtensions() =
 
     /// <summary>

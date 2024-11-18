@@ -24,6 +24,16 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Fable.Core" Version="4.3.0" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
+        <PackageReference Include="Fable.Package.SDK" Version="1.3.0">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="IdeTweaks.fs" />
@@ -32,21 +42,6 @@
         <Compile Include="SolidBindings.fs" />
         <Compile Include="SolidRouterBindings.fs" />
         <Compile Include="Aria.fs" />
-    </ItemGroup>
-
-
-    <ItemGroup>
-      <PackageReference Include="Fable.Core" Version="4.3.0" />
-      <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
-      <PackageReference Include="Fable.Package.SDK" Version="1.3.0">
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        <PrivateAssets>all</PrivateAssets>
-      </PackageReference>
-      <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.3.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Content Include="README.md" />
     </ItemGroup>
 
 </Project>

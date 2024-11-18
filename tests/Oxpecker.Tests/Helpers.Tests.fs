@@ -4,12 +4,6 @@ open Xunit
 open FsUnitTyped
 open Oxpecker.Helpers
 
-
-[<Fact>]
-let ``Test isNotNull`` () =
-    "sdf" |> isNotNull |> shouldEqual true
-    null |> isNotNull |> shouldEqual false
-
 [<Fact>]
 let ``Test composition plus`` () =
     let f x = x + 1

@@ -22,7 +22,7 @@ let renderForm q =
               hxPushUrl="true",
               hxIndicator="#spinner")
         img(id="spinner", class'="spinner htmx-indicator", src="/spinning-circles.svg", alt="Request In Flight...")
-        input(type'="submit", value="Search")
+        input(type'="submit", value="Search").hxOn("click", "alert('clicked')")
     }
 ```
 

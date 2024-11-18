@@ -47,6 +47,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [Binding Query Strings](#binding-query-strings)
     - [File Upload](#file-upload)
     - [WebSockets](#websockets)
+    - [Grpc](#grpc)
     - [Authentication and Authorization](#authentication-and-authorization)
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
@@ -1049,6 +1050,41 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseOxpecker(webApp) // Add Oxpecker
         .UseWebSockets() // Add WebSockets
     |> ignore
+```
+
+### Grpc
+
+Oxpecker's doesn't provide any additional wrappers and fully relies on [ASP.NET Core Grpc support](https://learn.microsoft.com/en-us/aspnet/core/grpc/). However, to generate classes from `.proto` files you need to create a C# project. So, here is a list of steps:
+
+- Create a new C# project, [add your `.proto` file(s) there](https://learn.microsoft.com/en-us/aspnet/core/grpc/#c-tooling-support-for-proto-files) (also reference required packages like `Grpc.Tools`, `Grpc.Core` and `Google.Protobuf`)
+- Build the C# project, make sure build succeeds
+- Reference the C# project from your F# project containing Oxpecker's API
+- Implement the Grpc service in F# using generated classes. Example:
+```fsharp
+type GreeterService() =
+    inherit Greeter.GreeterBase()
+    override _.SayHello (request, _) =
+        HelloReply(Message = $"Hello {request.Name}") |> Task.FromResult
+```
+- Add `Grpc.AspNetCore.Server` NuGet package to the F# project
+- Configure the Grpc service in the F# project:
+
+```fsharp
+let configureServices (services: IServiceCollection) =
+    services
+        // other dependencies
+        .AddGrpc() // Register GRPC dependencies
+    |> ignore
+
+
+[<EntryPoint>]
+let main args =
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+    let app = builder.Build()
+    app.MapGrpcService<GreeterService>() |> ignore // expose Grpc endpoint
+    app.Run()
+    0
 ```
 
 ### Authentication and Authorization

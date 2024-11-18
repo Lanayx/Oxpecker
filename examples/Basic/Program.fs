@@ -89,7 +89,7 @@ let handler11: EndpointHandler =
 
 let closedHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
-        if ctx.Request.Path.Value.Contains("closed") then
+        if ctx.Request.Path.Value |> Unchecked.nonNull |> _.Contains("closed") then
             ctx.SetStatusCode 401
             json {| Status = "Unauthorized" |} ctx
         else
@@ -138,7 +138,7 @@ let MY_HEADER endpoint =
 let NO_RESPONSE_CACHE = applyBefore noResponseCaching
 let RESPONSE_CACHE =
     let cacheDirective =
-        CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10), Public = true)
+        CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10.0), Public = true)
         |> Some
     applyBefore <| responseCaching cacheDirective None None
 
@@ -242,17 +242,10 @@ let configureApp (appBuilder: IApplicationBuilder) =
         .UseRouting()
         .Use(errorHandler)
         .UseOxpecker(endpoints)
-        .UseSwagger() // for generating OpenApi spec
-        .UseSwaggerUI() // for viewing Swagger UI
         .Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-        .AddOxpecker()
-        .AddEndpointsApiExplorer() // use the API Explorer to discover and describe endpoints
-        .AddSwaggerGen() // swagger dependencies
-    |> ignore
+    services.AddRouting().AddOxpecker().AddOpenApi() |> ignore
 
 
 [<EntryPoint>]
@@ -261,5 +254,6 @@ let main args =
     configureServices builder.Services
     let app = builder.Build()
     configureApp app
+    app.MapOpenApi() |> ignore
     app.Run()
     0
