@@ -128,8 +128,7 @@ module CustomWebUtility =
 
     let htmlEncode (value: string | null) (sb: StringBuilder) =
         match value with
-        | Null ->
-            sb.Append(value) |> ignore
+        | Null -> sb.Append(value) |> ignore
         | NonNull value ->
             match indexOfHtmlEncodingChars value with
             | -1 -> sb.Append(value) |> ignore
