@@ -103,8 +103,6 @@ module OrderRepository =
             return result
         }
 
-open OrderRepository
-
 module ProductRepository =
     type DbProduct = {
         ProductId: Guid
