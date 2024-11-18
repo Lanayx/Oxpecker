@@ -16,7 +16,8 @@
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;F#;FSharp;Fable;fable-javascript;Web;Framework;Solid;Solidjs</PackageTags>
-        <Authors>Vladimir Shchur</Authors>
+        <Authors>Vladimir Shchur and contributors</Authors>
+        <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <Version>0.3.0</Version>
         <PackageVersion>0.3.0</PackageVersion>

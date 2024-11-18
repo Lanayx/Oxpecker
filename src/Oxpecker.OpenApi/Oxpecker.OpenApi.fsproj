@@ -15,8 +15,9 @@
         <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.OpenApi</PackageProjectUrl>
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
-        <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Http;Web;OpenApi</PackageTags>
-        <Authors>Vladimir Shchur</Authors>
+        <PackageTags>Oxpecker;ASP.NET Core;F#;FSharp;Http;Web;OpenApi;Swagger</PackageTags>
+        <Authors>Vladimir Shchur and contributors</Authors>
+        <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
