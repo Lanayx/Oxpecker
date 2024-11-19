@@ -117,7 +117,7 @@ module CustomWebUtility =
                 elif ch >= '\u00A0' && ch < '\u0100' then
                     i
                 elif Char.IsSurrogate(ch) then
-                    i
+                    i - 1
                 else
                     loop(i - 1)
             else

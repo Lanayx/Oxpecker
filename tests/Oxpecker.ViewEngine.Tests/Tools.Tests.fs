@@ -55,4 +55,4 @@ let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the sam
 let ``indexOfHtmlEncodingChars works correctly`` () =
     CustomWebUtility.indexOfHtmlEncodingCharsBack "test" |> shouldEqual -1
     CustomWebUtility.indexOfHtmlEncodingCharsBack "test<sd" |> shouldEqual 4
-    CustomWebUtility.indexOfHtmlEncodingCharsBack "test😀sd" |> shouldEqual 5
+    CustomWebUtility.indexOfHtmlEncodingCharsBack "test😀sd" |> shouldEqual 4
