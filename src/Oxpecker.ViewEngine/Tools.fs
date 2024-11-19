@@ -86,7 +86,6 @@ module CustomWebUtility =
                 elif '&' = ch then sb.Append "&amp;"
                 else sb.Append ch
                 |> ignore
-                i <- i + 1
             else
                 let mutable valueToEncode = -1
                 if ch >= '\u00A0' && ch < '\u0100' then
@@ -102,38 +101,34 @@ module CustomWebUtility =
                     sb.Append("&#").Append(valueToEncode).Append(';') |> ignore
                 else
                     sb.Append(ch) |> ignore
-                let mutable x = 1 // dirty hack for performance
-                i <- i + x
 
-    // Function to find the index of characters that need HTML encoding
-    let internal indexOfHtmlEncodingChars (input: string) : int =
+            i <- i + 1
+
+    // Function to find the index of characters that need HTML encoding back
+    let internal indexOfHtmlEncodingCharsBack (input: string) : int =
         let rec loop i =
-            if i < input.Length then
+            if i > 0 then
                 let ch = input[i]
                 if ch <= '>' then
                     if ch = '<' || ch = '>' || ch = '"' || ch = '\'' || ch = '&' then
                         i
                     else
-                        loop(i + 1)
+                        loop(i - 1)
                 elif ch >= '\u00A0' && ch < '\u0100' then
                     i
                 elif Char.IsSurrogate(ch) then
                     i
                 else
-                    loop(i + 1)
+                    loop(i - 1)
             else
                 -1
-        loop 0
-
+        loop (input.Length - 1)
 
     let htmlEncode (value: string | null) (sb: StringBuilder) =
         match value with
         | Null ->
             sb.Append(value) |> ignore
         | NonNull value ->
-            match indexOfHtmlEncodingChars value with
+            match indexOfHtmlEncodingCharsBack value with
             | -1 -> sb.Append(value) |> ignore
-            | index ->
-                let value = value.AsSpan()
-                sb.Append(value.Slice(0, index)) |> ignore
-                htmlEncodeInner (value.Slice index) sb
+            | _ -> htmlEncodeInner (value.AsSpan ()) sb
