@@ -65,7 +65,7 @@ module CustomWebUtility =
                     // The seemingly arbitrary 160 comes from RFC
                     valueToEncode <- int ch
                 elif Char.IsSurrogate(ch) then
-                   if (i + 1) < input.Length then
+                    if (i + 1) < input.Length then
                         match Rune.TryCreate(ch, input[i + 1]) with
                         | true, rune ->
                             valueToEncode <- rune.Value
@@ -74,7 +74,7 @@ module CustomWebUtility =
                             // Don't encode BMP characters (like U+FFFD) since they wouldn't have
                             // been encoded if explicitly present in the string anyway.
                             ch <- UnicodeReplacementChar
-                   else
+                    else
                         // Invalid surrogate pair
                         ch <- UnicodeReplacementChar
                 if valueToEncode >= 0 then
@@ -84,7 +84,9 @@ module CustomWebUtility =
                 let mutable x = 1 // dirty hack for performance
                 i <- i + x
     let private htmlAsciiNonEncodingChars =
-        SearchValues.Create("\0\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !#$%()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u007f")
+        SearchValues.Create(
+            "\0\u0001\u0002\u0003\u0004\u0005\u0006\a\b\t\n\v\f\r\u000e\u000f\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017\u0018\u0019\u001a\u001b\u001c\u001d\u001e\u001f !#$%()*+,-./0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\u007f"
+        )
     let rec private findEncodingCharLoop i (input: ReadOnlySpan<char>) =
         if i < input.Length then
             let ch = input[i]
@@ -96,7 +98,7 @@ module CustomWebUtility =
             elif Char.IsBetween(ch, '\u00A0', '\u00FF') || Char.IsSurrogate(ch) then
                 i
             else
-                findEncodingCharLoop(i + 1) input
+                findEncodingCharLoop (i + 1) input
         else
             -1
 
