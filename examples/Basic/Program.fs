@@ -24,15 +24,15 @@ let setHeaderMw key value : EndpointMiddleware =
             do! next ctx
             Console.WriteLine($"Header {key} set")
         }
-let handler0 (name: string) : EndpointHandler = _.WriteText(sprintf "Hello %s" name)
+let handler0 (name: string) : EndpointHandler = _.WriteText($"Hello %s{name}")
 
 let handler1: EndpointHandler = fun ctx -> ctx.WriteText "Hello World"
 
 let handler2 (name: string) (age: int) : EndpointHandler =
-    _.WriteText(sprintf "Hello %s, you are %i years old." name age)
+    _.WriteText($"Hello %s{name}, you are %i{age} years old.")
 
 let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
-    _.WriteText(sprintf "Hello %s %s %s %i" a b c d)
+    _.WriteText($"Hello %s{a} %s{b} %s{c} %i{d}")
 
 [<CLIMutable>]
 type MyModel = { Name: string; Age: int }

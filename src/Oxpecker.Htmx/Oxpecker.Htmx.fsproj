@@ -15,7 +15,8 @@
         <PackageIcon>oxpecker-128.png</PackageIcon>
         <RepositoryType>git</RepositoryType>
         <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;HTMX</PackageTags>
-        <Authors>Vladimir Shchur</Authors>
+        <Authors>Vladimir Shchur and contributors</Authors>
+        <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>

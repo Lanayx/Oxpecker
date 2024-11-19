@@ -9,7 +9,6 @@ open Backend.Services
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
 open Oxpecker
-open FSharp.UMX
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type OperationEnv(env: Env) =
