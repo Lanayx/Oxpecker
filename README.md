@@ -18,7 +18,9 @@ Medium posts:
 ## Features:
 
 - Native [ASP.NET Core Endpoint routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) integration
-- ViewEngine with convenient DSL for HTML
+- Fast ViewEngine with convenient DSL for HTML
+- OpenApi integration
+- Htmx integration
 - Strongly typed route parameters
 - Endpoint handlers and endpoint middlewares, flexible composition
 - JSON binding and serialization
@@ -65,3 +67,7 @@ Medium posts:
 * [Oxpecker.OpenApi Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
 * [Oxpecker.Solid Nuget package](https://www.nuget.org/packages/Oxpecker.Solid)
 * [Oxpecker.Solid.FablePlugin Nuget package](https://www.nuget.org/packages/Oxpecker.Solid.FablePlugin)
+
+## Support
+You can promote the development of the project using [Github sponsors](https://github.com/sponsors/Lanayx) option
+
