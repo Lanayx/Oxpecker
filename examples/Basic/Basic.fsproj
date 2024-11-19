@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="0.15.0" />
-        <PackageReference Include="Oxpecker.OpenApi" Version="0.1.0" />
-        <PackageReference Include="Oxpecker.Htmx" Version="0.1.2" />
+        <PackageReference Include="Oxpecker" Version="1.0.0" />
+        <PackageReference Include="Oxpecker.OpenApi" Version="1.0.0" />
+        <PackageReference Include="Oxpecker.Htmx" Version="1.0.0" />
         <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
     </ItemGroup>
