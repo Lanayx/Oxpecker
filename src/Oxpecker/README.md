@@ -45,6 +45,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [Binding JSON](#binding-json)
       - [Binding Forms](#binding-forms)
       - [Binding Query Strings](#binding-query-strings)
+    - [Model validation](#model-validation)
     - [File Upload](#file-upload)
     - [WebSockets](#websockets)
     - [Grpc](#grpc)
