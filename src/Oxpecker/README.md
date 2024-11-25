@@ -1010,6 +1010,8 @@ You have 3 ways to validate your model:
 - Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
 - Using `bindAndValidate*` handlers (similar to `bind*`)
 
+Inside handler you'll need to match `ValidationResult` to handle both valid and invalid cases:
+
 ```fsharp
 let addCar : EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -1020,8 +1022,18 @@ let addCar : EndpointHandler =
             | ValidationResult.Invalid (invalidCar, errors) ->
                 return! ctx.Write <| BadRequest errors.All
         }
-
 ```
+
+If you are using server-side rendering using `Oxpecker.ViewEngine`, you can leverage special  `ModelState`
+```fsharp
+[<RequireQualifiedAccess>]
+type ModelState<'T> =
+    | Empty
+    | Valid of 'T
+    | Invalid of InvalidModel<'T>
+```
+This type is intended to be used for create/edit pages to simplify passing validation data to the view. An example of usage can be found in the [ContactApp example](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp).
+
 
 ### File Upload
 
