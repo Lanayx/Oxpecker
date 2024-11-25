@@ -999,6 +999,30 @@ Just like in the previous examples the record type must be decorated with the `[
 
 The underlying model binder is configured as a dependency during application startup (see [Binding Forms](#binding-forms))
 
+### Model validation
+
+Oxpecker diverges from the Giraffe's approach to model validation and embraces the traditional ASP.NET Core model validation based on `System.ComponentModel.DataAnnotations` attributes.
+
+While you might still need to do complex validation inside your domain, the built-in DTO model validation is still useful for the API boundary.
+
+You have 3 ways to validate your model:
+- Directly using `validateModel` function
+- Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
+- Using `bindAndValidate*` handlers (similar to `bind*`)
+
+```fsharp
+let addCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match! ctx.BindAndValidateJson<Car>() with
+            | ValidationResult.Valid car ->
+                return! ctx.Write <| Ok car
+            | ValidationResult.Invalid (invalidCar, errors) ->
+                return! ctx.Write <| BadRequest errors.All
+        }
+
+```
+
 ### File Upload
 
 ASP.NET Core makes it really easy to process uploaded files.

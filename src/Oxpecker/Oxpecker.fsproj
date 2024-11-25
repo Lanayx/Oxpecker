@@ -44,6 +44,7 @@
         <Compile Include="DateTimeExtensions.fs" />
         <Compile Include="Core.fs" />
         <Compile Include="Handlers.fs" />
+        <Compile Include="ModelValidation.fs" />
         <Compile Include="ResponseCaching.fs" />
         <Compile Include="Preconditional.fs" />
         <Compile Include="Streaming.fs" />

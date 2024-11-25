@@ -1,9 +1,10 @@
 ﻿module ContactApp.templates.new'
 open ContactApp.Models
+open Oxpecker.ModelValidation
 open Oxpecker.ViewEngine
 open ContactApp.templates.shared
 
-let html (contact: ContactDTO) =
+let html (contact: ModelState<ContactDTO>) =
     Fragment() {
         form(action="/contacts/new", method="post") {
             fieldset() {
