@@ -7,7 +7,7 @@ let showErrors (modelState: ModelState<_>) (fieldName: string) =
     match modelState with
     | ModelState.Invalid (_, modelErrors) ->
         span(class'="error"){
-            modelErrors.ErrorMessagesFor(fieldName) |> String.concat ", "
+            System.String.Join(", ", modelErrors.ErrorMessagesFor(fieldName))
         } :> HtmlElement
     | _ ->
         Fragment()

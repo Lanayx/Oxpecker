@@ -11,7 +11,7 @@ module ModelValidation =
     type ValidationErrors(errors: ResizeArray<ValidationResult>) =
         let errorDict =
             lazy
-                (let dict = Dictionary<string, ResizeArray<string>>()
+                (let dict = Dictionary<string, ResizeArray<string|null>>()
                  for error in errors do
                      for memberName in error.MemberNames do
                          match dict.TryGetValue(memberName) with
@@ -22,7 +22,7 @@ module ModelValidation =
                              dict[memberName] <- arrayList
                  dict)
         member this.All: ValidationResult seq = errors
-        member this.ErrorMessagesFor(name) : string seq =
+        member this.ErrorMessagesFor(name) : seq<string|null> =
             match errorDict.Value.TryGetValue(name) with
             | true, value -> value
             | false, _ -> Seq.empty
@@ -37,8 +37,8 @@ module ModelValidation =
         member this.Value(f: 'T -> string | null) =
             match this with
             | Empty -> null
-            | Valid model -> f model |> string
-            | Invalid(model, _) -> f model |> string
+            | Valid model -> f model
+            | Invalid(model, _) -> f model
         member this.BoolValue(f: 'T -> bool) =
             match this with
             | Empty -> false
