@@ -1002,7 +1002,7 @@ The underlying model binder is configured as a dependency during application sta
 
 ### Model validation
 
-Oxpecker diverges from the Giraffe's approach to model validation and embraces the traditional ASP.NET Core model validation based on `System.ComponentModel.DataAnnotations` attributes.
+Oxpecker diverges from the Giraffe's approach to model validation and embraces the traditional ASP.NET Core model validation based on `System.ComponentModel.DataAnnotations.Validator` ([link](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.validator)).
 
 While you might still need to do complex validation inside your domain, the built-in DTO model validation is still useful for the API boundary.
 
@@ -1014,6 +1014,19 @@ You have 3 ways to validate your model:
 Inside handler you'll need to match `ValidationResult` to handle both valid and invalid cases:
 
 ```fsharp
+open System.ComponentModel.DataAnnotations
+
+[<CLIMutable>]
+type Car = {
+    [<Required>]
+    Name: string
+    [<Required>]
+    Make: string
+    [<Range(1, 10)>]
+    Wheels: int
+    Built: DateTime
+}
+
 let addCar : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {

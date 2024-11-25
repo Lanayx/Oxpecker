@@ -21,7 +21,13 @@ module ModelValidation =
                              arrayList.Add(error.ErrorMessage)
                              dict[memberName] <- arrayList
                  dict)
+        /// <summary>
+        /// Get all validation results for a model.
+        /// </summary>
         member this.All: ValidationResult seq = errors
+        /// <summary>
+        /// Get all error messages for a specific model field (could to be used with `nameof` funciton).
+        /// </summary>
         member this.ErrorMessagesFor(name) : seq<string|null> =
             match errorDict.Value.TryGetValue(name) with
             | true, value -> value
@@ -34,11 +40,18 @@ module ModelValidation =
         | Empty
         | Valid of 'T
         | Invalid of InvalidModel<'T>
+        /// <summary>
+        /// Pass an accessor function to get the string value of a model field (could be used with shorthand lambda).
+        /// </summary>
         member this.Value(f: 'T -> string | null) =
             match this with
             | Empty -> null
             | Valid model -> f model
             | Invalid(model, _) -> f model
+
+        /// <summary>
+        /// Pass an accessor function to get the boolean value of a model field (could be used with shorthand lambda).
+        /// </summary>
         member this.BoolValue(f: 'T -> bool) =
             match this with
             | Empty -> false
@@ -50,6 +63,9 @@ module ModelValidation =
         | Valid of 'T
         | Invalid of InvalidModel<'T>
 
+    /// <summary>
+    /// Manually validate an object of type 'T`.
+    /// </summary>
     let validateModel (model: 'T) =
         let validationResults = ResizeArray()
         match Validator.TryValidateObject(model, ValidationContext(model), validationResults, true) with
