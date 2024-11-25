@@ -24,11 +24,6 @@
         <PackageVersion>1.0.0</PackageVersion>
         <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
-    <PropertyGroup>
-        <WarningLevel>3</WarningLevel>
-        <WarningsAsErrors>3239;0025</WarningsAsErrors>
-        <NoWarn>3186;40</NoWarn>
-    </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
