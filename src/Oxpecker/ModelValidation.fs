@@ -8,22 +8,21 @@ module ModelValidation =
     open System.Runtime.CompilerServices
     open Microsoft.AspNetCore.Http
 
-    type ValidationErrors (errors: ResizeArray<ValidationResult>) =
-        let errorDict = lazy (
-            let dict = Dictionary<string,ResizeArray<string>>()
-            for error in errors do
-                for memberName in error.MemberNames do
-                    match dict.TryGetValue(memberName) with
-                    | true, value ->
-                        value.Add(error.ErrorMessage)
-                    | false, _ ->
-                        let arrayList = ResizeArray(1)
-                        arrayList.Add(error.ErrorMessage)
-                        dict[memberName] <- arrayList
-            dict
-        )
+    type ValidationErrors(errors: ResizeArray<ValidationResult>) =
+        let errorDict =
+            lazy
+                (let dict = Dictionary<string, ResizeArray<string>>()
+                 for error in errors do
+                     for memberName in error.MemberNames do
+                         match dict.TryGetValue(memberName) with
+                         | true, value -> value.Add(error.ErrorMessage)
+                         | false, _ ->
+                             let arrayList = ResizeArray(1)
+                             arrayList.Add(error.ErrorMessage)
+                             dict[memberName] <- arrayList
+                 dict)
         member this.All: ValidationResult seq = errors
-        member this.ErrorMessagesFor(name): string seq =
+        member this.ErrorMessagesFor(name) : string seq =
             match errorDict.Value.TryGetValue(name) with
             | true, value -> value
             | false, _ -> Seq.empty
@@ -35,16 +34,16 @@ module ModelValidation =
         | Empty
         | Valid of 'T
         | Invalid of InvalidModel<'T>
-        member this.Value(f: 'T -> string|null) =
+        member this.Value(f: 'T -> string | null) =
             match this with
             | Empty -> null
             | Valid model -> f model |> string
-            | Invalid (model, _) -> f model |> string
+            | Invalid(model, _) -> f model |> string
         member this.BoolValue(f: 'T -> bool) =
             match this with
             | Empty -> false
             | Valid model -> f model
-            | Invalid (model, _) -> f model
+            | Invalid(model, _) -> f model
 
     [<RequireQualifiedAccess>]
     type ValidationResult<'T> =
@@ -55,7 +54,7 @@ module ModelValidation =
         let validationResults = ResizeArray()
         match Validator.TryValidateObject(model, ValidationContext(model), validationResults, true) with
         | true -> ValidationResult.Valid model
-        | false -> ValidationResult.Invalid (model, ValidationErrors(validationResults))
+        | false -> ValidationResult.Invalid(model, ValidationErrors(validationResults))
 
     type HttpContextExtensions =
 
