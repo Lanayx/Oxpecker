@@ -45,6 +45,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [Binding JSON](#binding-json)
       - [Binding Forms](#binding-forms)
       - [Binding Query Strings](#binding-query-strings)
+    - [Model validation](#model-validation)
     - [File Upload](#file-upload)
     - [WebSockets](#websockets)
     - [Grpc](#grpc)
@@ -998,6 +999,55 @@ let webApp = [
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
 
 The underlying model binder is configured as a dependency during application startup (see [Binding Forms](#binding-forms))
+
+### Model validation
+
+Oxpecker diverges from the Giraffe's approach to model validation and embraces the traditional ASP.NET Core model validation based on `System.ComponentModel.DataAnnotations.Validator` ([link](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.validator)).
+
+While you might still need to do complex validation inside your domain, the built-in DTO model validation is still useful for the API boundary.
+
+You have 3 ways to validate your model:
+- Directly using `validateModel` function
+- Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
+- Using `bindAndValidate*` handlers (similar to `bind*`)
+
+Inside handler you'll need to match `ValidationResult` to handle both valid and invalid cases:
+
+```fsharp
+open System.ComponentModel.DataAnnotations
+
+[<CLIMutable>]
+type Car = {
+    [<Required>]
+    Name: string
+    [<Required>]
+    Make: string
+    [<Range(1, 10)>]
+    Wheels: int
+    Built: DateTime
+}
+
+let addCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match! ctx.BindAndValidateJson<Car>() with
+            | ValidationResult.Valid car ->
+                return! ctx.Write <| Ok car
+            | ValidationResult.Invalid (invalidCar, errors) ->
+                return! ctx.Write <| BadRequest errors.All
+        }
+```
+
+If you are using server-side rendering using `Oxpecker.ViewEngine`, you can leverage special  `ModelState`
+```fsharp
+[<RequireQualifiedAccess>]
+type ModelState<'T> =
+    | Empty
+    | Valid of 'T
+    | Invalid of InvalidModel<'T>
+```
+This type is intended to be used for create/edit pages to simplify passing validation data to the view. An example of usage can be found in the [ContactApp example](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp).
+
 
 ### File Upload
 

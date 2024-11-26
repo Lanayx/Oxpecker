@@ -17,6 +17,7 @@
         <Compile Include="Models.fs" />
         <Compile Include="Tools.fs" />
         <Compile Include="templates\shared\layout.fs" />
+        <Compile Include="templates\shared\errors.fs" />
         <Compile Include="templates\shared\contactFields.fs" />
         <Compile Include="templates\index.fs" />
         <Compile Include="templates\show.fs" />
