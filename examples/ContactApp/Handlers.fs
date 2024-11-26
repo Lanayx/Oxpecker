@@ -6,7 +6,6 @@ open ContactApp.Tools
 open Microsoft.AspNetCore.Http
 open Oxpecker
 open Oxpecker.Htmx
-open Oxpecker.ModelValidation
 
 let mutable archiver = Archiver(ResizeArray())
 
@@ -41,13 +40,13 @@ let insertContact: EndpointHandler =
     fun ctx ->
         task {
             match! ctx.BindAndValidateForm<ContactDTO>() with
-            | ValidationResult.Valid validatedContact ->
+            | ModelValidationResult.Valid validatedContact ->
                 validatedContact.ToDomain()
                 |> ContactService.add
                 |> ignore
                 flash "Created new Contact!" ctx
                 return ctx.Response.Redirect("/contacts")
-            | ValidationResult.Invalid invalidModel ->
+            | ModelValidationResult.Invalid invalidModel ->
                 return!
                     invalidModel
                     |> ModelState.Invalid
@@ -60,12 +59,12 @@ let updateContact id: EndpointHandler =
     fun ctx ->
         task {
             match! ctx.BindAndValidateForm<ContactDTO>() with
-            | ValidationResult.Valid validatedContact ->
+            | ModelValidationResult.Valid validatedContact ->
                 let domainContact = validatedContact.ToDomain()
                 ContactService.update({domainContact with Id = id})
                 flash "Updated Contact!" ctx
                 return ctx.Response.Redirect($"/contacts/{id}")
-            | ValidationResult.Invalid (contactDto, errors) ->
+            | ModelValidationResult.Invalid (contactDto, errors) ->
                 return!
                     ({ contactDto with id = id }, errors)
                     |> ModelState.Invalid

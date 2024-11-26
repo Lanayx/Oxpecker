@@ -11,7 +11,7 @@ module ModelValidation =
     type ValidationErrors(errors: ResizeArray<ValidationResult>) =
         let errorDict =
             lazy
-                (let dict = Dictionary<string, ResizeArray<string|null>>()
+                (let dict = Dictionary<string, ResizeArray<string | null>>()
                  for error in errors do
                      for memberName in error.MemberNames do
                          match dict.TryGetValue(memberName) with
@@ -28,17 +28,23 @@ module ModelValidation =
         /// <summary>
         /// Get all error messages for a specific model field (could to be used with `nameof` funciton).
         /// </summary>
-        member this.ErrorMessagesFor(name) : seq<string|null> =
+        member this.ErrorMessagesFor(name) : seq<string | null> =
             match errorDict.Value.TryGetValue(name) with
             | true, value -> value
             | false, _ -> Array.empty
 
     type InvalidModel<'T> = 'T * ValidationErrors
 
+    /// <summary>
+    /// Model wrapper for convenient usage with Oxpecker.ViewEngine
+    /// </summary>
     [<RequireQualifiedAccess>]
     type ModelState<'T> =
+        /// Could be used for "create" views.
         | Empty
+        /// Could be used for "edit" views.
         | Valid of 'T
+        /// Could be used for displaying errors in "create" and "edit" views.
         | Invalid of InvalidModel<'T>
         /// <summary>
         /// Pass an accessor function to get the string value of a model field (could be used with shorthand lambda).
@@ -59,7 +65,7 @@ module ModelValidation =
             | Invalid(model, _) -> f model
 
     [<RequireQualifiedAccess>]
-    type ValidationResult<'T> =
+    type ModelValidationResult<'T> =
         | Valid of 'T
         | Invalid of InvalidModel<'T>
 
@@ -69,8 +75,8 @@ module ModelValidation =
     let validateModel (model: 'T) =
         let validationResults = ResizeArray()
         match Validator.TryValidateObject(model, ValidationContext(model), validationResults, true) with
-        | true -> ValidationResult.Valid model
-        | false -> ValidationResult.Invalid(model, ValidationErrors(validationResults))
+        | true -> ModelValidationResult.Valid model
+        | false -> ModelValidationResult.Invalid(model, ValidationErrors(validationResults))
 
     type HttpContextExtensions =
 
@@ -119,7 +125,7 @@ module ModelValidation =
         /// <param name="ctx">HttpContext</param>
         /// <typeparam name="'T"></typeparam>
         /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-        let bindAndValidateJson<'T> (f: ValidationResult<'T> -> EndpointHandler) : EndpointHandler =
+        let bindAndValidateJson<'T> (f: ModelValidationResult<'T> -> EndpointHandler) : EndpointHandler =
             fun (ctx: HttpContext) ->
                 task {
                     let! model = ctx.BindJson<'T>()
@@ -133,7 +139,7 @@ module ModelValidation =
         /// <param name="ctx">HttpContext</param>
         /// <typeparam name="'T"></typeparam>
         /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-        let bindAndValidateForm<'T> (f: ValidationResult<'T> -> EndpointHandler) : EndpointHandler =
+        let bindAndValidateForm<'T> (f: ModelValidationResult<'T> -> EndpointHandler) : EndpointHandler =
             fun (ctx: HttpContext) ->
                 task {
                     let! model = ctx.BindForm<'T>()
@@ -147,7 +153,7 @@ module ModelValidation =
         /// <param name="ctx">HttpContext</param>
         /// <typeparam name="'T"></typeparam>
         /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-        let bindAndValidateQuery<'T> (f: ValidationResult<'T> -> EndpointHandler) : EndpointHandler =
+        let bindAndValidateQuery<'T> (f: ModelValidationResult<'T> -> EndpointHandler) : EndpointHandler =
             fun (ctx: HttpContext) ->
                 let model = ctx.BindQuery<'T>()
                 f (validateModel model) ctx
