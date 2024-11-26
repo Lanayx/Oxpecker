@@ -31,7 +31,7 @@ module ModelValidation =
         member this.ErrorMessagesFor(name) : seq<string|null> =
             match errorDict.Value.TryGetValue(name) with
             | true, value -> value
-            | false, _ -> Seq.empty
+            | false, _ -> Array.empty
 
     type InvalidModel<'T> = 'T * ValidationErrors
 
