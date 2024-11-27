@@ -25,6 +25,7 @@ Medium posts:
 - Endpoint handlers and endpoint middlewares, flexible composition
 - JSON binding and serialization
 - Form binding
+- Model validation
 - URL parameters binding
 - Response caching
 - Streaming
