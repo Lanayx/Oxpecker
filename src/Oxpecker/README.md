@@ -1011,7 +1011,7 @@ You have 3 ways to validate your model:
 - Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
 - Using `bindAndValidate*` handlers (similar to `bind*`)
 
-Inside handler you'll need to match `ValidationResult` to handle both valid and invalid cases:
+Inside handler you'll need to match `ModelValidationResult` to handle both valid and invalid cases:
 
 ```fsharp
 open System.ComponentModel.DataAnnotations
