@@ -20,8 +20,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.1.0</Version>
-        <PackageVersion>1.1.0</PackageVersion>
+        <Version>1.1.1</Version>
+        <PackageVersion>1.1.1</PackageVersion>
         <PackageReleaseNotes>Oxpecker.ModelValidation module added</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
