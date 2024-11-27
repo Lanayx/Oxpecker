@@ -1031,9 +1031,9 @@ let addCar : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             match! ctx.BindAndValidateJson<Car>() with
-            | ValidationResult.Valid car ->
+            | ModelValidationResult.Valid car ->
                 return! ctx.Write <| Ok car
-            | ValidationResult.Invalid (invalidCar, errors) ->
+            | ModelValidationResult.Invalid (invalidCar, errors) ->
                 return! ctx.Write <| BadRequest errors.All
         }
 ```
