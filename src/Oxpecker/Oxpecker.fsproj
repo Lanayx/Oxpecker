@@ -20,14 +20,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.0.0</Version>
-        <PackageVersion>1.0.0</PackageVersion>
-        <PackageReleaseNotes>Major release</PackageReleaseNotes>
-    </PropertyGroup>
-    <PropertyGroup>
-        <WarningLevel>3</WarningLevel>
-        <WarningsAsErrors>3239;0025</WarningsAsErrors>
-        <NoWarn>3186;40</NoWarn>
+        <Version>1.1.1</Version>
+        <PackageVersion>1.1.1</PackageVersion>
+        <PackageReleaseNotes>Oxpecker.ModelValidation module added</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -45,6 +40,7 @@
         <Compile Include="DateTimeExtensions.fs" />
         <Compile Include="Core.fs" />
         <Compile Include="Handlers.fs" />
+        <Compile Include="ModelValidation.fs" />
         <Compile Include="ResponseCaching.fs" />
         <Compile Include="Preconditional.fs" />
         <Compile Include="Streaming.fs" />

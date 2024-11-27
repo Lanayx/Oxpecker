@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="1.0.0" />
+        <PackageReference Include="Oxpecker" Version="1.1.1" />
         <PackageReference Include="Oxpecker.ViewEngine" Version="1.0.0" />
         <PackageReference Include="Oxpecker.Htmx" Version="1.0.0" />
     </ItemGroup>

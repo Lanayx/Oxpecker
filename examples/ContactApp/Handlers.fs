@@ -34,43 +34,43 @@ let getContactsCount: EndpointHandler =
         ctx.WriteText $"({count} total Contacts)"
 
 let getNewContact: EndpointHandler =
-    let newContact = {
-        id = 0
-        first = ""
-        last = ""
-        email = ""
-        phone = ""
-        errors = dict []
-    }
-    writeHtml (new'.html newContact)
+    writeHtml (new'.html ModelState.Empty)
 
 let insertContact: EndpointHandler =
     fun ctx ->
         task {
-            let! contact = ctx.BindForm<ContactDTO>()
-            let validatedContact = contact.Validate()
-            if validatedContact.errors.Count > 0 then
-                return! ctx |> writeHtml (new'.html validatedContact)
-            else
+            match! ctx.BindAndValidateForm<ContactDTO>() with
+            | ModelValidationResult.Valid validatedContact ->
                 validatedContact.ToDomain()
                 |> ContactService.add
                 |> ignore
                 flash "Created new Contact!" ctx
                 return ctx.Response.Redirect("/contacts")
+            | ModelValidationResult.Invalid invalidModel ->
+                return!
+                    invalidModel
+                    |> ModelState.Invalid
+                    |> new'.html
+                    |> writeHtml
+                    <| ctx
         }
 
 let updateContact id: EndpointHandler =
     fun ctx ->
         task {
-            let! contact = ctx.BindForm<ContactDTO>()
-            let validatedContact = contact.Validate()
-            if validatedContact.errors.Count > 0 then
-                return! ctx |> writeHtml (edit.html { validatedContact with id = id })
-            else
+            match! ctx.BindAndValidateForm<ContactDTO>() with
+            | ModelValidationResult.Valid validatedContact ->
                 let domainContact = validatedContact.ToDomain()
                 ContactService.update({domainContact with Id = id})
                 flash "Updated Contact!" ctx
                 return ctx.Response.Redirect($"/contacts/{id}")
+            | ModelValidationResult.Invalid (contactDto, errors) ->
+                return!
+                    ({ contactDto with id = id }, errors)
+                    |> ModelState.Invalid
+                    |> edit.html
+                    |> writeHtml
+                    <| ctx
         }
 
 let viewContact id: EndpointHandler =
@@ -78,8 +78,12 @@ let viewContact id: EndpointHandler =
     writeHtml <| show.html contact
 
 let getEditContact id: EndpointHandler =
-    let contact = ContactService.find id |> ContactDTO.FromDomain
-    writeHtml <| edit.html contact
+    id
+    |> ContactService.find
+    |> ContactDTO.FromDomain
+    |> ModelState.Valid
+    |> edit.html
+    |> writeHtml
 
 let deleteContact id: EndpointHandler =
     fun ctx ->

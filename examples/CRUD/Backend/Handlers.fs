@@ -27,8 +27,6 @@ type OperationEnv(env: Env) =
     interface IGetProducts with
         member this.GetProducts() = ProductRepository.getProducts env
 
-
-
 let getOrders env (ctx: HttpContext) =
     task {
         let operationEnv = OperationEnv(env)
