@@ -177,6 +177,8 @@ module internal rec AST =
                                                     FullName = "Oxpecker.Solid.Builder.HtmlElement"
                                                 },
                                                 _)) -> (propName, transform expr) :: restResults
+                        | Delegate(args, expr, name, tags) ->
+                            (propName, Delegate(args, transform expr, name, tags)) :: restResults
                         | _ -> (propName, propValue) :: restResults
                     else
                         restResults
