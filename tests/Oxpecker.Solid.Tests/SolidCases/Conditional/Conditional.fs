@@ -5,7 +5,7 @@ open Oxpecker.Solid
 [<SolidComponent>]
 let Test (show: bool) =
     let x, _ = createSignal 7
-    div() {
+    ErrorBoundary(fallback= fun err _ -> div() { $"An error occurred {err}" }) {
         Show(when'=show, fallback = div() { "World" }) {
             div() {
                 "Hello"

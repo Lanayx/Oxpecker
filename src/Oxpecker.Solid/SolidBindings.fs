@@ -221,6 +221,9 @@ module Bindings =
         [<Erase>]
         member this.onChange
             with set (_: Event -> unit) = ()
+        [<Erase>]
+        member this.onInput
+            with set (_: InputEvent -> unit) = ()
 
     type textarea with
         [<Erase>]
@@ -512,12 +515,14 @@ module Bindings =
         member this.useShadow
             with set (value: bool) = ()
 
+    module ErrorBoundary =
+        type Fallback = delegate of err: obj * reset: (unit -> unit) -> HtmlElement
     [<Erase>]
     type ErrorBoundary() =
         interface HtmlContainer
         [<Erase>]
         member this.fallback
-            with set (value: HtmlElement) = ()
+            with set (value: ErrorBoundary.Fallback) = ()
 
     [<Erase>]
     type Extensions =
@@ -621,7 +626,7 @@ type Bindings =
     static member render(code: unit -> #HtmlElement, element: #Element) : unit = jsNative
 
     [<ImportMember("solid-js/web")>]
-    static member renderToString(fn: (unit -> #HtmlElement)) : string = jsNative
+    static member renderToString(fn: unit -> #HtmlElement) : string = jsNative
 
     [<ImportMember("solid-js")>]
     static member createSignal(value: 'T) : Signal<'T> = jsNative
@@ -662,22 +667,22 @@ type Bindings =
     static member reconcile<'T, 'U>(value: 'T) : ('U -> 'T) = jsNative
 
     [<ImportMember("solid-js/store")>]
-    static member produce<'T>(fn: ('T -> unit)) : ('T -> 'T) = jsNative
+    static member produce<'T>(fn: 'T -> unit) : ('T -> 'T) = jsNative
 
     [<ImportMember("solid-js/store")>]
     static member unwrap<'T>(item: 'T) : 'T = jsNative
 
     [<ImportMember("solid-js")>]
-    static member batch<'T>(fn: (unit -> 'T)) : 'T = jsNative
+    static member batch<'T>(fn: unit -> 'T) : 'T = jsNative
 
     [<ImportMember("solid-js")>]
-    static member catchError<'T>(tryFn: (unit -> 'T), onError: (obj -> unit)) : 'T = jsNative
+    static member catchError<'T>(tryFn: unit -> 'T, onError: obj -> unit) : 'T = jsNative
 
     [<ImportMember("solid-js")>]
-    static member onCleanup(fn: (unit -> unit)) : unit = jsNative
+    static member onCleanup(fn: unit -> unit) : unit = jsNative
 
     [<ImportMember("solid-js")>]
-    static member onMount(fn: (unit -> unit)) : unit = jsNative
+    static member onMount(fn: unit -> unit) : unit = jsNative
 
     [<ImportMember("solid-js")>]
     static member useTransition() : (unit -> bool) * ((unit -> unit) -> JS.Promise<unit>) = jsNative

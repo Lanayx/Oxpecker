@@ -19,9 +19,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.3.0</Version>
-        <PackageVersion>0.3.0</PackageVersion>
-        <PackageReleaseNotes>Support for match and if expressions</PackageReleaseNotes>
+        <Version>0.4.0</Version>
+        <PackageVersion>0.4.0</PackageVersion>
+        <PackageReleaseNotes>Improved Select and ErrorBoundary attributes</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
