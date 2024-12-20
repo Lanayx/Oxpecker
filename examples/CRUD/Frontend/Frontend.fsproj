@@ -10,7 +10,7 @@
     <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
     <PackageReference Include="Fable.Core" Version="4.3.0" />
     <PackageReference Include="Thoth.Fetch" Version="3.0.1" />
-    <PackageReference Include="Oxpecker.Solid" Version="0.4.0" />
+    <PackageReference Include="Oxpecker.Solid" Version="0.4.1" />
   </ItemGroup>
 
   <ItemGroup>
