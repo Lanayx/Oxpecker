@@ -1,5 +1,6 @@
 ﻿module Tools.Tests
 
+open System
 open System.Net
 open System.Text
 open Oxpecker.ViewEngine
@@ -53,6 +54,6 @@ let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the sam
 
 [<Fact>]
 let ``indexOfHtmlEncodingChar works correctly`` () =
-    CustomWebUtility.indexOfHtmlEncodingChar "test" |> shouldEqual -1
-    CustomWebUtility.indexOfHtmlEncodingChar "test<sd" |> shouldEqual 4
-    CustomWebUtility.indexOfHtmlEncodingChar "test😀sd" |> shouldEqual 4
+    CustomWebUtility.indexOfHtmlEncodingChar ("test".AsSpan()) |> shouldEqual -1
+    CustomWebUtility.indexOfHtmlEncodingChar ("test<sd".AsSpan()) |> shouldEqual 4
+    CustomWebUtility.indexOfHtmlEncodingChar ("test😀sd".AsSpan()) |> shouldEqual 4

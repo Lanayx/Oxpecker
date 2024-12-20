@@ -73,6 +73,8 @@ This library doesn't provide support for React-like context. I strongly believe 
 
 Note that `attr:`, `on:`, `bool:`, `ref` attributes are exposed as F# methods in the API: `elem.on(...)`, `elem.attr(...)` etc. Also, `style` and `class'` are attributes when accepting `string`, while `style'` and `classList` are methods when accepting `object` (to be used with [createObj](https://fable.io/docs/javascript/features.html#createobj)).
 
+_Note_: when using `ref(nativeElem)` make sure that `nativeElem` is mutable (e.g. `let mutable nativeElem = Unchecked.defaultof<HTMLDivElement>`).
+
 ### Store
 
 Similar to the original implementation in `Fable.Solid` , store has a special helper for updating its fields:
@@ -86,7 +88,6 @@ setStore // store setter
 ### Resource
 
 Again, just as in the original implementation in `Fable.Solid`, resource is a special object, so instead of JS `resource()` call, you'll need to use `resource.current` in F#.
-
 
 
 ### Router

@@ -315,6 +315,21 @@ module internal rec AST =
         ||> List.fold(fun acc prop ->
             Value(kind = NewList(headAndTail = Some(prop, acc), typ = listItemType), range = None))
 
+    let wrapChildrenExpression childrenExpression =
+        Value(
+            kind =
+                NewTuple(
+                    values = [
+                        // property name
+                        Value(kind = StringConstant "children", range = None)
+                        // property value
+                        TypeCast(childrenExpression, Type.Any)
+                    ],
+                    isStruct = false
+                ),
+            range = None
+        )
+
     let transformTagInfo (tagInfo: TagInfo) : Expr =
         let tagName, props, children, range =
             match tagInfo with
@@ -348,21 +363,8 @@ module internal rec AST =
                     range = None
                 ))
         let childrenExpression = convertExprListToExpr children
-        let childrenXs =
-            Value(
-                kind =
-                    NewTuple(
-                        values = [
-                            // property name
-                            Value(kind = StringConstant "children", range = None)
-                            // property value
-                            TypeCast(childrenExpression, Type.Any)
-                        ],
-                        isStruct = false
-                    ),
-                range = None
-            )
-        let finalList = childrenXs :: propsXs
+
+        let finalList = (wrapChildrenExpression childrenExpression) :: propsXs
         let propsExpr = convertExprListToExpr finalList
         let tag =
             match tagName with
@@ -421,6 +423,39 @@ module internal rec AST =
         | TypeCast(expr, DeclaredType _) -> transform expr
         | _ -> expr
 
+    let transformException (pluginHelper: PluginHelper) (range: SourceLocation option) =
+        let childrenExpression =
+            Value(
+                NewList (
+                    Some (
+                        Value (
+                            StringConstant $"Fable compilation error in {pluginHelper.CurrentFile}", None
+                        ),
+                        Value (
+                            NewList(None, Type.Tuple([ Type.String; Type.Any ], false)), None
+                        )
+                    ),
+                    Type.Tuple([ Type.String; Type.Any ], false)
+                ),
+                None
+            )
+        let text = wrapChildrenExpression childrenExpression
+        let finalList = text :: []
+        let propsExpr = convertExprListToExpr finalList
+        Call(
+            callee = importJsxCreate,
+            info = {
+                ThisArg = None
+                Args = [ Value(StringConstant "h1", None); propsExpr ]
+                SignatureArgTypes = []
+                GenericArgs = []
+                MemberRef = None
+                Tags = [ "jsx" ]
+            },
+            typ = jsxElementType,
+            range = range
+        )
+
 
 type SolidComponentAttribute() =
     inherit MemberDeclarationPluginAttribute()
@@ -431,7 +466,12 @@ type SolidComponentAttribute() =
         // Console.WriteLine("!Start! MemberDecl")
         // Console.WriteLine(memberDecl.Body)
         // Console.WriteLine("!End! MemberDecl")
-        let newBody = AST.transform memberDecl.Body
+        let newBody =
+            match memberDecl.Body with
+            | Extended (Throw _, range) ->
+                AST.transformException pluginHelper range
+            | _ ->
+                AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr
