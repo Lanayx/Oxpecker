@@ -59,7 +59,8 @@ let toStreamAsync (stream: Stream) (view: #HtmlElement) =
         use _ = streamWriter :> IAsyncDisposable
         try
             view.Render sb
-            return! streamWriter.WriteAsync(sb)
+            do! streamWriter.WriteAsync(sb)
+            return! streamWriter.FlushAsync()
         finally
             StringBuilderPool.Return(sb)
     }
@@ -73,7 +74,8 @@ let toHtmlDocStreamAsync (stream: Stream) (view: #HtmlElement) =
         use _ = streamWriter :> IAsyncDisposable
         try
             view.Render sb
-            return! streamWriter.WriteAsync(sb)
+            do! streamWriter.WriteAsync(sb)
+            return! streamWriter.FlushAsync()
         finally
             StringBuilderPool.Return(sb)
     }
@@ -84,7 +86,8 @@ let toTextWriterAsync (textWriter: TextWriter) (view: #HtmlElement) =
     task {
         try
             view.Render sb
-            return! textWriter.WriteAsync(sb)
+            do! textWriter.WriteAsync(sb)
+            return! textWriter.FlushAsync()
         finally
             StringBuilderPool.Return(sb)
     }
@@ -96,7 +99,8 @@ let toHtmlDocTextWriterAsync (textWriter: TextWriter) (view: #HtmlElement) =
     task {
         try
             view.Render sb
-            return! textWriter.WriteAsync(sb)
+            do! textWriter.WriteAsync(sb)
+            return! textWriter.FlushAsync()
         finally
             StringBuilderPool.Return(sb)
     }

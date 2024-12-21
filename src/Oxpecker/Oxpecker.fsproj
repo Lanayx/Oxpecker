@@ -20,9 +20,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.1.1</Version>
-        <PackageVersion>1.1.1</PackageVersion>
-        <PackageReleaseNotes>Oxpecker.ModelValidation module added</PackageReleaseNotes>
+        <Version>1.1.2</Version>
+        <PackageVersion>1.1.2</PackageVersion>
+        <PackageReleaseNotes>Fixed WriteHtmlView for non-ascii charactes</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />

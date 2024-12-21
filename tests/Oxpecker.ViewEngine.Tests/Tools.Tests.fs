@@ -54,6 +54,6 @@ let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the sam
 
 [<Fact>]
 let ``indexOfHtmlEncodingChar works correctly`` () =
-    CustomWebUtility.indexOfHtmlEncodingChar ("test".AsSpan()) |> shouldEqual -1
-    CustomWebUtility.indexOfHtmlEncodingChar ("test<sd".AsSpan()) |> shouldEqual 4
-    CustomWebUtility.indexOfHtmlEncodingChar ("test😀sd".AsSpan()) |> shouldEqual 4
+    CustomWebUtility.indexOfHtmlEncodingChar("test".AsSpan()) |> shouldEqual -1
+    CustomWebUtility.indexOfHtmlEncodingChar("test<sd".AsSpan()) |> shouldEqual 4
+    CustomWebUtility.indexOfHtmlEncodingChar("test😀sd".AsSpan()) |> shouldEqual 4
