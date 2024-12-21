@@ -25,7 +25,7 @@
         <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="1.0.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="1.0.1" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
