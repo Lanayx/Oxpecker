@@ -426,14 +426,10 @@ module internal rec AST =
     let transformException (pluginHelper: PluginHelper) (range: SourceLocation option) =
         let childrenExpression =
             Value(
-                NewList (
-                    Some (
-                        Value (
-                            StringConstant $"Fable compilation error in {pluginHelper.CurrentFile}", None
-                        ),
-                        Value (
-                            NewList(None, Type.Tuple([ Type.String; Type.Any ], false)), None
-                        )
+                NewList(
+                    Some(
+                        Value(StringConstant $"Fable compilation error in {pluginHelper.CurrentFile}", None),
+                        Value(NewList(None, Type.Tuple([ Type.String; Type.Any ], false)), None)
                     ),
                     Type.Tuple([ Type.String; Type.Any ], false)
                 ),
@@ -468,10 +464,8 @@ type SolidComponentAttribute() =
         // Console.WriteLine("!End! MemberDecl")
         let newBody =
             match memberDecl.Body with
-            | Extended (Throw _, range) ->
-                AST.transformException pluginHelper range
-            | _ ->
-                AST.transform memberDecl.Body
+            | Extended(Throw _, range) -> AST.transformException pluginHelper range
+            | _ -> AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr

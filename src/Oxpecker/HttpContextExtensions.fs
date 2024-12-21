@@ -2,6 +2,7 @@ namespace Oxpecker
 
 open System
 open System.Collections.Generic
+open System.IO
 open System.Runtime.CompilerServices
 open System.Text
 open System.Threading.Tasks
@@ -285,27 +286,27 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
-        let sb = Tools.StringBuilderPool.Get().AppendLine("<!DOCTYPE html>")
+        let memoryStream = recyclableMemoryStreamManager.Value.GetStream()
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         if ctx.Request.Method <> HttpMethods.Head then
-            let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
             task {
-                use _ = textWriter :> IAsyncDisposable
                 try
-                    htmlView.Render(sb)
-                    ctx.Response.ContentLength <- sb.Length
-                    return! textWriter.WriteAsync(sb)
+                    do! Render.toHtmlDocStreamAsync memoryStream htmlView
+                    ctx.Response.ContentLength <- memoryStream.Length
+                    memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
+                    return! memoryStream.CopyToAsync ctx.Response.Body
                 finally
-                    Tools.StringBuilderPool.Return(sb)
+                    memoryStream.Dispose()
             }
             :> Task
         else
-            try
-                htmlView.Render(sb)
-                ctx.Response.ContentLength <- sb.Length
-                Task.CompletedTask
-            finally
-                Tools.StringBuilderPool.Return(sb)
+            task {
+                try
+                    do! Render.toHtmlDocStreamAsync memoryStream htmlView
+                    ctx.Response.ContentLength <- memoryStream.Length
+                finally
+                    memoryStream.Dispose()
+            }
 
     /// <summary>
     /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
@@ -323,7 +324,6 @@ type HttpContextExtensions() =
             use _ = textWriter :> IAsyncDisposable
             while! enumerator.MoveNextAsync() do
                 do! Render.toTextWriterAsync textWriter enumerator.Current
-                do! textWriter.FlushAsync()
         }
 
     /// <summary>
