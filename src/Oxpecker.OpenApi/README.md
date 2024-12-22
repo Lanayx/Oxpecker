@@ -39,7 +39,7 @@ let endpoints = [
 ]
 
 ```
-
+_Note: you MUST specify HTTP method (GET, POST etc.), because routes with ANY method are not supported by OpenApi_
 
 ## Configuration
 
@@ -111,7 +111,7 @@ let main args =
 
 To make endpoints discoverable by OpenApi, you need to call one of the following functions: `addOpenApi` or `addOpenApiSimple` on the endpoint.
 
-_NOTE: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically._
+_Note: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically._
 
 ### addOpenApi
 
