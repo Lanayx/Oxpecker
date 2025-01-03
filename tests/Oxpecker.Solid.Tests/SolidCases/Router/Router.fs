@@ -14,6 +14,13 @@ let Root (props: RootProps) : HtmlElement =
     }
 
 [<SolidComponent>]
+let App3 () : HtmlElement =
+    let navigator = useNavigate()
+    createEffect(fun _ -> navigator.Invoke("/def/inner"))
+
+    h1() { "Hello world 3" }
+
+[<SolidComponent>]
 let Test1 () =
     Router(root=Root) {
         Route()

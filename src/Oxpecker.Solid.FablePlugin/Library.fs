@@ -110,7 +110,7 @@ module internal rec AST =
 
     let (|LibraryTagImport|_|) (expr: Expr) =
         match expr with
-        | Call(Import({ Kind = UserImport false }, Any, _) as imp, _, DeclaredType(typ, []), range) when
+        | Call(Import({ Kind = UserImport false }, Any, _) as imp, { Tags = [ "new" ] }, DeclaredType(typ, []), range) when
             typ.FullName.StartsWith("Oxpecker.Solid")
             ->
             Some(imp, range)

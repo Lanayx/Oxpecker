@@ -1,7 +1,7 @@
-import { Route, Router, A } from "@solidjs/router";
-import { App1 } from "./App1.fs.js";
-import { App2 } from "./App2.fs.js";
-import { lazy } from "solid-js";
+import { Route, Router, useNavigate, A } from "@solidjs/router";
+import { lazy, createEffect } from "solid-js";
+import { App1 } from "./App1.jsx";
+import { App2 } from "./App2.jsx";
 
 export function Root(props) {
     return <>
@@ -13,6 +13,16 @@ export function Root(props) {
             About
         </A>
     </>;
+}
+
+export function App3() {
+    const navigator = useNavigate();
+    createEffect(() => {
+        navigator("/def/inner");
+    });
+    return <h1>
+        Hello world 3
+    </h1>;
 }
 
 export function Test1() {
