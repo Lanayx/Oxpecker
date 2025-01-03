@@ -9,7 +9,7 @@ let private runCase folderName caseName =
     cli {
         Shell CMD
         WorkingDirectory dir
-        Command "dotnet fable --noCache --exclude Oxpecker.Solid.FablePlugin --extension .jsx"
+        Command "dotnet fable --extension .jsx"
     }
     |> Command.execute
     |> Output.toExitCode
