@@ -9,13 +9,13 @@ let private runCase folderName caseName =
     cli {
         Shell CMD
         WorkingDirectory dir
-        Command "dotnet fable --noCache --exclude Oxpecker.Solid.FablePlugin"
+        Command "dotnet fable --noCache --exclude Oxpecker.Solid.FablePlugin --extension .jsx"
     }
     |> Command.execute
     |> Output.toExitCode
     |> shouldEqual 0
 
-    let result = File.ReadAllText($"{dir}/{caseName}.fs.js")
+    let result = File.ReadAllText($"{dir}/{caseName}.jsx")
     let expected = File.ReadAllText($"{dir}/{caseName}.expected")
     result |> shouldEqual expected
 
