@@ -59,3 +59,9 @@ jobs:
 
       - name: Test the main solution
         run: dotnet test Oxpecker.sln --no-restore --no-build
+
+      - name: Restore Solid nuget dependencies
+        run: dotnet restore Oxpecker.Solid.sln
+
+      - name: Compile Solid solution
+        run: dotnet build Oxpecker.Solid.sln --no-restore
