@@ -78,7 +78,7 @@ let main args =
 
 ### ASP.NET Core 9
 
-Since `Oxpecker.OpenApi` works on top of `Microsoft.AspNetCore.OpenApi` and `Swashbuckle.AspNetCore` packages, you need to do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi):
+Since `Oxpecker.OpenApi` works on top of `Microsoft.AspNetCore.OpenApi` packages, you need to do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi):
 
 ```fsharp
 
