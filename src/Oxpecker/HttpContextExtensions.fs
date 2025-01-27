@@ -10,13 +10,10 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
 open Microsoft.AspNetCore.WebUtilities
+open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker.ViewEngine
-
-type MissingDependencyException(dependencyName: string) =
-    inherit
-        Exception $"Could not retrieve object of type '%s{dependencyName}' from ASP.NET Core's dependency container."
 
 type RouteParseException(message: string, ex) =
     inherit Exception(message, ex)
@@ -134,11 +131,8 @@ type HttpContextExtensions() =
     /// </summary>
     /// <returns>Returns an instance of `'T`.</returns>
     [<Extension>]
-    static member GetService<'T>(ctx: HttpContext) =
-        let t = typeof<'T>
-        match ctx.RequestServices.GetService t with
-        | null -> raise <| MissingDependencyException t.Name
-        | service -> service :?> 'T
+    static member GetService(ctx: HttpContext) =
+        ctx.RequestServices.GetRequiredService<'T>()
 
     /// <summary>
     /// Gets an instance of <see cref="Microsoft.Extensions.Logging.ILogger{T}" /> from the request's service container.
