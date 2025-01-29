@@ -27,6 +27,7 @@ module internal rec AST =
         | Call(Import(importInfo, LambdaType(_, DeclaredType(typ, _)), _), callInfo, _, range) when condition importInfo ->
             let tagImport =
                 match callInfo.Args with
+                | LibraryTagImport(imp, _) :: _
                 | Let(_, LibraryTagImport(imp, _), _) :: _ -> LibraryImport imp
                 | _ ->
                     let tagName = typ.FullName.Split('.') |> Seq.last
