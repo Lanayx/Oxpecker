@@ -149,7 +149,7 @@ let endpoints = [
     GET [
         route "/" <| text "Hello World"
         route "/iresult" <| %Ok {| Text = "Hello World" |}
-        route "/ibadResult" <| % BadRequest()
+        route "/ibadResult" <| %BadRequest()
         routef "/text/{%s}" text
         |> configureEndpoint _.WithName("GetText")
         |> addOpenApiSimple<unit, string>
@@ -238,11 +238,7 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
     :> Task
 
 let configureApp (appBuilder: IApplicationBuilder) =
-    appBuilder
-        .UseRouting()
-        .Use(errorHandler)
-        .UseOxpecker(endpoints)
-        .Run(notFoundHandler)
+    appBuilder.UseRouting().Use(errorHandler).UseOxpecker(endpoints).Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
     services.AddRouting().AddOxpecker().AddOpenApi() |> ignore

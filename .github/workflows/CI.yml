@@ -8,7 +8,7 @@ on:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_VERSION: 9.0.100
+  DOTNET_VERSION: 9.0.101
 
 # Kill other jobs when we trigger this workflow by sending new commits
 # to the PR.
@@ -59,3 +59,9 @@ jobs:
 
       - name: Test the main solution
         run: dotnet test Oxpecker.sln --no-restore --no-build
+
+      - name: Restore Solid nuget dependencies
+        run: dotnet restore Oxpecker.Solid.sln
+
+      - name: Compile Solid solution
+        run: dotnet build Oxpecker.Solid.sln --no-restore

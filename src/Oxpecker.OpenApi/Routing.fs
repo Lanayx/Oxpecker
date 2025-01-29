@@ -56,7 +56,6 @@ module Routing =
             | _, _ -> "Invoke"
         configureEndpoint
             _.WithMetadata(
-                typeof<FakeFunc<'Req, 'Res>>
-                    .GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
+                typeof<FakeFunc<'Req, 'Res>>.GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
             )
                 .WithOpenApi()

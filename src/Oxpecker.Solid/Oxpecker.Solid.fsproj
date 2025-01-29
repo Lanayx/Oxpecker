@@ -19,9 +19,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.4.2</Version>
-        <PackageVersion>0.4.2</PackageVersion>
-        <PackageReleaseNotes>Prevent useNavigator being compiled as tag</PackageReleaseNotes>
+        <Version>0.4.3</Version>
+        <PackageVersion>0.4.3</PackageVersion>
+        <PackageReleaseNotes>Fix for handling tag import without attributes</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +31,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.4.2" />
+        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.4.3" />
     </ItemGroup>
 
     <ItemGroup>

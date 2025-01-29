@@ -108,10 +108,7 @@ module SpanJson =
                 .UseKestrel()
                 .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
                 .ConfigureServices(fun services ->
-                    services
-                        .AddRouting()
-                        .AddOxpecker()
-                        .AddSingleton<IJsonSerializer>(SpanJsonSerializer())
+                    services.AddRouting().AddOxpecker().AddSingleton<IJsonSerializer>(SpanJsonSerializer())
                     |> ignore)
         new TestServer(builder)
 

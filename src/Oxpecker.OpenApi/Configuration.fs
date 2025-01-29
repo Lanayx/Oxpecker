@@ -20,8 +20,7 @@ module Configuration =
         member this.InvokeUnit() = ()
 
     let internal fakeFuncMethod =
-        typeof<FakeFunc<_, _>>
-            .GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
+        typeof<FakeFunc<_, _>>.GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
     let internal unitType = typeof<unit>
 
     type RequestBody(?requestType: Type, ?contentTypes: string array, ?isOptional: bool) =
