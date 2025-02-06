@@ -6,22 +6,36 @@ open Fable.AST
 open Fable.AST.Fable
 
 [<assembly: ScanForPlugins>]
-do ()
+do () // Prompts fable to utilise this plugin
 
 module internal rec AST =
+    /// <summary>
+    /// AST Representation for a JSX Attribute/property. Tuple of name and value
+    /// </summary>
     type PropInfo = string * Expr
+    /// <summary>
+    /// List of AST property name value pairs
+    /// </summary>
     type Props = PropInfo list
 
     type TagSource =
         | AutoImport of tagName: string
         | LibraryImport of imp: Expr
-
+    /// <summary>
+    /// DU which distinguishes between a user call instantiating the tag with children, without children (props only),
+    /// or with both children AND properties.
+    /// </summary>
     type TagInfo =
         | WithChildren of tagName: TagSource * propsAndChildren: CallInfo * range: SourceLocation option
         | NoChildren of tagName: TagSource * props: Expr list * range: SourceLocation option
         | Combined of tagName: TagSource * props: Expr list * propsAndChildren: CallInfo * range: SourceLocation option
 
-
+    /// <summary>
+    /// Pattern matches expressions for Tags calls.
+    /// </summary>
+    /// <param name="condition"><c>ImportInfo</c></param>
+    /// <remarks>Apostrophised tagnames are cleaned of the apostrophe during transpilation</remarks>
+    /// <returns><c>TagSource * CallInfo * SourceLocation option</c></returns>
     let (|CallTag|_|) condition =
         function
         | Call(Import(importInfo, LambdaType(_, DeclaredType(typ, _)), _), callInfo, _, range) when condition importInfo ->
@@ -43,13 +57,19 @@ module internal rec AST =
                     AutoImport finalTagName
             Some(tagImport, callInfo, range)
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches expressions to Tags calls without children
+    /// </summary>
+    /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|TagNoChildren|_|) (expr: Expr) =
         let condition = _.Selector.EndsWith("_$ctor")
         match expr with
         | CallTag condition (tagName, _, range) -> Some(tagName, range)
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches expressions to Tag calls with children
+    /// </summary>
+    /// <returns><c>TagInfo.WithChildren</c></returns>
     let (|TagWithChildren|_|) (expr: Expr) =
         let condition =
             fun importInfo ->
@@ -58,22 +78,34 @@ module internal rec AST =
         match expr with
         | CallTag condition tagCallInfo -> Some tagCallInfo
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches <c>let</c> bindings that start with <c>element</c>
+    /// </summary>
+    /// <returns><c>unit</c></returns>
     let (|LetElement|_|) =
         function
         | Let({ Name = name }, _, _) when name.StartsWith("element") -> Some()
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches <c>let</c> bindings for Tags with children
+    /// </summary>
+    /// <returns><c>TagInfo.WithChildren</c></returns>
     let (|LetTagWithChildren|_|) =
         function
         | Let(_, TagWithChildren(tagName, callInfo, range), _) -> TagInfo.WithChildren(tagName, callInfo, range) |> Some
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches <c>let</c> bindings for Tags without children (but with props)
+    /// </summary>
+    /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|LetTagNoChildrenWithProps|_|) =
         function
         | Let(_, TagNoChildren(tagName, range), Sequential exprs) -> TagInfo.NoChildren(tagName, exprs, range) |> Some
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches expressions (<c>let</c> or otherwise) for tags without children directly to Tag calls
+    /// </summary>
+    /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|CallTagNoChildrenWithHandler|_|) (expr: Expr) =
         match expr with
         | Call(Import(importInfo, _, _),
@@ -98,17 +130,26 @@ module internal rec AST =
                range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches <c>let</c> bindings for tags without children or props
+    /// </summary>
+    /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|LetTagNoChildrenNoProps|_|) =
         function
         | Let(_, TagNoChildren(tagName, range), _) -> TagInfo.NoChildren(tagName, [], range) |> Some
         | _ -> None
-
+    /// <summary>
+    /// Pattern matches expressions that are text in isolation (no siblings)
+    /// </summary>
+    /// <returns><c>Expr</c> of text</returns>
     let (|TextNoSiblings|_|) =
         function
         | Lambda({ Name = cont }, TypeCast(textBody, Unit), None) when cont.StartsWith("cont") -> Some textBody
         | _ -> None
-
+    /// <summary>
+    /// Matches expressions for tags that are imported from a namespace starting with <c>Oxpecker.Solid</c>
+    /// </summary>
+    /// <returns><c>Expr * SourceLocation</c></returns>
     let (|LibraryTagImport|_|) (expr: Expr) =
         match expr with
         | Call(Import({ Kind = UserImport false }, Any, _) as imp, { Tags = [ "new" ] }, DeclaredType(typ, []), range) when
@@ -116,7 +157,9 @@ module internal rec AST =
             ->
             Some(imp, range)
         | _ -> None
-
+    /// <summary>
+    /// Plugin type declaration for JSX Element
+    /// </summary>
     let jsxElementType =
         Type.DeclaredType(
             ref = {
@@ -125,7 +168,9 @@ module internal rec AST =
             },
             genericArgs = []
         )
-
+    /// <summary>
+    /// Plugin import declaration for JSX <c>create</c>
+    /// </summary>
     let importJsxCreate =
         Import(
             info = {
@@ -453,7 +498,10 @@ module internal rec AST =
             range = range
         )
 
-
+/// <summary>
+/// Registers a function as a SolidComponent for transformation by
+/// the <c>Oxpecker.Solid.FablePlugin</c>
+/// </summary>
 type SolidComponentAttribute() =
     inherit MemberDeclarationPluginAttribute()
 
