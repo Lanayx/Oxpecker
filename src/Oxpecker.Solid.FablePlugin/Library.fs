@@ -39,23 +39,25 @@ module internal rec AST =
     let (|CallTag|_|) condition =
         function
         | Call(Import(importInfo, LambdaType(_, DeclaredType(typ, _)), _), callInfo, _, range) when condition importInfo ->
-            let tagImport =
-                match callInfo.Args with
-                | LibraryTagImport(imp, _) :: _
-                | Let(_, LibraryTagImport(imp, _), _) :: _ -> LibraryImport imp
-                | _ ->
+            match callInfo.Args with
+            | LibraryTagImport(imp, _) :: _
+            | Let(_, LibraryTagImport(imp, _), _) :: _ -> LibraryImport imp
+            | _ ->
+                match
                     let tagName = typ.FullName.Split('.') |> Seq.last
-                    let finalTagName =
-                        if tagName = "Fragment" then
-                            ""
-                        elif tagName.EndsWith("'") then
-                            tagName.Substring(0, tagName.Length - 1)
-                        elif tagName.EndsWith("`1") then
-                            tagName.Substring(0, tagName.Length - 2)
-                        else
-                            tagName
-                    AutoImport finalTagName
-            Some(tagImport, callInfo, range)
+                    in tagName
+                with
+                | "Fragment" ->
+                    ""
+                | tagName when tagName.EndsWith("'") ->
+                    tagName.Substring(0, tagName.Length - 1)
+                | tagName when tagName.EndsWith("`1") ->
+                    tagName.Substring(0, tagName.Length - 2)
+                | tagName ->
+                    tagName
+                |> AutoImport
+            |> fun tagImport ->
+                Some (tagImport, callInfo, range)
         | _ -> None
     /// <summary>
     /// Pattern matches expressions to Tags calls without children
