@@ -22,8 +22,7 @@ module Builder =
         abstract member AddChild: HtmlElement -> unit
 
     module internal RenderHelpers =
-        let inline renderStartTag (tagName: string) (sb: StringBuilder) (attributes: CustomQueue<HtmlAttribute>) =
-            sb.Append('<').Append(tagName) |> ignore
+        let inline renderTagAttributes (sb: StringBuilder) (attributes: CustomQueue<HtmlAttribute>) =
             let mutable next = attributes.Head
             while isNotNull next do
                 let attr = next.Value
@@ -31,6 +30,9 @@ module Builder =
                 sb |> CustomWebUtility.htmlEncode attr.Value
                 sb.Append('"') |> ignore
                 next <- next.Next
+        let inline renderStartTag (tagName: string) (sb: StringBuilder) (attributes: CustomQueue<HtmlAttribute>) =
+            sb.Append('<').Append(tagName) |> ignore
+            renderTagAttributes sb attributes
             sb.Append('>') |> ignore
 
         let inline renderChildren (sb: StringBuilder) (children: CustomQueue<HtmlElement>) =
@@ -41,6 +43,13 @@ module Builder =
                 next <- next.Next
         let inline renderEndTag (tagName: string) (sb: StringBuilder) =
             sb.Append("</").Append(tagName).Append('>') |> ignore
+
+        /// Renders an EmptyElem tag according to the XML spec
+        let inline renderEmptyElemTag (tagName: string) (sb: StringBuilder) (attributes: CustomQueue<HtmlAttribute>) =
+            sb.Append('<').Append(tagName) |> ignore
+            renderTagAttributes sb attributes
+            sb.Append("/>") |> ignore
+
 
     /// Node with children only (no attributes)
     type FragmentNode() =
@@ -61,9 +70,13 @@ module Builder =
         member this.Attributes = attributes.AsEnumerable()
         member this.TagName = tagName
         member this.Render(sb: StringBuilder) =
-            RenderHelpers.renderStartTag tagName sb attributes
-            RenderHelpers.renderChildren sb children
-            RenderHelpers.renderEndTag tagName sb
+            // Most likely branch first
+            if children.IsEmpty() |> not then
+                RenderHelpers.renderStartTag tagName sb attributes
+                RenderHelpers.renderChildren sb children
+                RenderHelpers.renderEndTag tagName sb
+            else
+                RenderHelpers.renderEmptyElemTag tagName sb attributes
         member this.AddAttribute(attribute: HtmlAttribute) = attributes.Enqueue(attribute)
         member this.AddChild(element: HtmlElement) = children.Enqueue(element)
         interface HtmlElement with

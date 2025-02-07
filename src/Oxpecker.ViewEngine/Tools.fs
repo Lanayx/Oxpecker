@@ -40,6 +40,8 @@ type internal CustomQueue<'T> =
                 next <- next.Next
         }
 
+    member this.IsEmpty() = isNull this.Head
+
 module CustomWebUtility =
 
     [<Literal>]
