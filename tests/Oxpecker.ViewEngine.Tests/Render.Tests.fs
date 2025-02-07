@@ -24,7 +24,7 @@ let ``Basic test`` () =
     result
     |> Render.toString
     |> shouldEqual
-        """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
+        """<html><div id="1"/><div id="2"><div id="3" class="test"/><br><br><div id="4"/></div></html>"""
 
 
 [<Fact>]
@@ -69,7 +69,7 @@ let ``Aria test`` () =
     result
     |> Render.toString
     |> shouldEqual
-        """<span role="checkbox" id="checkBoxInput" aria-checked="false" tabindex="0" aria-labelledby="chk15-label"></span>"""
+        """<span role="checkbox" id="checkBoxInput" aria-checked="false" tabindex="0" aria-labelledby="chk15-label"/>"""
 
 [<Fact>]
 let ``Only children test`` () =
@@ -114,7 +114,7 @@ let ``Basic chunked test`` () =
         stream.Seek(0L, SeekOrigin.Begin) |> ignore
         stream.ToArray()
         |> Encoding.UTF8.GetString
-        |> shouldEqual """<html><div id="1"></div></html>"""
+        |> shouldEqual """<html><div id="1"/></html>"""
     }
 
 [<Fact>]
@@ -128,5 +128,5 @@ let ``Render to text writer`` () =
         stream.Seek(0L, SeekOrigin.Begin) |> ignore
         stream.ToArray()
         |> Encoding.UTF8.GetString
-        |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="1"></div></html>"""
+        |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="1"/></html>"""
     }
