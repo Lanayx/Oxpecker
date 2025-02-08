@@ -27,9 +27,12 @@ module Builder =
             let mutable next = attributes.Head
             while isNotNull next do
                 let attr = next.Value
-                sb.Append(' ').Append(attr.Name).Append("=\"") |> ignore
-                sb |> CustomWebUtility.htmlEncode attr.Value
-                sb.Append('"') |> ignore
+                if isNull attr.Value then
+                    sb.Append(' ').Append(attr.Name) |> ignore
+                else
+                    sb.Append(' ').Append(attr.Name).Append("=\"") |> ignore
+                    sb |> CustomWebUtility.htmlEncode attr.Value
+                    sb.Append('"') |> ignore
                 next <- next.Next
             sb.Append('>') |> ignore
 

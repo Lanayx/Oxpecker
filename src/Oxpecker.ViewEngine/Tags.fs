@@ -24,6 +24,12 @@ module Tags =
                 this.AddAttribute({ Name = name; Value = value })
             this
 
+        /// Adds an attribute switch to an element based on conditional
+        [<Extension>]
+        static member bool(this: #HtmlTag, name: string, value: bool) =
+            if value then
+                this.AddAttribute({ Name = name; Value = null })
+            this
         /// Add event handler to the element through the corresponding attribute
         [<Extension>]
         static member on(this: #HtmlTag, eventName: string, [<StringSyntax("js")>] eventHandler: string) =
