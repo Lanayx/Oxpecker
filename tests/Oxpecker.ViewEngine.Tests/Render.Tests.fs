@@ -106,6 +106,21 @@ let ``Double render works`` () =
     result2 |> shouldEqual """<span id="test1">test2</span>"""
 
 [<Fact>]
+let ``Boolean attribute method`` () =
+    let result =
+        button().bool("required", true).bool("disabled", true).bool("novalidate", false)
+            { "Test" }
+    result
+    |> Render.toString
+    |> shouldEqual """<button required disabled>Test</button>"""
+
+[<Fact>]
+let ``Boolean property helpers`` () =
+    button(autofocus=true, disabled=false) { "Test" }
+    |> Render.toString
+    |> shouldEqual """<button autofocus>Test</button>"""
+
+[<Fact>]
 let ``Basic chunked test`` () =
     task {
         let view = html() { div(id = "1") }
