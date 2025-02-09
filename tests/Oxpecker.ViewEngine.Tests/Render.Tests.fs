@@ -108,15 +108,14 @@ let ``Double render works`` () =
 [<Fact>]
 let ``Boolean attribute method`` () =
     let result =
-        button().bool("required", true).bool("disabled", true).bool("novalidate", false)
-            { "Test" }
+        button().bool("required", true).bool("disabled", true).bool("novalidate", false) { "Test" }
     result
     |> Render.toString
     |> shouldEqual """<button required disabled>Test</button>"""
 
 [<Fact>]
 let ``Boolean property helpers`` () =
-    button(autofocus=true, disabled=false) { "Test" }
+    button(autofocus = true, disabled = false) { "Test" }
     |> Render.toString
     |> shouldEqual """<button autofocus>Test</button>"""
 
