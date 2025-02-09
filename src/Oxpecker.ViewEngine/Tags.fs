@@ -67,9 +67,7 @@ module Tags =
         member this.hidden
             with set (value: string | null) = this.attr("hidden", value) |> ignore
         member this.inert
-            with set (value: bool) =
-                if value then
-                    this.attr("inert", "") |> ignore
+            with set (value: bool) = this.bool("inert", value) |> ignore
         member this.inputmode
             with set (value: string | null) = this.attr("inputmode", value) |> ignore
         member this.popover
@@ -230,9 +228,7 @@ module Tags =
         member this.usemap
             with set (value: string | null) = this.attr("usemap", value) |> ignore
         member this.ismap
-            with set (value: bool) =
-                if value then
-                    this.attr("ismap", "") |> ignore
+            with set (value: bool) = this.bool("ismap", value) |> ignore
         member this.decoding
             with set (value: string | null) = this.attr("decoding", value) |> ignore
         member this.loading
@@ -259,9 +255,7 @@ module Tags =
         member this.name
             with set (value: string | null) = this.attr("name", value) |> ignore
         member this.novalidate
-            with set (value: bool) =
-                if value then
-                    this.attr("novalidate", "") |> ignore
+            with set (value: bool) = this.bool("novalidate", value) |> ignore
         member this.rel
             with set (value: string | null) = this.attr("rel", value) |> ignore
 
@@ -272,21 +266,15 @@ module Tags =
         member this.type'
             with set (value: string | null) = this.attr("type", value) |> ignore
         member this.async
-            with set (value: bool) =
-                if value then
-                    this.attr("async", "") |> ignore
+            with set (value: bool) = this.bool("async", value) |> ignore
         member this.defer
-            with set (value: bool) =
-                if value then
-                    this.attr("defer", "") |> ignore
+            with set (value: bool) = this.bool("defer", value) |> ignore
         member this.integrity
             with set (value: string | null) = this.attr("integrity", value) |> ignore
         member this.crossorigin
             with set (value: string | null) = this.attr("crossorigin", value) |> ignore
         member this.nomodule
-            with set (value: bool) =
-                if value then
-                    this.attr("nomodule", "") |> ignore
+            with set (value: bool) = this.bool("nomodule", value) |> ignore
         member this.nonce
             with set (value: string | null) = this.attr("nonce", value) |> ignore
         member this.referrerpolicy
@@ -313,9 +301,7 @@ module Tags =
         member this.referrerpolicy
             with set (value: string | null) = this.attr("referrerpolicy", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.hreflang
             with set (value: string | null) = this.attr("hreflang", value) |> ignore
         member this.imagesizes
@@ -353,13 +339,9 @@ module Tags =
         member this.placeholder
             with set (value: string | null) = this.attr("placeholder", value) |> ignore
         member this.required
-            with set (value: bool) =
-                if value then
-                    this.attr("required", "") |> ignore
+            with set (value: bool) = this.bool("required", value) |> ignore
         member this.autofocus
-            with set (value: bool) =
-                if value then
-                    this.attr("autofocus", "") |> ignore
+            with set (value: bool) = this.bool("autofocus", value) |> ignore
         member this.autocomplete
             with set (value: string | null) = this.attr("autocomplete", value) |> ignore
         member this.min
@@ -371,17 +353,11 @@ module Tags =
         member this.pattern
             with set (value: string | null) = this.attr("pattern", value) |> ignore
         member this.readonly
-            with set (value: bool) =
-                if value then
-                    this.attr("readonly", "") |> ignore
+            with set (value: bool) = this.bool("readonly", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.multiple
-            with set (value: bool) =
-                if value then
-                    this.attr("multiple", "") |> ignore
+            with set (value: bool) = this.bool("multiple", value) |> ignore
         member this.accept
             with set (value: string | null) = this.attr("accept", value) |> ignore
         member this.list
@@ -401,9 +377,7 @@ module Tags =
         member this.alt
             with set (value: string | null) = this.attr("alt", value) |> ignore
         member this.checked'
-            with set (value: bool) =
-                if value then
-                    this.attr("checked", "") |> ignore
+            with set (value: bool) = this.bool("checked", value) |> ignore
         member this.dirname
             with set (value: string | null) = this.attr("dirname", value) |> ignore
         member this.form
@@ -415,9 +389,7 @@ module Tags =
         member this.formmethod
             with set (value: string | null) = this.attr("formmethod", value) |> ignore
         member this.formnovalidate
-            with set (value: bool) =
-                if value then
-                    this.attr("formnovalidate", "") |> ignore
+            with set (value: bool) = this.bool("formnovalidate", value) |> ignore
         member this.formtarget
             with set (value: string | null) = this.attr("formtarget", value) |> ignore
         member this.inputmode
@@ -443,23 +415,15 @@ module Tags =
         member this.placeholder
             with set (value: string | null) = this.attr("placeholder", value) |> ignore
         member this.required
-            with set (value: bool) =
-                if value then
-                    this.attr("required", "") |> ignore
+            with set (value: bool) = this.bool("required", value) |> ignore
         member this.autocomplete
             with set (value: string | null) = this.attr("autocomplete", value) |> ignore
         member this.autofocus
-            with set (value: bool) =
-                if value then
-                    this.attr("autofocus", "") |> ignore
+            with set (value: bool) = this.bool("autofocus", value) |> ignore
         member this.readonly
-            with set (value: bool) =
-                if value then
-                    this.attr("readonly", "") |> ignore
+            with set (value: bool) = this.bool("readonly", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.rows
             with set (value: int) = this.attr("rows", string value) |> ignore
         member this.cols
@@ -484,13 +448,9 @@ module Tags =
         member this.value
             with set (value: string | null) = this.attr("value", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.autofocus
-            with set (value: bool) =
-                if value then
-                    this.attr("autofocus", "") |> ignore
+            with set (value: bool) = this.bool("autofocus", value) |> ignore
         member this.form
             with set (value: string | null) = this.attr("form", value) |> ignore
         member this.formaction
@@ -500,9 +460,7 @@ module Tags =
         member this.formmethod
             with set (value: string | null) = this.attr("formmethod", value) |> ignore
         member this.formnovalidate
-            with set (value: bool) =
-                if value then
-                    this.attr("formnovalidate", "") |> ignore
+            with set (value: bool) = this.bool("formnovalidate", value) |> ignore
         member this.formtarget
             with set (value: string | null) = this.attr("formtarget", value) |> ignore
         member this.popovertarget
@@ -515,23 +473,15 @@ module Tags =
         member this.name
             with set (value: string | null) = this.attr("name", value) |> ignore
         member this.required
-            with set (value: bool) =
-                if value then
-                    this.attr("required", "") |> ignore
+            with set (value: bool) = this.bool("required", value) |> ignore
         member this.autofocus
-            with set (value: bool) =
-                if value then
-                    this.attr("autofocus", "") |> ignore
+            with set (value: bool) = this.bool("autofocus", value) |> ignore
         member this.autocomplete
             with set (value: string | null) = this.attr("autocomplete", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.multiple
-            with set (value: bool) =
-                if value then
-                    this.attr("multiple", "") |> ignore
+            with set (value: bool) = this.bool("multiple", value) |> ignore
         member this.size
             with set (value: int) = this.attr("size", string value) |> ignore
         member this.form
@@ -542,13 +492,9 @@ module Tags =
         member this.value
             with set (value: string | null) = this.attr("value", value) |> ignore
         member this.selected
-            with set (value: bool) =
-                if value then
-                    this.attr("selected", "") |> ignore
+            with set (value: bool) = this.bool("selected", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.label
             with set (value: string | null) = this.attr("label", value) |> ignore
 
@@ -557,9 +503,7 @@ module Tags =
         member this.label
             with set (value: string | null) = this.attr("label", value) |> ignore
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
 
     type label() =
         inherit RegularNode("label")
@@ -601,29 +545,19 @@ module Tags =
         member this.poster
             with set (value: string | null) = this.attr("poster", value) |> ignore
         member this.autoplay
-            with set (value: bool) =
-                if value then
-                    this.attr("autoplay", "") |> ignore
+            with set (value: bool) = this.bool("autoplay", value) |> ignore
         member this.controls
-            with set (value: bool) =
-                if value then
-                    this.attr("controls", "") |> ignore
+            with set (value: bool) = this.bool("controls", value) |> ignore
         member this.playsinline
-            with set (value: bool) =
-                if value then
-                    this.attr("playsinline", "") |> ignore
+            with set (value: bool) = this.bool("playsinline", value) |> ignore
         member this.controlsList
             with set (value: string | null) = this.attr("controlsList", value) |> ignore
         member this.crossorigin
             with set (value: string | null) = this.attr("crossorigin", value) |> ignore
         member this.loop
-            with set (value: bool) =
-                if value then
-                    this.attr("loop", "") |> ignore
+            with set (value: bool) = this.bool("loop", value) |> ignore
         member this.muted
-            with set (value: bool) =
-                if value then
-                    this.attr("muted", "") |> ignore
+            with set (value: bool) = this.bool("muted", value) |> ignore
         member this.width
             with set (value: int) = this.attr("width", string value) |> ignore
         member this.height
@@ -631,26 +565,18 @@ module Tags =
         member this.preload
             with set (value: string | null) = this.attr("preload", value) |> ignore
         member this.disableremoteplayback
-            with set (value: bool) =
-                if value then
-                    this.attr("disableremoteplayback", "") |> ignore
+            with set (value: bool) = this.bool("disableremoteplayback", value) |> ignore
         member this.disablepictureinpicture
-            with set (value: bool) =
-                if value then
-                    this.attr("disablepictureinpicture", "") |> ignore
+            with set (value: bool) = this.bool("disablepictureinpicture", value) |> ignore
 
     type audio() =
         inherit RegularNode("audio")
         member this.src
             with set (value: string | null) = this.attr("src", value) |> ignore
         member this.autoplay
-            with set (value: bool) =
-                if value then
-                    this.attr("autoplay", "") |> ignore
+            with set (value: bool) = this.bool("autoplay", value) |> ignore
         member this.controls
-            with set (value: bool) =
-                if value then
-                    this.attr("controls", "") |> ignore
+            with set (value: bool) = this.bool("controls", value) |> ignore
         member this.controlsList
             with set (value: string | null) = this.attr("controlsList", value) |> ignore
         member this.crossorigin
@@ -658,17 +584,11 @@ module Tags =
         member this.preload
             with set (value: string | null) = this.attr("preload", value) |> ignore
         member this.loop
-            with set (value: bool) =
-                if value then
-                    this.attr("loop", "") |> ignore
+            with set (value: bool) = this.bool("loop", value) |> ignore
         member this.muted
-            with set (value: bool) =
-                if value then
-                    this.attr("muted", "") |> ignore
+            with set (value: bool) = this.bool("muted", value) |> ignore
         member this.disableremoteplayback
-            with set (value: bool) =
-                if value then
-                    this.attr("disableremoteplayback", "") |> ignore
+            with set (value: bool) = this.bool("disableremoteplayback", value) |> ignore
 
     type source() =
         inherit VoidNode("source")
@@ -749,9 +669,7 @@ module Tags =
     type details() =
         inherit RegularNode("details")
         member this.open'
-            with set (value: bool) =
-                if value then
-                    this.attr("open", "") |> ignore
+            with set (value: bool) = this.bool("open", value) |> ignore
 
     type summary() =
         inherit RegularNode("summary")
@@ -759,9 +677,7 @@ module Tags =
     type dialog() =
         inherit RegularNode("dialog")
         member this.open'
-            with set (value: bool) =
-                if value then
-                    this.attr("open", "") |> ignore
+            with set (value: bool) = this.bool("open", value) |> ignore
 
     type menu() =
         inherit RegularNode("menu")
@@ -772,9 +688,7 @@ module Tags =
     type fieldset() =
         inherit RegularNode("fieldset")
         member this.disabled
-            with set (value: bool) =
-                if value then
-                    this.attr("disabled", "") |> ignore
+            with set (value: bool) = this.bool("disabled", value) |> ignore
         member this.form
             with set (value: string | null) = this.attr("form", value) |> ignore
         member this.name
