@@ -58,12 +58,15 @@ These elements are used to iterate over a list of items (you can read about the 
 ### Custom elements
 Custom elements can be useful for integration with Web Component based libraries. You can create one by inheriting from `RegularNode` (or `VoidNode`):
 ```fsharp
+namespace Oxpecker.Solid.MyTags
+
+[<CompiledName("my-tag")>]
 type MyTag () =
     inherit RegularNode()
     member this.myAttr
         with set (value: string) = ()
 ```
-Make sure you put your custom element type definition in a seperate module (not to the same module with its usage) for compiler plugin to transform it correctly.
+Make sure you put your custom element type definition in a separate module (not to the same module with its usage) in a namespace starting from `Oxpecker.Solid` for compiler plugin to transform it correctly.
 
 ### Context
 

@@ -2,8 +2,8 @@
 
 open System
 open System.Threading.Tasks
+open Backend.Abstractions
 open Backend.Database
-open Backend.Env
 open Shared
 open Backend.Services
 open Microsoft.AspNetCore.Http
@@ -11,7 +11,7 @@ open Microsoft.Extensions.Logging
 open Oxpecker
 open type Microsoft.AspNetCore.Http.TypedResults
 
-type OperationEnv(env: Env) =
+type OperationEnv<'T when 'T :> IDbEnv and 'T:> IAppLogger>(env: 'T) =
     interface IGetOrders with
         member this.GetOrders() = OrderRepository.getOrders env
     interface IGetOrder with

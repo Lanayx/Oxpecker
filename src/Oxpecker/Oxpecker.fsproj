@@ -20,9 +20,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.1.2</Version>
-        <PackageVersion>1.1.2</PackageVersion>
-        <PackageReleaseNotes>Fixed WriteHtmlView for non-ascii charactes</PackageReleaseNotes>
+        <Version>1.2.0</Version>
+        <PackageVersion>1.2.0</PackageVersion>
+        <PackageReleaseNotes>Updated ViewEngine version</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
