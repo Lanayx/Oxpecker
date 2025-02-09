@@ -205,6 +205,7 @@ module internal rec AST =
                 | "bool", EventHandler(eventName, handler) -> ("bool:" + eventName, handler) :: restResults
                 | "data", EventHandler(eventName, handler) -> ("data-" + eventName, handler) :: restResults
                 | "attr", EventHandler(eventName, handler) -> (eventName, handler) :: restResults
+                | "spread", { Args = [ _; identExpr ] } -> ("__SPREAD_PROPERTY__", identExpr) :: restResults
                 | "ref", { Args = [ _; identExpr ] } -> ("ref", identExpr) :: restResults
                 | "style'", { Args = [ _; identExpr ] } -> ("style", identExpr) :: restResults
                 | "classList", { Args = [ _; identExpr ] } -> ("classList", identExpr) :: restResults
