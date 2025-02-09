@@ -26,7 +26,7 @@
         <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="1.1.2" />
+        <PackageReference Include="Oxpecker" Version="1.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
     </ItemGroup>
     <ItemGroup>

@@ -34,7 +34,7 @@
         <PackageReference Include="xunit" Version="2.9.2" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
         <PackageReference Include="coverlet.collector" Version="6.0.2" />
-        <PackageReference Include="Oxpecker" Version="1.1.2" />
+        <PackageReference Include="Oxpecker" Version="1.2.0" />
     </ItemGroup>
 
 </Project>
