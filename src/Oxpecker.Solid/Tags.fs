@@ -1157,3 +1157,245 @@ module Tags =
     [<Erase>]
     type wbr() =
         inherit RegularNode()
+
+    type SvgTag with
+        [<Erase>]
+        member _.id
+            with set (value: string) = ()
+        member _.class'
+            with set (value: string) = ()
+        // member _.style
+        //     with set //TODO
+        member _.lang
+            with set (value: string) = ()
+        member _.tabindex
+            with set (value: int) = ()
+        member _.``xml:lang``
+            with set (value: string) = ()
+        member _.``xml:space``
+            with set (value: string) = ()
+        member inline this.xmlLang
+            with set (value: string) = this.``xml:lang`` <- value
+        member inline this.xmlSpace
+            with set(value: string) = this.``xml:space`` <- value
+        // member systemLanguage // TODO
+
+    [<Erase>]
+    module Svg =
+        [<StringEnum(CaseRules.KebabCase)>]
+        type ReferrerPolicy =
+            | NoReferrer
+            | NoReferrerWhenDowngrade
+            | SameOrigin
+            | Origin
+            | StrictOrigin
+            | OriginWhenCrossOrigin
+            | StrictOriginWhenCrossOrigin
+            | UnsafeUrl
+
+        [<Erase>]
+        type a() =
+            inherit SvgNode()
+            member _.download
+                with set(value: string) = ()
+            member _.href
+                with set(value: string) = ()
+            member _.hreflang
+                with set(value: string) = ()
+            member _.ping
+                with set(value: string) = ()
+            member _.referrerpolicy
+                with set(value: ReferrerPolicy) = ()
+            member _.rel
+                with set(value: string) = ()
+            member _.target
+                with set(value: string) = ()
+            member _.type'
+                with set(value: string) = ()
+
+        [<Erase>]
+        type animate() =
+            inherit SvgNode()
+        [<Erase>]
+        type animateMotion() =
+            inherit SvgNode()
+        [<Erase>]
+        type animateTransform() =
+            inherit SvgNode()
+        [<Erase>]
+        type circle() =
+            inherit SvgNode()
+        [<Erase>]
+        type clipPath() =
+            inherit SvgNode()
+        [<Erase>]
+        type defs() =
+            inherit SvgNode()
+        [<Erase>]
+        type desc() =
+            inherit SvgNode()
+        [<Erase>]
+        type ellipse() =
+            inherit SvgNode()
+        [<Erase>]
+        type feBlend() =
+            inherit SvgNode()
+        [<Erase>]
+        type feColorMatrix() =
+            inherit SvgNode()
+        [<Erase>]
+        type feComponentTransfer() =
+            inherit SvgNode()
+        [<Erase>]
+        type feComposite() =
+            inherit SvgNode()
+        [<Erase>]
+        type feConvolveMatrix() =
+            inherit SvgNode()
+        [<Erase>]
+        type feDiffuseLighting() =
+            inherit SvgNode()
+        [<Erase>]
+        type feDisplacementMap() =
+            inherit SvgNode()
+        [<Erase>]
+        type feDistantLight() =
+            inherit SvgNode()
+        [<Erase>]
+        type feDropShadow() =
+            inherit SvgNode()
+        [<Erase>]
+        type feFlood() =
+            inherit SvgNode()
+        [<Erase>]
+        type feFuncA() =
+            inherit SvgNode()
+        [<Erase>]
+        type feFuncB() =
+            inherit SvgNode()
+        [<Erase>]
+        type feFuncG() =
+            inherit SvgNode()
+        [<Erase>]
+        type feFuncR() =
+            inherit SvgNode()
+        [<Erase>]
+        type feGaussianBlur() =
+            inherit SvgNode()
+        [<Erase>]
+        type feImage() =
+            inherit SvgNode()
+        [<Erase>]
+        type feMerge() =
+            inherit SvgNode()
+        [<Erase>]
+        type feMergeNode() =
+            inherit SvgNode()
+        [<Erase>]
+        type feMorphology() =
+            inherit SvgNode()
+        [<Erase>]
+        type feOffset() =
+            inherit SvgNode()
+        [<Erase>]
+        type fePointLight() =
+            inherit SvgNode()
+        [<Erase>]
+        type feSpecularLighting() =
+            inherit SvgNode()
+        [<Erase>]
+        type feSpotLight() =
+            inherit SvgNode()
+        [<Erase>]
+        type feTile() =
+            inherit SvgNode()
+        [<Erase>]
+        type feTurbulence() =
+            inherit SvgNode()
+        [<Erase>]
+        type filter() =
+            inherit SvgNode()
+        [<Erase>]
+        type foreignObject() =
+            inherit SvgNode()
+        [<Erase>]
+        type g() =
+            inherit SvgNode()
+        [<Erase>]
+        type image() =
+            inherit SvgNode()
+        [<Erase>]
+        type line() =
+            inherit SvgNode()
+        [<Erase>]
+        type linearGradient() =
+            inherit SvgNode()
+        [<Erase>]
+        type marker() =
+            inherit SvgNode()
+        [<Erase>]
+        type mask() =
+            inherit SvgNode()
+        [<Erase>]
+        type metadata() =
+            inherit SvgNode()
+        [<Erase>]
+        type mpath() =
+            inherit SvgNode()
+        [<Erase>]
+        type path() =
+            inherit SvgNode()
+        [<Erase>]
+        type pattern() =
+            inherit SvgNode()
+        [<Erase>]
+        type polygon() =
+            inherit SvgNode()
+        [<Erase>]
+        type polyline() =
+            inherit SvgNode()
+        [<Erase>]
+        type radialGradient() =
+            inherit SvgNode()
+        [<Erase>]
+        type rect() =
+            inherit SvgNode()
+        [<Erase>]
+        type script() =
+            inherit SvgNode()
+        [<Erase>]
+        type set() =
+            inherit SvgNode()
+        [<Erase>]
+        type stop() =
+            inherit SvgNode()
+        [<Erase>]
+        type style() =
+            inherit SvgNode()
+        [<Erase>]
+        type svg() =
+            inherit SvgNode()
+        [<Erase>]
+        type switch() =
+            inherit SvgNode()
+        [<Erase>]
+        type symbol() =
+            inherit SvgNode()
+        [<Erase>]
+        type text() =
+            inherit SvgNode()
+        [<Erase>]
+        type textPath() =
+            inherit SvgNode()
+        [<Erase>]
+        type title() =
+            inherit SvgNode()
+        [<Erase>]
+        type tspan() =
+            inherit SvgNode()
+        [<Erase>]
+        type use'() =
+            inherit SvgNode()
+        [<Erase>]
+        type view() =
+            inherit SvgNode()
