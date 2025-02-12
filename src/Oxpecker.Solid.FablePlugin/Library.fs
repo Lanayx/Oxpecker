@@ -1,6 +1,9 @@
 namespace Oxpecker.Solid
 
 open System
+open System.Diagnostics
+open System.Runtime.CompilerServices
+open System.Runtime.InteropServices
 open Fable
 open Fable.AST
 open Fable.AST.Fable
@@ -8,16 +11,18 @@ open Fable.AST.Fable
 [<assembly: ScanForPlugins>]
 do () // Prompts fable to utilise this plugin
 
-type Tracer = Tracer of string seq with
-    static member create s = Tracer s
-    static member init = Tracer (seq {})
-    member inline this.Value = let (Tracer value) = this in value
-    #if DEBUG
-    member this.add s = Tracer (this.Value |> Seq.append s)
-    member this.add (t : Tracer) = Tracer (this.Value |> Seq.append t.Value)
-    #else
-    member this.add 't = this
-    #endif
+type Tracer() =
+    let guid = Guid.NewGuid()
+    let trace =  new ResizeArray<string>()
+    member _.Trace([<Optional; DefaultParameterValue("")>] message : string,
+                   [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName : string,
+                   [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
+                   [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int) =
+        trace.Add $"{line}: {memberName} # {guid} {message}"
+    member _.Collect() =
+        trace
+        |> _.ToArray()
+        |> String.concat "\n"
 
 module internal rec AST =
     /// <summary>
@@ -53,8 +58,8 @@ module internal rec AST =
             Range: SourceLocation option
             Tracer: Tracer
         }
-        static member create (tag, info, range) = { Tag=tag;Info=info;Range=range;Tracer=Tracer.init}
-        static member create (tag, info) = { Tag=tag;Info=info;Range=None;Tracer=Tracer.init}
+        static member create (tag, info, range) = { Tag=tag;Info=info;Range=range;Tracer=Tracer()}
+        static member create (tag, info) = { Tag=tag;Info=info;Range=None;Tracer=Tracer()}
         static member tag tag builder = { builder with Tag = tag }
         static member info info builder = { builder with Info = info }
         static member range range (builder : TagBuilder) = { builder with Range = range }
@@ -95,6 +100,7 @@ module internal rec AST =
         /// <param name="builder"><c>TagBuilder</c></param>
         /// <returns>Flattened expression of the built Tag</returns>
         let transform builder =
+            builder.Tracer.Trace "Transform"
             let properties, children =
                 match builder.Info with
                 | Children propsAndChildren ->
@@ -126,6 +132,7 @@ module internal rec AST =
                 | AutoImport tagName -> Value(StringConstant tagName, None)
                 | LibraryImport import -> import
 
+            Console.WriteLine (builder.Tracer.Collect())
             Call(
                 callee = Baked.importJsxCreate,
                 info = {
@@ -183,7 +190,9 @@ module internal rec AST =
                 |> getTagSource
                 |> fun tagSource ->
                     TagBuilder.create (tagSource, TagBuilderInfo.create callInfo, range)
+                    |> fun builder -> builder.Tracer.Trace() ; builder
                     |> Some
+
             | _ -> None
         let (|ImportCallRangeInfo|_|) = function
             | Call(Import(importInfo, _, _), callInfo, _, range) -> Some (importInfo, callInfo, range)
@@ -512,8 +521,7 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
-        Console.ForegroundColor <- ConsoleColor.Cyan
-        Console.WriteLine memberDecl.Body
+        Console.WriteLine("")
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
