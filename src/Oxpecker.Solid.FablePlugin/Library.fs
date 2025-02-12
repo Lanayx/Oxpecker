@@ -12,18 +12,48 @@ open Fable.AST.Fable
 do () // Prompts fable to utilise this plugin
 
 type Tracer() =
-    let guid = Guid.NewGuid()
+    static let prettyPrint = true
+    static let mutable verbosity : Verbosity = Verbosity.Normal
+    static let mutable verbose : bool = false
+    static let _random = Random()
+    static let mutable lastColor = ConsoleColor.Black
+    static let color_gen () = _random.Next(15) |> enum<ConsoleColor>
+    let consoleColor =
+        let mutable color = color_gen()
+        while color = lastColor do
+            color <- color_gen()
+        lastColor <- color
+        color
+    let guid = if verbose then Guid.NewGuid() else Guid.Empty
     let trace =  new ResizeArray<string>()
+    let add message memberName path line =
+        if verbose then
+            let traceMsg = $"L{line}: {memberName} # {guid} {message}"
+            trace.Add traceMsg
+            if prettyPrint then
+                Console.ForegroundColor <- consoleColor
+                Console.Write guid
+                Console.ResetColor()
+                Console.WriteLine $" || L{line} : {memberName, -20} {message}"
+
+    static member setVerbosity traceVerbosity =
+        match traceVerbosity with
+        | Verbosity.Verbose ->
+            verbosity <- traceVerbosity
+            verbose <- true
+        | _ -> ()
     member _.Trace([<Optional; DefaultParameterValue("")>] message : string,
                    [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName : string,
                    [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
                    [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int) =
-        trace.Add $"{line}: {memberName} # {guid} {message}"
+        add message memberName path line
+    member _.Add = add
     member _.Collect() =
-        trace
-        |> _.ToArray()
-        |> String.concat "\n"
-
+        if verbose then
+            trace
+            |> _.ToArray()
+            |> String.concat "\n"
+        else ""
 module internal rec AST =
     /// <summary>
     /// Property definition of a <c>string * Fable.Expr</c> tuple
@@ -58,6 +88,10 @@ module internal rec AST =
             Range: SourceLocation option
             Tracer: Tracer
         }
+        member inline this.trace ([<Optional; DefaultParameterValue("")>] message : string,
+                   [<CallerMemberName; Optional; DefaultParameterValue("")>] memberName : string,
+                   [<CallerFilePath; Optional; DefaultParameterValue("")>] path: string,
+                   [<CallerLineNumber; Optional; DefaultParameterValue(0)>] line: int) = this.Tracer.Add message memberName path line ; this
         static member create (tag, info, range) = { Tag=tag;Info=info;Range=range;Tracer=Tracer()}
         static member create (tag, info) = { Tag=tag;Info=info;Range=None;Tracer=Tracer()}
         static member tag tag builder = { builder with Tag = tag }
@@ -80,6 +114,7 @@ module internal rec AST =
                 | Props propertyList
                 | Combined (propertyList, _) -> // TODO -> should this keep subtype?
                     { builder with Info = TagBuilderInfo.create (e :: propertyList) }
+                    |> _.trace()
                 | _ ->
                     failwith "Impossible"
             /// <summary>
@@ -94,22 +129,25 @@ module internal rec AST =
                 | Children propsAndChildren -> { builder with Info = TagBuilderInfo.create (es, propsAndChildren) }
                 | Props props -> { builder with Info = TagBuilderInfo.create (es @ props) }
                 | Combined(props, propsAndChildren) -> { builder with Info = TagBuilderInfo.create (es @ props, propsAndChildren) }
+                |> _.trace()
         /// <summary>
         /// Collates and builds the collected tag properties and children
         /// </summary>
         /// <param name="builder"><c>TagBuilder</c></param>
         /// <returns>Flattened expression of the built Tag</returns>
-        let transform builder =
-            builder.Tracer.Trace "Transform"
+        let transform (builder: TagBuilder) =
             let properties, children =
                 match builder.Info with
                 | Children propsAndChildren ->
+                    builder.trace() |> ignore
                     (propsAndChildren.Args |> List.fold Attributes.get [],
                      propsAndChildren.Args |> List.fold Children.get [])
                 | Props props ->
+                    builder.trace() |> ignore
                     (Attributes.collect props,
                      [])
                 | Combined(props, propsAndChildren) ->
+                    builder.trace() |> ignore
                     (Attributes.collect props,
                      propsAndChildren.Args |> List.fold Children.get [])
             let transformedProperties =
@@ -131,8 +169,8 @@ module internal rec AST =
                 match builder.Tag with
                 | AutoImport tagName -> Value(StringConstant tagName, None)
                 | LibraryImport import -> import
-
-            Console.WriteLine (builder.Tracer.Collect())
+            builder.trace() |> ignore
+            // Console.WriteLine (builder.Tracer.Collect())
             Call(
                 callee = Baked.importJsxCreate,
                 info = {
@@ -190,7 +228,7 @@ module internal rec AST =
                 |> getTagSource
                 |> fun tagSource ->
                     TagBuilder.create (tagSource, TagBuilderInfo.create callInfo, range)
-                    |> fun builder -> builder.Tracer.Trace() ; builder
+                    |> _.trace($"{tagSource}")
                     |> Some
 
             | _ -> None
@@ -202,7 +240,7 @@ module internal rec AST =
         let (|NoChildren|_|) expr =
             let condition = _.Selector.EndsWith("_$ctor")
             match expr with
-            | Call.Tag condition tagBuilder -> Some tagBuilder
+            | Call.Tag condition tagBuilder -> tagBuilder.trace() |> Some
             | _ -> None
         let (|WithChildren|_|) expr =
             let condition =
@@ -210,7 +248,7 @@ module internal rec AST =
                     importInfo.Selector.StartsWith("HtmlContainerExtensions_Run")
                     || importInfo.Selector.StartsWith("BindingsModule_Extensions_Run")
             match expr with
-            | Call.Tag condition tagBuilder -> Some tagBuilder
+            | Call.Tag condition tagBuilder -> tagBuilder.trace() |> Some
             | _ -> None
         let (|NoChildrenWithHandler|_|) expr =
             match expr with
@@ -221,12 +259,14 @@ module internal rec AST =
                     builder
                     |> TagBuilder.info (TagBuilderInfo.create [ expr ])
                     |> TagBuilder.range range
+                    |> _.trace()
                     |> Some
                 | Let.NoChildrenWithProps builder
                 | Tag.NoChildrenWithHandler builder ->
                     builder
                     |> TagBuilder.info.add expr
                     |> TagBuilder.range range
+                    |> _.trace()
                     |> Some
                 | _ -> None
             | _ -> None
@@ -236,16 +276,17 @@ module internal rec AST =
             | Let(Ident.StartsWith "element", _, _) -> Some()
             | _ -> None
         let (|WithChildren|_|) = function
-            | Let(_, Tag.WithChildren builder, _) -> builder |> Some
+            | Let(_, Tag.WithChildren builder, _) -> builder |> _.trace() |> Some
             | _ -> None
         let (|NoChildrenWithProps|_|) = function
-            | Let(_, Tag.NoChildren builder, Sequential exprs) -> Some { builder with Info = TagBuilderInfo.create exprs }
+            | Let(_, Tag.NoChildren builder, Sequential exprs) -> { builder with Info = TagBuilderInfo.create exprs } |> _.trace() |> Some
             | _ -> None
         let (|NoChildrenNoProps|_|) =
             function
             | Let(_, Tag.NoChildren builder, _) ->
                 builder
                 |> TagBuilder.info (TagBuilderInfo.create [])
+                |> _.trace()
                 |> Some
             | _ -> None
     [<RequireQualifiedAccess>]
@@ -354,7 +395,7 @@ module internal rec AST =
             | Let.Element & Let(_, Let.NoChildrenWithProps builder, _)
             | Let.Element & Let.NoChildrenNoProps builder
             | Let.Element & Let(_, Tag.NoChildrenWithHandler builder, _) ->
-                TagBuilder.transform builder :: current
+                TagBuilder.transform (builder.trace()) :: current
             | Let.Element & Let(_, next, _) ->
                 transform next :: current
             | Lambda(Ident.StartsWith "cont", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) ->
@@ -377,12 +418,12 @@ module internal rec AST =
             | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
                 match expr with
                 | Let.NoChildrenNoProps builder ->
-                    Children.get (TagBuilder.transform builder :: current) next
+                    Children.get (TagBuilder.transform (builder.trace()) :: current) next
                 | Tag.NoChildren builder ->
-                    TagBuilder.transform (builder |> TagBuilder.info (TagBuilderInfo.create []))
+                    TagBuilder.transform (builder |> TagBuilder.info (TagBuilderInfo.create []) |> _.trace())
                     |> fun newExpr -> Children.get (newExpr :: current) next
                 | Tag.WithChildren builder ->
-                    TagBuilder.transform builder
+                    TagBuilder.transform (builder.trace())
                     |> fun newExpr -> Children.get (newExpr :: current) next
                 | _ ->
                     Children.get (transform expr :: current) next
@@ -395,13 +436,14 @@ module internal rec AST =
                 | [ Call(Import({Selector = "uncurry2"}, Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
                     Children.get current body
                 | [ Call.TagImport (imp, _) ] ->
-                    TagBuilder.transform (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create []))
+                    TagBuilder.transform (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create []) |> _.trace())
                     |> fun newExpr -> newExpr :: current
                 | [ Let(_, Call.TagImport(imp, _), Sequential exprs) ] ->
-                    TagBuilder.transform (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create exprs))
+                    TagBuilder.transform (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create exprs) |> _.trace())
                     |> fun newExpr -> newExpr :: current
                 | [ Let(_, Let(_, Call.TagImport(imp, _), Sequential exprs), Tag.WithChildren { Info = TagBuilderInfo.Children callInfo }) ] ->
                     TagBuilder.create ((LibraryImport imp), (TagBuilderInfo.create(exprs, callInfo)))
+                    |> _.trace()
                     |> TagBuilder.transform
                     |> fun newExpr -> newExpr :: current
                 | [ next1; next2 ] ->
@@ -438,28 +480,30 @@ module internal rec AST =
     let transform expr =
         match expr with
         | Let.NoChildrenWithProps builder
-        | Let.Element & Let(_, Let.NoChildrenWithProps builder, _) -> builder |> TagBuilder.transform
+        | Let.Element & Let(_, Let.NoChildrenWithProps builder, _) -> builder.trace() |> TagBuilder.transform
         | Tag.NoChildren builder ->
-            builder
+            builder.trace()
             |> TagBuilder.info (TagBuilderInfo.create [])
             |> TagBuilder.transform
         | Tag.NoChildrenWithHandler builder
         | Let.NoChildrenNoProps builder
         | Tag.WithChildren builder
-        | Let.WithChildren builder -> builder |> TagBuilder.transform
+        | Let.WithChildren builder -> builder.trace() |> TagBuilder.transform
         | Call.TagImport (tagSource, range) ->
             TagBuilder.create (LibraryImport tagSource, TagBuilderInfo.create [], range)
+            |> _.trace($"{LibraryImport tagSource}")
             |>  TagBuilder.transform
         | Let(_, Call.TagImport(tagSource, range), Tag.WithChildren builder) ->
-            builder
+            builder.trace()
             |> TagBuilder.tag (LibraryImport tagSource)
             |> TagBuilder.range range
             |> TagBuilder.transform
         | Let(_, Call.TagImport(tagSource, range), Sequential exprs) ->
             TagBuilder.create (LibraryImport tagSource, TagBuilderInfo.create exprs, range)
+            |> _.trace()
             |> TagBuilder.transform
         | Let(_, Let(_, Call.TagImport(tagSource, range), Sequential exprs), Tag.WithChildren builder) ->
-            builder
+            builder.trace()
             |> TagBuilder.range range
             |> TagBuilder.tag (LibraryImport tagSource)
             |> TagBuilder.info.adds exprs
@@ -510,7 +554,7 @@ module internal rec AST =
             typ = Baked.jsxElementType,
             range = range
         )
-open FSharp.Json
+
 /// <summary>
 /// Registers a function as a SolidComponent for transformation by
 /// the <c>Oxpecker.Solid.FablePlugin</c>
@@ -521,7 +565,8 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
-        Console.WriteLine("")
+        // Set tracer verbosity on tracers
+        Tracer.setVerbosity pluginHelper.Options.Verbosity
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
@@ -529,3 +574,4 @@ type SolidComponentAttribute() =
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr
+
