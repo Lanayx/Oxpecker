@@ -219,8 +219,8 @@ module internal rec AST =
                         let tagName = typ.FullName.Split('.') |> Seq.last
                         match tagName with
                         | "Fragment" -> ""
-                        | _ when tagName.EndsWith("'") -> tagName[0..tagName.Length-1]
-                        | _ when tagName.EndsWith("`1") -> tagName[0..tagName.Length-2]
+                        | _ when tagName.EndsWith("'") -> tagName.Substring(0, tagName.Length - 1)
+                        | _ when tagName.EndsWith("`1") -> tagName.Substring(0, tagName.Length - 2)
                         | _ -> tagName
                         |> AutoImport
                 callInfo
@@ -362,7 +362,7 @@ module internal rec AST =
                             builder.trace("Setter > 0") |> ignore
                             let propertyName =
                                 match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
-                                | name when name.EndsWith("'") -> name[0..name.Length - 1]
+                                | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1)
                                 | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
                                 | name -> name
                             let propertyValue = callInfo.Args.Head
