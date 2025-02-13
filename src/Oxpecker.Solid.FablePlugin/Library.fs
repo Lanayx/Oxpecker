@@ -29,22 +29,58 @@ module internal rec AST =
         | WithChildren of tagName: TagSource * propsAndChildren: CallInfo * range: SourceLocation option
         | NoChildren of tagName: TagSource * props: Expr list * range: SourceLocation option
         | Combined of tagName: TagSource * props: Expr list * propsAndChildren: CallInfo * range: SourceLocation option
-
-    /// <summary>
-    /// Pattern matches expressions for Tags calls.
-    /// </summary>
-    /// <param name="condition"><c>ImportInfo</c></param>
-    /// <remarks>Apostrophised tagnames are cleaned of the apostrophe during transpilation</remarks>
-    /// <returns><c>TagSource * CallInfo * SourceLocation option</c></returns>
+    [<AutoOpen>]
+    module Native =
+        let (|StartsWith|_|) (value: string) : string -> unit option = function
+            | s when s.StartsWith(value) -> Some()
+            | _ -> None
+        let (|EndsWith|_|) (value: string) : string -> unit option = function
+            | s when s.EndsWith(value) -> Some()
+            | _ -> None
+    [<RequireQualifiedAccess>]
+    module EntityRef =
+        let (|StartsWith|_|) (value : string) = function
+            | e when e.FullName.StartsWith value -> Some()
+            | _ -> None
+    [<RequireQualifiedAccess>]
+    module Ident =
+        let (|StartsWith|_|) (value : string) : Ident -> unit option = function
+            | i when i.Name.StartsWith value -> Some()
+            | _ -> None
+    [<RequireQualifiedAccess>]
+    module ImportInfo =
+        let (|StartsWith|_|) (value : string) = function
+            | i when i.Selector.StartsWith value -> Some()
+            | _ -> None
+    [<RequireQualifiedAccess>]
+    module Import =
+        let (|Info|_|) = function | Import(value,_,_) -> Some value | _ -> None
+        let (|Type|_|) = function | Import(_,value,_) -> Some value | _ -> None
+        let (|Range|_|) = function | Import(_,_,value) -> Some value | _ -> None
     [<RequireQualifiedAccess>]
     module Call =
+        /// <summary>
+        /// Matches expressions for tags that are imported from a namespace starting with <c>Oxpecker.Solid</c>
+        /// </summary>
+        /// <returns><c>Expr * SourceLocation</c></returns>
+        let (|ImportTag|_|) (expr: Expr) =
+            match expr with
+            | Call(Import({ Kind = UserImport false }, Any, _) as imp, { Tags = [ "new" ] }, DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []), range) ->
+                Some(imp, range)
+            | _ -> None
+        /// <summary>
+        /// Pattern matches expressions for Tags calls.
+        /// </summary>
+        /// <param name="condition"><c>ImportInfo</c></param>
+        /// <remarks>Apostrophised tagnames are cleaned of the apostrophe during transpilation</remarks>
+        /// <returns><c>TagSource * CallInfo * SourceLocation option</c></returns>
         let (|Tag|_|) condition =
             function
             | Call(Import(importInfo, LambdaType(_, DeclaredType(typ, _)), _), callInfo, _, range) when condition importInfo ->
                 let tagImport =
                     match callInfo.Args with
-                    | LibraryTagImport(imp, _) :: _
-                    | Let(_, LibraryTagImport(imp, _), _) :: _ -> LibraryImport imp
+                    | Call.ImportTag(imp, _) :: _
+                    | Let(_, Call.ImportTag(imp, _), _) :: _ -> LibraryImport imp
                     | _ ->
                         let tagName = typ.FullName.Split('.') |> Seq.last
                         let finalTagName =
@@ -59,6 +95,7 @@ module internal rec AST =
                         AutoImport finalTagName
                 Some(tagImport, callInfo, range)
             | _ -> None
+
     [<RequireQualifiedAccess>]
     module Tag =
         /// <summary>
@@ -84,27 +121,30 @@ module internal rec AST =
             | _ -> None
     [<RequireQualifiedAccess>]
     module Let =
+        let (|Ident|_|) = function | Let(value,_,_) -> Some value | _ -> None
+        let (|Value|_|) = function | Let(_,value,_) -> Some value | _ -> None
+        let (|Body|_|) = function | Let(_,_,value) -> Some value | _ -> None
         /// <summary>
         /// Pattern matches <c>let</c> bindings that start with <c>element</c>
         /// </summary>
         /// <returns><c>unit</c></returns>
-        let (|LetElement|_|) =
+        let (|Element|_|) =
             function
-            | Let({ Name = name }, _, _) when name.StartsWith("element") -> Some()
+            | Let.Ident (Ident.StartsWith "element") -> Some()
             | _ -> None
         /// <summary>
         /// Pattern matches <c>let</c> bindings for Tags with children
         /// </summary>
         /// <returns><c>TagInfo.WithChildren</c></returns>
-        let (|LetTagWithChildren|_|) =
+        let (|TagWithChildren|_|) =
             function
-            | Let(_, Tag.WithChildren(tagName, callInfo, range), _) -> TagInfo.WithChildren(tagName, callInfo, range) |> Some
+            | Let.Value (Tag.WithChildren(tagName, callInfo, range)) -> TagInfo.WithChildren(tagName, callInfo, range) |> Some
             | _ -> None
         /// <summary>
         /// Pattern matches <c>let</c> bindings for Tags without children (but with props)
         /// </summary>
         /// <returns><c>TagInfo.NoChildren</c></returns>
-        let (|LetTagNoChildrenWithProps|_|) =
+        let (|TagNoChildrenWithProps|_|) =
             function
             | Let(_, Tag.NoChildren(tagName, range), Sequential exprs) -> TagInfo.NoChildren(tagName, exprs, range) |> Some
             | _ -> None
@@ -114,35 +154,24 @@ module internal rec AST =
     /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|CallTagNoChildrenWithHandler|_|) (expr: Expr) =
         match expr with
-        | Call(Import(importInfo, _, _),
-               {
-                   Args = Tag.NoChildren(tagName, _) :: _
-               },
-               _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
-            TagInfo.NoChildren(tagName, [ expr ], range) |> Some
-        | Call(Import(importInfo, _, _),
-               {
-                   Args = Let.LetTagNoChildrenWithProps(NoChildren(tagName, props, _)) :: _
-               },
-               _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
-            TagInfo.NoChildren(tagName, expr :: props, range) |> Some
-        | Call(Import(importInfo, _, _),
-               {
-                   Args = CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)) :: _
-               },
-               _,
-               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
-            TagInfo.NoChildren(tagName, expr :: props, range) |> Some
+        | Call(Import.Info (ImportInfo.StartsWith "HtmlElementExtensions_"), { Args = args :: _ }, _, range) -> Some (args,range)
         | _ -> None
+        |> Option.bind (function
+            | Tag.NoChildren(tagName, _), range ->
+                TagInfo.NoChildren(tagName, [ expr ], range) |> Some
+            | Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range ->
+                TagInfo.NoChildren(tagName, expr :: props, range) |> Some
+            | CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)), range ->
+                TagInfo.NoChildren(tagName, expr :: props, range) |> Some
+            | _ -> None
+            )
     /// <summary>
     /// Pattern matches <c>let</c> bindings for tags without children or props
     /// </summary>
     /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|LetTagNoChildrenNoProps|_|) =
         function
-        | Let(_, Tag.NoChildren(tagName, range), _) -> TagInfo.NoChildren(tagName, [], range) |> Some
+        | Let.Value (Tag.NoChildren(tagName, range)) -> TagInfo.NoChildren(tagName, [], range) |> Some
         | _ -> None
     /// <summary>
     /// Pattern matches expressions that are text in isolation (no siblings)
@@ -150,18 +179,7 @@ module internal rec AST =
     /// <returns><c>Expr</c> of text</returns>
     let (|TextNoSiblings|_|) =
         function
-        | Lambda({ Name = cont }, TypeCast(textBody, Unit), None) when cont.StartsWith("cont") -> Some textBody
-        | _ -> None
-    /// <summary>
-    /// Matches expressions for tags that are imported from a namespace starting with <c>Oxpecker.Solid</c>
-    /// </summary>
-    /// <returns><c>Expr * SourceLocation</c></returns>
-    let (|LibraryTagImport|_|) (expr: Expr) =
-        match expr with
-        | Call(Import({ Kind = UserImport false }, Any, _) as imp, { Tags = [ "new" ] }, DeclaredType(typ, []), range) when
-            typ.FullName.StartsWith("Oxpecker.Solid")
-            ->
-            Some(imp, range)
+        | Lambda(Ident.StartsWith "cont", TypeCast(textBody, Unit), None) -> Some textBody
         | _ -> None
     /// <summary>
     /// Plugin type declaration for JSX Element
@@ -200,12 +218,10 @@ module internal rec AST =
         match exprs with
         | [] -> []
         | Sequential expressions :: rest -> collectAttributes rest @ collectAttributes expressions
-        | Call(Import(importInfo, _, _), callInfo, _, _) :: rest ->
+        | Call(Import.Info importInfo, callInfo, _, _) :: rest ->
             let restResults = collectAttributes rest
             match importInfo.Kind with
-            | ImportKind.MemberImport(MemberRef(entity, memberRefInfo)) when
-                entity.FullName.StartsWith("Oxpecker.Solid")
-                ->
+            | ImportKind.MemberImport(MemberRef(EntityRef.StartsWith "Oxpecker.Solid", memberRefInfo)) ->
                 match memberRefInfo.CompiledName, callInfo with
                 | "on", EventHandler(eventName, handler) -> ("on:" + eventName, handler) :: restResults
                 | "bool", EventHandler(eventName, handler) -> ("bool:" + eventName, handler) :: restResults
@@ -235,9 +251,7 @@ module internal rec AST =
                     else
                         restResults
             | _ -> restResults
-        | Set(IdentExpr({ Name = returnVal }), SetKind.FieldSet name, _, handler, _) :: rest when
-            returnVal.StartsWith("returnVal")
-            ->
+        | Set(IdentExpr(Ident.StartsWith "returnVal"), SetKind.FieldSet name, _, handler, _) :: rest ->
             let propName =
                 match name with
                 | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
@@ -247,62 +261,52 @@ module internal rec AST =
 
     let getAttributes currentList (expr: Expr) : Props =
         match expr with
-        | Let({ Name = returnVal }, _, Sequential exprs) when returnVal.StartsWith("returnVal") ->
+        | Let(Ident.StartsWith "returnVal", _, Sequential exprs) ->
             collectAttributes exprs @ currentList
         | CallTagNoChildrenWithHandler(NoChildren(_, props, _)) -> collectAttributes props @ currentList
         | _ -> currentList
 
     let getChildren currentList (expr: Expr) : Expr list =
         match expr with
-        | Let.LetTagWithChildren tagInfo ->
+        | Let.TagWithChildren tagInfo ->
             let newExpr = transformTagInfo tagInfo
             newExpr :: currentList
-        | Let.LetElement & Let(_, Let.LetTagNoChildrenWithProps tagInfo, _) ->
+        | Let.Element & Let.Value (Let.TagNoChildrenWithProps tagInfo) ->
             let newExpr = transformTagInfo tagInfo
             newExpr :: currentList
-        | Let.LetElement & LetTagNoChildrenNoProps tagInfo ->
+        | Let.Element & LetTagNoChildrenNoProps tagInfo ->
             let newExpr = transformTagInfo tagInfo
             newExpr :: currentList
-        | Let.LetElement & Let(_, CallTagNoChildrenWithHandler tagInfo, _) ->
+        | Let.Element & Let.Value (CallTagNoChildrenWithHandler tagInfo) ->
             let newExpr = transformTagInfo tagInfo
             newExpr :: currentList
-        | Let.LetElement & Let(_, next, _) ->
+        | Let.Element & Let.Value next ->
             let newExpr = transform next
             newExpr :: currentList
         // Lambda with two arguments returning element
-        | Lambda({ Name = cont }, TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) when cont.StartsWith("cont") ->
+        | Lambda(Ident.StartsWith "cont", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) ->
             Delegate([ item; index ], transform next, None, []) :: currentList
         | TextNoSiblings body -> body :: currentList
         // text with solid signals inside
-        | Let({ Name = text }, body, TextNoSiblings _) when text.StartsWith("text") -> body :: currentList
+        | Let(Ident.StartsWith "text", body, TextNoSiblings _) -> body :: currentList
         // text then tag
-        | Let({ Name = second }, next, Lambda({ Name = builder }, Sequential(TypeCast(textBody, Unit) :: _), _)) when
-            second.StartsWith("second") && builder.StartsWith("builder")
-            ->
+        | Let(Ident.StartsWith "second", next, Lambda(Ident.StartsWith "builder", Sequential(TypeCast(textBody, Unit) :: _), _)) ->
             getChildren (textBody :: currentList) next
         // parameter then another parameter
-        | CurriedApply(Lambda({ Name = cont }, TypeCast(lastParameter, Unit), Some second), _, _, _) when
-            cont.StartsWith("cont") && second.StartsWith("second")
-            ->
+        | CurriedApply(Lambda(Ident.StartsWith "cont", TypeCast(lastParameter, Unit), Some (StartsWith "second")), _, _, _) ->
             lastParameter :: currentList
-        | CurriedApply(Lambda({ Name = builder }, Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _)
-        | Lambda({ Name = builder }, Sequential [ TypeCast(middleParameter, Unit); next ], _) when
-            builder.StartsWith("builder")
-            ->
+        | CurriedApply(Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _)
+        | Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _) ->
             getChildren (middleParameter :: currentList) next
         // tag then text
-        | Let({ Name = first }, next1, Lambda({ Name = builder }, Sequential [ CurriedApply _; next2 ], _)) when
-            first.StartsWith("first") && builder.StartsWith("builder")
-            ->
+        | Let(Ident.StartsWith "first", next1, Lambda(Ident.StartsWith "builder", Sequential [ CurriedApply _; next2 ], _)) ->
             let next2Children = getChildren [] next2
             let next1Children = getChildren [] next1
             next2Children @ next1Children @ currentList
-        | Let({ Name = first }, Let(_, expr, _), Let({ Name = second }, next, _))
-        | Let({ Name = first }, expr, Let({ Name = second }, next, _)) when
-            first.StartsWith("first") && second.StartsWith("second")
-            ->
+        | Let(Ident.StartsWith "first", Let.Value expr, Let(Ident.StartsWith "second", next, _))
+        | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
             match expr with
-            | Let.LetTagNoChildrenWithProps tagInfo ->
+            | Let.TagNoChildrenWithProps tagInfo ->
                 let newExpr = transformTagInfo tagInfo
                 getChildren (newExpr :: currentList) next
             | Tag.NoChildren(tagName, range) ->
@@ -325,13 +329,13 @@ module internal rec AST =
             match args with
             | [ Call(Import({ Selector = "uncurry2" }, Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
                 getChildren currentList body
-            | [ LibraryTagImport(imp, _) ] ->
+            | [ Call.ImportTag(imp, _) ] ->
                 let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None))
                 newExpr :: currentList
-            | [ Let(_, LibraryTagImport(imp, _), Sequential exprs) ] ->
+            | [ Let(_, Call.ImportTag(imp, _), Sequential exprs) ] ->
                 let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None))
                 newExpr :: currentList
-            | [ Let(_, Let(_, LibraryTagImport(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ] ->
+            | [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ] ->
                 let newExpr =
                     transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None))
                 newExpr :: currentList
@@ -341,20 +345,13 @@ module internal rec AST =
                 next2Children @ next1Children @ currentList
             | [ expr ] -> expr :: currentList
             | _ -> currentList
-        | Let({
-                  Name = name
-                  Range = range
-                  Type = DeclaredType({ FullName = fullName }, [])
-              },
-              _,
-              _) when
-            ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
-             || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
-            |> not
-            ->
-            match range with
-            | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
-            | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
+        | Let.Ident { Name = name
+                      Range = range
+                      Type = DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []) }
+            when not (name.StartsWith("returnVal") || name.StartsWith("element")) ->
+                match range with
+                | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
+                | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
         | _ -> currentList
 
     let listItemType =
@@ -439,19 +436,19 @@ module internal rec AST =
 
     let transform (expr: Expr) =
         match expr with
-        | Let.LetTagNoChildrenWithProps tagCall
-        | Let.LetElement & Let(_, Let.LetTagNoChildrenWithProps tagCall, _) -> transformTagInfo tagCall
+        | Let.TagNoChildrenWithProps tagCall
+        | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _) -> transformTagInfo tagCall
         | Tag.NoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range))
         | CallTagNoChildrenWithHandler tagCall -> transformTagInfo tagCall
         | LetTagNoChildrenNoProps tagCall -> transformTagInfo tagCall
         | Tag.WithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo)
-        | Let.LetTagWithChildren tagCall -> transformTagInfo tagCall
-        | LibraryTagImport(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
-        | Let(_, LibraryTagImport(imp, range), Tag.WithChildren(_, callInfo, _)) ->
+        | Let.TagWithChildren tagCall -> transformTagInfo tagCall
+        | Call.ImportTag(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
+        | Let(_, Call.ImportTag(imp, range), Tag.WithChildren(_, callInfo, _)) ->
             transformTagInfo(TagInfo.WithChildren(LibraryImport imp, callInfo, range))
-        | Let(_, LibraryTagImport(imp, range), Sequential exprs) ->
+        | Let(_, Call.ImportTag(imp, range), Sequential exprs) ->
             transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, range))
-        | Let(_, Let(_, LibraryTagImport(imp, range), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ->
+        | Let(_, Let(_, Call.ImportTag(imp, range), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ->
             transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, range))
         | Let(name, value, expr) -> Let(name, value, (transform expr))
         | Sequential expressions ->
