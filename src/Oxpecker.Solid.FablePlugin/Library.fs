@@ -16,6 +16,26 @@ module internal rec AST =
             Guid : Guid
             ConsoleColor : ConsoleColor
         }
+        member this.emit(message: string, memberName: string, path: string, line: int) =
+            Console.ForegroundColor <- this.ConsoleColor
+            Console.Write $"{this.Guid} "
+            Console.ForegroundColor <- ConsoleColor.Gray
+            Console.Write $"{memberName, -15}"
+            Console.ResetColor()
+            Console.WriteLine $"{message} ({path}:{line})"
+            this
+        member this.trace (
+            [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message : string,
+            [<Runtime.InteropServices.Optional; Runtime.CompilerServices.CallerMemberName; Runtime.InteropServices.DefaultParameterValue("")>] memberName : string,
+            [<Runtime.CompilerServices.CallerFilePath; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] path : string,
+            [<Runtime.CompilerServices.CallerLineNumber; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue(0)>] line : int
+        ) = this.emit(message, memberName, path, line)
+        member this.ping (
+            [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message : string,
+            [<Runtime.InteropServices.Optional; Runtime.CompilerServices.CallerMemberName; Runtime.InteropServices.DefaultParameterValue("")>] memberName : string,
+            [<Runtime.CompilerServices.CallerFilePath; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] path : string,
+            [<Runtime.CompilerServices.CallerLineNumber; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue(0)>] line : int
+        ) = this.emit(message, memberName, path, line) |> ignore
     module Tracer =
         let inline private _create value guid consoleColor = { Value = value; Guid = guid; ConsoleColor = consoleColor }
         let create value =
@@ -30,7 +50,7 @@ module internal rec AST =
             [<Runtime.InteropServices.Optional; Runtime.CompilerServices.CallerMemberName; Runtime.InteropServices.DefaultParameterValue("")>] memberName : string,
             [<Runtime.CompilerServices.CallerFilePath; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] path : string,
             [<Runtime.CompilerServices.CallerLineNumber; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue(0)>] line : int
-            ) (tracer: Tracer<'a>)= tracer
+            ) (tracer: Tracer<'a>)= tracer.emit(message, memberName, path, line)
 
     /// <summary>
     /// AST Representation for a JSX Attribute/property. Tuple of name and value
@@ -257,16 +277,16 @@ module internal rec AST =
     let getChildren currentList (expr: Expr) : Expr list =
         match expr with
         | Let.TagWithChildren tagInfo ->
-            let newExpr = transformTagInfo tagInfo
+            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
             newExpr :: currentList
         | Let.Element & Let.Value (Let.TagNoChildrenWithProps tagInfo) ->
-            let newExpr = transformTagInfo tagInfo
+            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
             newExpr :: currentList
         | Let.Element & LetTagNoChildrenNoProps tagInfo ->
-            let newExpr = transformTagInfo tagInfo
+            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
             newExpr :: currentList
         | Let.Element & Let.Value (CallTagNoChildrenWithHandler tagInfo) ->
-            let newExpr = transformTagInfo tagInfo
+            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
             newExpr :: currentList
         | Let.Element & Let.Value next ->
             let newExpr = transform next
@@ -295,13 +315,13 @@ module internal rec AST =
         | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
             match expr with
             | Let.TagNoChildrenWithProps tagInfo ->
-                let newExpr = transformTagInfo tagInfo
+                let newExpr = transformTagInfo (tagInfo |> Tracer.create)
                 getChildren (newExpr :: currentList) next
             | Tag.NoChildren(tagName, range) ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren(tagName, [], range))
+                let newExpr = transformTagInfo(TagInfo.NoChildren(tagName, [], range) |> Tracer.create)
                 getChildren (newExpr :: currentList) next
             | Tag.WithChildren callInfo ->
-                let newExpr = transformTagInfo(TagInfo.WithChildren callInfo)
+                let newExpr = transformTagInfo(TagInfo.WithChildren callInfo |> Tracer.create)
                 getChildren (newExpr :: currentList) next
             | expr ->
                 let newExpr = transform expr
@@ -318,14 +338,14 @@ module internal rec AST =
             | [ Call(Import(ImportInfo.Equals "uncurry2", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
                 getChildren currentList body
             | [ Call.ImportTag(imp, _) ] ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None))
+                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None) |> Tracer.create)
                 newExpr :: currentList
             | [ Let(_, Call.ImportTag(imp, _), Sequential exprs) ] ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None))
+                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None) |> Tracer.create)
                 newExpr :: currentList
             | [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ] ->
                 let newExpr =
-                    transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None))
+                    transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None) |> Tracer.create)
                 newExpr :: currentList
             | [ next1; next2 ] ->
                 let next2Children = getChildren [] next2
@@ -394,8 +414,9 @@ module internal rec AST =
             range = None
         )
 
-    let transformTagInfo (tagInfo: TagInfo) : Expr =
+    let transformTagInfo (tracer: TagInfo Tracer) : Expr =
         let tagName, props, children, range =
+            let tagInfo= tracer.Value
             match tagInfo with
             | WithChildren(tagName, callInfo, range) ->
                 let props = callInfo.Args |> List.fold getAttributes []
@@ -452,19 +473,19 @@ module internal rec AST =
     let transform (expr: Expr) =
         match expr with
         | Let.TagNoChildrenWithProps tagCall
-        | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _) -> transformTagInfo tagCall
-        | Tag.NoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range))
-        | CallTagNoChildrenWithHandler tagCall -> transformTagInfo tagCall
-        | LetTagNoChildrenNoProps tagCall -> transformTagInfo tagCall
-        | Tag.WithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo)
-        | Let.TagWithChildren tagCall -> transformTagInfo tagCall
-        | Call.ImportTag(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range))
+        | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _) -> transformTagInfo (tagCall |> Tracer.create |> _.trace() )
+        | Tag.NoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range) |> Tracer.create |> _.trace() )
+        | CallTagNoChildrenWithHandler tagCall -> transformTagInfo (tagCall |> Tracer.create |> _.trace() )
+        | LetTagNoChildrenNoProps tagCall -> transformTagInfo (tagCall |> Tracer.create |> _.trace() )
+        | Tag.WithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo |> Tracer.create |> _.trace())
+        | Let.TagWithChildren tagCall -> transformTagInfo (tagCall |> Tracer.create |> _.trace())
+        | Call.ImportTag(imp, range) -> transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range) |> Tracer.create |> _.trace())
         | Let(_, Call.ImportTag(imp, range), Tag.WithChildren(_, callInfo, _)) ->
-            transformTagInfo(TagInfo.WithChildren(LibraryImport imp, callInfo, range))
+            transformTagInfo(TagInfo.WithChildren(LibraryImport imp, callInfo, range) |> Tracer.create |> _.trace())
         | Let(_, Call.ImportTag(imp, range), Sequential exprs) ->
-            transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, range))
+            transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, range) |> Tracer.create |> _.trace())
         | Let(_, Let(_, Call.ImportTag(imp, range), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ->
-            transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, range))
+            transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, range) |> Tracer.create |> _.trace())
         | Let(name, value, expr) -> Let(name, value, (transform expr))
         | Sequential expressions ->
             // transform only the last expression
