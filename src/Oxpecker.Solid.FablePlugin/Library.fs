@@ -32,9 +32,10 @@ type Tracer() =
             trace.Add traceMsg
             if prettyPrint then
                 Console.ForegroundColor <- consoleColor
-                Console.Write guid
+                Console.Write $"{guid} "
                 Console.ResetColor()
-                Console.WriteLine $" || L{line} : {memberName, -20} {message}"
+                Console.Write $"{memberName, -18} {message,-18} "
+                Console.WriteLine $"({path}:{line})"
 
     static member setVerbosity traceVerbosity =
         match traceVerbosity with
@@ -135,21 +136,21 @@ module internal rec AST =
         /// </summary>
         /// <param name="builder"><c>TagBuilder</c></param>
         /// <returns>Flattened expression of the built Tag</returns>
-        let transform (builder: TagBuilder) =
+        let build (builder: TagBuilder) =
             let properties, children =
                 match builder.Info with
                 | Children propsAndChildren ->
-                    builder.trace() |> ignore
-                    (propsAndChildren.Args |> List.fold Attributes.get [],
-                     propsAndChildren.Args |> List.fold Children.get [])
+                    builder.trace("Children") |> ignore
+                    (propsAndChildren.Args |> List.fold (Attributes.get builder) [],
+                     propsAndChildren.Args |> List.fold (Children.get builder) [])
                 | Props props ->
-                    builder.trace() |> ignore
-                    (Attributes.collect props,
+                    builder.trace("Props") |> ignore
+                    (Attributes.collect props builder,
                      [])
                 | Combined(props, propsAndChildren) ->
-                    builder.trace() |> ignore
-                    (Attributes.collect props,
-                     propsAndChildren.Args |> List.fold Children.get [])
+                    builder.trace("Combined") |> ignore
+                    (Attributes.collect props builder,
+                     propsAndChildren.Args |> List.fold (Children.get builder) [])
             let transformedProperties =
                 properties |> List.map (fun (name, expr) ->
                     Value(
@@ -169,8 +170,7 @@ module internal rec AST =
                 match builder.Tag with
                 | AutoImport tagName -> Value(StringConstant tagName, None)
                 | LibraryImport import -> import
-            builder.trace() |> ignore
-            // Console.WriteLine (builder.Tracer.Collect())
+            builder.trace("Finalised") |> ignore
             Call(
                 callee = Baked.importJsxCreate,
                 info = {
@@ -266,7 +266,7 @@ module internal rec AST =
                     builder
                     |> TagBuilder.info.add expr
                     |> TagBuilder.range range
-                    |> _.trace()
+                    |> _.trace("WithPropsOrHandler")
                     |> Some
                 | _ -> None
             | _ -> None
@@ -342,20 +342,24 @@ module internal rec AST =
             | "style", { Args = [ _; identExpr ] } -> Property.create "style" identExpr |> Some
             | "classList", { Args = [ _; identExpr ] } -> Property.create "classList" identExpr |> Some
             | _ -> None
-        let rec collect exprs =
+        let rec collect exprs builder =
             match exprs with
-            | [] -> []
-            | Sequential expressions :: rest -> Attributes.collect rest @ Attributes.collect expressions
+            | [] -> builder.trace("Empty") |> ignore ; []
+            | Sequential expressions :: rest -> Attributes.collect rest (builder.trace("Sequential (L)")) @ Attributes.collect expressions (builder.trace("Sequential (R)"))
             | Call.ImportCallRangeInfo (importInfo, callInfo, _) :: rest ->
-                let restResults = Attributes.collect rest
+                let restResults = Attributes.collect rest (builder.trace("Call.ImportCallRangeInfo"))
                 match importInfo.Kind with
                 | ImportKind.MemberImport(MemberRef(entity, memberRefInfo))
                     when entity.FullName.StartsWith("Oxpecker.Solid") ->
                     match memberRefInfo.CompiledName, callInfo with
-                    | Attributes.ElementExtension extensionProperty -> extensionProperty :: restResults
+                    | Attributes.ElementExtension extensionProperty ->
+                        builder.trace("Element extension") |> ignore
+                        extensionProperty :: restResults
                     | _ ->
+                        builder.trace("Non Extension") |> ignore
                         let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
                         if setterIndex >= 0 then
+                            builder.trace("Setter > 0") |> ignore
                             let propertyName =
                                 match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
                                 | name when name.EndsWith("'") -> name[0..name.Length - 1]
@@ -364,102 +368,130 @@ module internal rec AST =
                             let propertyValue = callInfo.Args.Head
                             match propertyValue with
                             | TypeCast(expr, DeclaredType({ FullName = "Oxpecker.Solid.Builder.HtmlElement" }, _)) ->
+                                builder.trace($"Typecast {propertyName}") |> ignore
                                 transform expr
                                 |> Property.create propertyName
                             | Delegate(args, expr, name, tags) ->
+                                builder.trace($"Delegate {propertyName}") |> ignore
                                 Delegate(args, transform expr, name, tags)
                                 |> Property.create propertyName
-                            | _ -> Property.create propertyName propertyValue
+                            | _ ->
+                                builder.trace($"_ {propertyName}") |> ignore
+                                Property.create propertyName propertyValue
                             |> fun property -> property :: restResults
                         else
+                            builder.trace("Setter = 0") |> ignore
                             restResults
-                | _ -> restResults
+                | _ ->
+                    builder.trace("_") |> ignore
+                    restResults
             | Set(IdentExpr(Ident.StartsWith "returnVal"), SetKind.FieldSet name, _, handler, _) :: rest ->
                 let propertyName = name |> function
                     | _ when name.EndsWith("'") -> name.Substring(0, name.Length - 1)
                     | _ -> name
                 Property.create propertyName handler
-                |> fun property -> property :: Attributes.collect rest
-            | _ :: rest -> Attributes.collect rest
-        let get current expr : PropertyList =
+                |> fun property -> property :: Attributes.collect rest (builder.trace("Set Ident returnVal"))
+            | _ :: rest -> Attributes.collect rest (builder.trace("_"))
+        let get builder current expr : PropertyList =
             match expr with
             | Let(Ident.StartsWith "returnVal", _, Sequential exprs) ->
-                Attributes.collect exprs @ current
+                Attributes.collect exprs (builder.trace()) @ current
             | Tag.NoChildrenWithHandler { Info = TagBuilderInfo.Props props } ->
-                Attributes.collect props @ current
+                Attributes.collect props (builder.trace()) @ current
             | _ -> current
     module Children =
-        let get current expr : Expr list =
+        let get builder current expr : Expr list =
             match expr with
             | Let.WithChildren builder
             | Let.Element & Let(_, Let.NoChildrenWithProps builder, _)
             | Let.Element & Let.NoChildrenNoProps builder
             | Let.Element & Let(_, Tag.NoChildrenWithHandler builder, _) ->
-                TagBuilder.transform (builder.trace()) :: current
+                TagBuilder.build (builder.trace()) :: current
             | Let.Element & Let(_, next, _) ->
+                builder.trace() |> ignore
                 transform next :: current
             | Lambda(Ident.StartsWith "cont", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) ->
+                builder.trace() |> ignore
                 Delegate([ item; index ], transform next, None, []) :: current
-            | Lambda.TextNoSiblings body -> body :: current
+            | Lambda.TextNoSiblings body ->
+                builder.trace() |> ignore
+                body :: current
             | Let(Ident.StartsWith "text", body, Lambda.TextNoSiblings _) ->
+                builder.trace() |> ignore
                 body :: current
             | Let(Ident.StartsWith "second", next, Lambda(Ident.StartsWith "builder", Sequential(TypeCast(textBody, Unit) :: _), _)) ->
-                Children.get (textBody :: current) next
+                Children.get (builder.trace()) (textBody :: current) next
             | CurriedApply(Lambda(Ident.StartsWith "cont", TypeCast(lastParameter, Unit), Some second), _, _, _) when second.StartsWith "second" ->
+                builder.trace() |> ignore
                 lastParameter :: current
             | CurriedApply(Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _)
             | Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _) ->
-                Children.get (middleParameter :: current) next
+                Children.get (builder.trace()) (middleParameter :: current) next
             | Let(Ident.StartsWith "first", next1, Lambda(Ident.StartsWith "builder", Sequential [ CurriedApply _; next2 ], _)) ->
-                let next2Children = Children.get [] next2
-                let next1Children = Children.get [] next1
+                let next2Children = Children.get (builder.trace()) [] next2
+                let next1Children = Children.get (builder.trace()) [] next1
                 next2Children @ next1Children @ current
             | Let(Ident.StartsWith "first", Let(_, expr, _), Let(Ident.StartsWith "second", next, _))
             | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
                 match expr with
-                | Let.NoChildrenNoProps builder ->
-                    Children.get (TagBuilder.transform (builder.trace()) :: current) next
-                | Tag.NoChildren builder ->
-                    TagBuilder.transform (builder |> TagBuilder.info (TagBuilderInfo.create []) |> _.trace())
-                    |> fun newExpr -> Children.get (newExpr :: current) next
-                | Tag.WithChildren builder ->
-                    TagBuilder.transform (builder.trace())
-                    |> fun newExpr -> Children.get (newExpr :: current) next
+                | Let.NoChildrenNoProps nextBuilder ->
+                    Children.get (builder.trace()) (TagBuilder.build (nextBuilder.trace()) :: current) next
+                | Tag.NoChildren nextBuilder ->
+                    TagBuilder.build (nextBuilder |> TagBuilder.info (TagBuilderInfo.create []) |> _.trace())
+                    |> fun newExpr -> Children.get (builder.trace()) (newExpr :: current) next
+                | Tag.WithChildren nextBuilder ->
+                    TagBuilder.build (nextBuilder.trace())
+                    |> fun newExpr -> Children.get (builder.trace()) (newExpr :: current) next
                 | _ ->
-                    Children.get (transform expr :: current) next
+                    Children.get (builder.trace()) (transform expr :: current) next
             | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
+                builder.trace() |> ignore
                 IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range) :: current
             | DecisionTree(decisionTree, targets) ->
+                builder.trace() |> ignore
                 DecisionTree(decisionTree, targets |> List.map(fun (target,expr) -> target, transform expr)) :: current
             | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
                 match args with
                 | [ Call(Import({Selector = "uncurry2"}, Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
-                    Children.get current body
+                    Children.get (builder.trace()) current body
                 | [ Call.TagImport (imp, _) ] ->
-                    TagBuilder.transform (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create []) |> _.trace())
+                    builder.trace() |> ignore
+                    TagBuilder.build (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create []) |> _.trace())
                     |> fun newExpr -> newExpr :: current
                 | [ Let(_, Call.TagImport(imp, _), Sequential exprs) ] ->
-                    TagBuilder.transform (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create exprs) |> _.trace())
+                    builder.trace() |> ignore
+                    TagBuilder.build (TagBuilder.create (LibraryImport imp, TagBuilderInfo.create exprs) |> _.trace())
                     |> fun newExpr -> newExpr :: current
                 | [ Let(_, Let(_, Call.TagImport(imp, _), Sequential exprs), Tag.WithChildren { Info = TagBuilderInfo.Children callInfo }) ] ->
+                    builder.trace() |> ignore
                     TagBuilder.create ((LibraryImport imp), (TagBuilderInfo.create(exprs, callInfo)))
                     |> _.trace()
-                    |> TagBuilder.transform
+                    |> TagBuilder.build
                     |> fun newExpr -> newExpr :: current
                 | [ next1; next2 ] ->
-                    let next2Children = Children.get [] next2
-                    let next1Children = Children.get [] next1
+                    let next2Children = Children.get (builder.trace()) [] next2
+                    let next1Children = Children.get (builder.trace()) [] next1
                     next2Children @ next1Children @ current
-                | [ expr ] -> expr :: current
-                | _ -> current
+                | [ expr ] ->
+                    builder.trace() |> ignore
+                    expr :: current
+                | _ ->
+                    builder.trace() |> ignore
+                    current
             | Let({Name=name; Range=range; Type=DeclaredType({FullName = fullName}, [])}, _, _)
-                when (name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
-                || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid"))
+                when ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
+                || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
                 |> not ->
                 match range with
-                | Some range -> failwith $"let binding inside HTML CE can't be converted"
-                | None -> failwith "let binding inside HTML CE can't be converted"
-            | _ -> current
+                | Some range ->
+                    builder.trace($"@{range}: Name = {name}; DeclaredType FullName = {fullName}") |> ignore
+                    failwith $"let binding inside HTML CE can't be converted"
+                | None ->
+                    builder.trace($"@{range}: Name = {name}; DeclaredType FullName = {fullName}") |> ignore
+                    failwith "let binding inside HTML CE can't be converted"
+            | _ ->
+                builder.trace() |> ignore
+                current
         let wrap childrenExpression =
             Value(
                 kind = NewTuple(
@@ -480,34 +512,34 @@ module internal rec AST =
     let transform expr =
         match expr with
         | Let.NoChildrenWithProps builder
-        | Let.Element & Let(_, Let.NoChildrenWithProps builder, _) -> builder.trace() |> TagBuilder.transform
+        | Let.Element & Let(_, Let.NoChildrenWithProps builder, _) -> builder.trace() |> TagBuilder.build
         | Tag.NoChildren builder ->
             builder.trace()
             |> TagBuilder.info (TagBuilderInfo.create [])
-            |> TagBuilder.transform
+            |> TagBuilder.build
         | Tag.NoChildrenWithHandler builder
         | Let.NoChildrenNoProps builder
         | Tag.WithChildren builder
-        | Let.WithChildren builder -> builder.trace() |> TagBuilder.transform
+        | Let.WithChildren builder -> builder.trace() |> TagBuilder.build
         | Call.TagImport (tagSource, range) ->
             TagBuilder.create (LibraryImport tagSource, TagBuilderInfo.create [], range)
             |> _.trace($"{LibraryImport tagSource}")
-            |>  TagBuilder.transform
+            |>  TagBuilder.build
         | Let(_, Call.TagImport(tagSource, range), Tag.WithChildren builder) ->
             builder.trace()
             |> TagBuilder.tag (LibraryImport tagSource)
             |> TagBuilder.range range
-            |> TagBuilder.transform
+            |> TagBuilder.build
         | Let(_, Call.TagImport(tagSource, range), Sequential exprs) ->
             TagBuilder.create (LibraryImport tagSource, TagBuilderInfo.create exprs, range)
             |> _.trace()
-            |> TagBuilder.transform
+            |> TagBuilder.build
         | Let(_, Let(_, Call.TagImport(tagSource, range), Sequential exprs), Tag.WithChildren builder) ->
             builder.trace()
             |> TagBuilder.range range
             |> TagBuilder.tag (LibraryImport tagSource)
             |> TagBuilder.info.adds exprs
-            |> TagBuilder.transform
+            |> TagBuilder.build
         | Sequential expressions ->
             Sequential (
                 expressions
