@@ -8,8 +8,15 @@ open Fable.AST.Fable
 [<assembly: ScanForPlugins>]
 do () // Prompts fable to utilise this plugin
 
+[<AutoOpen>]
+module TraceSettings =
+    let mutable private _verbose = false
+    let enableTrace () = _verbose <- true
+    let verbose () = _verbose
+
 module internal rec AST =
     let private _random = Random()
+
     type Tracer<'T> =
         {
             Value : 'T
@@ -17,10 +24,12 @@ module internal rec AST =
             ConsoleColor : ConsoleColor
         }
         member this.emit(message: string, memberName: string, path: string, line: int) =
+            if verbose() |> not then this
+            else
             Console.ForegroundColor <- this.ConsoleColor
             Console.Write $"{this.Guid} "
             Console.ForegroundColor <- ConsoleColor.Gray
-            Console.Write $"{memberName, -15}"
+            Console.Write $"{memberName, -20}"
             Console.ResetColor()
             Console.WriteLine $"{message} ({path}:{line})"
             this
@@ -39,6 +48,8 @@ module internal rec AST =
     module Tracer =
         let inline private _create value guid consoleColor = { Value = value; Guid = guid; ConsoleColor = consoleColor }
         let create value =
+            if verbose() |> not then _create value Guid.Empty ConsoleColor.Black
+            else
             _random.Next(15)
             |> enum<ConsoleColor>
             |> _create value (Guid.NewGuid())
@@ -221,146 +232,155 @@ module internal rec AST =
         match callInfo with
         | CallInfo.GetArgs [ _; Value(StringConstant eventName, _); handler ] -> Some(eventName, handler)
         | _ -> None
+    [<AutoOpen>]
+    module Attributes =
+        let (|Extension|_|) = function
+            | "on", EventHandler(eventName, handler), restResults -> ("on:" + eventName, handler) :: restResults |> Some
+            | "bool", EventHandler(eventName, handler), restResults -> ("bool:" + eventName, handler) :: restResults |> Some
+            | "data", EventHandler(eventName, handler), restResults -> ("data-" + eventName, handler) :: restResults |> Some
+            | "attr", EventHandler(eventName, handler), restResults -> (eventName, handler) :: restResults |> Some
+            | "ref", CallInfo.GetArgs [ _; identExpr ], restResults -> ("ref", identExpr) :: restResults |> Some
+            | "style'", CallInfo.GetArgs [ _; identExpr ], restResults -> ("style", identExpr) :: restResults |> Some
+            | "classList", CallInfo.GetArgs [ _; identExpr ], restResults -> ("classList", identExpr) :: restResults |> Some
+            | _ -> None
+        let rec collectAttributes (tracer: Expr list Tracer) =
+            let exprs = tracer.Value
+            match exprs with
+            | [] -> []
+            | Sequential expressions :: rest -> (Tracer.map tracer >> collectAttributes) rest @ (Tracer.map tracer >> collectAttributes) expressions
+            | Call(Import.Info importInfo, callInfo, _, _) :: rest ->
+                let restResults = (Tracer.map tracer >> collectAttributes) rest
+                match importInfo.Kind with
+                | ImportKind.MemberImport(MemberRef(EntityRef.StartsWith "Oxpecker.Solid", memberRefInfo)) ->
+                    match memberRefInfo.CompiledName, callInfo, restResults with
+                    | Extension propList -> propList
+                    | _ ->
+                        let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
+                        if setterIndex >= 0 then
+                            let propName =
+                                match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
+                                | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
+                                | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
+                                | name -> name
+                            let propValue = callInfo.Args.Head
+                            match propValue with
+                            | TypeCast(expr,
+                                       DeclaredType({
+                                                        FullName = "Oxpecker.Solid.Builder.HtmlElement"
+                                                    },
+                                                    _)) -> (propName, transform expr) :: restResults
+                            | Delegate(args, expr, name, tags) ->
+                                (propName, Delegate(args, transform expr, name, tags)) :: restResults
+                            | _ -> (propName, propValue) :: restResults
+                        else
+                            restResults
+                | _ -> restResults
+            | Set(IdentExpr(Ident.StartsWith "returnVal"), SetKind.FieldSet name, _, handler, _) :: rest ->
+                let propName =
+                    match name with
+                    | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
+                    | name -> name
+                (propName, handler) :: (Tracer.map tracer >> collectAttributes) rest
+            | _ :: rest -> (Tracer.map tracer >> collectAttributes) rest
 
-    let rec collectAttributes (exprs: Expr list) =
-        match exprs with
-        | [] -> []
-        | Sequential expressions :: rest -> collectAttributes rest @ collectAttributes expressions
-        | Call(Import.Info importInfo, callInfo, _, _) :: rest ->
-            let restResults = collectAttributes rest
-            match importInfo.Kind with
-            | ImportKind.MemberImport(MemberRef(EntityRef.StartsWith "Oxpecker.Solid", memberRefInfo)) ->
-                match memberRefInfo.CompiledName, callInfo with
-                | "on", EventHandler(eventName, handler) -> ("on:" + eventName, handler) :: restResults
-                | "bool", EventHandler(eventName, handler) -> ("bool:" + eventName, handler) :: restResults
-                | "data", EventHandler(eventName, handler) -> ("data-" + eventName, handler) :: restResults
-                | "attr", EventHandler(eventName, handler) -> (eventName, handler) :: restResults
-                | "ref", CallInfo.GetArgs [ _; identExpr ] -> ("ref", identExpr) :: restResults
-                | "style'", CallInfo.GetArgs [ _; identExpr ] -> ("style", identExpr) :: restResults
-                | "classList", CallInfo.GetArgs [ _; identExpr ] -> ("classList", identExpr) :: restResults
-                | _ ->
-                    let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
-                    if setterIndex >= 0 then
-                        let propName =
-                            match memberRefInfo.CompiledName.Substring(setterIndex + "set_".Length) with
-                            | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
-                            | name when name.StartsWith("aria") -> $"aria-{name.Substring(4).ToLower()}"
-                            | name -> name
-                        let propValue = callInfo.Args.Head
-                        match propValue with
-                        | TypeCast(expr,
-                                   DeclaredType({
-                                                    FullName = "Oxpecker.Solid.Builder.HtmlElement"
-                                                },
-                                                _)) -> (propName, transform expr) :: restResults
-                        | Delegate(args, expr, name, tags) ->
-                            (propName, Delegate(args, transform expr, name, tags)) :: restResults
-                        | _ -> (propName, propValue) :: restResults
-                    else
-                        restResults
-            | _ -> restResults
-        | Set(IdentExpr(Ident.StartsWith "returnVal"), SetKind.FieldSet name, _, handler, _) :: rest ->
-            let propName =
-                match name with
-                | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
-                | name -> name
-            (propName, handler) :: collectAttributes rest
-        | _ :: rest -> collectAttributes rest
-
-    let getAttributes currentList (expr: Expr) : Props =
-        match expr with
-        | Let(Ident.StartsWith "returnVal", _, Sequential exprs) ->
-            collectAttributes exprs @ currentList
-        | CallTagNoChildrenWithHandler(NoChildren(_, props, _)) -> collectAttributes props @ currentList
-        | _ -> currentList
-
-    let getChildren currentList (expr: Expr) : Expr list =
-        match expr with
-        | Let.TagWithChildren tagInfo ->
-            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
-            newExpr :: currentList
-        | Let.Element & Let.Value (Let.TagNoChildrenWithProps tagInfo) ->
-            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
-            newExpr :: currentList
-        | Let.Element & LetTagNoChildrenNoProps tagInfo ->
-            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
-            newExpr :: currentList
-        | Let.Element & Let.Value (CallTagNoChildrenWithHandler tagInfo) ->
-            let newExpr = transformTagInfo (tagInfo |> Tracer.create)
-            newExpr :: currentList
-        | Let.Element & Let.Value next ->
-            let newExpr = transform next
-            newExpr :: currentList
-        // Lambda with two arguments returning element
-        | Lambda(Ident.StartsWith "cont", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) ->
-            Delegate([ item; index ], transform next, None, []) :: currentList
-        | TextNoSiblings body -> body :: currentList
-        // text with solid signals inside
-        | Let(Ident.StartsWith "text", body, TextNoSiblings _) -> body :: currentList
-        // text then tag
-        | Let(Ident.StartsWith "second", next, Lambda(Ident.StartsWith "builder", Sequential(TypeCast(textBody, Unit) :: _), _)) ->
-            getChildren (textBody :: currentList) next
-        // parameter then another parameter
-        | CurriedApply(Lambda(Ident.StartsWith "cont", TypeCast(lastParameter, Unit), Some (StartsWith "second")), _, _, _) ->
-            lastParameter :: currentList
-        | CurriedApply(Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _)
-        | Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _) ->
-            getChildren (middleParameter :: currentList) next
-        // tag then text
-        | Let(Ident.StartsWith "first", next1, Lambda(Ident.StartsWith "builder", Sequential [ CurriedApply _; next2 ], _)) ->
-            let next2Children = getChildren [] next2
-            let next1Children = getChildren [] next1
-            next2Children @ next1Children @ currentList
-        | Let(Ident.StartsWith "first", Let.Value expr, Let(Ident.StartsWith "second", next, _))
-        | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
+        let getAttributes currentList (tracer: Expr Tracer) : Props =
+            tracer.ping()
+            let expr = tracer.Value
             match expr with
-            | Let.TagNoChildrenWithProps tagInfo ->
-                let newExpr = transformTagInfo (tagInfo |> Tracer.create)
-                getChildren (newExpr :: currentList) next
-            | Tag.NoChildren(tagName, range) ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren(tagName, [], range) |> Tracer.create)
-                getChildren (newExpr :: currentList) next
-            | Tag.WithChildren callInfo ->
-                let newExpr = transformTagInfo(TagInfo.WithChildren callInfo |> Tracer.create)
-                getChildren (newExpr :: currentList) next
-            | expr ->
-                let newExpr = transform expr
-                getChildren (newExpr :: currentList) next
-        | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
-            IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range)
-            :: currentList
-        | DecisionTree(decisionTree, targets) ->
-            DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
-            :: currentList
-        // router cases
-        | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
-            match args with
-            | [ Call(Import(ImportInfo.Equals "uncurry2", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
-                getChildren currentList body
-            | [ Call.ImportTag(imp, _) ] ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None) |> Tracer.create)
-                newExpr :: currentList
-            | [ Let(_, Call.ImportTag(imp, _), Sequential exprs) ] ->
-                let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None) |> Tracer.create)
-                newExpr :: currentList
-            | [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ] ->
-                let newExpr =
-                    transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None) |> Tracer.create)
-                newExpr :: currentList
-            | [ next1; next2 ] ->
-                let next2Children = getChildren [] next2
-                let next1Children = getChildren [] next1
-                next2Children @ next1Children @ currentList
-            | [ expr ] -> expr :: currentList
+            | Let(Ident.StartsWith "returnVal", _, Sequential exprs) ->
+                (Tracer.map (tracer.trace()) >> collectAttributes) exprs @ currentList
+            | CallTagNoChildrenWithHandler(NoChildren(_, props, _)) -> (Tracer.map (tracer.trace()) >> collectAttributes) props @ currentList
             | _ -> currentList
-        | Let.Ident { Name = name
-                      Range = range
-                      Type = DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []) }
-            when not (name.StartsWith("returnVal") || name.StartsWith("element")) ->
-                match range with
-                | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
-                | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
-        | _ -> currentList
+    [<AutoOpen>]
+    module Children =
+        let getChildren currentList (tracer: Expr Tracer) : Expr list =
+            let expr = tracer.trace().Value
+            match expr with
+            | Let.TagWithChildren tagInfo ->
+                let newExpr = transformTagInfo (tagInfo |> Tracer.create)
+                newExpr :: currentList
+            | Let.Element & Let.Value (Let.TagNoChildrenWithProps tagInfo) ->
+                let newExpr = transformTagInfo (tagInfo |> Tracer.create)
+                newExpr :: currentList
+            | Let.Element & LetTagNoChildrenNoProps tagInfo ->
+                let newExpr = transformTagInfo (tagInfo |> Tracer.create)
+                newExpr :: currentList
+            | Let.Element & Let.Value (CallTagNoChildrenWithHandler tagInfo) ->
+                let newExpr = transformTagInfo (tagInfo |> Tracer.create)
+                newExpr :: currentList
+            | Let.Element & Let.Value next ->
+                let newExpr = transform next
+                newExpr :: currentList
+            // Lambda with two arguments returning element
+            | Lambda(Ident.StartsWith "cont", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) ->
+                Delegate([ item; index ], transform next, None, []) :: currentList
+            | TextNoSiblings body -> body :: currentList
+            // text with solid signals inside
+            | Let(Ident.StartsWith "text", body, TextNoSiblings _) -> body :: currentList
+            // text then tag
+            | Let(Ident.StartsWith "second", next, Lambda(Ident.StartsWith "builder", Sequential(TypeCast(textBody, Unit) :: _), _)) ->
+                getChildren (textBody :: currentList) (Tracer.map tracer next)
+            // parameter then another parameter
+            | CurriedApply(Lambda(Ident.StartsWith "cont", TypeCast(lastParameter, Unit), Some (StartsWith "second")), _, _, _) ->
+                lastParameter :: currentList
+            | CurriedApply(Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _)
+            | Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _) ->
+                getChildren (middleParameter :: currentList) (Tracer.map tracer next)
+            // tag then text
+            | Let(Ident.StartsWith "first", next1, Lambda(Ident.StartsWith "builder", Sequential [ CurriedApply _; next2 ], _)) ->
+                let next2Children = getChildren [] (Tracer.map tracer next2)
+                let next1Children = getChildren [] (Tracer.map tracer next1)
+                next2Children @ next1Children @ currentList
+            | Let(Ident.StartsWith "first", Let.Value expr, Let(Ident.StartsWith "second", next, _))
+            | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
+                match expr with
+                | Let.TagNoChildrenWithProps tagInfo ->
+                    let newExpr = transformTagInfo (tagInfo |> Tracer.create)
+                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                | Tag.NoChildren(tagName, range) ->
+                    let newExpr = transformTagInfo(TagInfo.NoChildren(tagName, [], range) |> Tracer.create)
+                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                | Tag.WithChildren callInfo ->
+                    let newExpr = transformTagInfo(TagInfo.WithChildren callInfo |> Tracer.create)
+                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                | expr ->
+                    let newExpr = transform expr
+                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+            | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
+                IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range)
+                :: currentList
+            | DecisionTree(decisionTree, targets) ->
+                DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
+                :: currentList
+            // router cases
+            | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
+                match args with
+                | [ Call(Import(ImportInfo.Equals "uncurry2", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
+                    getChildren currentList (Tracer.map tracer body)
+                | [ Call.ImportTag(imp, _) ] ->
+                    let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None) |> Tracer.create)
+                    newExpr :: currentList
+                | [ Let(_, Call.ImportTag(imp, _), Sequential exprs) ] ->
+                    let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None) |> Tracer.create)
+                    newExpr :: currentList
+                | [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ] ->
+                    let newExpr =
+                        transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None) |> Tracer.create)
+                    newExpr :: currentList
+                | [ next1; next2 ] ->
+                    let next2Children = getChildren [] (Tracer.map tracer next2)
+                    let next1Children = getChildren [] (Tracer.map tracer next1)
+                    next2Children @ next1Children @ currentList
+                | [ expr ] -> expr :: currentList
+                | _ -> currentList
+            | Let.Ident { Name = name
+                          Range = range
+                          Type = DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []) }
+                when not (name.StartsWith("returnVal") || name.StartsWith("element")) ->
+                    match range with
+                    | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
+                    | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
+            | _ -> currentList
     [<RequireQualifiedAccess>]
     module Baked =
         let listItemType =
@@ -415,20 +435,21 @@ module internal rec AST =
         )
 
     let transformTagInfo (tracer: TagInfo Tracer) : Expr =
+        tracer.ping()
+        let tagInfo= tracer.Value
         let tagName, props, children, range =
-            let tagInfo= tracer.Value
             match tagInfo with
             | WithChildren(tagName, callInfo, range) ->
-                let props = callInfo.Args |> List.fold getAttributes []
-                let childrenList = callInfo.Args |> List.fold getChildren []
+                let props = callInfo.Args |> List.map (Tracer.map tracer) |> List.fold getAttributes []
+                let childrenList = callInfo.Args |> List.map (Tracer.map tracer) |> List.fold getChildren []
                 tagName, props, childrenList, range
             | NoChildren(tagName, propList, range) ->
-                let props = collectAttributes propList
+                let props = propList |> Tracer.map tracer |> collectAttributes
                 let childrenList = []
                 tagName, props, childrenList, range
             | Combined(tagName, propList, callInfo, range) ->
-                let props = collectAttributes propList
-                let childrenList = callInfo.Args |> List.fold getChildren []
+                let props = propList |> Tracer.map tracer |> collectAttributes
+                let childrenList = callInfo.Args |> List.map (Tracer.map tracer) |> List.fold getChildren []
                 tagName, props, childrenList, range
 
         let propsXs =
@@ -455,7 +476,7 @@ module internal rec AST =
             match tagName with
             | AutoImport tagName -> Value(StringConstant tagName, None)
             | LibraryImport imp -> imp
-
+        tracer.ping("Finalised")
         Call(
             callee = Baked.importJsxCreate,
             info = {
@@ -470,7 +491,9 @@ module internal rec AST =
             range = range
         )
 
-    let transform (expr: Expr) =
+    let transform' (tracer: Expr Tracer) =
+        tracer.ping()
+        let expr = tracer.Value
         match expr with
         | Let.TagNoChildrenWithProps tagCall
         | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _) -> transformTagInfo (tagCall |> Tracer.create |> _.trace() )
@@ -495,6 +518,7 @@ module internal rec AST =
             )
         // transform children passed to component function call
         | Call(callee, callInfo, typ, range) ->
+            tracer.ping("Transform children passed to component function call")
             let newCallInfo = {
                 callInfo with
                     Args = callInfo.Args |> List.map transform
@@ -507,7 +531,7 @@ module internal rec AST =
             DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
         | TypeCast(expr, DeclaredType _) -> transform expr
         | _ -> expr
-
+    let transform (expr: Expr) = expr |> Tracer.create |> transform'
     let transformException (pluginHelper: PluginHelper) (range: SourceLocation option) =
         let childrenExpression =
             Value(
@@ -546,6 +570,7 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
+        if pluginHelper.Options.Verbosity = Verbosity.Verbose then enableTrace()
         // Console.WriteLine("!Start! MemberDecl")
         // Console.WriteLine(memberDecl.Body)
         // Console.WriteLine("!End! MemberDecl")
