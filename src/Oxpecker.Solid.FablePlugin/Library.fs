@@ -9,6 +9,29 @@ open Fable.AST.Fable
 do () // Prompts fable to utilise this plugin
 
 module internal rec AST =
+    let private _random = Random()
+    type Tracer<'T> =
+        {
+            Value : 'T
+            Guid : Guid
+            ConsoleColor : ConsoleColor
+        }
+    module Tracer =
+        let inline private _create value guid consoleColor = { Value = value; Guid = guid; ConsoleColor = consoleColor }
+        let create value =
+            _random.Next(15)
+            |> enum<ConsoleColor>
+            |> _create value (Guid.NewGuid())
+        let init = _create () Guid.Empty ConsoleColor.Black
+        let map (tracer: Tracer<'T>) (input: 'M): Tracer<'M> = _create input tracer.Guid tracer.ConsoleColor
+        let (|Traced|) (tracer : Tracer<'T>) = (tracer.Value, tracer)
+        let trace (
+            [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message : string,
+            [<Runtime.InteropServices.Optional; Runtime.CompilerServices.CallerMemberName; Runtime.InteropServices.DefaultParameterValue("")>] memberName : string,
+            [<Runtime.CompilerServices.CallerFilePath; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] path : string,
+            [<Runtime.CompilerServices.CallerLineNumber; Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue(0)>] line : int
+            ) (tracer: Tracer<'a>)= tracer
+
     /// <summary>
     /// AST Representation for a JSX Attribute/property. Tuple of name and value
     /// </summary>
@@ -31,27 +54,20 @@ module internal rec AST =
         | Combined of tagName: TagSource * props: Expr list * propsAndChildren: CallInfo * range: SourceLocation option
     [<AutoOpen>]
     module Native =
-        let (|StartsWith|_|) (value: string) : string -> unit option = function
-            | s when s.StartsWith(value) -> Some()
-            | _ -> None
-        let (|EndsWith|_|) (value: string) : string -> unit option = function
-            | s when s.EndsWith(value) -> Some()
-            | _ -> None
+        let (|StartsWith|_|) (value: string) : string -> unit option = function | s when s.StartsWith(value) -> Some() | _ -> None
+        let (|EndsWith|_|) (value: string) : string -> unit option = function | s when s.EndsWith(value) -> Some() | _ -> None
+        let (|Equals|_|) (value: string) : string -> unit option = function | s when s.Equals(value) -> Some() | _ -> None
+        let (|Trim|) (value: int) (input: string) = input.Substring(0, input.Length - value)
     [<RequireQualifiedAccess>]
     module EntityRef =
-        let (|StartsWith|_|) (value : string) = function
-            | e when e.FullName.StartsWith value -> Some()
-            | _ -> None
+        let (|StartsWith|_|) (value : string) = function | e when e.FullName.StartsWith value -> Some() | _ -> None
     [<RequireQualifiedAccess>]
     module Ident =
-        let (|StartsWith|_|) (value : string) : Ident -> unit option = function
-            | i when i.Name.StartsWith value -> Some()
-            | _ -> None
+        let (|StartsWith|_|) (value : string) : Ident -> unit option = function | i when i.Name.StartsWith value -> Some() | _ -> None
     [<RequireQualifiedAccess>]
     module ImportInfo =
-        let (|StartsWith|_|) (value : string) = function
-            | i when i.Selector.StartsWith value -> Some()
-            | _ -> None
+        let (|StartsWith|_|) (value : string) = function | i when i.Selector.StartsWith value -> Some() | _ -> None
+        let (|Equals|_|) (value: string) = function | i when i.Selector = value -> Some() | _ -> None
     [<RequireQualifiedAccess>]
     module Import =
         let (|Info|_|) = function | Import(value,_,_) -> Some value | _ -> None
@@ -65,7 +81,7 @@ module internal rec AST =
         /// <returns><c>Expr * SourceLocation</c></returns>
         let (|ImportTag|_|) (expr: Expr) =
             match expr with
-            | Call(Import({ Kind = UserImport false }, Any, _) as imp, { Tags = [ "new" ] }, DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []), range) ->
+            | Call(Import({ Kind = UserImport false }, Any, _) as imp, CallInfo.GetTags [ "new" ], DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []), range) ->
                 Some(imp, range)
             | _ -> None
         /// <summary>
@@ -83,19 +99,18 @@ module internal rec AST =
                     | Let(_, Call.ImportTag(imp, _), _) :: _ -> LibraryImport imp
                     | _ ->
                         let tagName = typ.FullName.Split('.') |> Seq.last
-                        let finalTagName =
-                            if tagName = "Fragment" then
-                                ""
-                            elif tagName.EndsWith("'") then
-                                tagName.Substring(0, tagName.Length - 1)
-                            elif tagName.EndsWith("`1") then
-                                tagName.Substring(0, tagName.Length - 2)
-                            else
-                                tagName
-                        AutoImport finalTagName
+                        match tagName with
+                        | "Fragment" -> ""
+                        | EndsWith "'" & Trim(1) s -> s
+                        | EndsWith "`1" & Trim(2) s -> s
+                        | _ -> tagName
+                        |> AutoImport
                 Some(tagImport, callInfo, range)
             | _ -> None
-
+    [<RequireQualifiedAccess>]
+    module CallInfo =
+        let (|GetArgs|) = _.Args
+        let (|GetTags|) = _.Tags
     [<RequireQualifiedAccess>]
     module Tag =
         /// <summary>
@@ -154,17 +169,17 @@ module internal rec AST =
     /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|CallTagNoChildrenWithHandler|_|) (expr: Expr) =
         match expr with
-        | Call(Import.Info (ImportInfo.StartsWith "HtmlElementExtensions_"), { Args = args :: _ }, _, range) -> Some (args,range)
+        | Call(Import.Info (ImportInfo.StartsWith "HtmlElementExtensions_"), CallInfo.GetArgs(args :: _), _, range) ->
+            (args,range)
+            |> function
+                | Tag.NoChildren(tagName, _), range ->
+                    TagInfo.NoChildren(tagName, [ expr ], range) |> Some
+                | Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range ->
+                    TagInfo.NoChildren(tagName, expr :: props, range) |> Some
+                | CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)), range ->
+                    TagInfo.NoChildren(tagName, expr :: props, range) |> Some
+                | _ -> None
         | _ -> None
-        |> Option.bind (function
-            | Tag.NoChildren(tagName, _), range ->
-                TagInfo.NoChildren(tagName, [ expr ], range) |> Some
-            | Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range ->
-                TagInfo.NoChildren(tagName, expr :: props, range) |> Some
-            | CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)), range ->
-                TagInfo.NoChildren(tagName, expr :: props, range) |> Some
-            | _ -> None
-            )
     /// <summary>
     /// Pattern matches <c>let</c> bindings for tags without children or props
     /// </summary>
@@ -181,37 +196,10 @@ module internal rec AST =
         function
         | Lambda(Ident.StartsWith "cont", TypeCast(textBody, Unit), None) -> Some textBody
         | _ -> None
-    /// <summary>
-    /// Plugin type declaration for JSX Element
-    /// </summary>
-    let jsxElementType =
-        Type.DeclaredType(
-            ref = {
-                FullName = "Fable.Core.JSX.Element"
-                Path = EntityPath.CoreAssemblyName "Fable.Core"
-            },
-            genericArgs = []
-        )
-    /// <summary>
-    /// Plugin import declaration for JSX <c>create</c>
-    /// </summary>
-    let importJsxCreate =
-        Import(
-            info = {
-                Selector = "create"
-                Path = "@fable-org/fable-library-js/JSX.js"
-                Kind = ImportKind.UserImport false
-            },
-            typ = Type.Any,
-            range = None
-        )
-
 
     let private (|EventHandler|_|) callInfo =
         match callInfo with
-        | {
-              Args = [ _; Value(StringConstant eventName, _); handler ]
-          } -> Some(eventName, handler)
+        | CallInfo.GetArgs [ _; Value(StringConstant eventName, _); handler ] -> Some(eventName, handler)
         | _ -> None
 
     let rec collectAttributes (exprs: Expr list) =
@@ -227,9 +215,9 @@ module internal rec AST =
                 | "bool", EventHandler(eventName, handler) -> ("bool:" + eventName, handler) :: restResults
                 | "data", EventHandler(eventName, handler) -> ("data-" + eventName, handler) :: restResults
                 | "attr", EventHandler(eventName, handler) -> (eventName, handler) :: restResults
-                | "ref", { Args = [ _; identExpr ] } -> ("ref", identExpr) :: restResults
-                | "style'", { Args = [ _; identExpr ] } -> ("style", identExpr) :: restResults
-                | "classList", { Args = [ _; identExpr ] } -> ("classList", identExpr) :: restResults
+                | "ref", CallInfo.GetArgs [ _; identExpr ] -> ("ref", identExpr) :: restResults
+                | "style'", CallInfo.GetArgs [ _; identExpr ] -> ("style", identExpr) :: restResults
+                | "classList", CallInfo.GetArgs [ _; identExpr ] -> ("classList", identExpr) :: restResults
                 | _ ->
                     let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
                     if setterIndex >= 0 then
@@ -327,7 +315,7 @@ module internal rec AST =
         // router cases
         | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
             match args with
-            | [ Call(Import({ Selector = "uncurry2" }, Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
+            | [ Call(Import(ImportInfo.Equals "uncurry2", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
                 getChildren currentList body
             | [ Call.ImportTag(imp, _) ] ->
                 let newExpr = transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], None))
@@ -353,16 +341,43 @@ module internal rec AST =
                 | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
                 | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
         | _ -> currentList
+    [<RequireQualifiedAccess>]
+    module Baked =
+        let listItemType =
+            Type.Tuple(genericArgs = [ Type.String; Type.Any ], isStruct = false)
+        let emptyList =
+            Value(kind = NewList(headAndTail = None, typ = listItemType), range = None)
 
-    let listItemType =
-        Type.Tuple(genericArgs = [ Type.String; Type.Any ], isStruct = false)
-    let emptyList =
-        Value(kind = NewList(headAndTail = None, typ = listItemType), range = None)
+        /// <summary>
+        /// Plugin type declaration for JSX Element
+        /// </summary>
+        let jsxElementType =
+            Type.DeclaredType(
+                ref = {
+                    FullName = "Fable.Core.JSX.Element"
+                    Path = EntityPath.CoreAssemblyName "Fable.Core"
+                },
+                genericArgs = []
+            )
+        /// <summary>
+        /// Plugin import declaration for JSX <c>create</c>
+        /// </summary>
+        let importJsxCreate =
+            Import(
+                info = {
+                    Selector = "create"
+                    Path = "@fable-org/fable-library-js/JSX.js"
+                    Kind = ImportKind.UserImport false
+                },
+                typ = Type.Any,
+                range = None
+            )
+
 
     let convertExprListToExpr (exprs: Expr list) =
-        (emptyList, exprs)
+        (Baked.emptyList, exprs)
         ||> List.fold(fun acc prop ->
-            Value(kind = NewList(headAndTail = Some(prop, acc), typ = listItemType), range = None))
+            Value(kind = NewList(headAndTail = Some(prop, acc), typ = Baked.listItemType), range = None))
 
     let wrapChildrenExpression childrenExpression =
         Value(
@@ -421,7 +436,7 @@ module internal rec AST =
             | LibraryImport imp -> imp
 
         Call(
-            callee = importJsxCreate,
+            callee = Baked.importJsxCreate,
             info = {
                 ThisArg = None
                 Args = [ tag; propsExpr ]
@@ -430,7 +445,7 @@ module internal rec AST =
                 MemberRef = None
                 Tags = [ "jsx" ]
             },
-            typ = jsxElementType,
+            typ = Baked.jsxElementType,
             range = range
         )
 
@@ -488,7 +503,7 @@ module internal rec AST =
         let finalList = text :: []
         let propsExpr = convertExprListToExpr finalList
         Call(
-            callee = importJsxCreate,
+            callee = Baked.importJsxCreate,
             info = {
                 ThisArg = None
                 Args = [ Value(StringConstant "h1", None); propsExpr ]
@@ -497,7 +512,7 @@ module internal rec AST =
                 MemberRef = None
                 Tags = [ "jsx" ]
             },
-            typ = jsxElementType,
+            typ = Baked.jsxElementType,
             range = range
         )
 
