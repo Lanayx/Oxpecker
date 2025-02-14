@@ -470,8 +470,11 @@ module internal rec AST =
             | Let.Ident {
                             Name = name
                             Range = range
-                            Type = DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", [])
-                        } when not(name.StartsWith("returnVal") || name.StartsWith("element")) ->
+                            Type = DeclaredType({ FullName = fullName }, [])
+                        }
+                when ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
+                 || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
+                |> not ->
                 match range with
                 | Some range ->
                     failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
