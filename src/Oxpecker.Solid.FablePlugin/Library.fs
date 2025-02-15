@@ -4,6 +4,8 @@ open System
 open Fable
 open Fable.AST
 open Fable.AST.Fable
+open FablePlugin.PrettyPrint
+open FablePlugin.Types
 
 [<assembly: ScanForPlugins>]
 do () // Prompts fable to utilise this plugin
@@ -13,15 +15,7 @@ module TraceSettings =
     let mutable private _verbose = false
     let enableTrace () = _verbose <- true
     let verbose () = _verbose
-
-module internal rec AST =
-    let private _random = Random()
-
-    type Tracer<'T> = {
-        Value: 'T
-        Guid: Guid
-        ConsoleColor: ConsoleColor
-    } with
+    type Tracer<'T> with
         member this.emit(message: string, memberName: string, path: string, line: int) =
             if verbose() |> not then
                 this
@@ -32,6 +26,7 @@ module internal rec AST =
                 Console.Write $"{memberName, -20}"
                 Console.ResetColor()
                 Console.WriteLine $"{message} ({path}:{line})"
+                Console.WriteLine $"{PrettyPrinter.print this.Value}"
                 this
         member this.trace
             (
@@ -61,7 +56,9 @@ module internal rec AST =
                   Runtime.InteropServices.DefaultParameterValue(0)>] line: int
             ) =
             this.emit(message, memberName, path, line) |> ignore
+module internal rec AST =
     module Tracer =
+        let private _random = Random()
         let inline private _create value guid consoleColor = {
             Value = value
             Guid = guid
@@ -93,26 +90,6 @@ module internal rec AST =
             =
             tracer.emit(message, memberName, path, line)
 
-    /// <summary>
-    /// AST Representation for a JSX Attribute/property. Tuple of name and value
-    /// </summary>
-    type PropInfo = string * Expr
-    /// <summary>
-    /// List of AST property name value pairs
-    /// </summary>
-    type Props = PropInfo list
-
-    type TagSource =
-        | AutoImport of tagName: string
-        | LibraryImport of imp: Expr
-    /// <summary>
-    /// DU which distinguishes between a user call instantiating the tag with children, without children (props only),
-    /// or with both children AND properties.
-    /// </summary>
-    type TagInfo =
-        | WithChildren of tagName: TagSource * propsAndChildren: CallInfo * range: SourceLocation option
-        | NoChildren of tagName: TagSource * props: Expr list * range: SourceLocation option
-        | Combined of tagName: TagSource * props: Expr list * propsAndChildren: CallInfo * range: SourceLocation option
     [<AutoOpen>]
     module Native =
         let (|StartsWith|_|) (value: string) : string -> unit option =
