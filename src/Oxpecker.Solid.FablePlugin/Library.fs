@@ -4,7 +4,7 @@ open System
 open Fable
 open Fable.AST
 open Fable.AST.Fable
-open FablePlugin.PrettyPrint
+open Oxpecker.Solid.FablePlugin
 open FablePlugin.Types
 
 [<assembly: ScanForPlugins>]
@@ -26,7 +26,8 @@ module TraceSettings =
                 Console.Write $"{memberName, -20}"
                 Console.ResetColor()
                 Console.WriteLine $"{message} ({path}:{line})"
-                Console.WriteLine $"{PrettyPrinter.print this.Value}"
+                if PluginConfiguration.Jsonify() then
+                    Console.WriteLine $"{PrettyPrinter.print this.Value}"
                 this
         member this.trace
             (
@@ -448,10 +449,11 @@ module internal rec AST =
                             Name = name
                             Range = range
                             Type = DeclaredType({ FullName = fullName }, [])
-                        }
-                when ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
+                        } when
+                ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
                  || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
-                |> not ->
+                |> not
+                ->
                 match range with
                 | Some range ->
                     failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
@@ -664,7 +666,8 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
-        if pluginHelper.Options.Verbosity = Verbosity.Verbose then
+        PluginConfiguration.configure pluginHelper
+        if PluginConfiguration.Verbose() then
             enableTrace()
         // Console.WriteLine("!Start! MemberDecl")
         // Console.WriteLine(memberDecl.Body)
