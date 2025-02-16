@@ -42,7 +42,10 @@ module Types =
                 verbose <- true
                 if
                     helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_MINIMAL")
-                    && not (helper.Options.Define |> List.exists(fun s -> s.StartsWith("OXPECKER_SOLID_DEBUG") || s = "OXPECKER_SOLID_TRACE"))
+                    && not(
+                        helper.Options.Define
+                        |> List.exists(fun s -> s.StartsWith("OXPECKER_SOLID_DEBUG") || s = "OXPECKER_SOLID_TRACE")
+                    )
                 then
                     jsonify <- false
                 elif helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_TRACE") then
@@ -56,8 +59,8 @@ module Types =
                         |> String.Concat
                         |> int
                         |> fun i -> depth <- i
-                if jsonify && helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_MINIMAL")
-                then slim <- true
+                if jsonify && helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_MINIMAL") then
+                    slim <- true
         static member Verbose() = verbose
         static member Verbose value = verbose <- value
         static member Slim() = slim

@@ -89,7 +89,7 @@ module private rec PrettyPrint =
         override this.Write(writer, value, options) =
             if simplify() then
                 nameof EntityPath |> wrapUnionType |> writer.WriteStringValue
-            elif  canWrite writer then
+            elif canWrite writer then
                 let prefix postfix = $"{nameof EntityPath}.{postfix}"
                 writer.WriteStartObject()
                 match value with
@@ -971,4 +971,3 @@ module private rec PrettyPrint =
 type PrettyPrinter =
     static member print(value: 'T) : string =
         JsonSerializer.Serialize(value, PrettyPrint.options)
-

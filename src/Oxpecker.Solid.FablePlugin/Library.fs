@@ -16,7 +16,14 @@ module TraceSettings =
     let enableTrace () = _verbose <- true
     let verbose () = _verbose
     type Tracer<'T> with
-        member this.emit(message: string, memberName: string, path: string, line: int, [<Runtime.InteropServices.Optional;Runtime.InteropServices.DefaultParameterValue(true)>] emitJson: bool) =
+        member this.emit
+            (
+                message: string,
+                memberName: string,
+                path: string,
+                line: int,
+                [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue(true)>] emitJson: bool
+            ) =
             if verbose() |> not then
                 this
             else
@@ -124,7 +131,9 @@ module internal rec AST =
             | _ -> None
         let (|Equals|_|) (value: string) : string -> unit option =
             function
-            | s when s.Equals(value) -> Tracer.ping($"Equals {value}"); Some()
+            | s when s.Equals(value) ->
+                Tracer.ping($"Equals {value}")
+                Some()
             | _ -> None
         let (|Trim|) (value: int) (input: string) =
             input.Substring(0, input.Length - value)
@@ -132,7 +141,9 @@ module internal rec AST =
     module EntityRef =
         let (|StartsWith|_|) (value: string) =
             function
-            | e when e.FullName.StartsWith value -> Tracer.ping($"EntityRef Startswith {value}"); Some()
+            | e when e.FullName.StartsWith value ->
+                Tracer.ping($"EntityRef Startswith {value}")
+                Some()
             | _ -> None
     [<RequireQualifiedAccess>]
     module Ident =
@@ -181,7 +192,9 @@ module internal rec AST =
             | Call(Import({ Kind = UserImport false }, Any, _) as imp,
                    CallInfo.GetTags [ "new" ],
                    DeclaredType(EntityRef.StartsWith "Oxpecker.Solid", []),
-                   range) -> Tracer.ping(); Some(imp, range)
+                   range) ->
+                Tracer.ping()
+                Some(imp, range)
             | _ -> None
         /// <summary>
         /// Pattern matches expressions for Tags calls.
@@ -197,7 +210,11 @@ module internal rec AST =
                 let tagImport =
                     match callInfo.Args with
                     | Call.ImportTag(imp, _) :: _
-                    | Let(_, Call.ImportTag(imp, _), _) :: _ -> Tracer.ping($"CallInfo.Args is Let(_, Call.ImportTag(imp, _), _) :: _ or Call.ImportTag(imp,_)::_"); LibraryImport imp
+                    | Let(_, Call.ImportTag(imp, _), _) :: _ ->
+                        Tracer.ping(
+                            $"CallInfo.Args is Let(_, Call.ImportTag(imp, _), _) :: _ or Call.ImportTag(imp,_)::_"
+                        )
+                        LibraryImport imp
                     | _ ->
                         Tracer.ping("AutoImport")
                         let tagName = typ.FullName.Split('.') |> Seq.last
@@ -222,7 +239,9 @@ module internal rec AST =
         let (|NoChildren|_|) (expr: Expr) =
             let condition = _.Selector.EndsWith("_$ctor")
             match expr with
-            | Call.Tag condition (tagName, _, range) -> Tracer.ping(); Some(tagName, range)
+            | Call.Tag condition (tagName, _, range) ->
+                Tracer.ping()
+                Some(tagName, range)
             | _ -> None
         /// <summary>
         /// Pattern matches expressions to Tag calls with children
@@ -234,7 +253,9 @@ module internal rec AST =
                     importInfo.Selector.StartsWith("HtmlContainerExtensions_Run")
                     || importInfo.Selector.StartsWith("BindingsModule_Extensions_Run")
             match expr with
-            | Call.Tag condition tagCallInfo -> Tracer.ping(); Some tagCallInfo
+            | Call.Tag condition tagCallInfo ->
+                Tracer.ping()
+                Some tagCallInfo
             | _ -> None
     [<RequireQualifiedAccess>]
     module Let =
@@ -256,7 +277,9 @@ module internal rec AST =
         /// <returns><c>unit</c></returns>
         let (|Element|_|) =
             function
-            | Let.Ident(Ident.StartsWith "element") -> Tracer.ping(); Some()
+            | Let.Ident(Ident.StartsWith "element") ->
+                Tracer.ping()
+                Some()
             | _ -> None
         /// <summary>
         /// Pattern matches <c>let</c> bindings for Tags with children
@@ -285,7 +308,9 @@ module internal rec AST =
     let (|CallTagNoChildrenWithHandler|_|) (expr: Expr) =
         match expr with
         | Call(Import.Info(ImportInfo.StartsWith "HtmlElementExtensions_"), CallInfo.GetArgs(args :: _), _, range) ->
-            Tracer.ping($"Meets Condition 1: Call(Import.Info(ImportInfo.StartsWith 'HtmlElementExtensions_'), CallInfo.GetArgs(args :: _), _, range)")
+            Tracer.ping(
+                $"Meets Condition 1: Call(Import.Info(ImportInfo.StartsWith 'HtmlElementExtensions_'), CallInfo.GetArgs(args :: _), _, range)"
+            )
             (args, range)
             |> function
                 | Tag.NoChildren(tagName, _), range ->
@@ -305,7 +330,9 @@ module internal rec AST =
     /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|LetTagNoChildrenNoProps|_|) =
         function
-        | Let.Value(Tag.NoChildren(tagName, range)) -> Tracer.ping(); TagInfo.NoChildren(tagName, [], range) |> Some
+        | Let.Value(Tag.NoChildren(tagName, range)) ->
+            Tracer.ping()
+            TagInfo.NoChildren(tagName, [], range) |> Some
         | _ -> None
     /// <summary>
     /// Pattern matches expressions that are text in isolation (no siblings)
@@ -313,27 +340,39 @@ module internal rec AST =
     /// <returns><c>Expr</c> of text</returns>
     let (|TextNoSiblings|_|) =
         function
-        | Lambda(Ident.StartsWith "cont", TypeCast(textBody, Unit), None) -> Tracer.ping(); Some textBody
+        | Lambda(Ident.StartsWith "cont", TypeCast(textBody, Unit), None) ->
+            Tracer.ping()
+            Some textBody
         | _ -> None
 
     let private (|EventHandler|_|) callInfo =
         match callInfo with
-        | CallInfo.GetArgs [ _; Value(StringConstant eventName, _); handler ] -> Tracer.ping(); Some(eventName, handler)
+        | CallInfo.GetArgs [ _; Value(StringConstant eventName, _); handler ] ->
+            Tracer.ping()
+            Some(eventName, handler)
         | _ -> None
     [<AutoOpen>]
     module Attributes =
         let (|Extension|_|) =
             function
-            | "on", EventHandler(eventName, handler), restResults -> Tracer.ping("on"); ("on:" + eventName, handler) :: restResults |> Some
+            | "on", EventHandler(eventName, handler), restResults ->
+                Tracer.ping("on")
+                ("on:" + eventName, handler) :: restResults |> Some
             | "bool", EventHandler(eventName, handler), restResults ->
                 Tracer.ping("bool")
                 ("bool:" + eventName, handler) :: restResults |> Some
             | "data", EventHandler(eventName, handler), restResults ->
                 Tracer.ping("data")
                 ("data-" + eventName, handler) :: restResults |> Some
-            | "attr", EventHandler(eventName, handler), restResults -> Tracer.ping("attr"); (eventName, handler) :: restResults |> Some
-            | "ref", CallInfo.GetArgs [ _; identExpr ], restResults -> Tracer.ping("ref"); ("ref", identExpr) :: restResults |> Some
-            | "style'", CallInfo.GetArgs [ _; identExpr ], restResults -> Tracer.ping("style"); ("style", identExpr) :: restResults |> Some
+            | "attr", EventHandler(eventName, handler), restResults ->
+                Tracer.ping("attr")
+                (eventName, handler) :: restResults |> Some
+            | "ref", CallInfo.GetArgs [ _; identExpr ], restResults ->
+                Tracer.ping("ref")
+                ("ref", identExpr) :: restResults |> Some
+            | "style'", CallInfo.GetArgs [ _; identExpr ], restResults ->
+                Tracer.ping("style")
+                ("style", identExpr) :: restResults |> Some
             | "classList", CallInfo.GetArgs [ _; identExpr ], restResults ->
                 Tracer.ping("classList")
                 ("classList", identExpr) :: restResults |> Some
@@ -351,9 +390,12 @@ module internal rec AST =
                 let restResults = (Tracer.map tracer >> collectAttributes) rest
                 match importInfo.Kind with
                 | ImportKind.MemberImport(MemberRef(EntityRef.StartsWith "Oxpecker.Solid", memberRefInfo)) ->
-                    Tracer.ping $"Condition 2: ImportKind.MemberImport(MemberRef(EntityRef.StartsWith 'Oxpecker.Solid', memberRefInfo))"
+                    Tracer.ping
+                        $"Condition 2: ImportKind.MemberImport(MemberRef(EntityRef.StartsWith 'Oxpecker.Solid', memberRefInfo))"
                     match memberRefInfo.CompiledName, callInfo, restResults with
-                    | Extension propList -> Tracer.ping($"Condition 3: Extension propList "); propList
+                    | Extension propList ->
+                        Tracer.ping($"Condition 3: Extension propList ")
+                        propList
                     | _ ->
                         Tracer.ping($"Condition 3: _")
                         let setterIndex = memberRefInfo.CompiledName.IndexOf("set_")
@@ -370,24 +412,33 @@ module internal rec AST =
                                                         FullName = "Oxpecker.Solid.Builder.HtmlElement"
                                                     },
                                                     _)) ->
-                                Tracer.ping $"Condition 4: TypeCast(expr, DeclaredType({{ FullName = 'Oxpecker.Solid.Builder.HtmlElement' }},_))"
+                                Tracer.ping
+                                    $"Condition 4: TypeCast(expr, DeclaredType({{ FullName = 'Oxpecker.Solid.Builder.HtmlElement' }},_))"
                                 (propName, transform expr) :: restResults
                             | Delegate(args, expr, name, tags) ->
                                 Tracer.ping($"Condition 4: Delegate(args, expr, name, tags)")
                                 (propName, Delegate(args, transform expr, name, tags)) :: restResults
-                            | _ -> Tracer.ping($"Condition 4: _"); (propName, propValue) :: restResults
+                            | _ ->
+                                Tracer.ping($"Condition 4: _")
+                                (propName, propValue) :: restResults
                         else
                             Tracer.ping($"Setter index was >= 0")
                             restResults
-                | _ -> Tracer.ping($"Condition 2: _"); restResults
+                | _ ->
+                    Tracer.ping($"Condition 2: _")
+                    restResults
             | Set(IdentExpr(Ident.StartsWith "returnVal"), SetKind.FieldSet name, _, handler, _) :: rest ->
-                Tracer.ping($"Condition 1: Set(IdentExpr(Ident.StartsWith \"returnVal\"), SetKind.FieldSet name, _, handler, _) :: rest")
+                Tracer.ping(
+                    $"Condition 1: Set(IdentExpr(Ident.StartsWith \"returnVal\"), SetKind.FieldSet name, _, handler, _) :: rest"
+                )
                 let propName =
                     match name with
                     | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
                     | name -> name
                 (propName, handler) :: (Tracer.map tracer >> collectAttributes) rest
-            | _ :: rest -> Tracer.ping($"Condition 1: _ :: rest"); (Tracer.map tracer >> collectAttributes) rest
+            | _ :: rest ->
+                Tracer.ping($"Condition 1: _ :: rest")
+                (Tracer.map tracer >> collectAttributes) rest
 
         let getAttributes currentList (tracer: Expr Tracer) : Props =
             tracer.ping()
@@ -399,7 +450,9 @@ module internal rec AST =
             | CallTagNoChildrenWithHandler(NoChildren(_, props, _)) ->
                 Tracer.ping("CallTagNoChildrenWithHandler(NoChildren(_, props, _))")
                 (Tracer.map(tracer.trace()) >> collectAttributes) props @ currentList
-            | _ -> Tracer.ping("_"); currentList
+            | _ ->
+                Tracer.ping("_")
+                currentList
     [<AutoOpen>]
     module Children =
         let getChildren currentList (tracer: Expr Tracer) : Expr list =
@@ -427,7 +480,9 @@ module internal rec AST =
                 newExpr :: currentList
             // Lambda with two arguments returning element
             | Lambda(Ident.StartsWith "cont", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _) ->
-                Tracer.ping("Lambda(Ident.StartsWith \"cont\", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _)")
+                Tracer.ping(
+                    "Lambda(Ident.StartsWith \"cont\", TypeCast(Lambda(item, Lambda(index, next, _), _), _), _)"
+                )
                 Delegate([ item; index ], transform next, None, []) :: currentList
             | TextNoSiblings body ->
                 Tracer.ping "TextNoSiblings body"
@@ -440,33 +495,38 @@ module internal rec AST =
             | Let(Ident.StartsWith "second",
                   next,
                   Lambda(Ident.StartsWith "builder", Sequential(TypeCast(textBody, Unit) :: _), _)) ->
-                Tracer.ping "Let(Ident.StartsWith \"second\", next, Lambda(Ident.StartsWith \"builder\", Sequential(TypeCast(textBody, Unit) :: _), _))"
+                Tracer.ping
+                    "Let(Ident.StartsWith \"second\", next, Lambda(Ident.StartsWith \"builder\", Sequential(TypeCast(textBody, Unit) :: _), _))"
                 getChildren (textBody :: currentList) (Tracer.map tracer next)
             // parameter then another parameter
             | CurriedApply(Lambda(Ident.StartsWith "cont", TypeCast(lastParameter, Unit), Some(StartsWith "second")),
                            _,
                            _,
                            _) ->
-                Tracer.ping "CurriedApply(Lambda(Ident.StartsWith \"cont\", TypeCast(lastParameter, Unit), Some(StartsWith \"second\")), _, _, _)"
+                Tracer.ping
+                    "CurriedApply(Lambda(Ident.StartsWith \"cont\", TypeCast(lastParameter, Unit), Some(StartsWith \"second\")), _, _, _)"
                 lastParameter :: currentList
             | CurriedApply(Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _),
                            _,
                            _,
                            _)
             | Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _) ->
-                Tracer.ping "| CurriedApply(Lambda(Ident.StartsWith \"builder\", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _) | Lambda(Ident.StartsWith \"builder\", Sequential [ TypeCast(middleParameter, Unit); next ], _)"
+                Tracer.ping
+                    "| CurriedApply(Lambda(Ident.StartsWith \"builder\", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _) | Lambda(Ident.StartsWith \"builder\", Sequential [ TypeCast(middleParameter, Unit); next ], _)"
                 getChildren (middleParameter :: currentList) (Tracer.map tracer next)
             // tag then text
             | Let(Ident.StartsWith "first",
                   next1,
                   Lambda(Ident.StartsWith "builder", Sequential [ CurriedApply _; next2 ], _)) ->
-                Tracer.ping "Let(Ident.StartsWith \"first\", next1, Lambda(Ident.StartsWith \"builder\", Sequential [ CurriedApply _; next2 ], _))"
+                Tracer.ping
+                    "Let(Ident.StartsWith \"first\", next1, Lambda(Ident.StartsWith \"builder\", Sequential [ CurriedApply _; next2 ], _))"
                 let next2Children = getChildren [] (Tracer.map tracer next2)
                 let next1Children = getChildren [] (Tracer.map tracer next1)
                 next2Children @ next1Children @ currentList
             | Let(Ident.StartsWith "first", Let.Value expr, Let(Ident.StartsWith "second", next, _))
             | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
-                Tracer.ping "Condition 1: | Let(Ident.StartsWith \"first\", Let.Value expr, Let(Ident.StartsWith \"second\", next, _)) | Let(Ident.StartsWith \"first\", expr, Let(Ident.StartsWith \"second\", next, _))"
+                Tracer.ping
+                    "Condition 1: | Let(Ident.StartsWith \"first\", Let.Value expr, Let(Ident.StartsWith \"second\", next, _)) | Let(Ident.StartsWith \"first\", expr, Let(Ident.StartsWith \"second\", next, _))"
                 match expr with
                 | Let.TagNoChildrenWithProps tagInfo ->
                     Tracer.ping("Condition 2: Let.TagNoChildrenWithProps tagInfo")
@@ -498,7 +558,9 @@ module internal rec AST =
                 Tracer.ping("Condition 1: Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _)")
                 match args with
                 | [ Call(Import(ImportInfo.Equals "uncurry2", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ] ->
-                    Tracer.ping("Condition 2: [ Call(Import(ImportInfo.Equals \"uncurry2\", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ]")
+                    Tracer.ping(
+                        "Condition 2: [ Call(Import(ImportInfo.Equals \"uncurry2\", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ]"
+                    )
                     getChildren currentList (Tracer.map tracer body)
                 | [ Call.ImportTag(imp, _) ] ->
                     Tracer.ping("Condition 2: [ Call.ImportTag(imp, _) ]")
@@ -511,7 +573,9 @@ module internal rec AST =
                         transformTagInfo(TagInfo.NoChildren(LibraryImport imp, exprs, None) |> Tracer.create)
                     newExpr :: currentList
                 | [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ] ->
-                    Tracer.ping("Condition 2: [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ]")
+                    Tracer.ping(
+                        "Condition 2: [ Let(_, Let(_, Call.ImportTag(imp, _), Sequential exprs), Tag.WithChildren(_, callInfo, _)) ]"
+                    )
                     let newExpr =
                         transformTagInfo(TagInfo.Combined(LibraryImport imp, exprs, callInfo, None) |> Tracer.create)
                     newExpr :: currentList
@@ -535,7 +599,8 @@ module internal rec AST =
                  || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
                 |> not
                 ->
-                Tracer.ping "Let.Ident { Name = name; Range = range; Type = DeclaredType({ FullName = fullName }, []) } when ((name.StartsWith(\"returnVal\") && fullName.StartsWith(\"Oxpecker.Solid\")) || (name.StartsWith(\"element\") && fullName.StartsWith(\"Oxpecker.Solid\"))) |> not"
+                Tracer.ping
+                    "Let.Ident { Name = name; Range = range; Type = DeclaredType({ FullName = fullName }, []) } when ((name.StartsWith(\"returnVal\") && fullName.StartsWith(\"Oxpecker.Solid\")) || (name.StartsWith(\"element\") && fullName.StartsWith(\"Oxpecker.Solid\"))) |> not"
                 match range with
                 | Some range ->
                     failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
@@ -669,15 +734,37 @@ module internal rec AST =
         match expr with
         | Let.TagNoChildrenWithProps tagCall
         | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _) ->
-            transformTagInfo(tagCall |> Tracer.create |> _.trace("| Let.TagNoChildrenWithProps tagCall | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _)"))
+            transformTagInfo(
+                tagCall
+                |> Tracer.create
+                |> _.trace(
+                    "| Let.TagNoChildrenWithProps tagCall | Let.Element & Let(_, Let.TagNoChildrenWithProps tagCall, _)"
+                )
+            )
         | Tag.NoChildren(tagName, range) ->
-            transformTagInfo(TagInfo.NoChildren(tagName, [], range) |> Tracer.create |> _.trace("Tag.NoChildren(tagName, range)"))
-        | CallTagNoChildrenWithHandler tagCall -> transformTagInfo(tagCall |> Tracer.create |> _.trace("CallTagNoChildrenWithHandler tagCall"))
-        | LetTagNoChildrenNoProps tagCall -> transformTagInfo(tagCall |> Tracer.create |> _.trace("LetTagNoChildrenNoProps tagCall"))
-        | Tag.WithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo |> Tracer.create |> _.trace("Tag.WithChildren callInfo"))
-        | Let.TagWithChildren tagCall -> transformTagInfo(tagCall |> Tracer.create |> _.trace("Let.TagWithChildren tagCall"))
+            transformTagInfo(
+                TagInfo.NoChildren(tagName, [], range)
+                |> Tracer.create
+                |> _.trace("Tag.NoChildren(tagName, range)")
+            )
+        | CallTagNoChildrenWithHandler tagCall ->
+            transformTagInfo(tagCall |> Tracer.create |> _.trace("CallTagNoChildrenWithHandler tagCall"))
+        | LetTagNoChildrenNoProps tagCall ->
+            transformTagInfo(tagCall |> Tracer.create |> _.trace("LetTagNoChildrenNoProps tagCall"))
+        | Tag.WithChildren callInfo ->
+            transformTagInfo(
+                TagInfo.WithChildren callInfo
+                |> Tracer.create
+                |> _.trace("Tag.WithChildren callInfo")
+            )
+        | Let.TagWithChildren tagCall ->
+            transformTagInfo(tagCall |> Tracer.create |> _.trace("Let.TagWithChildren tagCall"))
         | Call.ImportTag(imp, range) ->
-            transformTagInfo(TagInfo.NoChildren(LibraryImport imp, [], range) |> Tracer.create |> _.trace("Call.ImportTag(imp,range)"))
+            transformTagInfo(
+                TagInfo.NoChildren(LibraryImport imp, [], range)
+                |> Tracer.create
+                |> _.trace("Call.ImportTag(imp,range)")
+            )
         | Let(_, Call.ImportTag(imp, range), Tag.WithChildren(_, callInfo, _)) ->
             transformTagInfo(
                 TagInfo.WithChildren(LibraryImport imp, callInfo, range)
@@ -694,7 +781,9 @@ module internal rec AST =
             transformTagInfo(
                 TagInfo.Combined(LibraryImport imp, exprs, callInfo, range)
                 |> Tracer.create
-                |> _.trace("Let(_, Let(_, Call.ImportTag(imp, range), Sequential exprs), Tag.WithChildren(_, callInfo, _))")
+                |> _.trace(
+                    "Let(_, Let(_, Call.ImportTag(imp, range), Sequential exprs), Tag.WithChildren(_, callInfo, _))"
+                )
             )
         | Let(name, value, expr) ->
             Tracer.ping("Let(name, value, expr)")
