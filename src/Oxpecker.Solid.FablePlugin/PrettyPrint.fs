@@ -23,6 +23,9 @@
 // ''  ''    ''  ''     [n]  //* Max depth of n
 // OXPECKER_SOLID_TRACE      //* No max depth.
 //
+// OXPECKER_SOLID_MINIMAL                               //* This combo will cause the json to be slim.
+// && (OXPECKER_SOLID_DEBUG || OXPECKER_SOLID_TRACE)    //  ie we replace things like paths with nulls
+//
 // =======
 // USAGE
 // =======
@@ -49,6 +52,7 @@ module private CompilerDirectives =
             else
                 true
     let canWrite = _canWrite
+    let simplify = PluginConfiguration.Slim
 module private rec PrettyPrint =
     (*  The Converters are all written the same.
     The Write logic is wrapped in an `if` statement. It checks against the current depth
@@ -62,9 +66,9 @@ module private rec PrettyPrint =
   * Remember the output is not supposed to be decodable, or accurately reflect the underlying
     types.
 
-  * Wrap DUs in an object, not an array.
-    BAD_OUTPUT: ["SourcePath", "value"]
-    GOOD_OUTPUT: {"SourcePath":"value"}
+  * DUs should have their name embedded in the object value. The PropertyName should be the
+    DU type wrapped in __, and the value would be the DU Value.
+    GOOD_OUTPUT: {"__EntityPath__":"SourcePath",...:...}
 
   * Prepend all DUs choices with the root type name.
     BAD_OUTPUT: {"SourcePath":"value"}
@@ -77,12 +81,15 @@ module private rec PrettyPrint =
     Obviously simple/single value/non-tupled DUs don't have to do this.
     BAD_OUTPUT: {"Constraint.HasMember":[{...}, false]}
     GOOD_OUTPUT: {"Constraint.HasMember":{"name":{...}, "isStatic":false}}                      *)
+    let wrapUnionType str = $"__{str}__"
     type EntityPathConverter() =
         inherit Serialization.JsonConverter<EntityPath>()
         override this.CanConvert typ = typ = typeof<EntityPath>
         override this.Read(_, _, _) = unbox null
         override this.Write(writer, value, options) =
-            if canWrite writer then
+            if simplify() then
+                nameof EntityPath |> wrapUnionType |> writer.WriteStringValue
+            elif  canWrite writer then
                 let prefix postfix = $"{nameof EntityPath}.{postfix}"
                 writer.WriteStartObject()
                 match value with
@@ -964,3 +971,4 @@ module private rec PrettyPrint =
 type PrettyPrinter =
     static member print(value: 'T) : string =
         JsonSerializer.Serialize(value, PrettyPrint.options)
+

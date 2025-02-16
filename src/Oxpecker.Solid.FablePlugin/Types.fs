@@ -36,24 +36,31 @@ module Types =
         static let mutable verbose = false
         static let mutable depth = 4
         static let mutable jsonify = true
+        static let mutable slim = false
         static member configure(helper: Fable.PluginHelper) =
             if helper.Options.Define |> List.exists(fun s -> s.StartsWith "OXPECKER_SOLID_") then
                 verbose <- true
-            if helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_MINIMAL") then
-                jsonify <- false
-            elif helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_TRACE") then
-                depth <- 0
-            else
-                for definition in
-                    helper.Options.Define
-                    |> List.filter(fun s -> s.StartsWith "OXPECKER_SOLID_DEBUG_") do
-                    definition.ToCharArray()
-                    |> Array.filter Char.IsDigit
-                    |> string
-                    |> int
-                    |> fun i -> depth <- i
+                if
+                    helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_MINIMAL")
+                    && not (helper.Options.Define |> List.exists(fun s -> s.StartsWith("OXPECKER_SOLID_DEBUG") || s = "OXPECKER_SOLID_TRACE"))
+                then
+                    jsonify <- false
+                elif helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_TRACE") then
+                    depth <- 0
+                else
+                    for definition in
+                        helper.Options.Define
+                        |> List.filter(fun s -> s.StartsWith "OXPECKER_SOLID_DEBUG_") do
+                        definition.ToCharArray()
+                        |> Array.filter Char.IsDigit
+                        |> String.Concat
+                        |> int
+                        |> fun i -> depth <- i
+                if jsonify && helper.Options.Define |> List.exists((=) "OXPECKER_SOLID_MINIMAL")
+                then slim <- true
         static member Verbose() = verbose
         static member Verbose value = verbose <- value
+        static member Slim() = slim
         static member Depth() = depth
         static member Depth value = depth <- value
         static member Jsonify() = jsonify
