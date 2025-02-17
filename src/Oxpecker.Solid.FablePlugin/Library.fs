@@ -5,118 +5,13 @@ open Fable
 open Fable.AST
 open Fable.AST.Fable
 open Oxpecker.Solid.FablePlugin
-open FablePlugin.Types
+open Fable.Plugin.Tracer
+
 
 [<assembly: ScanForPlugins>]
 do () // Prompts fable to utilise this plugin
 
-[<AutoOpen>]
-module TraceSettings =
-    let mutable private _verbose = false
-    let enableTrace () = _verbose <- true
-    let verbose () = _verbose
-    type Tracer<'T> with
-        member this.emit
-            (
-                message: string,
-                memberName: string,
-                path: string,
-                line: int,
-                [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue(true)>] emitJson: bool
-            ) =
-            if verbose() |> not then
-                this
-            else
-                Console.ForegroundColor <- this.ConsoleColor
-                Console.Write $"{this.Guid} "
-                Console.ForegroundColor <- ConsoleColor.Gray
-                Console.Write $"{memberName, -20}"
-                Console.ResetColor()
-                Console.WriteLine $"{message} ({path}:{line})"
-                if PluginConfiguration.Jsonify() && emitJson then
-                    Console.WriteLine $"{PrettyPrinter.print this.Value}"
-                this
-        member this.trace
-            (
-                [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message: string,
-                [<Runtime.InteropServices.Optional;
-                  Runtime.CompilerServices.CallerMemberName;
-                  Runtime.InteropServices.DefaultParameterValue("")>] memberName: string,
-                [<Runtime.CompilerServices.CallerFilePath;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue("")>] path: string,
-                [<Runtime.CompilerServices.CallerLineNumber;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue(0)>] line: int
-            ) =
-            this.emit(message, memberName, path, line)
-        member this.ping
-            (
-                [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message: string,
-                [<Runtime.InteropServices.Optional;
-                  Runtime.CompilerServices.CallerMemberName;
-                  Runtime.InteropServices.DefaultParameterValue("")>] memberName: string,
-                [<Runtime.CompilerServices.CallerFilePath;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue("")>] path: string,
-                [<Runtime.CompilerServices.CallerLineNumber;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue(0)>] line: int
-            ) =
-            this.emit(message, memberName, path, line) |> ignore
-        static member ping
-            (
-                [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message: string,
-                [<Runtime.InteropServices.Optional;
-                  Runtime.CompilerServices.CallerMemberName;
-                  Runtime.InteropServices.DefaultParameterValue("")>] memberName: string,
-                [<Runtime.CompilerServices.CallerFilePath;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue("")>] path: string,
-                [<Runtime.CompilerServices.CallerLineNumber;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue(0)>] line: int
-            ) =
-            if verbose() then
-                Console.Write "                                     "
-                Console.ForegroundColor <- ConsoleColor.Gray
-                Console.Write $"{memberName, -20}"
-                Console.ResetColor()
-                Console.WriteLine $"{message} ({path}:{line})"
 module internal rec AST =
-    module Tracer =
-        let private _random = Random()
-        let inline private _create value guid consoleColor = {
-            Value = value
-            Guid = guid
-            ConsoleColor = consoleColor
-        }
-        let create value =
-            if verbose() |> not then
-                _create value Guid.Empty ConsoleColor.Black
-            else
-                _random.Next(15) |> enum<ConsoleColor> |> _create value (Guid.NewGuid())
-        let init = _create () Guid.Empty ConsoleColor.Black
-        let map (tracer: Tracer<'T>) (input: 'M) : Tracer<'M> =
-            _create input tracer.Guid tracer.ConsoleColor
-        let (|Traced|) (tracer: Tracer<'T>) = (tracer.Value, tracer)
-        let trace
-            (
-                [<Runtime.InteropServices.Optional; Runtime.InteropServices.DefaultParameterValue("")>] message: string,
-                [<Runtime.InteropServices.Optional;
-                  Runtime.CompilerServices.CallerMemberName;
-                  Runtime.InteropServices.DefaultParameterValue("")>] memberName: string,
-                [<Runtime.CompilerServices.CallerFilePath;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue("")>] path: string,
-                [<Runtime.CompilerServices.CallerLineNumber;
-                  Runtime.InteropServices.Optional;
-                  Runtime.InteropServices.DefaultParameterValue(0)>] line: int
-            )
-            (tracer: Tracer<'a>)
-            =
-            tracer.emit(message, memberName, path, line)
-
     [<AutoOpen>]
     module Native =
         let (|StartsWith|_|) (value: string) : string -> unit option =
@@ -383,11 +278,11 @@ module internal rec AST =
             | [] -> []
             | Sequential expressions :: rest ->
                 Tracer.ping("| [] -> [] | Sequential expressions :: rest")
-                (Tracer.map tracer >> collectAttributes) rest
-                @ (Tracer.map tracer >> collectAttributes) expressions
+                (Tracer.bind tracer >> collectAttributes) rest
+                @ (Tracer.bind tracer >> collectAttributes) expressions
             | Call(Import.Info importInfo, callInfo, _, _) :: rest ->
                 Tracer.ping("Condition 1: Call(Import.Info importInfo, callInfo, _, _) :: rest")
-                let restResults = (Tracer.map tracer >> collectAttributes) rest
+                let restResults = (Tracer.bind tracer >> collectAttributes) rest
                 match importInfo.Kind with
                 | ImportKind.MemberImport(MemberRef(EntityRef.StartsWith "Oxpecker.Solid", memberRefInfo)) ->
                     Tracer.ping
@@ -435,10 +330,10 @@ module internal rec AST =
                     match name with
                     | name when name.EndsWith("'") -> name.Substring(0, name.Length - 1) // like class' or type'
                     | name -> name
-                (propName, handler) :: (Tracer.map tracer >> collectAttributes) rest
+                (propName, handler) :: (Tracer.bind tracer >> collectAttributes) rest
             | _ :: rest ->
                 Tracer.ping($"Condition 1: _ :: rest")
-                (Tracer.map tracer >> collectAttributes) rest
+                (Tracer.bind tracer >> collectAttributes) rest
 
         let getAttributes currentList (tracer: Expr Tracer) : Props =
             tracer.ping()
@@ -446,10 +341,10 @@ module internal rec AST =
             match expr with
             | Let(Ident.StartsWith "returnVal", _, Sequential exprs) ->
                 Tracer.ping("Let(Ident.StartsWith \"returnVal\", _, Sequential exprs)")
-                (Tracer.map(tracer.trace()) >> collectAttributes) exprs @ currentList
+                (Tracer.bind(tracer.trace()) >> collectAttributes) exprs @ currentList
             | CallTagNoChildrenWithHandler(NoChildren(_, props, _)) ->
                 Tracer.ping("CallTagNoChildrenWithHandler(NoChildren(_, props, _))")
-                (Tracer.map(tracer.trace()) >> collectAttributes) props @ currentList
+                (Tracer.bind(tracer.trace()) >> collectAttributes) props @ currentList
             | _ ->
                 Tracer.ping("_")
                 currentList
@@ -497,7 +392,7 @@ module internal rec AST =
                   Lambda(Ident.StartsWith "builder", Sequential(TypeCast(textBody, Unit) :: _), _)) ->
                 Tracer.ping
                     "Let(Ident.StartsWith \"second\", next, Lambda(Ident.StartsWith \"builder\", Sequential(TypeCast(textBody, Unit) :: _), _))"
-                getChildren (textBody :: currentList) (Tracer.map tracer next)
+                getChildren (textBody :: currentList) (Tracer.bind tracer next)
             // parameter then another parameter
             | CurriedApply(Lambda(Ident.StartsWith "cont", TypeCast(lastParameter, Unit), Some(StartsWith "second")),
                            _,
@@ -513,15 +408,15 @@ module internal rec AST =
             | Lambda(Ident.StartsWith "builder", Sequential [ TypeCast(middleParameter, Unit); next ], _) ->
                 Tracer.ping
                     "| CurriedApply(Lambda(Ident.StartsWith \"builder\", Sequential [ TypeCast(middleParameter, Unit); next ], _), _, _, _) | Lambda(Ident.StartsWith \"builder\", Sequential [ TypeCast(middleParameter, Unit); next ], _)"
-                getChildren (middleParameter :: currentList) (Tracer.map tracer next)
+                getChildren (middleParameter :: currentList) (Tracer.bind tracer next)
             // tag then text
             | Let(Ident.StartsWith "first",
                   next1,
                   Lambda(Ident.StartsWith "builder", Sequential [ CurriedApply _; next2 ], _)) ->
                 Tracer.ping
                     "Let(Ident.StartsWith \"first\", next1, Lambda(Ident.StartsWith \"builder\", Sequential [ CurriedApply _; next2 ], _))"
-                let next2Children = getChildren [] (Tracer.map tracer next2)
-                let next1Children = getChildren [] (Tracer.map tracer next1)
+                let next2Children = getChildren [] (Tracer.bind tracer next2)
+                let next1Children = getChildren [] (Tracer.bind tracer next1)
                 next2Children @ next1Children @ currentList
             | Let(Ident.StartsWith "first", Let.Value expr, Let(Ident.StartsWith "second", next, _))
             | Let(Ident.StartsWith "first", expr, Let(Ident.StartsWith "second", next, _)) ->
@@ -531,20 +426,20 @@ module internal rec AST =
                 | Let.TagNoChildrenWithProps tagInfo ->
                     Tracer.ping("Condition 2: Let.TagNoChildrenWithProps tagInfo")
                     let newExpr = transformTagInfo(tagInfo |> Tracer.create)
-                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                    getChildren (newExpr :: currentList) (Tracer.bind tracer next)
                 | Tag.NoChildren(tagName, range) ->
                     Tracer.ping("Condition 2: Tag.NoChildren(tagName, range) ")
                     let newExpr =
                         transformTagInfo(TagInfo.NoChildren(tagName, [], range) |> Tracer.create)
-                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                    getChildren (newExpr :: currentList) (Tracer.bind tracer next)
                 | Tag.WithChildren callInfo ->
                     Tracer.ping("Condition 2: Tag.WithChildren callInfo")
                     let newExpr = transformTagInfo(TagInfo.WithChildren callInfo |> Tracer.create)
-                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                    getChildren (newExpr :: currentList) (Tracer.bind tracer next)
                 | expr ->
                     Tracer.ping("Condition 2: expr")
                     let newExpr = transform expr
-                    getChildren (newExpr :: currentList) (Tracer.map tracer next)
+                    getChildren (newExpr :: currentList) (Tracer.bind tracer next)
             | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
                 Tracer.ping("IfThenElse(guardExpr, thenExpr, elseExpr, range)")
                 IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range)
@@ -561,7 +456,7 @@ module internal rec AST =
                     Tracer.ping(
                         "Condition 2: [ Call(Import(ImportInfo.Equals \"uncurry2\", Any, None), { Args = [ Lambda(_, body, _) ] }, _, _) ]"
                     )
-                    getChildren currentList (Tracer.map tracer body)
+                    getChildren currentList (Tracer.bind tracer body)
                 | [ Call.ImportTag(imp, _) ] ->
                     Tracer.ping("Condition 2: [ Call.ImportTag(imp, _) ]")
                     let newExpr =
@@ -581,8 +476,8 @@ module internal rec AST =
                     newExpr :: currentList
                 | [ next1; next2 ] ->
                     Tracer.ping("Condition 2: [ next1; next2 ]")
-                    let next2Children = getChildren [] (Tracer.map tracer next2)
-                    let next1Children = getChildren [] (Tracer.map tracer next1)
+                    let next2Children = getChildren [] (Tracer.bind tracer next2)
+                    let next1Children = getChildren [] (Tracer.bind tracer next1)
                     next2Children @ next1Children @ currentList
                 | [ expr ] ->
                     Tracer.ping("Condition 2: [ expr ]")
@@ -669,20 +564,20 @@ module internal rec AST =
             | WithChildren(tagName, callInfo, range) ->
                 Tracer.ping("tagInfo - WithChildren(tagName, callInfo, range)")
                 let props =
-                    callInfo.Args |> List.map(Tracer.map tracer) |> List.fold getAttributes []
+                    callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getAttributes []
                 let childrenList =
-                    callInfo.Args |> List.map(Tracer.map tracer) |> List.fold getChildren []
+                    callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getChildren []
                 tagName, props, childrenList, range
             | NoChildren(tagName, propList, range) ->
                 Tracer.ping("tagInfo - NoChildren(tagName, propLiust, range")
-                let props = propList |> Tracer.map tracer |> collectAttributes
+                let props = propList |> Tracer.bind tracer |> collectAttributes
                 let childrenList = []
                 tagName, props, childrenList, range
             | Combined(tagName, propList, callInfo, range) ->
                 Tracer.ping("tagInfo - Combined(tagName, propList, callInfo, range")
-                let props = propList |> Tracer.map tracer |> collectAttributes
+                let props = propList |> Tracer.bind tracer |> collectAttributes
                 let childrenList =
-                    callInfo.Args |> List.map(Tracer.map tracer) |> List.fold getChildren []
+                    callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getChildren []
                 tagName, props, childrenList, range
 
         let propsXs =
@@ -857,22 +752,11 @@ type SolidComponentAttribute() =
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
-        PluginConfiguration.configure pluginHelper
-        use fs = new IO.FileStream("PluginOutput.txt", IO.FileMode.Create)
-        use sw = new IO.StreamWriter(fs)
-        Console.SetOut sw
-        if PluginConfiguration.Verbose() then
-            enableTrace()
-        // Console.WriteLine("!Start! MemberDecl")
-        // Console.WriteLine(memberDecl.Body)
-        // Console.WriteLine("!End! MemberDecl")
+        Settings.configure "OXPECKER_SOLID" pluginHelper
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
             | _ -> AST.transform memberDecl.Body
-        let standardOutput = new IO.StreamWriter(Console.OpenStandardOutput())
-        standardOutput.AutoFlush <- true
-        Console.SetOut standardOutput
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr
