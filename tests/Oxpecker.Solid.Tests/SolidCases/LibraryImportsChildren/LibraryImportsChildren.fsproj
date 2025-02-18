@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Types.fs" />
+    <Compile Include="../LibraryImports/Types.fs" />
     <Compile Include="LibraryImportsChildren.fs" />
   </ItemGroup>
 

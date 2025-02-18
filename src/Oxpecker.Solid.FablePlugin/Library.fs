@@ -345,9 +345,15 @@ module internal rec AST =
             | Let(Ident.StartsWith "returnVal", _, Sequential exprs) ->
                 Tracer.ping("Let(Ident.StartsWith \"returnVal\", _, Sequential exprs)")
                 (Tracer.bind(tracer.trace()) >> collectAttributes) exprs @ currentList
-            | CallTagNoChildrenWithHandler(NoChildren(_, props, _)) ->
+            | CallTagNoChildrenWithHandler(NoChildren(ident, props, _)) ->
                 Tracer.ping("CallTagNoChildrenWithHandler(NoChildren(_, props, _))")
                 (Tracer.bind(tracer.trace()) >> collectAttributes) props @ currentList
+                |> fun newList ->
+                    match ident with
+                    | LibraryImport imp ->
+                        Tracer.ping("Lifting LibraryImport")
+                        ("__LIFT_TAG__", imp) :: newList
+                    | _ -> newList
             | _ ->
                 Tracer.ping("_")
                 currentList
@@ -570,7 +576,11 @@ module internal rec AST =
                     callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getAttributes []
                 let childrenList =
                     callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getChildren []
-                tagName, props, childrenList, range
+                match props |> List.tryFind (fun (propName,_) -> propName = "__LIFT_TAG__") with
+                | Some (_, imp) ->
+                    LibraryImport imp, props |> List.filter(fun (propName, _) -> propName <> "__LIFT_TAG__")
+                    , childrenList, range
+                | None -> tagName, props, childrenList, range
             | NoChildren(tagName, propList, range) ->
                 Tracer.ping("tagInfo - NoChildren(tagName, propLiust, range")
                 let props = propList |> Tracer.bind tracer |> collectAttributes
