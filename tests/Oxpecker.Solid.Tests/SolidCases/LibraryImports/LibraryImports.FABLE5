@@ -1,0 +1,7 @@
+﻿import { Faketag } from "fakemodule";
+
+export function Button() {
+    return <Faketag class="TEST"
+        key="value" />;
+}
+

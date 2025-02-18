@@ -214,6 +214,9 @@ module internal rec AST =
                 | Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range ->
                     Tracer.ping("Condition 2 Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range")
                     TagInfo.NoChildren(tagName, expr :: props, range) |> Some
+                | Let(_, Call.ImportTag(imp, _), Sequential exprs), _ ->
+                    Tracer.ping("Condition 2 Let(_,Call.ImportTag(imp, _), Sequential exprs), _")
+                    TagInfo.NoChildren(LibraryImport imp, expr :: exprs, range) |> Some
                 | CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)), range ->
                     Tracer.ping("Condition 2 CallTagNoChildrenWithHandler(NoChildren(tagName, props, _)), range")
                     TagInfo.NoChildren(tagName, expr :: props, range) |> Some

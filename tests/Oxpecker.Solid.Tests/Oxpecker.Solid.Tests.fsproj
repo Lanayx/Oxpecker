@@ -76,6 +76,11 @@
         <Compile Include="SolidCases\Router\App2.fs" />
         <Compile Include="SolidCases\Router\Router.fs" />
         <Content Include="SolidCases\Router\Router.fsproj" />
+        <Compile Include="SolidCases\LibraryImports\Types.fs" />
+        <Compile Include="SolidCases\LibraryImports\LibraryImports.fs" />
+        <None Include="SolidCases\LibraryImports\LibraryImports.fsproj" />
+        <None Include="SolidCases\LibraryImports\LibraryImports.FABLE5" />
+        <None Include="SolidCases\LibraryImports\LibraryImports.expected" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />
