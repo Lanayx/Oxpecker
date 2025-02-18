@@ -1,4 +1,4 @@
-﻿namespace rec Fable.Plugin.Tracer
+﻿namespace rec Oxpecker.Solid
 
 open System
 open System.Runtime.InteropServices

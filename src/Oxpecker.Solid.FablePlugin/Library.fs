@@ -5,8 +5,6 @@ open Fable
 open Fable.AST
 open Fable.AST.Fable
 open Oxpecker.Solid.FablePlugin
-open Fable.Plugin.Tracer
-
 
 [<assembly: ScanForPlugins>]
 do () // Prompts fable to utilise this plugin
