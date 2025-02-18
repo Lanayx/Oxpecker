@@ -1,7 +1,12 @@
 ﻿import { Faketag } from "fakemodule";
 
 export function Button() {
-    return <Faketag class="TEST"
-        key="value"></Faketag>;
+    return <div>
+        <Faketag class="TEST"
+            key="value"></Faketag>
+        <Faketag key="value"></Faketag>
+        <Faketag key="value"
+            some="other"></Faketag>
+    </div>;
 }
 

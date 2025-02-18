@@ -6,4 +6,8 @@ open Oxpecker.Solid.Tests.Cases.Types
 
 [<SolidComponent>]
 let Button () =
-    ImportedTag(class'="TEST").attr("key","value")
+    div() {
+        ImportedTag(class'="TEST").attr("key","value")
+        ImportedTag().attr("key","value")
+        ImportedTag().attr("key","value").attr("some","other")
+    }

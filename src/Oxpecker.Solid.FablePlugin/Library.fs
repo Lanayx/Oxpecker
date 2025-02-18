@@ -209,6 +209,9 @@ module internal rec AST =
                 | Tag.NoChildren(tagName, _), range ->
                     Tracer.ping("Condition 2 Tag.NoChildren(tagName, _), range ")
                     TagInfo.NoChildren(tagName, [ expr ], range) |> Some
+                | Call.ImportTag(imp, _), range ->
+                    Tracer.ping("Condition 2 Call.ImportTag(imp, _), range")
+                    TagInfo.NoChildren(LibraryImport imp, [ expr ], range) |> Some
                 | Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range ->
                     Tracer.ping("Condition 2 Let.TagNoChildrenWithProps(NoChildren(tagName, props, _)), range")
                     TagInfo.NoChildren(tagName, expr :: props, range) |> Some
@@ -263,6 +266,8 @@ module internal rec AST =
             | "attr", EventHandler(eventName, handler), restResults ->
                 Tracer.ping("attr")
                 (eventName, handler) :: restResults |> Some
+            | "spread", CallInfo.GetArgs [ _; identExpr ], restResults ->
+                ("__SPREAD_PROPERTY__", identExpr) :: restResults |> Some
             | "ref", CallInfo.GetArgs [ _; identExpr ], restResults ->
                 Tracer.ping("ref")
                 ("ref", identExpr) :: restResults |> Some
