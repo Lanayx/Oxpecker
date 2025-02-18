@@ -81,6 +81,9 @@
         <None Include="SolidCases\LibraryImports\LibraryImports.fsproj" />
         <None Include="SolidCases\LibraryImports\LibraryImports.FABLE5" />
         <None Include="SolidCases\LibraryImports\LibraryImports.expected" />
+        <Compile Include="SolidCases\LibraryImportsChildren\LibraryImportsChildren.fs" />
+        <None Include="SolidCases\LibraryImportsChildren\LibraryImportsChildren.fsproj" />
+        <None Include="SolidCases\LibraryImportsChildren\LibraryImportsChildren.expected" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />

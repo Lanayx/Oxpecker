@@ -38,3 +38,7 @@ let ``Router`` () =
 [<Fact>]
 let ``LibraryImports`` () =
     runSolidCase "LibraryImports"
+
+[<Fact>]
+let ``LibraryImportsChildren`` () =
+    runSolidCase "LibraryImportsChildren"
