@@ -576,10 +576,12 @@ module internal rec AST =
                     callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getAttributes []
                 let childrenList =
                     callInfo.Args |> List.map(Tracer.bind tracer) |> List.fold getChildren []
-                match props |> List.tryFind (fun (propName,_) -> propName = "__LIFT_TAG__") with
-                | Some (_, imp) ->
-                    LibraryImport imp, props |> List.filter(fun (propName, _) -> propName <> "__LIFT_TAG__")
-                    , childrenList, range
+                match props |> List.tryFind(fun (propName, _) -> propName = "__LIFT_TAG__") with
+                | Some(_, imp) ->
+                    LibraryImport imp,
+                    props |> List.filter(fun (propName, _) -> propName <> "__LIFT_TAG__"),
+                    childrenList,
+                    range
                 | None -> tagName, props, childrenList, range
             | NoChildren(tagName, propList, range) ->
                 Tracer.ping("tagInfo - NoChildren(tagName, propLiust, range")
