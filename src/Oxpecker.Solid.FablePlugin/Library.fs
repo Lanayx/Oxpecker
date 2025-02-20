@@ -266,8 +266,6 @@ module internal rec AST =
             | "attr", EventHandler(eventName, handler), restResults ->
                 Tracer.ping("attr")
                 (eventName, handler) :: restResults |> Some
-            | "spread", CallInfo.GetArgs [ _; identExpr ], restResults ->
-                ("__SPREAD_PROPERTY__", identExpr) :: restResults |> Some
             | "ref", CallInfo.GetArgs [ _; identExpr ], restResults ->
                 Tracer.ping("ref")
                 ("ref", identExpr) :: restResults |> Some
