@@ -1164,8 +1164,8 @@ module Tags =
             with set (value: string) = ()
         member _.class'
             with set (value: string) = ()
-        // member _.style
-        //     with set //TODO
+        member _.style
+            with set (value: string) = ()
         member _.lang
             with set (value: string) = ()
         member _.tabindex
@@ -1182,7 +1182,7 @@ module Tags =
 
     [<Erase>]
     module Svg =
-        [<StringEnum(CaseRules.KebabCase)>]
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
         type ReferrerPolicy =
             | NoReferrer
             | NoReferrerWhenDowngrade
@@ -1192,7 +1192,220 @@ module Tags =
             | OriginWhenCrossOrigin
             | StrictOriginWhenCrossOrigin
             | UnsafeUrl
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type AlignmentBaseline =
+            | Auto
+            | Baseline
+            | BeforeEdge
+            | TextBeforeEdge
+            | Middle
+            | Central
+            | AfterEdge
+            | TextAfterEdge
+            | Ideographic
+            | Alphabetic
+            | Hanging
+            | Mathematical
+            | Top
+            | Center
+            | Bottom
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type BlendMode =
+            | Normal
+            | Multiply
+            | Screen
+            | Overlay
+            | Darken
+            | Lighten
+            | ColorDodge
+            | ColorBurn
+            | HardLight
+            | SoftLight
+            | Difference
+            | Exclusion
+            | Hue
+            | Saturation
+            | Color
+            | Luminosity
+        [<StringEnum; RequireQualifiedAccess>]
+        type ClipRule =
+            | [<CompiledName("nonzero")>] NonZero
+            | [<CompiledName("evenodd")>] EvenOdd
+            | [<CompiledName("inherit")>] Inherit
+        [<StringEnum; RequireQualifiedAccess>]
+        type ColorInterpolation =
+            | Auto
+            | SRGB
+            | LinearRGB
+        [<StringEnum; RequireQualifiedAccess>]
+        type ColorInterpolationFilters = ColorInterpolation
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type Cursor =
+            | Auto
+            | Crosshair
+            | Default
+            | Pointer
+            | Move
+            | EResize
+            | NeResize
+            | NwResize
+            | NResize
+            | SeResize
+            | SwResize
+            | SResize
+            | WResize
+            | Text
+            | Wait
+            | Help
+            | Inherit
+        [<StringEnum; RequireQualifiedAccess>]
+        type Direction =
+            | Ltr
+            | Rtl
+        [<StringEnum; RequireQualifiedAccess>]
+        type Display =
+            | None
+            | Inherit
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type DominantBaseline =
+            | Auto
+            | TextBottom
+            | Alphabetic
+            | Ideographic
+            | Middle
+            | Central
+            | Mathematical
+            | Hanging
+            | TextTop
+        /// <summary>
+        /// Fill enum in context of the tags <c>animate</c>, <c>animateMotion</c>, <c>animateTransform</c> and
+        /// <c>set</c>
+        /// </summary>
+        [<StringEnum; RequireQualifiedAccess>]
+        type FillAnimate =
+            | Freeze
+            | Remove
+        [<StringEnum; RequireQualifiedAccess>]
+        type FillRule =
+            | [<CompiledName("nonzero")>] NonZero
+            | [<CompiledName("evenodd")>] EvenOdd
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type WritingMode =
+            | HorizontalTb
+            | VerticalRl
+            | VerticalLr
+        [<StringEnum; RequireQualifiedAccess>]
+        type Visibility =
+            | Visible
+            | Hidden
+            | Collapse
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type VectorEffect =
+            | None
+            | NonScalingStroke
+            | NonScalingSize
+            | NonRotation
+            | FixedPosition
+        [<StringEnum; RequireQualifiedAccess>]
+        type TextRendering =
+            | Auto
+            | OptimizeSpeed
+            | OptimizeLegibility
+            | GeometricPrecision
+        [<StringEnum; RequireQualifiedAccess>]
+        type TextAnchor =
+            | Start
+            | Middle
+            | End
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type StrokeLineJoin =
+            | Arcs
+            | Bevel
+            | Miter
+            | MiterClip
+            | Round
+        [<StringEnum; RequireQualifiedAccess>]
+        type StrokeLinecap =
+            | Butt
+            | Round
+            | Square
+        [<StringEnum; RequireQualifiedAccess>]
+        type ShapeRendering =
+            | Auto
+            | OptimizeSpeed
+            | CrispEdges
+            | GeometricPrecision
+        [<StringEnum; RequireQualifiedAccess>]
+        type PointerEvents =
+            | [<CompiledName("bounding-box")>] BoundingBox
+            | VisiblePainted
+            | VisibleFill
+            | VisibleStroke
+            | Visible
+            | Painted
+            | Fill
+            | Stroke
+            | All
+            | None
+        [<StringEnum; RequireQualifiedAccess>]
+        type Overflow =
+            | Visible
+            | Hidden
+            | Scroll
+            | Auto
+        [<StringEnum; RequireQualifiedAccess>]
+        type ImageRendering =
+            | Auto
+            | OptimizeSpeed
+            | OptimizeQuality
+        [<StringEnum; RequireQualifiedAccess>]
+        type FontWeight =
+            | Normal
+            | Bold
+            | Bolder
+            | Lighter
+        [<StringEnum; RequireQualifiedAccess>]
+        type FontStyle =
+            | Normal
+            | Italic
+            | Oblique
+        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
+        type Rotate =
+            | Auto
+            | AutoReverse
+        [<StringEnum; RequireQualifiedAccess>]
+        type Type =
+            | Translate
+            | Scale
+            | Rotate
+            | SkewX
+            | SkewY
 
+            | Matrix
+            | Saturate
+            | HueRotate
+            | LuminanceToAlpha
+
+            | Identity
+            | Table
+            | Discrete
+            | Linear
+            | Gamma
+
+            | FractalNoise
+            | Turbulence
+        [<StringEnum; RequireQualifiedAccess>]
+        type ClipPathUnits =
+            | UserSpaceOnUse
+            | ObjectBoundingBox
+        [<StringEnum(CaseRules.None); RequireQualifiedAccess>]
+        type In =
+            | SourceGraphic
+            | SourceAlpha
+            | BackgroundImage
+            | BackgroundAlpha
+            | FillPaint
+            | StrokePain
         [<Erase>]
         type a() =
             inherit SvgNode()
@@ -1219,15 +1432,35 @@ module Tags =
         [<Erase>]
         type animateMotion() =
             inherit SvgNode()
+            member _.keyPoints // TODO - make sure this renders properly
+                with set(value: float array) = ()
+            member _.path
+                with set(value: string) = ()
+            member _.rotate
+                with set(value: U2<int, Rotate>) = ()
+            // member inline this.rotate' with set(value: int) = this.rotate <-  unbox value
+            // member inline this.rotate' with set(value: Rotate) = this.rotate <- unbox value
+
+
         [<Erase>]
         type animateTransform() =
             inherit SvgNode()
+            member _.by with set(value: string) = ()
+            member _.from with set(value: string) = ()
+            member _.to' with set(value: string) = ()
+            member _.type' with set(value: Type) = ()
+
         [<Erase>]
         type circle() =
             inherit SvgNode()
+            member _.cx with set(value: U3<int, float, string>) = ()
+            member _.cy with set(value: U3<int, float, string>) = ()
+            member _.r with set(value: U2<int, string>) = ()
+            member _.pathLength with set(value: int) = ()
         [<Erase>]
         type clipPath() =
             inherit SvgNode()
+            member _.clipPathUnits with set(value: ClipPathUnits) = ()
         [<Erase>]
         type defs() =
             inherit SvgNode()
@@ -1237,9 +1470,18 @@ module Tags =
         [<Erase>]
         type ellipse() =
             inherit SvgNode()
+            member _.cx with set(value: U3<int, float, string>) = ()
+            member _.cy with set(value: U3<int, float, string>) = ()
+            member _.rx with set(value: U3<int, float, string>) = ()
+            member _.ry with set(value: U3<int, float, string>) = ()
+            member _.pathLength with set (value: int) = ()
         [<Erase>]
         type feBlend() =
             inherit SvgNode()
+            member _.in' with set(value: In) = ()
+            member _.in2 with set(value: In) = ()
+            member _.mode with set(vale: BlendMode) = ()
+
         [<Erase>]
         type feColorMatrix() =
             inherit SvgNode()
