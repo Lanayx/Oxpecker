@@ -18,9 +18,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.4.3</Version>
-        <PackageVersion>0.4.3</PackageVersion>
-        <PackageReleaseNotes>Fix for handling tag import without attributes</PackageReleaseNotes>
+        <Version>0.5.0</Version>
+        <PackageVersion>0.5.0</PackageVersion>
+        <PackageReleaseNotes>Fix for combining imported tags with method calls</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

@@ -2,7 +2,7 @@
 ---
 # Oxpecker.Solid
 
-Fable (4.23.0+) bindings for the **Solid.js** and **Solid-router.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
+Fable (4.23.0+) bindings for the **Solid.js**, **Solid-router.js** and **Solid-meta.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
 
 **Medium article**: [Oxpecker goes full stack](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
 
@@ -95,7 +95,7 @@ Again, just as in the original implementation in `Fable.Solid`, resource is a sp
 
 ### Router
 
-Router namespace is `Oxpecker.Solid.Router`. It contains router related components and functions. To render a router you still need to decorate router function with `SolidComponent` attribute:
+[Router](https://docs.solidjs.com/solid-router) namespace is `Oxpecker.Solid.Router`. It contains router related components and functions. To render a router you still need to decorate router function with `SolidComponent` attribute:
 ```fsharp
 open Oxpecker.Solid.Router
 
@@ -108,6 +108,21 @@ let MyRouter () =
 
 render (MyRouter, document.getElementById "root")
 ```
+_You still need to add a separate reference to @solidjs/router in your package.json._
+
+### Meta
+
+[Meta](https://docs.solidjs.com/solid-meta) namespace is `Oxpecker.Solid.Meta`. It contains elements to be rendered in the application's `<head>` section:
+```fsharp
+open Oxpecker.Solid.Meta
+
+[<SolidComponent>]
+let Root () =
+    MetaProivder() {
+        Title() { "My App" }
+    }
+```
+_You still need to add a separate reference to @solidjs/meta in your package.json._
 
 ### Aria
 

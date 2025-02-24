@@ -1,0 +1,18 @@
+import { MetaProvider, Meta, Title } from "@solidjs/meta";
+
+export function Component() {
+    return <h1>
+        <Title>
+            MyComponent
+        </Title>
+        <Meta content="https://example.com/image.jpg"
+            property="og:image"></Meta>
+    </h1>;
+}
+
+export function Test() {
+    return <MetaProvider>
+        {Component()}
+    </MetaProvider>;
+}
+

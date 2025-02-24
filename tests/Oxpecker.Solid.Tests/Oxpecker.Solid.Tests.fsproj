@@ -76,6 +76,9 @@
         <Compile Include="SolidCases\Router\App2.fs" />
         <Compile Include="SolidCases\Router\Router.fs" />
         <Content Include="SolidCases\Router\Router.fsproj" />
+        <Content Include="SolidCases\Meta\Meta.expected" />
+        <Compile Include="SolidCases\Meta\Meta.fs" />
+        <Content Include="SolidCases\Meta\Meta.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />
