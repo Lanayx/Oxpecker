@@ -19,9 +19,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.4.3</Version>
-        <PackageVersion>0.4.3</PackageVersion>
-        <PackageReleaseNotes>Fix for handling tag import without attributes</PackageReleaseNotes>
+        <Version>0.5.0</Version>
+        <PackageVersion>0.5.0</PackageVersion>
+        <PackageReleaseNotes>Bindings for @solidjs/meta</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +31,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.4.3" />
+        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.5.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -42,6 +42,7 @@
         <Compile Include="Tags.fs" />
         <Compile Include="SolidBindings.fs" />
         <Compile Include="SolidRouterBindings.fs" />
+        <Compile Include="SolidMetaBindings.fs" />
         <Compile Include="Aria.fs" />
     </ItemGroup>
 

@@ -23,7 +23,7 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid" Version="0.4.2" />
+        <PackageReference Include="Oxpecker.Solid" Version="0.5.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -77,6 +77,9 @@
         <Compile Include="SolidCases\Router\App2.fs" />
         <Compile Include="SolidCases\Router\Router.fs" />
         <Content Include="SolidCases\Router\Router.fsproj" />
+        <Content Include="SolidCases\Meta\Meta.expected" />
+        <Compile Include="SolidCases\Meta\Meta.fs" />
+        <Content Include="SolidCases\Meta\Meta.fsproj" />
         <Compile Include="Common.fs" />
         <Compile Include="GeneralTests.fs" />
         <Compile Include="SolidTests.fs" />

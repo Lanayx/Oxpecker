@@ -115,6 +115,17 @@ module internal rec AST =
                _,
                range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, [ expr ], range) |> Some
+        | Call(Import(importInfo, _, _), { Args = LibraryTagImport(imp, _) :: _ }, _, range) when
+            importInfo.Selector.StartsWith("HtmlElementExtensions_")
+            -> // on, attr, data, ref
+            TagInfo.NoChildren(TagSource.LibraryImport imp, [ expr ], range) |> Some
+        | Call(Import(importInfo, _, _),
+               {
+                   Args = Let(_, LibraryTagImport(imp, _), Sequential props) :: _
+               },
+               _,
+               range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
+            TagInfo.NoChildren(TagSource.LibraryImport imp, expr :: props, range) |> Some
         | Call(Import(importInfo, _, _),
                {
                    Args = LetTagNoChildrenWithProps(NoChildren(tagName, props, _)) :: _

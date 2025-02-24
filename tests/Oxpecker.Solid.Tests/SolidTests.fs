@@ -34,3 +34,7 @@ let ``Refs`` () =
 [<Fact>]
 let ``Router`` () =
     runSolidCase "Router"
+
+[<Fact>]
+let ``Meta`` () =
+    runSolidCase "Meta"
