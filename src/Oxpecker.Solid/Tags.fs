@@ -23,6 +23,11 @@ module Tags =
         [<Extension; Erase>]
         static member attr(this: #HtmlTag, name: string, value: string) = this
 
+        /// Applies JS Object Spread to the given value within the given element. Care must be taken to provide valid
+        /// objects. Mostly used to pass on properties in bindings/imports to nested children.
+        [<Extension; Erase>]
+        static member spread(this: #HtmlTag, value: 'T) = this
+
         /// Add event handler to the element through the corresponding attribute
         [<Extension; Erase>]
         static member on(this: #HtmlTag, eventName: string, eventHandler: Event -> unit) = this
