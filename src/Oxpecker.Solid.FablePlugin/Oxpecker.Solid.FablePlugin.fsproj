@@ -18,8 +18,8 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.5.1</Version>
-        <PackageVersion>0.5.1</PackageVersion>
+        <Version>0.5.2</Version>
+        <PackageVersion>0.5.2</PackageVersion>
         <PackageReleaseNotes>Another fix for combining imported tags with method calls</PackageReleaseNotes>
     </PropertyGroup>
 
