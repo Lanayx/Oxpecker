@@ -1,4 +1,4 @@
-import { int32ToString } from "./fable_modules/fable-library-js.4.23.0/Util.js";
+import { int32ToString } from "./fable_modules/fable-library-js.4.24.0/Util.js";
 
 export function Test(id, hello) {
     const helloWorld = hello + " world";

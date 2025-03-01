@@ -1,7 +1,17 @@
-import { minValue, day } from "./fable_modules/fable-library-js.4.23.0/Date.js";
-import { int32ToString } from "./fable_modules/fable-library-js.4.23.0/Util.js";
+import { ImportedName } from "ImportedModule";
+import { minValue, day } from "./fable_modules/fable-library-js.4.24.0/Date.js";
+import { int32ToString } from "./fable_modules/fable-library-js.4.24.0/Util.js";
 
-export function Test() {
+export function Test2() {
+    return <ImportedName x="y"
+        a="b">
+        <ImportedName x="y"
+            a="b"></ImportedName>
+        Hello
+    </ImportedName>;
+}
+
+export function Test1() {
     let copyOfStruct_1;
     return <my-tag myAttr="foo">
         {"Hello " + ((copyOfStruct_1 = day(minValue()), int32ToString(copyOfStruct_1)))}

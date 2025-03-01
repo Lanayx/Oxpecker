@@ -1,4 +1,4 @@
-import { some } from "./fable_modules/fable-library-js.4.23.0/Option.js";
+import { some } from "./fable_modules/fable-library-js.4.24.0/Option.js";
 import { createSignal } from "solid-js";
 
 export function Component(getText) {

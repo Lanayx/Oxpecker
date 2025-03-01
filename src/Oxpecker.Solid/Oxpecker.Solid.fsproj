@@ -19,9 +19,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.5.0</Version>
-        <PackageVersion>0.5.0</PackageVersion>
-        <PackageReleaseNotes>Bindings for @solidjs/meta</PackageReleaseNotes>
+        <Version>0.5.1</Version>
+        <PackageVersion>0.5.1</PackageVersion>
+        <PackageReleaseNotes>Another fix for combining imported tags with method calls</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
