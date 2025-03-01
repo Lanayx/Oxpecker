@@ -9,10 +9,12 @@ open Fable.AST.Fable
 do () // Prompts fable to utilise this plugin
 
 module internal rec AST =
+
     /// <summary>
     /// AST Representation for a JSX Attribute/property. Tuple of name and value
     /// </summary>
     type PropInfo = string * Expr
+
     /// <summary>
     /// List of AST property name value pairs
     /// </summary>
@@ -21,6 +23,7 @@ module internal rec AST =
     type TagSource =
         | AutoImport of tagName: string
         | LibraryImport of imp: Expr
+
     /// <summary>
     /// DU which distinguishes between a user call instantiating the tag with children, without children (props only),
     /// or with both children AND properties.
@@ -29,6 +32,20 @@ module internal rec AST =
         | WithChildren of tagName: TagSource * propsAndChildren: CallInfo * range: SourceLocation option
         | NoChildren of tagName: TagSource * props: Expr list * range: SourceLocation option
         | Combined of tagName: TagSource * props: Expr list * propsAndChildren: CallInfo * range: SourceLocation option
+
+    let (|ChainOfExtensionCalls|_|) =
+        function
+        | Call(Import(importInfo, _, _),
+               {
+                   Args = ChainOfExtensionCalls expr :: _
+               },
+               _,
+               _)
+        | Call(Import(importInfo, _, _), { Args = expr :: _ }, _, _) when
+            importInfo.Selector.StartsWith("HtmlElementExtensions_")
+            -> // on, attr, data, ref
+            expr |> Some
+        | _ -> None
 
     /// <summary>
     /// Pattern matches expressions for Tags calls.
@@ -42,7 +59,9 @@ module internal rec AST =
             let tagImport =
                 match callInfo.Args with
                 | LibraryTagImport(imp, _) :: _
-                | Let(_, LibraryTagImport(imp, _), _) :: _ -> LibraryImport imp
+                | Let(_, LibraryTagImport(imp, _), _) :: _
+                | ChainOfExtensionCalls(LibraryTagImport(imp, _)) :: _ -> // on, attr, data, ref
+                    LibraryImport imp
                 | _ ->
                     let tagName = typ.FullName.Split('.') |> Seq.last
                     let finalTagName =
@@ -57,6 +76,7 @@ module internal rec AST =
                     AutoImport finalTagName
             Some(tagImport, callInfo, range)
         | _ -> None
+
     /// <summary>
     /// Pattern matches expressions to Tags calls without children
     /// </summary>
@@ -66,6 +86,7 @@ module internal rec AST =
         match expr with
         | CallTag condition (tagName, _, range) -> Some(tagName, range)
         | _ -> None
+
     /// <summary>
     /// Pattern matches expressions to Tag calls with children
     /// </summary>
@@ -78,6 +99,7 @@ module internal rec AST =
         match expr with
         | CallTag condition tagCallInfo -> Some tagCallInfo
         | _ -> None
+
     /// <summary>
     /// Pattern matches <c>let</c> bindings that start with <c>element</c>
     /// </summary>
@@ -86,6 +108,7 @@ module internal rec AST =
         function
         | Let({ Name = name }, _, _) when name.StartsWith("element") -> Some()
         | _ -> None
+
     /// <summary>
     /// Pattern matches <c>let</c> bindings for Tags with children
     /// </summary>
@@ -94,6 +117,7 @@ module internal rec AST =
         function
         | Let(_, TagWithChildren(tagName, callInfo, range), _) -> TagInfo.WithChildren(tagName, callInfo, range) |> Some
         | _ -> None
+
     /// <summary>
     /// Pattern matches <c>let</c> bindings for Tags without children (but with props)
     /// </summary>
@@ -102,6 +126,7 @@ module internal rec AST =
         function
         | Let(_, TagNoChildren(tagName, range), Sequential exprs) -> TagInfo.NoChildren(tagName, exprs, range) |> Some
         | _ -> None
+
     /// <summary>
     /// Pattern matches expressions (<c>let</c> or otherwise) for tags without children directly to Tag calls
     /// </summary>
@@ -141,6 +166,7 @@ module internal rec AST =
                range) when importInfo.Selector.StartsWith("HtmlElementExtensions_") -> // on, attr, data, ref
             TagInfo.NoChildren(tagName, expr :: props, range) |> Some
         | _ -> None
+
     /// <summary>
     /// Pattern matches <c>let</c> bindings for tags without children or props
     /// </summary>
@@ -149,6 +175,7 @@ module internal rec AST =
         function
         | Let(_, TagNoChildren(tagName, range), _) -> TagInfo.NoChildren(tagName, [], range) |> Some
         | _ -> None
+
     /// <summary>
     /// Pattern matches expressions that are text in isolation (no siblings)
     /// </summary>
@@ -157,6 +184,7 @@ module internal rec AST =
         function
         | Lambda({ Name = cont }, TypeCast(textBody, Unit), None) when cont.StartsWith("cont") -> Some textBody
         | _ -> None
+
     /// <summary>
     /// Matches expressions for tags that are imported from a namespace starting with <c>Oxpecker.Solid</c>
     /// </summary>
@@ -168,6 +196,7 @@ module internal rec AST =
             ->
             Some(imp, range)
         | _ -> None
+
     /// <summary>
     /// Plugin type declaration for JSX Element
     /// </summary>
