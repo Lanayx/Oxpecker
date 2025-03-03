@@ -15,6 +15,8 @@ module Builder =
         inherit HtmlElement
     type HtmlContainer =
         inherit HtmlElement
+    type SvgTag =
+        inherit HtmlElement
 
     [<Erase>]
     type RegularNode() =
@@ -28,6 +30,12 @@ module Builder =
     [<Erase>]
     type VoidNode() =
         interface HtmlTag
+
+    [<Erase>]
+    type SvgNode() =
+        interface SvgTag
+        interface HtmlContainer
+
 
     type HtmlContainerFun = HtmlContainer -> unit
 
