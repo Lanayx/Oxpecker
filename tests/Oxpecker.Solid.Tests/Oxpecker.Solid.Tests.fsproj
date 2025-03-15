@@ -51,6 +51,9 @@
         <None Include="Cases\CustomTags\CustomTags.fsproj" />
         <Compile Include="Cases\LetBindings\LetBindings.fs" />
         <None Include="Cases\LetBindings\LetBindings.fsproj" />
+        <Content Include="Cases\Branches\Branches.expected" />
+        <Compile Include="Cases\Branches\Branches.fs" />
+        <Content Include="Cases\Branches\Branches.fsproj" />
         <Compile Include="SolidCases\Signal\Signal.fs" />
         <None Include="SolidCases\Signal\Signal.expected" />
         <None Include="SolidCases\Signal\Signal.fsproj" />
