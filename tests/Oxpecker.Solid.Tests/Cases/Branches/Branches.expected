@@ -1,0 +1,14 @@
+import { createSignal } from "solid-js";
+
+export function Test(x) {
+    const patternInput = createSignal(x);
+    return <h1>
+        {(patternInput[0]() === 0) ? <div bool:visible={true}></div> : ((x === 1) ? <h2>
+            Hello
+        </h2> : ((x === 2) ? <h3></h3> : ((x > 10) ? <h1 id="id1"></h1> : <h1 id="id2"
+            abc="def">
+            Hello
+        </h1>)))}
+    </h1>;
+}
+

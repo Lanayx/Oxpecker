@@ -44,6 +44,10 @@ let ``Custom tags`` () =
     runGeneralCase "CustomTags"
 
 [<Fact>]
+let ``Branches`` () =
+    runGeneralCase "Branches"
+
+[<Fact>]
 let ``Let bindings`` () =
     let dir = $"{__SOURCE_DIRECTORY__}/Cases/LetBindings"
     let output =

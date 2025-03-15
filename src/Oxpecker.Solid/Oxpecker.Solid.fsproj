@@ -19,9 +19,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.5.2</Version>
-        <PackageVersion>0.5.2</PackageVersion>
-        <PackageReleaseNotes>Another fix for combining imported tags with method calls</PackageReleaseNotes>
+        <Version>0.5.3</Version>
+        <PackageVersion>0.5.3</PackageVersion>
+        <PackageReleaseNotes>Better transformations for if/match branches</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,7 +31,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.5.2" />
+        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.5.3" />
     </ItemGroup>
 
     <ItemGroup>

@@ -348,6 +348,7 @@ module internal rec AST =
             | expr ->
                 let newExpr = transform expr
                 getChildren (newExpr :: currentList) next
+        // branches
         | IfThenElse(guardExpr, thenExpr, elseExpr, range) ->
             IfThenElse(guardExpr, transform thenExpr, transform elseExpr, range)
             :: currentList
@@ -378,17 +379,21 @@ module internal rec AST =
         | Let({
                   Name = name
                   Range = range
-                  Type = DeclaredType({ FullName = fullName }, [])
+                  Type = type'
               },
               _,
-              _) when
-            ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
-             || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
-            |> not
-            ->
-            match range with
-            | Some range -> failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
-            | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
+              _) ->
+            match type' with
+            | DeclaredType({ FullName = fullName }, _) when
+                ((name.StartsWith("returnVal") && fullName.StartsWith("Oxpecker.Solid"))
+                 || (name.StartsWith("element") && fullName.StartsWith("Oxpecker.Solid")))
+                ->
+                currentList
+            | _ ->
+                match range with
+                | Some range ->
+                    failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
+                | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
         | _ -> currentList
 
     let listItemType =
@@ -477,6 +482,7 @@ module internal rec AST =
         | LetElement & Let(_, LetTagNoChildrenWithProps tagCall, _) -> transformTagInfo tagCall
         | TagNoChildren(tagName, range) -> transformTagInfo(TagInfo.NoChildren(tagName, [], range))
         | CallTagNoChildrenWithHandler tagCall -> transformTagInfo tagCall
+        | LetElement & Let(_, CallTagNoChildrenWithHandler tagCall, _) -> transformTagInfo tagCall
         | LetTagNoChildrenNoProps tagCall -> transformTagInfo tagCall
         | TagWithChildren callInfo -> transformTagInfo(TagInfo.WithChildren callInfo)
         | LetTagWithChildren tagCall -> transformTagInfo tagCall
