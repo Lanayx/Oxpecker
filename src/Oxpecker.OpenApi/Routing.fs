@@ -57,5 +57,6 @@ module Routing =
         configureEndpoint
             _.WithMetadata(
                 typeof<FakeFunc<'Req, 'Res>>.GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
+                |> nullArgCheck $"Method {methodName} not found"
             )
                 .WithOpenApi()

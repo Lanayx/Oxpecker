@@ -1,4 +1,6 @@
-﻿namespace Oxpecker
+﻿#nowarn 3261
+
+namespace Oxpecker
 
 open System
 open System.Collections.Generic
@@ -61,7 +63,7 @@ module internal ModelParser =
             | false -> false, false, Unchecked.defaultof<Type>
 
         if t.IsArray then
-            let arrArgType = t.GetElementType() |> Unchecked.nonNull
+            let arrArgType = t.GetElementType() |> nonNull
             let arrLen = rawValues.Count
             let arr = Array.CreateInstance(arrArgType, arrLen)
             if arrLen = 0 then
@@ -113,9 +115,9 @@ module internal ModelParser =
                 match isOption with
                 | false -> Ok value
                 | true ->
-                    match isNull value with
-                    | true -> t.MakeNoneCase()
-                    | false -> t.MakeSomeCase(value)
+                    match value with
+                    | null -> t.MakeNoneCase()
+                    | v -> t.MakeSomeCase(v)
                     |> Ok
         elif FSharpType.IsUnion t then
             let unionName = rawValues.ToString()
@@ -156,10 +158,11 @@ module internal ModelParser =
         // Normalize data
         let normalizeKey (key: string) = key.TrimEnd([| '['; ']' |])
         let data = data |> Seq.map(fun i -> normalizeKey i.Key, i.Value) |> dict
+        let boxedModel = box model
 
         let error =
             // Iterate through all properties of the model
-            model.GetType().GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
+            boxedModel.GetType().GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
             |> Seq.filter _.CanWrite
             |> Seq.fold
                 (fun (error: string option) (prop: PropertyInfo) ->
