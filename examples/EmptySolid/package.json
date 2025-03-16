@@ -6,10 +6,10 @@
     "build": "dotnet fable --exclude Oxpecker.Solid.FablePlugin --noCache --extension .jsx --run vite build"
   },
   "dependencies": {
-    "solid-js": "^1.9.2"
+    "solid-js": "1.9.5"
   },
   "devDependencies": {
-    "vite": "^5.4.9",
-    "vite-plugin-solid": "^2.10.2"
+    "vite": "^6.2.2",
+    "vite-plugin-solid": "^2.11.6"
   }
 }
