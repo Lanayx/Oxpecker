@@ -8,22 +8,22 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
-        <PackageReference Include="Falco.Markup" Version="1.1.1" />
-        <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
-        <PackageReference Include="Giraffe" Version="7.0.2" />
-        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.0" />
-        <PackageReference Include="SpanJson" Version="4.2.1" />
-        <PackageReference Include="Oxpecker" Version="1.2.0" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="1.1.0" />
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="ViewEngineBuild.fs" />
         <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="JSON.fs" />
         <Compile Include="Program.fs"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+        <PackageReference Include="Falco.Markup" Version="1.1.1" />
+        <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
+        <PackageReference Include="Giraffe" Version="7.0.2" />
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.3" />
+        <PackageReference Include="SpanJson" Version="4.2.1" />
+        <PackageReference Include="Oxpecker" Version="1.2.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="1.1.0" />
     </ItemGroup>
 
 </Project>

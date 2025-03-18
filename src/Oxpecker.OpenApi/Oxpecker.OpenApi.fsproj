@@ -27,7 +27,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Oxpecker" Version="1.2.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.1" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.14" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

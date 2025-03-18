@@ -19,19 +19,19 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.5.3</Version>
-        <PackageVersion>0.5.3</PackageVersion>
-        <PackageReleaseNotes>Better transformations for if/match branches</PackageReleaseNotes>
+        <Version>0.6.0</Version>
+        <PackageVersion>0.6.0</PackageVersion>
+        <PackageReleaseNotes>Support for match branches with named cases</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fable.Core" Version="4.3.0" />
-        <PackageReference Include="Fable.Browser.Dom" Version="2.18.0" />
+        <PackageReference Include="Fable.Core" Version="4.5.0" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.18.1" />
         <PackageReference Include="Fable.Package.SDK" Version="1.3.0">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.5.3" />
+        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.6.0" />
     </ItemGroup>
 
     <ItemGroup>

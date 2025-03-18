@@ -86,7 +86,7 @@ module ModelValidation =
         /// <typeparam name="'T"></typeparam>
         /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
         [<Extension>]
-        static member BindAndValidateJson<'T>(ctx: HttpContext) =
+        static member BindAndValidateJson<'T when 'T: not null>(ctx: HttpContext) =
             task {
                 let! result = ctx.BindJson<'T>()
                 return validateModel result
@@ -99,7 +99,7 @@ module ModelValidation =
         /// <typeparam name="'T"></typeparam>
         /// <returns>Returns a <see cref="System.Threading.Tasks.Task{T}"/></returns>
         [<Extension>]
-        static member BindAndValidateForm<'T>(ctx: HttpContext) =
+        static member BindAndValidateForm<'T when 'T: not null>(ctx: HttpContext) =
             task {
                 let! result = ctx.BindForm<'T>()
                 return validateModel result
@@ -112,7 +112,7 @@ module ModelValidation =
         /// <typeparam name="'T"></typeparam>
         /// <returns>Returns an instance of type 'T</returns>
         [<Extension>]
-        static member BindAndValidateQuery<'T>(ctx: HttpContext) =
+        static member BindAndValidateQuery<'T when 'T: not null>(ctx: HttpContext) =
             let result = ctx.BindQuery<'T>()
             validateModel result
 
@@ -125,7 +125,9 @@ module ModelValidation =
         /// <param name="ctx">HttpContext</param>
         /// <typeparam name="'T"></typeparam>
         /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-        let bindAndValidateJson<'T> (f: ModelValidationResult<'T> -> EndpointHandler) : EndpointHandler =
+        let bindAndValidateJson<'T when 'T: not null>
+            (f: ModelValidationResult<'T> -> EndpointHandler)
+            : EndpointHandler =
             fun (ctx: HttpContext) ->
                 task {
                     let! model = ctx.BindJson<'T>()
@@ -139,7 +141,9 @@ module ModelValidation =
         /// <param name="ctx">HttpContext</param>
         /// <typeparam name="'T"></typeparam>
         /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-        let bindAndValidateForm<'T> (f: ModelValidationResult<'T> -> EndpointHandler) : EndpointHandler =
+        let bindAndValidateForm<'T when 'T: not null>
+            (f: ModelValidationResult<'T> -> EndpointHandler)
+            : EndpointHandler =
             fun (ctx: HttpContext) ->
                 task {
                     let! model = ctx.BindForm<'T>()
@@ -153,7 +157,9 @@ module ModelValidation =
         /// <param name="ctx">HttpContext</param>
         /// <typeparam name="'T"></typeparam>
         /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-        let bindAndValidateQuery<'T> (f: ModelValidationResult<'T> -> EndpointHandler) : EndpointHandler =
+        let bindAndValidateQuery<'T when 'T: not null>
+            (f: ModelValidationResult<'T> -> EndpointHandler)
+            : EndpointHandler =
             fun (ctx: HttpContext) ->
                 let model = ctx.BindQuery<'T>()
                 f (validateModel model) ctx

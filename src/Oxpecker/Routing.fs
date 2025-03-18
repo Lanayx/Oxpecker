@@ -150,6 +150,7 @@ module RoutingInternal =
                     ctx
                 |]
             )
+            |> nonNull
             :?> Task
         else
             methodInfo.Invoke(
@@ -160,6 +161,7 @@ module RoutingInternal =
                         RouteTemplateBuilder.parse formatChar modifier routeValue
                 |]
             )
+            |> nonNull
             :?> FSharpFunc<HttpContext, Task>
             <| ctx
 

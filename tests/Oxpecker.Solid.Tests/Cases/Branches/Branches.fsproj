@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="MyUnions.fs" />
     <Compile Include="Branches.fs" />
   </ItemGroup>
 

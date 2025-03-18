@@ -11,7 +11,7 @@
         <PackageReference Include="Oxpecker.OpenApi" Version="1.0.0" />
         <PackageReference Include="Oxpecker.Htmx" Version="1.0.0" />
         <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
     </ItemGroup>
 
     <ItemGroup>

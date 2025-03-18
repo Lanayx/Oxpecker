@@ -355,6 +355,36 @@ module internal rec AST =
         | DecisionTree(decisionTree, targets) ->
             DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
             :: currentList
+        | Let({ Name = matchValue }, CurriedApply _, _) as expr when matchValue.StartsWith("matchValue") ->
+            // wrap with self-executing lambda function https://stackoverflow.com/a/66693905/1780648
+            let lambda =
+                Lambda(
+                    {
+                        Name = "self"
+                        Type = Unit
+                        IsMutable = false
+                        IsThisArgument = false
+                        IsCompilerGenerated = true
+                        Range = None
+                    },
+                    transform expr,
+                    None
+                )
+            let newExpr =
+                Call(
+                    callee = lambda,
+                    info = {
+                        ThisArg = None
+                        Args = []
+                        SignatureArgTypes = []
+                        GenericArgs = []
+                        MemberRef = None
+                        Tags = []
+                    },
+                    typ = Unit,
+                    range = None
+                )
+            newExpr :: currentList
         // router cases
         | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
             match args with

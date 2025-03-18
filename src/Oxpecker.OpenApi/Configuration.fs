@@ -21,6 +21,7 @@ module Configuration =
 
     let internal fakeFuncMethod =
         typeof<FakeFunc<_, _>>.GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
+        |> nullArgCheck $"Method InvokeUnit not found"
     let internal unitType = typeof<unit>
 
     type RequestBody(?requestType: Type, ?contentTypes: string array, ?isOptional: bool) =
