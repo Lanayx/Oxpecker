@@ -19,9 +19,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.5.3</Version>
-        <PackageVersion>0.5.3</PackageVersion>
-        <PackageReleaseNotes>Better transformations for if/match branches</PackageReleaseNotes>
+        <Version>0.6.0</Version>
+        <PackageVersion>0.6.0</PackageVersion>
+        <PackageReleaseNotes>Support for match branches with named cases</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

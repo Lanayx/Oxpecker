@@ -3,12 +3,21 @@ import { createSignal } from "solid-js";
 export function Test(x) {
     const patternInput = createSignal(x);
     return <h1>
-        {(patternInput[0]() === 0) ? <div bool:visible={true}></div> : ((x === 1) ? <h2>
-            Hello
-        </h2> : ((x === 2) ? <h3></h3> : ((x > 10) ? <h1 id="id1"></h1> : <h1 id="id2"
-            abc="def">
-            Hello
-        </h1>)))}
+        {(() => {
+            const matchValue = patternInput[0]();
+            if (matchValue.tag === 1) {
+                const matchValue_1 = matchValue.fields[0]();
+                return (matchValue_1.tag === 1) ? ((matchValue_1.fields[0]() < 0) ? <h3></h3> : <h1 id="id2"
+                    abc="def">
+                    {(matchValue_1.fields[0]() > 10) ? <h1 id="id1"></h1> : "Hello"}
+                </h1>) : <h2>
+                    Hello
+                </h2>;
+            }
+            else {
+                return <div bool:visible={true}></div>;
+            }
+        })()}
     </h1>;
 }
 

@@ -45,6 +45,7 @@
         <None Include="Cases\CustomTags\CustomTags.fsproj" />
         <Compile Include="Cases\LetBindings\LetBindings.fs" />
         <None Include="Cases\LetBindings\LetBindings.fsproj" />
+        <Compile Include="Cases\Branches\MyUnions.fs" />
         <Content Include="Cases\Branches\Branches.expected" />
         <Compile Include="Cases\Branches\Branches.fs" />
         <Content Include="Cases\Branches\Branches.fsproj" />

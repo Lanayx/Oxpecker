@@ -1,27 +1,28 @@
 module Oxpecker.Solid.Tests.Cases.Branches
 
 open Oxpecker.Solid
+open MyUnions
 
 [<SolidComponent>]
-let Test (x: int) : HtmlElement =
+let Test (x: Step) : HtmlElement =
     let s, setS = createSignal x
 
     h1() {
         match s() with
-        | 0 -> div().bool("visible", true)
-        | _ ->
-            match x with
-            | 1 ->
+        | One -> div().bool("visible", true)
+        | Two x ->
+            match x() with
+            | A ->
                 h2() {
                     "Hello"
                 }
-            | 2 ->
+            | B y when y() < 0  ->
                 h3()
-            | _ ->
-                if x > 10 then
-                    h1(id="id1")
-                else
-                    h1(id="id2").attr("abc", "def") {
+            | B z ->
+                h1(id="id2").attr("abc", "def") {
+                    if z() > 10 then
+                        h1(id="id1")
+                    else
                         "Hello"
-                    }
+                }
     }
