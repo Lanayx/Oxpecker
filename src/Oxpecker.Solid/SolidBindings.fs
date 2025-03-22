@@ -9,6 +9,18 @@ open System
 [<AutoOpen>]
 module Bindings =
 
+    /// <summary>
+    /// Calling the setter updates the Signal (triggering dependents to rerun) if the value actually changed.
+    /// <br/>The setter takes either the new value for the signal or a function that maps the previous value of the signal to a new value as its only argument. The updated value is also returned by the setter.
+    /// </summary>
+    /// <remarks>
+    /// To pass a handler that maps the previous value, call Invoke on the setter.
+    /// <code>
+    /// let index,setIndex = createSignal(0)
+    /// setIndex.Invoke(fun x -> x + 1)
+    /// </code>
+    /// To access the returned value, use <c>.InvokeGet</c>
+    /// </remarks>
     type Setter<'T> = 'T -> unit
     type Accessor<'T> = unit -> 'T
     type Signal<'T> = Accessor<'T> * Setter<'T>
@@ -457,6 +469,9 @@ module Bindings =
         [<Erase>]
         member this.fallback
             with set (value: HtmlElement) = ()
+        [<Erase>]
+        member this.keyed
+            with set (value: bool) = ()
 
     [<Erase>]
     type Match() =
@@ -541,6 +556,18 @@ module Bindings =
         static member Run(this: Switch, runExpr: HtmlContainerFun) =
             runExpr Unchecked.defaultof<_>
             this
+
+        [<Extension; Erase>]
+        static member inline Invoke(this: Setter<'T>, handler: 'T -> 'T) : unit = this(unbox<'T> handler)
+
+        [<Extension; Erase>]
+        static member inline Invoke(this: Setter<'T>, handler: 'T) : unit = this(unbox<'T> handler)
+
+        [<Extension; Erase>]
+        static member inline InvokeGet(this: Setter<'T>, handler: 'T -> 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
+
+        [<Extension; Erase>]
+        static member inline InvokeGet(this: Setter<'T>, handler: 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
 
     [<RequireQualifiedAccess; StringEnum>]
     type SolidResourceState =
