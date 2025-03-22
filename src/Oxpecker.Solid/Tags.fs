@@ -50,6 +50,42 @@ module Tags =
         /// Adds or removes attribute without value
         [<Extension; Erase>]
         static member bool(this: #HtmlTag, name: string, value: bool) = this
+    /// Set of html extensions that keep original type
+    [<Extension>]
+    [<Erase>]
+    type SvgHtmlElementExtensions =
+
+        /// Add an attribute to the element
+        [<Extension; Erase>]
+        static member attr(this: #SvgTag, name: string, value: string) = this
+
+        /// Add event handler to the element through the corresponding attribute
+        [<Extension; Erase>]
+        static member on(this: #SvgTag, eventName: string, eventHandler: Event -> unit) = this
+
+        /// Add data attribute to the element
+        [<Extension; Erase>]
+        static member data(this: #SvgTag, name: string, value: string) = this
+
+        /// Referenced native HTML element
+        [<Extension; Erase>]
+        static member ref(this: #SvgTag, el: #Element) = this
+
+        /// Referenced native HTML element (before connecting to DOM)
+        [<Extension; Erase>]
+        static member ref(this: #SvgTag, el: #Element -> unit) = this
+
+        /// Usage `elem.style(createObj ["color", "green"; "background-color", state.myColor ])`
+        [<Extension; Erase>]
+        static member style'(this: #SvgTag, styleObj: obj) = this
+
+        /// Usage `elem.classList(createObj ["active", true; "disabled", state.disabled ])`
+        [<Extension; Erase>]
+        static member classList(this: #SvgTag, classListObj: obj) = this
+
+        /// Adds or removes attribute without value
+        [<Extension; Erase>]
+        static member bool(this: #SvgTag, name: string, value: bool) = this
 
     // global attributes
     type HtmlTag with
@@ -1171,241 +1207,16 @@ module Tags =
         member _.tabindex
             with set (value: int) = ()
         member _.``xml:lang``
-            with set (value: string) = ()
+            with private set (value: string) = ()
         member _.``xml:space``
-            with set (value: string) = ()
+            with private set (value: string) = ()
         member inline this.xmlLang
-            with set (value: string) = this.``xml:lang`` <- value
+            with inline set (value: string) = this.``xml:lang`` <- value
         member inline this.xmlSpace
-            with set(value: string) = this.``xml:space`` <- value
-        // member systemLanguage // TODO
+            with inline set(value: string) = this.``xml:space`` <- value
 
     [<Erase>]
     module Svg =
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type ReferrerPolicy =
-            | NoReferrer
-            | NoReferrerWhenDowngrade
-            | SameOrigin
-            | Origin
-            | StrictOrigin
-            | OriginWhenCrossOrigin
-            | StrictOriginWhenCrossOrigin
-            | UnsafeUrl
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type AlignmentBaseline =
-            | Auto
-            | Baseline
-            | BeforeEdge
-            | TextBeforeEdge
-            | Middle
-            | Central
-            | AfterEdge
-            | TextAfterEdge
-            | Ideographic
-            | Alphabetic
-            | Hanging
-            | Mathematical
-            | Top
-            | Center
-            | Bottom
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type BlendMode =
-            | Normal
-            | Multiply
-            | Screen
-            | Overlay
-            | Darken
-            | Lighten
-            | ColorDodge
-            | ColorBurn
-            | HardLight
-            | SoftLight
-            | Difference
-            | Exclusion
-            | Hue
-            | Saturation
-            | Color
-            | Luminosity
-        [<StringEnum; RequireQualifiedAccess>]
-        type ClipRule =
-            | [<CompiledName("nonzero")>] NonZero
-            | [<CompiledName("evenodd")>] EvenOdd
-            | [<CompiledName("inherit")>] Inherit
-        [<StringEnum; RequireQualifiedAccess>]
-        type ColorInterpolation =
-            | Auto
-            | SRGB
-            | LinearRGB
-        [<StringEnum; RequireQualifiedAccess>]
-        type ColorInterpolationFilters = ColorInterpolation
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type Cursor =
-            | Auto
-            | Crosshair
-            | Default
-            | Pointer
-            | Move
-            | EResize
-            | NeResize
-            | NwResize
-            | NResize
-            | SeResize
-            | SwResize
-            | SResize
-            | WResize
-            | Text
-            | Wait
-            | Help
-            | Inherit
-        [<StringEnum; RequireQualifiedAccess>]
-        type Direction =
-            | Ltr
-            | Rtl
-        [<StringEnum; RequireQualifiedAccess>]
-        type Display =
-            | None
-            | Inherit
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type DominantBaseline =
-            | Auto
-            | TextBottom
-            | Alphabetic
-            | Ideographic
-            | Middle
-            | Central
-            | Mathematical
-            | Hanging
-            | TextTop
-        /// <summary>
-        /// Fill enum in context of the tags <c>animate</c>, <c>animateMotion</c>, <c>animateTransform</c> and
-        /// <c>set</c>
-        /// </summary>
-        [<StringEnum; RequireQualifiedAccess>]
-        type FillAnimate =
-            | Freeze
-            | Remove
-        [<StringEnum; RequireQualifiedAccess>]
-        type FillRule =
-            | [<CompiledName("nonzero")>] NonZero
-            | [<CompiledName("evenodd")>] EvenOdd
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type WritingMode =
-            | HorizontalTb
-            | VerticalRl
-            | VerticalLr
-        [<StringEnum; RequireQualifiedAccess>]
-        type Visibility =
-            | Visible
-            | Hidden
-            | Collapse
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type VectorEffect =
-            | None
-            | NonScalingStroke
-            | NonScalingSize
-            | NonRotation
-            | FixedPosition
-        [<StringEnum; RequireQualifiedAccess>]
-        type TextRendering =
-            | Auto
-            | OptimizeSpeed
-            | OptimizeLegibility
-            | GeometricPrecision
-        [<StringEnum; RequireQualifiedAccess>]
-        type TextAnchor =
-            | Start
-            | Middle
-            | End
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type StrokeLineJoin =
-            | Arcs
-            | Bevel
-            | Miter
-            | MiterClip
-            | Round
-        [<StringEnum; RequireQualifiedAccess>]
-        type StrokeLinecap =
-            | Butt
-            | Round
-            | Square
-        [<StringEnum; RequireQualifiedAccess>]
-        type ShapeRendering =
-            | Auto
-            | OptimizeSpeed
-            | CrispEdges
-            | GeometricPrecision
-        [<StringEnum; RequireQualifiedAccess>]
-        type PointerEvents =
-            | [<CompiledName("bounding-box")>] BoundingBox
-            | VisiblePainted
-            | VisibleFill
-            | VisibleStroke
-            | Visible
-            | Painted
-            | Fill
-            | Stroke
-            | All
-            | None
-        [<StringEnum; RequireQualifiedAccess>]
-        type Overflow =
-            | Visible
-            | Hidden
-            | Scroll
-            | Auto
-        [<StringEnum; RequireQualifiedAccess>]
-        type ImageRendering =
-            | Auto
-            | OptimizeSpeed
-            | OptimizeQuality
-        [<StringEnum; RequireQualifiedAccess>]
-        type FontWeight =
-            | Normal
-            | Bold
-            | Bolder
-            | Lighter
-        [<StringEnum; RequireQualifiedAccess>]
-        type FontStyle =
-            | Normal
-            | Italic
-            | Oblique
-        [<StringEnum(CaseRules.KebabCase); RequireQualifiedAccess>]
-        type Rotate =
-            | Auto
-            | AutoReverse
-        [<StringEnum; RequireQualifiedAccess>]
-        type Type =
-            | Translate
-            | Scale
-            | Rotate
-            | SkewX
-            | SkewY
-
-            | Matrix
-            | Saturate
-            | HueRotate
-            | LuminanceToAlpha
-
-            | Identity
-            | Table
-            | Discrete
-            | Linear
-            | Gamma
-
-            | FractalNoise
-            | Turbulence
-        [<StringEnum; RequireQualifiedAccess>]
-        type ClipPathUnits =
-            | UserSpaceOnUse
-            | ObjectBoundingBox
-        [<StringEnum(CaseRules.None); RequireQualifiedAccess>]
-        type In =
-            | SourceGraphic
-            | SourceAlpha
-            | BackgroundImage
-            | BackgroundAlpha
-            | FillPaint
-            | StrokePain
         [<Erase>]
         type a() =
             inherit SvgNode()
@@ -1418,7 +1229,7 @@ module Tags =
             member _.ping
                 with set(value: string) = ()
             member _.referrerpolicy
-                with set(value: ReferrerPolicy) = ()
+                with set(value: string) = ()
             member _.rel
                 with set(value: string) = ()
             member _.target
@@ -1432,15 +1243,12 @@ module Tags =
         [<Erase>]
         type animateMotion() =
             inherit SvgNode()
-            member _.keyPoints // TODO - make sure this renders properly
-                with set(value: float array) = ()
+            member _.keyPoints
+                with set(value: string) = ()
             member _.path
                 with set(value: string) = ()
             member _.rotate
-                with set(value: U2<int, Rotate>) = ()
-            // member inline this.rotate' with set(value: int) = this.rotate <-  unbox value
-            // member inline this.rotate' with set(value: Rotate) = this.rotate <- unbox value
-
+                with set(value: string) = ()
 
         [<Erase>]
         type animateTransform() =
@@ -1448,19 +1256,19 @@ module Tags =
             member _.by with set(value: string) = ()
             member _.from with set(value: string) = ()
             member _.to' with set(value: string) = ()
-            member _.type' with set(value: Type) = ()
+            member _.type' with set(value: string) = ()
 
         [<Erase>]
         type circle() =
             inherit SvgNode()
-            member _.cx with set(value: U3<int, float, string>) = ()
-            member _.cy with set(value: U3<int, float, string>) = ()
-            member _.r with set(value: U2<int, string>) = ()
-            member _.pathLength with set(value: int) = ()
+            member _.cx with set(value: string) = ()
+            member _.cy with set(value: string) = ()
+            member _.r with set(value: string) = ()
+            member _.pathLength with set(value: string) = ()
         [<Erase>]
         type clipPath() =
             inherit SvgNode()
-            member _.clipPathUnits with set(value: ClipPathUnits) = ()
+            member _.clipPathUnits with set(value: string) = ()
         [<Erase>]
         type defs() =
             inherit SvgNode()
@@ -1470,45 +1278,84 @@ module Tags =
         [<Erase>]
         type ellipse() =
             inherit SvgNode()
-            member _.cx with set(value: U3<int, float, string>) = ()
-            member _.cy with set(value: U3<int, float, string>) = ()
-            member _.rx with set(value: U3<int, float, string>) = ()
-            member _.ry with set(value: U3<int, float, string>) = ()
-            member _.pathLength with set (value: int) = ()
+            member _.cx with set(value: string) = ()
+            member _.cy with set(value: string) = ()
+            member _.rx with set(value: string) = ()
+            member _.ry with set(value: string) = ()
+            member _.pathLength with set (value: string) = ()
         [<Erase>]
         type feBlend() =
             inherit SvgNode()
-            member _.in' with set(value: In) = ()
-            member _.in2 with set(value: In) = ()
-            member _.mode with set(vale: BlendMode) = ()
+            member _.in' with set(value: string) = ()
+            member _.in2 with set(value: string) = ()
+            member _.mode with set(value: string) = ()
 
-        [<Erase>]
         type feColorMatrix() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.type' with set(value: string) = ()
+            member _.values with set(value: string) = ()
         [<Erase>]
         type feComponentTransfer() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
         [<Erase>]
         type feComposite() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.in2 with set(value: string) = ()
+            member _.operator with set(value: string) = ()
+            member _.k1 with set(value: string) = ()
+            member _.k2 with set(value: string) = ()
+            member _.k3 with set(value: string) = ()
+            member _.k4 with set(value: string) = ()
         [<Erase>]
         type feConvolveMatrix() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.order with set(value: string) = ()
+            member _.kernelMatrix with set(value: string) = ()
+            member _.divisor with set(value: string) = ()
+            member _.bias with set(value: string) = ()
+            member _.targetX with set(value: string) = ()
+            member _.targetY with set(value: string) = ()
+            member _.edgeMode with set(value: string) = ()
+            member _.kernelUnitLength with set(value: string) = ()
+            member _.preserveAlpha with set(value: string) = ()
         [<Erase>]
         type feDiffuseLighting() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.surfaceScale with set(value: string) = ()
+            member _.diffuseConstant with set(value: string) = ()
+            member _.kernelUnitLength with set(value: string) = ()
         [<Erase>]
         type feDisplacementMap() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.in2 with set(value: string) = ()
+            member _.scale with set(value: string) = ()
+            member _.xChannelSelector with set(value: string) = ()
+            member _.yChannelSelector with set(value: string) = ()
         [<Erase>]
         type feDistantLight() =
             inherit SvgNode()
+            member _.azimuth with set(value: string) = ()
+            member _.elevation with set(value: string) = ()
         [<Erase>]
         type feDropShadow() =
             inherit SvgNode()
+            member _.dx with set(value: string) = ()
+            member _.dy with set(value: string) = ()
+            member _.stdDeviation with set(value: string) = ()
+
         [<Erase>]
         type feFlood() =
             inherit SvgNode()
+            member _.``flood-color`` with private set(value: string) = ()
+            member _.``flood-opacity`` with private set(value: string) = ()
+            member this.floodColor with inline set(value: string) = this.``flood-color`` <- value
+            member this.floodOpacity with inline set(value: string) = this.``flood-opacity`` <- value
         [<Erase>]
         type feFuncA() =
             inherit SvgNode()
@@ -1524,60 +1371,151 @@ module Tags =
         [<Erase>]
         type feGaussianBlur() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.stdDeviation with set(value: string) = ()
+            member _.edgeMode with set(value: string) = ()
+
         [<Erase>]
         type feImage() =
             inherit SvgNode()
+            member _.crossorigin with set(value: string) = ()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.``xlink:href`` with private set(value: string) = ()
+            member this.xlinkHref with inline set(value: string) = this.``xlink:href`` <- value
         [<Erase>]
         type feMerge() =
             inherit SvgNode()
         [<Erase>]
         type feMergeNode() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
         [<Erase>]
         type feMorphology() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.operator with set(value: string) = ()
+            member _.radius with set(value: string) = ()
+
         [<Erase>]
         type feOffset() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.dx with set(value: string) = ()
+            member _.dy with set(value: string) = ()
+
         [<Erase>]
         type fePointLight() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.z with set(value: string) = ()
+
         [<Erase>]
         type feSpecularLighting() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+            member _.surfaceScale with set(value: string) = ()
+            member _.specularConstant with set(value: string) = ()
+            member _.specularExponent with set(value: string) = ()
+            member _.kernelUnitLength with set(value: string) = ()
         [<Erase>]
         type feSpotLight() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.z with set(value: string) = ()
+            member _.pointsAtX with set(value: string) = ()
+            member _.pointsAtY with set(value: string) = ()
+            member _.pointsAtZ with set(value: string) = ()
+            member _.specularExponent with set(value: string) = ()
+            member _.limitingConeAngle with set(value: string) = ()
         [<Erase>]
         type feTile() =
             inherit SvgNode()
+            member _.in' with set(value: string) = ()
+
         [<Erase>]
         type feTurbulence() =
             inherit SvgNode()
+            member _.baseFrequency with set(value: string) = ()
+            member _.numOctaves with set(value: string) = ()
+            member _.seed with set(value: string) = ()
+            member _.stitchTiles with set(value: string) = ()
+            member _.type' with set(value: string) = ()
         [<Erase>]
         type filter() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.height with set(value: string) = ()
+            member _.filterUnits with set(value: string) = ()
+            member _.primitiveUnits with set(value: string) = ()
+            member _.``xlink:href`` with private set(value: string) = ()
+            member this.xlinkHref with inline set(value: string) = this.``xlink:href`` <- value
         [<Erase>]
         type foreignObject() =
             inherit SvgNode()
+            member _.height with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
         [<Erase>]
         type g() =
             inherit SvgNode()
         [<Erase>]
         type image() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.height with set(value: string) = ()
+            member _.href with set(value: string) = ()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.crossorigin with set(value: string) = ()
+            member _.decoding with set(value: string) = ()
+
         [<Erase>]
         type line() =
             inherit SvgNode()
+            member _.x1 with set(value: string) = ()
+            member _.x2 with set(value: string) = ()
+            member _.y1 with set(value: string) = ()
+            member _.y2 with set(value: string) = ()
+            member _.pathLength with set(value: string) = ()
+
         [<Erase>]
         type linearGradient() =
             inherit SvgNode()
+            member _.gradientUnits with set(value: string) = ()
+            member _.gradientTransform with set(value: string) = ()
+            member _.href with set(value: string) = ()
+            member _.spreadMethod with set(value: string) = ()
+            member _.x1 with set(value: string) = ()
+            member _.x2 with set(value: string) = ()
+            member _.y1 with set(value: string) = ()
+            member _.y2 with set(value: string) = ()
         [<Erase>]
         type marker() =
             inherit SvgNode()
+            member _.markerHeight with set(value: string) = ()
+            member _.markerUnits with set(value: string) = ()
+            member _.markerWidth with set(value: string) = ()
+            member _.orient with set(value: string) = ()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.refX with set(value: string) = ()
+            member _.refY with set(value: string) = ()
+            member _.viewBox with set(value: string) = ()
         [<Erase>]
         type mask() =
             inherit SvgNode()
+            member _.height with set(value: string) = ()
+            member _.maskContentUnits with set(value: string) = ()
+            member _.maskUnits with set(value: string) = ()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.width with set(value: string) = ()
+
         [<Erase>]
         type metadata() =
             inherit SvgNode()
@@ -1587,57 +1525,149 @@ module Tags =
         [<Erase>]
         type path() =
             inherit SvgNode()
+            member _.d with set(value: string) = ()
+            member _.pathLength with set(value: string) = ()
         [<Erase>]
         type pattern() =
             inherit SvgNode()
+            member _.height with set(value: string) = ()
+            member _.href with set(value: string) = ()
+            member _.patternContentUnits with set(value: string) = ()
+            member _.patternTransform with set(value: string) = ()
+            member _.patternUnits with set(value: string) = ()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.viewBox with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+
         [<Erase>]
         type polygon() =
             inherit SvgNode()
+            member _.points with set(value: string) = ()
+            member _.pathLength with set(value: string) = ()
         [<Erase>]
         type polyline() =
             inherit SvgNode()
+            member _.points with set(value: string) = ()
+            member _.pathLength with set(value: string) = ()
         [<Erase>]
         type radialGradient() =
             inherit SvgNode()
+            member _.cx with set(value: string) = ()
+            member _.cy with set(value: string) = ()
+            member _.fr with set(value: string) = ()
+            member _.fx with set(value: string) = ()
+            member _.fy with set(value: string) = ()
+            member _.gradientUnits with set(value: string) = ()
+            member _.gradientTransform with set(value: string) = ()
+            member _.href with set(value: string) = ()
+            member _.r with set(value: string) = ()
+            member _.spreadMethod with set(value: string) = ()
         [<Erase>]
         type rect() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.height with set(value: string) = ()
+            member _.rx with set(value: string) = ()
+            member _.ry with set(value: string) = ()
+            member _.pathLength with set(value: string) = ()
+
         [<Erase>]
         type script() =
             inherit SvgNode()
+            member _.crossorigin with set(value: string) = ()
+            member _.href with set(value: string) = ()
+            member _.type' with set(value: string) = ()
         [<Erase>]
         type set() =
             inherit SvgNode()
+            member _.to' with set(value: string) = ()
         [<Erase>]
         type stop() =
             inherit SvgNode()
+            member _.offset with set(value: string) = ()
+            member _.``stop-color`` with private set(value: string) = ()
+            member _.``stop-opacity`` with private set(value: string) = ()
+            member this.stopColor with inline set(value: string) = this.``stop-color`` <- value
+            member this.stopOpacity with inline set(value: string) = this.``stop-opacity`` <- value
         [<Erase>]
         type style() =
             inherit SvgNode()
+            member _.type' with set(value: string) = ()
+            member _.media with set(value: string) = ()
+            member _.title with set(value: string) = ()
+
         [<Erase>]
         type svg() =
             inherit SvgNode()
+            member _.baseProfile with set(value: string) = ()
+            member _.height with set(value: string) = ()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.viewBox with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
         [<Erase>]
         type switch() =
             inherit SvgNode()
         [<Erase>]
         type symbol() =
             inherit SvgNode()
+            member _.height with set(value: string) = ()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.refX with set(value: string) = ()
+            member _.refY with set(value: string) = ()
+            member _.viewBox with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
         [<Erase>]
         type text() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.dx with set(value: string) = ()
+            member _.dy with set(value: string) = ()
+            member _.rotate with set(value: string) = ()
+            member _.lengthAdjust with set(value: string) = ()
+            member _.textLength with set(value: string) = ()
         [<Erase>]
         type textPath() =
             inherit SvgNode()
+            member _.href with set(value: string) = ()
+            member _.lengthAdjust with set(value: string) = ()
+            member _.method with set(value: string) = ()
+            member _.path with set(value: string) = ()
+            member _.side with set(value: string) = ()
+            member _.spacing with set(value: string) = ()
+            member _.startOffset with set(value: string) = ()
+            member _.textLength with set(value: string) = ()
         [<Erase>]
         type title() =
             inherit SvgNode()
         [<Erase>]
         type tspan() =
             inherit SvgNode()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.dx with set(value: string) = ()
+            member _.dy with set(value: string) = ()
+            member _.rotate with set(value: string) = ()
+            member _.lengthAdjust with set(value: string) = ()
+            member _.textLength with set(value: string) = ()
         [<Erase>]
         type use'() =
             inherit SvgNode()
+            member _.href with set(value: string) = ()
+            member _.x with set(value: string) = ()
+            member _.y with set(value: string) = ()
+            member _.width with set(value: string) = ()
+            member _.height with set(value: string) = ()
         [<Erase>]
         type view() =
             inherit SvgNode()
+            member _.preserveAspectRatio with set(value: string) = ()
+            member _.viewBox with set(value: string) = ()
