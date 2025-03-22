@@ -574,19 +574,30 @@ module internal rec AST =
             range = range
         )
 
+type SolidComponentFlag =
+    | Default = 0
+    | Debug = 1
+
+
 /// <summary>
 /// Registers a function as a SolidComponent for transformation by
 /// the <c>Oxpecker.Solid.FablePlugin</c>
 /// </summary>
-type SolidComponentAttribute() =
+/// <remarks>
+/// Pass an optional <c>SolidComponentFlag</c> such as <c>Debug</c> to enable helpers like printing AST on compilation.
+/// </remarks>
+type SolidComponentAttribute(flag: int) =
     inherit MemberDeclarationPluginAttribute()
 
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
-        // Console.WriteLine("!Start! MemberDecl")
-        // Console.WriteLine(memberDecl.Body)
-        // Console.WriteLine("!End! MemberDecl")
+        match enum<SolidComponentFlag> flag with
+        | SolidComponentFlag.Debug ->
+            Console.WriteLine("!Start! MemberDecl")
+            Console.WriteLine(memberDecl.Body)
+            Console.WriteLine("!End! MemberDecl")
+        | _ -> ()
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
@@ -594,3 +605,6 @@ type SolidComponentAttribute() =
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr
+
+    new() = SolidComponentAttribute(int SolidComponentFlag.Default)
+    new(compileOptions: SolidComponentFlag) = SolidComponentAttribute(int compileOptions)
