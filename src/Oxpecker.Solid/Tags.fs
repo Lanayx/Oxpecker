@@ -1207,9 +1207,9 @@ module Tags =
         member _.tabindex
             with set (value: int) = ()
         member _.``xml:lang``
-            with private set (value: string) = ()
+            with set (value: string) = ()
         member _.``xml:space``
-            with private set (value: string) = ()
+            with set (value: string) = ()
         member inline this.xmlLang
             with inline set (value: string) = this.``xml:lang`` <- value
         member inline this.xmlSpace
@@ -1405,9 +1405,9 @@ module Tags =
         type feFlood() =
             inherit SvgNode()
             member _.``flood-color``
-                with private set (value: string) = ()
+                with set (value: string) = ()
             member _.``flood-opacity``
-                with private set (value: string) = ()
+                with set (value: string) = ()
             member inline this.floodColor
                 with inline set (value: string) = this.``flood-color`` <- value
             member inline this.floodOpacity
@@ -1442,7 +1442,7 @@ module Tags =
             member _.preserveAspectRatio
                 with set (value: string) = ()
             member _.``xlink:href``
-                with private set (value: string) = ()
+                with set (value: string) = ()
             member inline this.xlinkHref
                 with inline set (value: string) = this.``xlink:href`` <- value
         [<Erase>]
@@ -1550,7 +1550,7 @@ module Tags =
             member _.primitiveUnits
                 with set (value: string) = ()
             member _.``xlink:href``
-                with private set (value: string) = ()
+                with set (value: string) = ()
             member inline this.xlinkHref
                 with inline set (value: string) = this.``xlink:href`` <- value
         [<Erase>]
@@ -1767,9 +1767,9 @@ module Tags =
             member _.offset
                 with set (value: string) = ()
             member _.``stop-color``
-                with private set (value: string) = ()
+                with set (value: string) = ()
             member _.``stop-opacity``
-                with private set (value: string) = ()
+                with set (value: string) = ()
             member inline this.stopColor
                 with inline set (value: string) = this.``stop-color`` <- value
             member inline this.stopOpacity
