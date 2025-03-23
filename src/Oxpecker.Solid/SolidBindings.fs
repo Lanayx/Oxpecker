@@ -564,10 +564,10 @@ module Bindings =
         static member inline Invoke(this: Setter<'T>, handler: 'T) : unit = this(unbox<'T> handler)
 
         [<Extension; Erase>]
-        static member inline InvokeGet(this: Setter<'T>, handler: 'T -> 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
+        static member inline InvokeAndGet(this: Setter<'T>, handler: 'T -> 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
 
         [<Extension; Erase>]
-        static member inline InvokeGet(this: Setter<'T>, handler: 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
+        static member inline InvokeAndGet(this: Setter<'T>, handler: 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
 
     [<RequireQualifiedAccess; StringEnum>]
     type SolidResourceState =
