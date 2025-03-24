@@ -16,10 +16,10 @@ module Bindings =
     /// <remarks>
     /// To pass a handler that maps the previous value, call Invoke on the setter.
     /// <code>
-    /// let index,setIndex = createSignal(0)
-    /// setIndex.Invoke(fun x -> x + 1)
+    /// let value, setValue = createSignal(0)
+    /// setValue.Invoke(fun x -> x + 1)
     /// </code>
-    /// To access the returned value, use <c>.InvokeGet</c>
+    /// To access the returned value, use <c>.InvokeAndGet</c>
     /// </remarks>
     type Setter<'T> = 'T -> unit
     type Accessor<'T> = unit -> 'T
@@ -568,8 +568,7 @@ module Bindings =
             this(unbox<'T> handler) |> unbox<'T>
 
         [<Extension; Erase>]
-        static member inline InvokeAndGet(this: Setter<'T>, handler: 'T) : 'T =
-            this(unbox<'T> handler) |> unbox<'T>
+        static member inline InvokeAndGet(this: Setter<'T>, handler: 'T) : 'T = this(unbox<'T> handler) |> unbox<'T>
 
     [<RequireQualifiedAccess; StringEnum>]
     type SolidResourceState =
