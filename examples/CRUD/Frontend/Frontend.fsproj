@@ -24,8 +24,6 @@
     <Content Include="package.json" />
     <Content Include="index.html" />
     <TypeScriptCompile Include="vite.config.ts" />
-    <Content Include="postcss.config.js" />
-    <Content Include="tailwind.config.js" />
   </ItemGroup>
 
   <ItemGroup>
