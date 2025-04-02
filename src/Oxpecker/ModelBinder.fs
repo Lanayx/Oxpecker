@@ -149,7 +149,6 @@ module internal ModelParser =
         | Shape.FSharpOption s ->
             s.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() =
-
                     if data.Count = 0 then
                         let value : 't option = None
                         value |> unbox<'T> |> Ok
@@ -159,23 +158,21 @@ module internal ModelParser =
                         |> unbox<Result<'T, string>>
             }
         | Shape.CliMutable (:? ShapeCliMutable<'T> as s) ->
-            let state = Ok <| s.CreateUninitialized()
+            let instance: 'T = s.CreateUninitialized()
             try
-                s.Properties
-                |> Array.fold
-                    (fun state prop ->
+                let xs =
+                    [ for prop in s.Properties ->
                         prop.Accept {
                             new IMemberVisitor<_, _> with
                                 member _.Visit(propShape: ShapeMember<'T, 'TProperty>) =
                                     let parse = mkParser<'TProperty>()
-                                    match state, data.TryGetValue(propShape.Label) with
-                                    | Error _, _ -> state
-                                    | Ok instance, (true, values) ->
+                                    match data.TryGetValue(propShape.Label) with
+                                    | true, values ->
                                         match parse values culture with
                                         | Ok value ->
                                             propShape.Set instance value |> Ok
                                         | Error e -> Error e
-                                    | Ok instance, (false, _) ->
+                                    | false, _ ->
                                         match shapeof<'TProperty> with
                                         | Shape.Array s when s.Rank = 1 ->
                                             let regex = propShape.Label |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
@@ -235,9 +232,10 @@ module internal ModelParser =
                                                 propShape.Set instance value |> Ok
                                             | Error e -> Error e
 
-                                        | _ -> state
-                        })
-                    state
+                                        | _ -> Ok instance
+                        }]
+
+                Ok instance |> List.foldBack (fun v acc -> v |> Result.bind (fun _ -> acc)) xs
             with exn -> Error exn.Message
         | _ ->
             failwith "not implemented"
