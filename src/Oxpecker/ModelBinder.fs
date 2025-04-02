@@ -37,6 +37,16 @@ module internal ModelParser =
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
 
+    module Result =
+        let traverse input =
+            Ok []
+            |> List.foldBack
+                (fun v  acc ->
+                    match acc, v with
+                    | Ok acc, Ok v -> Ok (v :: acc)
+                    | Error e, _ | _, Error e -> Error e)
+                input
+
     let rec mkParser<'T> () : StringValues -> CultureInfo -> Result<'T, string> =
         match cache.TryFind() with
         | Some x -> x
@@ -90,13 +100,8 @@ module internal ModelParser =
                     fun values culture ->
                         if values |> firstValue = null then Ok List.empty
                         else
-                            Ok []
-                            |> Array.foldBack
-                                (fun (v: string | null) acc ->
-                                    match acc, parse (StringValues v) culture with
-                                    | Ok acc, Ok v -> Ok (v :: acc)
-                                    | _ -> acc)
-                                [| yield! values |]
+                            [ for value in values -> parse (StringValues value) culture ]
+                            |> Result.traverse
                     |> wrap
             }
 
@@ -120,15 +125,8 @@ module internal ModelParser =
                     fun (values: StringValues) culture ->
                         if values.Count = 0 then Ok [||]
                         else
-                            Ok []
-                            |> Array.foldBack
-                                (fun (v: string | null) acc ->
-                                    match acc, parse (StringValues v) culture with
-                                    | Ok acc, Ok v ->
-                                        Ok (v :: acc)
-                                    | _, Error _ | Error _, _ ->
-                                        error values)
-                                [| yield! values |]
+                            [ for value in values -> parse (StringValues value) culture ]
+                            |> Result.traverse
                             |> Result.map Array.ofList
                     |> wrap
             }
@@ -202,33 +200,21 @@ module internal ModelParser =
 
                                             let maxIndex = Seq.max dicts.Keys 
 
-                                            let array =
-                                                s.Element.Accept { new ITypeVisitor<_> with
-                                                    member _.Visit<'TElement>() =
-                                                        let arr = [|
-                                                            for i in 0..maxIndex do
-                                                                match dicts.TryGetValue i with
-                                                                | true, dict ->
-                                                                    parseModel<'TElement> culture dict
-                                                                | _ ->
-                                                                    Ok Unchecked.defaultof<_>
-                                                        |]
-
-                                                        let arr =
-                                                            Ok []
-                                                            |> Array.foldBack
-                                                                (fun v acc ->
-                                                                    match v, acc with
-                                                                    | Ok v, Ok acc -> Ok (v :: acc)
-                                                                    | Error e, _ | _, Error e -> Error e)
-                                                                arr
-                                                            |> Result.map List.toArray
-
-                                                        arr |> unbox<Result<'TProperty, string>>
-                                                }
-                                            match array with
-                                            | Ok arr -> propShape.Set instance arr |> Ok
-                                            | Error e -> Error e
+                                            s.Element.Accept { new ITypeVisitor<_> with
+                                                member _.Visit<'TElement>() =
+                                                    [
+                                                        for i in 0..maxIndex do
+                                                            match dicts.TryGetValue i with
+                                                            | true, dict ->
+                                                                parseModel<'TElement> culture dict
+                                                            | _ ->
+                                                                Ok Unchecked.defaultof<_>
+                                                    ]
+                                                    |> Result.traverse
+                                                    |> Result.map List.toArray
+                                                    |> unbox<Result<'TProperty, string>>
+                                                    |> Result.map (propShape.Set instance)
+                                            }
 
                                         | Shape.CliMutable _ ->
                                             let regex = propShape.Label |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
