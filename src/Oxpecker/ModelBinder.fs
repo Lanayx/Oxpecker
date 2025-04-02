@@ -31,6 +31,12 @@ module internal ModelParser =
             | _ -> values.ToString()
         Error $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
+    let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
+        String.Equals( case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
+
+    let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
+        shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
+
     let rec mkParser<'T> () : StringValues -> CultureInfo -> Result<'T, string> =
         match cache.TryFind() with
         | Some x -> x
@@ -95,16 +101,14 @@ module internal ModelParser =
             }
 
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
-            let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
-                String.Equals( case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
-            let (|UnionCase|_|) caseName =
-                shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
-                
             fun values culture ->
                 match values |> firstValue with
-                | NonNull (UnionCase case) ->
+                | NonNull (UnionCase shape case) ->
                     Ok (case.CreateUninitialized())
-                | null when not shape.IsStructUnion -> Ok Unchecked.defaultof<_>
+
+                | null when not shape.IsStructUnion ->
+                    Ok Unchecked.defaultof<_>
+
                 | _ ->
                     error values
             |> wrap
