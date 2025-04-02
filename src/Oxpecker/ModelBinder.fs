@@ -168,10 +168,9 @@ module internal ModelParser =
                                     let parse = mkParser<'TProperty>()
                                     match data.TryGetValue(propShape.Label) with
                                     | true, values ->
-                                        match parse values culture with
-                                        | Ok value ->
-                                            propShape.Set instance value |> Ok
-                                        | Error e -> Error e
+                                        parse values culture
+                                        |> Result.map (propShape.Set instance)
+
                                     | false, _ ->
                                         match shapeof<'TProperty> with
                                         | Shape.Array s when s.Rank = 1 ->
@@ -210,8 +209,8 @@ module internal ModelParser =
                                                     |> Result.traverse
                                                     |> Result.map List.toArray
                                                     |> unbox<Result<'TProperty, string>>
-                                                    |> Result.map (propShape.Set instance)
                                             }
+                                            |> Result.map (propShape.Set instance)
 
                                         | Shape.CliMutable _ ->
                                             let regex = propShape.Label |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
@@ -227,10 +226,8 @@ module internal ModelParser =
                                                 |> Seq.choose id
                                                 |> dict
 
-                                            match parseModel<'TProperty> culture dict with
-                                            | Ok value ->
-                                                propShape.Set instance value |> Ok
-                                            | Error e -> Error e
+                                            parseModel<'TProperty> culture dict
+                                            |> Result.map (propShape.Set instance)
 
                                         | _ -> Ok instance
                         }]
