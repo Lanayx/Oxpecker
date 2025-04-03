@@ -383,7 +383,7 @@ let ``ModelParser.parse with complete composite model data`` () =
 
 [<Fact>]
 let ``Test string null`` () =
-    let values = ModelParser.dictionary <| StringValues (Unchecked.defaultof<string>)
+    let values =  Unchecked.defaultof<string> |> String.toDict
     let expected = Unchecked.defaultof<string>
     let culture = CultureInfo.InvariantCulture
 
@@ -393,7 +393,7 @@ let ``Test string null`` () =
 
 [<Fact>]
 let ``Test string empty`` () =
-    let values = ModelParser.dictionary <| StringValues (String.Empty)
+    let values = String.Empty |> String.toDict
     let expected = String.Empty
     let culture = CultureInfo.InvariantCulture
 
@@ -403,7 +403,7 @@ let ``Test string empty`` () =
 
 [<Fact>]
 let ``Test double some-value`` () =
-    let values = ModelParser.dictionary <| StringValues "some-value"
+    let values = "some-value" |> String.toDict
     let expected = Error "Could not parse value 'some-value' to type 'System.Double'."
     let culture = CultureInfo.InvariantCulture
 
@@ -413,7 +413,7 @@ let ``Test double some-value`` () =
 
 [<Fact>]
 let ``Test int some-value`` () =
-    let values = ModelParser.dictionary <| StringValues ("some-value")
+    let values = "some-value" |> String.toDict
     let expected = Error "Could not parse value 'some-value' to type 'System.Int32'."
     let culture = CultureInfo.InvariantCulture
 
@@ -423,7 +423,7 @@ let ``Test int some-value`` () =
 
 [<Fact>]
 let ``Test nullable int null`` () =
-    let values = ModelParser.dictionary <| StringValues (Unchecked.defaultof<string>)
+    let values = Unchecked.defaultof<string> |> String.toDict
     let expected = Ok (Nullable())
     let culture = CultureInfo.InvariantCulture
 
@@ -433,7 +433,7 @@ let ``Test nullable int null`` () =
 
 [<Fact>]
 let ``Test nullable int 1`` () =
-    let values = ModelParser.dictionary <| StringValues ("1")
+    let values = "1" |> String.toDict
     let expected = Ok (Nullable 1)
     let culture = CultureInfo.InvariantCulture
 
@@ -443,7 +443,7 @@ let ``Test nullable int 1`` () =
 
 [<Fact>]
 let ``Test some decimal null`` () =
-    let values = ModelParser.dictionary <| StringValues (Unchecked.defaultof<string>)
+    let values = Unchecked.defaultof<string> |> String.toDict
     let expected = Ok None
     let culture = CultureInfo.InvariantCulture
 
@@ -453,7 +453,7 @@ let ``Test some decimal null`` () =
 
 [<Fact>]
 let ``Test nullable decimal 100`` () =
-    let values = ModelParser.dictionary <| StringValues ("100")
+    let values = "100" |> String.toDict
     let expected = Ok (Some 100M)
     let culture = CultureInfo.InvariantCulture
 
@@ -463,7 +463,7 @@ let ``Test nullable decimal 100`` () =
 
 [<Fact>]
 let ``Test some string null`` () =
-    let values = ModelParser.dictionary <| StringValues (Unchecked.defaultof<string>)
+    let values = Unchecked.defaultof<string> |> String.toDict
     let expected = Ok None
     let culture = CultureInfo.InvariantCulture
 
@@ -473,7 +473,7 @@ let ``Test some string null`` () =
 
 [<Fact>]
 let ``Test nullable string empty`` () =
-    let values = ModelParser.dictionary <| StringValues (String.Empty)
+    let values = String.Empty |> String.toDict
     let expected = Ok (Some String.Empty)
     let culture = CultureInfo.InvariantCulture
 
@@ -483,7 +483,7 @@ let ``Test nullable string empty`` () =
 
 [<Fact>]
 let ``Test nullable string some-value`` () =
-    let values = ModelParser.dictionary <| StringValues ("some-value")
+    let values = "some-value" |> String.toDict
     let expected = Ok (Some "some-value")
     let culture = CultureInfo.InvariantCulture
 
@@ -493,7 +493,7 @@ let ``Test nullable string some-value`` () =
 
 [<Fact>]
 let ``Test option union case Female`` () =
-    let values = ModelParser.dictionary <| StringValues ("Female")
+    let values = "Female" |> String.toDict
     let expected = Ok (Some Female)
     let culture = CultureInfo.InvariantCulture
 
@@ -504,7 +504,7 @@ let ``Test option union case Female`` () =
 [<Fact>]
 let ``Test array union case`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
-    let values = ModelParser.dictionary <| StringValues xs
+    let values = xs |> StringValues |> StringValues.toDict
     let expected: Result<Sex array, string> = Ok [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
     let culture = CultureInfo.InvariantCulture
 
@@ -515,7 +515,7 @@ let ``Test array union case`` () =
 [<Fact>]
 let ``Test array union case option`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
-    let values = ModelParser.dictionary <| StringValues xs
+    let values = xs |> StringValues |> StringValues.toDict
     let expected = Ok [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
     let culture = CultureInfo.InvariantCulture
 

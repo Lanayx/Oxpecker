@@ -12,6 +12,22 @@ open Microsoft.Extensions.Primitives
 type IModelBinder =
     abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
+module StringValues =
+    let toDict(v: StringValues) = dict ["", v]
+
+module String =
+    let toDict(v: string | null) = StringValues v |> StringValues.toDict
+
+module Result =
+    let traverse input =
+        Ok []
+        |> List.foldBack
+            (fun v  acc ->
+                match acc, v with
+                | Ok acc, Ok v -> Ok (v :: acc)
+                | Error e, _ | _, Error e -> Error e)
+            input
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -52,17 +68,6 @@ module internal ModelParser =
         | _ -> failwith ""
 
 
-    module Result =
-        let traverse input =
-            Ok []
-            |> List.foldBack
-                (fun v  acc ->
-                    match acc, v with
-                    | Ok acc, Ok v -> Ok (v :: acc)
-                    | Error e, _ | _, Error e -> Error e)
-                input
-
-    let dictionary values = dict ["", values]
 
     let rec mkParser<'T> () : IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string> =
         match cache.TryFind() with
@@ -96,7 +101,7 @@ module internal ModelParser =
                     fun (RawValueQuick values) culture ->
                         if values |> firstValue = null
                         then Ok (Nullable())
-                        else parse (dictionary values) culture |> Result.map Nullable
+                        else parse (StringValues.toDict values) culture |> Result.map Nullable
                     |> wrap
             }
 
@@ -121,7 +126,7 @@ module internal ModelParser =
                     fun (RawValueQuick values) culture ->
                         if values |> firstValue = null then Ok List.empty
                         else
-                            [ for value in values -> parse (dictionary (StringValues value)) culture ]
+                            [ for value in values -> parse (String.toDict value) culture ]
                             |> Result.traverse
                     |> wrap
             }
@@ -149,7 +154,7 @@ module internal ModelParser =
                         | RawValue values ->
                             if values.Count = 0 then Ok [||]
                             else
-                                [ for value in values -> parse (dictionary (StringValues value)) culture ]
+                                [ for value in values -> parse (String.toDict value) culture ]
                                 |> Result.traverse
                                 |> Result.map List.toArray
 
@@ -200,7 +205,7 @@ module internal ModelParser =
 
                                 match data.TryGetValue(propShape.Label) with
                                 | true, values ->
-                                    parse (dictionary values) culture
+                                    parse (StringValues.toDict values) culture
                                     |> Result.map (propShape.Set instance)
 
                                 | false, _ ->
