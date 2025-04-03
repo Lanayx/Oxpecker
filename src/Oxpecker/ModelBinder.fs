@@ -149,9 +149,9 @@ module internal ModelParser =
                     let parse = mkParserCached<'t> ctx
 
                     fun (RawValueQuick values) culture ->
-                        if values |> firstValue = null
-                        then Ok (Nullable())
-                        else parse (StringValues.toDict values) culture |> Result.map Nullable
+                        if values |> firstValue = null then Ok (Nullable()) else
+
+                        parse (StringValues.toDict values) culture |> Result.map Nullable
                     |> wrap
             }
 
@@ -174,10 +174,10 @@ module internal ModelParser =
                 member _.Visit<'t>() = // 'T = 't list
                     let parse = mkParserCached<'t> ctx
                     fun (RawValueQuick values) culture ->
-                        if values |> firstValue = null then Ok List.empty
-                        else
-                            [ for value in values -> parse (String.toDict value) culture ]
-                            |> Result.traverse
+                        if values |> firstValue = null then Ok List.empty else
+
+                        [ for value in values -> parse (String.toDict value) culture ]
+                        |> Result.traverse
                     |> wrap
             }
 
@@ -217,6 +217,7 @@ module internal ModelParser =
                             ]
                             |> Result.traverse
                             |> Result.map List.toArray
+
                         | _ -> Ok [||]
                     |> wrap
             }
