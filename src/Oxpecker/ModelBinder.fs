@@ -67,6 +67,36 @@ module internal ModelParser =
         | RawValue v -> v
         | _ -> failwith ""
 
+    let (|SimpleArray|_|) (data: IDictionary<string, StringValues>) =
+        match data with
+        | RawValue values when values.Count > 0 -> values |> Seq.map String.toDict |> Some
+        | _ -> None
+
+    let (|ComplexArray|_|)  (data: IDictionary<string, StringValues>) =
+        let regex = "\[(\d+)\]\.(\w+)" |> Regex
+
+        let values =
+            data
+            |> Seq.choose (fun item ->
+                match regex.Match(item.Key) with
+                    | m when m.Success ->
+                        let index = int m.Groups.[1].Value
+                        let key = m.Groups.[2].Value
+                        Some (index, key, item.Value)
+                    | _ -> None)
+
+        let data' =
+            values
+            |> Seq.groupBy(fun (index, _, _) -> index)
+            |> Seq.map (fun (i, items) ->
+                i, items |> Seq.map (fun (_, k, v) -> k, v) |> dict)
+            |> dict
+
+        if data'.Count = 0 then None else
+
+        let maxIndex = Seq.max data'.Keys
+        Some (maxIndex, data')
+
 
     let (|ExactMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(propName) with
@@ -171,38 +201,15 @@ module internal ModelParser =
 
                     fun data culture ->
                         match data with
-                        | RawValue values ->
-                            if values.Count = 0 then Ok [||]
-                            else
-                                [ for value in values -> parse (String.toDict value) culture ]
-                                |> Result.traverse
-                                |> Result.map List.toArray
+                        | SimpleArray data' ->
+                            [ for value in data' do parse value culture ]
+                            |> Result.traverse
+                            |> Result.map List.toArray
 
-                        | _ ->
-                            let regex = "\[(\d+)\]\.(\w+)" |> Regex
-
-                            let values =
-                                data
-                                |> Seq.choose (fun item ->
-                                    match regex.Match(item.Key) with
-                                        | m when m.Success ->
-                                            let index = int m.Groups.[1].Value
-                                            let key = m.Groups.[2].Value
-                                            Some (index, key, item.Value)
-                                        | _ -> None)
-
-                            let dicts =
-                                values
-                                |> Seq.groupBy(fun (index, _, _) -> index)
-                                |> Seq.map (fun (i, items) ->
-                                    i, items |> Seq.map (fun (_, k, v) -> k, v) |> dict)
-                                |> dict
-
-                            let maxIndex = Seq.max dicts.Keys
-
+                        | ComplexArray (maxIndex, data') ->
                             [
                                 for i in 0..maxIndex do
-                                    match dicts.TryGetValue i with
+                                    match data'.TryGetValue i with
                                     | true, dict ->
                                         parse dict culture
                                     | _ ->
@@ -210,6 +217,7 @@ module internal ModelParser =
                             ]
                             |> Result.traverse
                             |> Result.map List.toArray
+                        | _ -> Ok [||]
                     |> wrap
             }
 
