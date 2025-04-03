@@ -139,100 +139,90 @@ module internal ModelParser =
 
         | Shape.Array s when s.Rank = 1 ->
             s.Element.Accept { new ITypeVisitor<_> with
-                member _.Visit<'t>() =
-                    let parse = mkParserCached<'t> ctx
-                    fun (RawValueQuick values) culture ->
-                        if values.Count = 0 then Ok [||]
-                        else
-                            [ for value in values -> parse (dictionary (StringValues value)) culture ]
+                member _.Visit<'TElement>() =
+                    let parse = mkParserCached<'TElement> ctx
+                    fun data culture ->
+                        match data with
+                        | RawValue values ->
+                            if values.Count = 0 then Ok [||]
+                            else
+                                [ for value in values -> parse (dictionary (StringValues value)) culture ]
+                                |> Result.traverse
+                                |> Result.map List.toArray
+                        | _ ->
+                            let regex = "\[(\d+)\]\.(\w+)" |> Regex
+
+                            let values =
+                                data
+                                |> Seq.choose (fun item ->
+                                    match regex.Match(item.Key) with
+                                        | m when m.Success ->
+                                            let index = int m.Groups.[1].Value
+                                            let key = m.Groups.[2].Value
+                                            Some (index, key, item.Value)
+                                        | _ -> None)
+
+                            let dicts =
+                                values
+                                |> Seq.groupBy(fun (index, _, _) -> index)
+                                |> Seq.map (fun (i, items) ->
+                                    i, items |> Seq.map (fun (_, k, v) -> k, v) |> dict)
+                                |> dict
+
+                            let maxIndex = Seq.max dicts.Keys
+
+                            [
+                                for i in 0..maxIndex do
+                                    match dicts.TryGetValue i with
+                                    | true, dict ->
+                                        parse dict culture
+                                    | _ ->
+                                        Ok Unchecked.defaultof<_>
+                            ]
                             |> Result.traverse
-                            |> Result.map Array.ofList
+                            |> Result.map List.toArray
                     |> wrap
             }
 
         | Shape.CliMutable (:? ShapeCliMutable<'T> as s) ->
             fun data culture ->
                 let instance = s.CreateUninitialized()
-                let xs =
-                    [ for prop in s.Properties ->
-                        prop.Accept {
-                            new IMemberVisitor<_, _> with
-                                member _.Visit(propShape: ShapeMember<'T, 'TProperty>) =
-                                    let parseProp = mkParser<'TProperty>()
-                                    match data.TryGetValue(propShape.Label) with
-                                        | true, values ->
-                                            parseProp (dictionary values) culture
-                                            |> Result.map (propShape.Set instance)
 
-                                        | false, _ ->
+                [ for prop in s.Properties ->
+                    prop.Accept {
+                        new IMemberVisitor<_, _> with
+                            member _.Visit(propShape: ShapeMember<'T, 'TProperty>) =
+                                let parse = mkParser<'TProperty>()
 
-                                            let regex = propShape.Label |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
-                                            let dict' =
-                                                seq {
-                                                    for item in data do
-                                                        match regex.Match(item.Key) with
-                                                        | m when m.Success ->
-                                                            let key = m.Groups.[1].Value
-                                                            Some (key, item.Value)
-                                                        | _ -> None
-                                                }
-                                                |> Seq.choose id
-                                                |> dict
+                                match data.TryGetValue(propShape.Label) with
+                                | true, values ->
+                                    parse (dictionary values) culture
+                                    |> Result.map (propShape.Set instance)
 
-                                            if dict'.Count > 0 then
-                                                parseProp dict' culture
-                                                |> Result.map (propShape.Set instance)
-                                            else
+                                | false, _ ->
+                                    let data' =
+                                        data
+                                        |> Seq.choose (fun (KeyValue (key, value)) ->
+                                            if not <| key.StartsWith(propShape.Label) then None else
 
-                                            match shapeof<'TProperty> with
-                                            | Shape.Array s when s.Rank = 1 ->
-                                                let regex = propShape.Label |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
-                                                let values =
-                                                    seq {
-                                                        for item in data do
-                                                            match regex.Match(item.Key) with
-                                                            | m when m.Success ->
-                                                                let index = int m.Groups.[1].Value
-                                                                let key = m.Groups.[2].Value
-                                                                Some (index, key, item.Value)
-                                                            | _ -> None
-                                                    }
-                                                    |> Seq.choose id
+                                            // For example, when the property is 'Foo':
+                                            // - 'Foo.Bar' becomes 'Bar' (trim the starting '.').
+                                            // - 'Foo[0].Bar' becomes '[0].Bar' (no trimming needed).
+                                            let key' = key.[propShape.Label.Length..].TrimStart('.')
+                                            Some (key', value))
+                                        |> dict
 
-                                                let dicts =
-                                                    values
-                                                    |> Seq.groupBy(fun (index, _, _) -> index)
-                                                    |> Seq.map (fun (i, items) ->
-                                                        i, items |> Seq.map (fun (_, k, v) -> k, v) |> dict)
-                                                    |> dict
-
-                                                let maxIndex = Seq.max dicts.Keys 
-                                                s.Element.Accept { new ITypeVisitor<_> with
-                                                    member _.Visit<'TElement>() =
-                                                        let parseElem = mkParser<'TElement>()
-                                                        [
-                                                            for i in 0..maxIndex do
-                                                                match dicts.TryGetValue i with
-                                                                | true, dict ->
-                                                                    parseElem dict culture
-                                                                | _ ->
-                                                                    Ok Unchecked.defaultof<_>
-                                                        ]
-                                                        |> Result.traverse
-                                                        |> Result.map List.toArray
-                                                        |> unbox<Result<'TProperty, string>>
-                                                }
-                                                |> Result.map (propShape.Set instance)
-
-                                            | _ -> Ok instance
-                        }]
-
-                Ok instance |> List.foldBack (fun v acc -> v |> Result.bind (fun _ -> acc)) xs
+                                    if data'.Count > 0 then
+                                        parse data' culture
+                                        |> Result.map (propShape.Set instance)
+                                    else
+                                        Ok instance
+                    }] |> List.tryFind _.IsError |> Option.defaultValue (Ok instance)
 
         | _ ->
             fun (RawValueQuick values) culture ->
                 match values |> firstValue with
-                | Null -> Ok (Unchecked.defaultof<_>)
+                | Null -> Ok Unchecked.defaultof<_>
                 | NonNull value ->
                     try
                         typeConverter.ConvertFromString(null, culture, value)
