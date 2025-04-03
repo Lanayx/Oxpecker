@@ -68,6 +68,26 @@ module internal ModelParser =
         | _ -> failwith ""
 
 
+    let (|ExactMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
+        match data.TryGetValue(propName) with
+        | true, values-> Some (StringValues.toDict values)
+        | false, _ -> None
+
+    let (|PrefixMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
+        let data' =
+            data
+            |> Seq.choose (fun (KeyValue (key, value)) ->
+                if not <| key.StartsWith(propName) then None else
+
+                // For example, when the property is 'Foo':
+                // - 'Foo.Bar' becomes 'Bar' (trim the starting '.').
+                // - 'Foo[0].Bar' becomes '[0].Bar' (no trimming needed).
+                let key' = key.[propName.Length..].TrimStart('.')
+                Some (key', value))
+            |> dict
+
+        if data'.Count > 0 then Some data' else None
+        
 
     let rec mkParser<'T> () : IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string> =
         match cache.TryFind() with
@@ -203,29 +223,12 @@ module internal ModelParser =
                             member _.Visit<'TProperty>(propShape) =
                                 let parse = mkParser<'TProperty>()
 
-                                match data.TryGetValue(propShape.Label) with
-                                | true, values ->
-                                    parse (StringValues.toDict values) culture
-                                    |> Result.map (propShape.Set instance)
+                                match data with
+                                | ExactMatch propShape.Label data'
+                                | PrefixMatch propShape.Label data' ->
+                                    parse data' culture |> Result.map (propShape.Set instance)
 
-                                | false, _ ->
-                                    let data' =
-                                        data
-                                        |> Seq.choose (fun (KeyValue (key, value)) ->
-                                            if not <| key.StartsWith(propShape.Label) then None else
-
-                                            // For example, when the property is 'Foo':
-                                            // - 'Foo.Bar' becomes 'Bar' (trim the starting '.').
-                                            // - 'Foo[0].Bar' becomes '[0].Bar' (no trimming needed).
-                                            let key' = key.[propShape.Label.Length..].TrimStart('.')
-                                            Some (key', value))
-                                        |> dict
-
-                                    if data'.Count > 0 then
-                                        parse data' culture
-                                        |> Result.map (propShape.Set instance)
-                                    else
-                                        Ok instance
+                                | _ -> Ok instance
                     }] |> List.tryFind _.IsError |> Option.defaultValue (Ok instance)
 
         | _ ->
