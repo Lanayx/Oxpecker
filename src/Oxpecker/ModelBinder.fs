@@ -227,8 +227,7 @@ module internal ModelParser =
                 let instance = shape.CreateUninitialized()
 
                 [ for prop in shape.Properties ->
-                    prop.Accept {
-                        new IMemberVisitor<_, _> with
+                    prop.Accept { new IMemberVisitor<_, _> with
                             member _.Visit<'TProperty>(propShape) =
                                 let parse = mkParser<'TProperty>()
 
