@@ -83,15 +83,16 @@ module internal ModelParser =
         let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
 
         match shapeof<'T> with
-        | Shape.String as s ->
+        | Shape.String ->
             fun (RawValueQuick values) _ ->
                 values |> firstValue |> Ok
             |> wrap
 
-        | Shape.Nullable s ->
-            s.Accept { new INullableVisitor<_> with
-                member _.Visit<'t when 't : (new : unit -> 't) and 't : struct and 't :> ValueType>() =
+        | Shape.Nullable shape ->
+            shape.Accept { new INullableVisitor<_> with
+                member _.Visit<'t when 't : (new : unit -> 't) and 't : struct and 't :> ValueType>() = // 'T = Nullable<'t>
                     let parse = mkParserCached<'t> ctx
+
                     fun (RawValueQuick values) culture ->
                         if values |> firstValue = null
                         then Ok (Nullable())
@@ -99,22 +100,23 @@ module internal ModelParser =
                     |> wrap
             }
 
-        | Shape.FSharpOption s ->
-            s.Element.Accept { new ITypeVisitor<_> with
-                member _.Visit<'t>() =
+        | Shape.FSharpOption shape ->
+            shape.Element.Accept { new ITypeVisitor<_> with
+                member _.Visit<'t>() = // 'T = option<'t>
                     let parse = mkParserCached<'t> ctx
-                    fun dict culture ->
-                        match dict with
+
+                    fun data culture ->
+                        match data with
                         | Empty -> Ok None
                         | RawValue values when values |> firstValue |> isNull ->
                             Ok None
-                        | _ ->  parse dict culture |> Result.map Some
+                        | _ ->  parse data culture |> Result.map Some
                     |> wrap
             }
 
-        | Shape.FSharpList s ->
-            s.Element.Accept { new ITypeVisitor<_> with
-                member _.Visit<'t>() =
+        | Shape.FSharpList shape ->
+            shape.Element.Accept { new ITypeVisitor<_> with
+                member _.Visit<'t>() = // 'T = 't list
                     let parse = mkParserCached<'t> ctx
                     fun (RawValueQuick values) culture ->
                         if values |> firstValue = null then Ok List.empty
@@ -137,10 +139,11 @@ module internal ModelParser =
                     error values
             |> wrap
 
-        | Shape.Array s when s.Rank = 1 ->
-            s.Element.Accept { new ITypeVisitor<_> with
-                member _.Visit<'TElement>() =
-                    let parse = mkParserCached<'TElement> ctx
+        | Shape.Array shape when shape.Rank = 1 ->
+            shape.Element.Accept { new ITypeVisitor<_> with
+                member _.Visit<'t>() = // 'T = 't array
+                    let parse = mkParserCached<'t> ctx
+
                     fun data culture ->
                         match data with
                         | RawValue values ->
@@ -149,6 +152,7 @@ module internal ModelParser =
                                 [ for value in values -> parse (dictionary (StringValues value)) culture ]
                                 |> Result.traverse
                                 |> Result.map List.toArray
+
                         | _ ->
                             let regex = "\[(\d+)\]\.(\w+)" |> Regex
 
@@ -184,14 +188,14 @@ module internal ModelParser =
                     |> wrap
             }
 
-        | Shape.CliMutable (:? ShapeCliMutable<'T> as s) ->
+        | Shape.CliMutable (:? ShapeCliMutable<'T> as shape) ->
             fun data culture ->
-                let instance = s.CreateUninitialized()
+                let instance = shape.CreateUninitialized()
 
-                [ for prop in s.Properties ->
+                [ for prop in shape.Properties ->
                     prop.Accept {
                         new IMemberVisitor<_, _> with
-                            member _.Visit(propShape: ShapeMember<'T, 'TProperty>) =
+                            member _.Visit<'TProperty>(propShape) =
                                 let parse = mkParser<'TProperty>()
 
                                 match data.TryGetValue(propShape.Label) with
