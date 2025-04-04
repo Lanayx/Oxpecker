@@ -28,9 +28,9 @@ module internal ModelParser =
     open TypeShape.Core
     open TypeShape.Core.Utils
 
-    let firstValue (rawValues: StringValues) = if rawValues.Count = 0 then null else rawValues[0]
+    let private firstValue (rawValues: StringValues) = if rawValues.Count = 0 then null else rawValues[0]
 
-    let error (values: StringValues) : 'T =
+    let private error (values: StringValues) : 'T =
         let value =
             match values |> firstValue with
             | null -> "null"
@@ -38,32 +38,32 @@ module internal ModelParser =
 
         failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
-    let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
+    let private unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
         String.Equals( case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
 
-    let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
+    let private (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
 
-    let (|Empty|_|) (dict: IDictionary<string, StringValues>) =
+    let private (|Empty|_|) (dict: IDictionary<string, StringValues>) =
         dict.Count = 0
 
-    let (|RawValue|_|) (dict: IDictionary<string, StringValues>) =
+    let private (|RawValue|_|) (dict: IDictionary<string, StringValues>) =
         if dict.Count = 1 then
             dict |> Seq.head |> _.Value |> Some
         else
             None
 
-    let (|RawValueQuick|) (dict: IDictionary<string, StringValues>) =
+    let private (|RawValueQuick|) (dict: IDictionary<string, StringValues>) =
         match dict with
         | RawValue v -> v
         | _ -> failwith ""
 
-    let (|SimpleArray|_|) (data: IDictionary<string, StringValues>) =
+    let private (|SimpleArray|_|) (data: IDictionary<string, StringValues>) =
         match data with
         | RawValue values when values.Count > 0 -> values |> Seq.map String.toDict |> Some
         | _ -> None
 
-    let (|ComplexArray|_|)  (data: IDictionary<string, StringValues>) =
+    let private (|ComplexArray|_|)  (data: IDictionary<string, StringValues>) =
         let regex = "\[(\d+)\]\.(\w+)" |> Regex
 
         let values =
@@ -85,15 +85,14 @@ module internal ModelParser =
 
         if data'.Count = 0 then None else
 
-        let maxIndex = Seq.max data'.Keys
-        Some (maxIndex, data')
+        Some data'
 
-    let (|ExactMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
+    let private (|ExactMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(propName) with
         | true, values-> Some (StringValues.toDict values)
         | false, _ -> None
 
-    let (|PrefixMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
+    let private (|PrefixMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
         let data' =
             data
             |> Seq.choose (fun (KeyValue (key, value)) ->
@@ -108,11 +107,11 @@ module internal ModelParser =
 
         if data'.Count > 0 then Some data' else None
 
-    type FieldSetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
+    type private FieldSetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
 
-    type Parser<'T> = CultureInfo -> IDictionary<string, StringValues> -> 'T
+    type private Parser<'T> = CultureInfo -> IDictionary<string, StringValues> -> 'T
 
-    let rec mkParser<'T> () : Parser<'T> =
+    let rec private mkParser<'T> () : Parser<'T> =
         match cache.TryFind() with
         | Some x -> x
         | None ->
@@ -188,7 +187,7 @@ module internal ModelParser =
             }
 
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
-            fun culture (RawValueQuick values) ->
+            fun _ (RawValueQuick values) ->
                 match values |> firstValue with
                 | NonNull (UnionCase shape case) ->
                     case.CreateUninitialized()
@@ -208,9 +207,11 @@ module internal ModelParser =
                     fun culture data ->
                         match data with
                         | SimpleArray data' ->
-                            [| for dict in data' do parse culture dict |]
+                            [| for dict in data' -> parse culture dict |]
 
-                        | ComplexArray (maxIndex, data') ->
+                        | ComplexArray data' ->
+                            let maxIndex = Seq.max data'.Keys
+
                             [|
                                 for i in 0..maxIndex ->
                                     match data'.TryGetValue i with
