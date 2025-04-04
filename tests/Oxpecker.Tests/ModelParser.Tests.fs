@@ -11,10 +11,8 @@ type Sex =
     | Male
     | Female
 
-[<CLIMutable>]
 type Child = { Name: string | null; Age: int }
 
-[<CLIMutable>]
 type Model = {
     Id: Guid
     FirstName: string | null
@@ -26,11 +24,8 @@ type Model = {
     Children: Child[]
 }
 
-
-[<CLIMutable>]
 type Model2 = { SearchTerms: string[] }
 
-[<CLIMutable>]
 type CompositeModel = {
     FirstChild: Child
     SecondChild: Child option
@@ -118,7 +113,6 @@ let ``ModelParser.parse with model data without optional parameters`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let instance = Activator.CreateInstance<Model>()
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData

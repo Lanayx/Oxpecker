@@ -108,7 +108,7 @@ module internal ModelParser =
 
         if data'.Count > 0 then Some data' else None
 
-    type PropertySetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
+    type FieldSetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
 
     let rec mkParser<'T> () : CultureInfo -> IDictionary<string, StringValues> -> 'T =
         match cache.TryFind() with
@@ -128,12 +128,12 @@ module internal ModelParser =
         let wrap (v: CultureInfo -> IDictionary<string, StringValues> -> 't) = unbox<CultureInfo -> IDictionary<string, StringValues> -> 'T> v 
         let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
 
-        let mkPropertySetter (shape : IShapeMember<'DeclaringType>) =
+        let mkFieldSetter (shape : IShapeMember<'DeclaringType>) =
             shape.Accept { new IMemberVisitor<_, _> with
                 member _.Visit<'TProperty>(propShape) =
                     let parse = mkParser<'TProperty>()
 
-                    PropertySetter (fun culture data instance -> 
+                    FieldSetter (fun culture data instance -> 
                         match data with
                         | ExactMatch propShape.Label data'
                         | PrefixMatch propShape.Label data' ->
@@ -177,6 +177,7 @@ module internal ModelParser =
             shape.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() = // 'T = 't list
                     let parse = mkParserCached<'t> ctx
+
                     fun culture (RawValueQuick values) ->
                         if values |> firstValue = null then [] else
 
@@ -190,7 +191,7 @@ module internal ModelParser =
                 | NonNull (UnionCase shape case) ->
                     case.CreateUninitialized()
 
-                | null when not shape.IsStructUnion ->
+                | Null when not shape.IsStructUnion ->
                     Unchecked.defaultof<_>
 
                 | _ ->
@@ -221,26 +222,29 @@ module internal ModelParser =
                     |> wrap
             }
 
-        | Shape.CliMutable (:? ShapeCliMutable<'T> as shape) ->
-                let propertySetters = shape.Properties |> Seq.map mkPropertySetter
+        | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
+                let fieldSetters = shape.Fields |> Seq.map mkFieldSetter
 
                 fun culture data ->
                     let instance = shape.CreateUninitialized()
                     
-                    for propertySetter in propertySetters do
-                        propertySetter.Invoke(culture, data, instance)
+                    for fieldSetter in fieldSetters do
+                        fieldSetter.Invoke(culture, data, instance)
 
                     instance
 
-        | _ ->
+        | shape ->
             fun culture (RawValueQuick values) ->
                 match values |> firstValue with
-                | Null -> Unchecked.defaultof<_>
                 | NonNull value ->
                     try
                         typeConverter.ConvertFromString(null, culture, value) |> unbox
                     with _ ->
                         error values
+
+                | Null when not shape.Type.IsValueType  -> Unchecked.defaultof<_>
+
+                | _ -> error values
 
     and private cache : TypeCache = TypeCache()
 
