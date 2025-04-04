@@ -110,27 +110,27 @@ module internal ModelParser =
         if data'.Count > 0 then Some data' else None
         
 
-    let rec mkParser<'T> () : IDictionary<string, StringValues> -> CultureInfo -> 'T =
+    let rec mkParser<'T> () : CultureInfo -> IDictionary<string, StringValues> -> 'T =
         match cache.TryFind() with
         | Some x -> x
         | None ->
             use ctx = cache.CreateGenerationContext()
             mkParserCached<'T> ctx
 
-    and private mkParserCached<'T> (ctx: TypeGenerationContext) : IDictionary<string, StringValues> -> CultureInfo -> 'T =
-        match ctx.InitOrGetCachedValue<IDictionary<string, StringValues> -> CultureInfo -> 'T>(fun c vs -> c.Value vs) with
+    and private mkParserCached<'T> (ctx: TypeGenerationContext) : CultureInfo -> IDictionary<string, StringValues> -> 'T =
+        match ctx.InitOrGetCachedValue<CultureInfo -> IDictionary<string, StringValues> -> 'T>(fun c vs -> c.Value vs) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = mkParserAux<'T> ctx
             ctx.Commit t v
 
-    and private mkParserAux<'T> (ctx: TypeGenerationContext) : IDictionary<string, StringValues> -> CultureInfo -> 'T =
-        let wrap (v: IDictionary<string, StringValues> -> CultureInfo -> 't) = unbox<IDictionary<string, StringValues> -> CultureInfo -> 'T> v 
+    and private mkParserAux<'T> (ctx: TypeGenerationContext) : CultureInfo -> IDictionary<string, StringValues> -> 'T =
+        let wrap (v: CultureInfo -> IDictionary<string, StringValues> -> 't) = unbox<CultureInfo -> IDictionary<string, StringValues> -> 'T> v 
         let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
 
         match shapeof<'T> with
         | Shape.String ->
-            fun (RawValueQuick values) _ ->
+            fun _ (RawValueQuick values) ->
                 values |> firstValue
             |> wrap
 
@@ -139,10 +139,10 @@ module internal ModelParser =
                 member _.Visit<'t when 't : (new : unit -> 't) and 't : struct and 't :> ValueType>() = // 'T = Nullable<'t>
                     let parse = mkParserCached<'t> ctx
 
-                    fun (RawValueQuick values) culture ->
+                    fun culture (RawValueQuick values) ->
                         if values |> firstValue = null then Nullable() else
 
-                        parse (StringValues.toDict values) culture |> Nullable
+                        parse culture (StringValues.toDict values) |> Nullable
                     |> wrap
             }
 
@@ -151,12 +151,12 @@ module internal ModelParser =
                 member _.Visit<'t>() = // 'T = option<'t>
                     let parse = mkParserCached<'t> ctx
 
-                    fun data culture ->
+                    fun culture data ->
                         match data with
                         | Empty -> None
                         | RawValue values when values |> firstValue |> isNull ->
                             None
-                        | _ ->  parse data culture |> Some
+                        | _ ->  parse culture data |> Some
                     |> wrap
             }
 
@@ -164,15 +164,15 @@ module internal ModelParser =
             shape.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() = // 'T = 't list
                     let parse = mkParserCached<'t> ctx
-                    fun (RawValueQuick values) culture ->
+                    fun culture (RawValueQuick values) ->
                         if values |> firstValue = null then [] else
 
-                        [ for value in values -> parse (String.toDict value) culture ]
+                        [ for value in values -> parse culture (String.toDict value) ]
                     |> wrap
             }
 
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
-            fun (RawValueQuick values) culture ->
+            fun culture (RawValueQuick values) ->
                 match values |> firstValue with
                 | NonNull (UnionCase shape case) ->
                     case.CreateUninitialized()
@@ -189,17 +189,17 @@ module internal ModelParser =
                 member _.Visit<'t>() = // 'T = 't array
                     let parse = mkParserCached<'t> ctx
 
-                    fun data culture ->
+                    fun culture data ->
                         match data with
                         | SimpleArray data' ->
-                            [| for value in data' do parse value culture |]
+                            [| for dict in data' do parse culture dict |]
 
                         | ComplexArray (maxIndex, data') ->
                             [|
                                 for i in 0..maxIndex ->
                                     match data'.TryGetValue i with
                                     | true, dict ->
-                                        parse dict culture
+                                        parse culture dict
                                     | _ ->
                                         Unchecked.defaultof<_>
                             |]
@@ -209,7 +209,7 @@ module internal ModelParser =
             }
 
         | Shape.CliMutable (:? ShapeCliMutable<'T> as shape) ->
-            fun data culture ->
+            fun culture data ->
                 let instance = shape.CreateUninitialized()
 
                 [ for prop in shape.Properties ->
@@ -220,13 +220,13 @@ module internal ModelParser =
                                 match data with
                                 | ExactMatch propShape.Label data'
                                 | PrefixMatch propShape.Label data' ->
-                                    parse data' culture |> propShape.Set instance
+                                    parse culture data'  |> propShape.Set instance
 
                                 | _ -> instance
                     }] |> List.head
 
         | _ ->
-            fun (RawValueQuick values) culture ->
+            fun culture (RawValueQuick values) ->
                 match values |> firstValue with
                 | Null -> Unchecked.defaultof<_>
                 | NonNull value ->
@@ -240,7 +240,7 @@ module internal ModelParser =
     let rec internal parseModel<'T> =
         let parse = mkParser<'T>()
         fun (culture: CultureInfo) (data: IDictionary<string, StringValues>) ->
-            parse data culture
+            parse culture data
 
 /// <summary>
 /// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>

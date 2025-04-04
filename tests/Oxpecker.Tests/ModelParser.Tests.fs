@@ -388,7 +388,7 @@ let ``Test string null`` () =
     let expected = Unchecked.defaultof<string>
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string>() values culture
+    let result = ModelParser.mkParser<string>() culture values
 
     result |> should equal expected
 
@@ -398,7 +398,7 @@ let ``Test string empty`` () =
     let expected = String.Empty
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string>() values culture
+    let result = ModelParser.mkParser<string>() culture values
 
     result |> should equal expected
 
@@ -408,7 +408,7 @@ let ``Test double some-value`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Double'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.mkParser<float>() values culture |> ignore
+    let result() = ModelParser.mkParser<float>() culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
@@ -418,7 +418,7 @@ let ``Test int some-value`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Int32'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.mkParser<int>() values culture |> ignore
+    let result() = ModelParser.mkParser<int>() culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
@@ -428,7 +428,7 @@ let ``Test nullable int null`` () =
     let expected = Nullable()
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Nullable<int>>() values culture
+    let result = ModelParser.mkParser<Nullable<int>>() culture values
 
     result |> should equal expected
 
@@ -438,7 +438,7 @@ let ``Test nullable int 1`` () =
     let expected = Nullable 1
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Nullable<int>>() values culture
+    let result = ModelParser.mkParser<Nullable<int>>() culture values
 
     result |> should equal expected
 
@@ -448,7 +448,7 @@ let ``Test some decimal null`` () =
     let expected = None
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<decimal option>() values culture
+    let result = ModelParser.mkParser<decimal option>() culture values
 
     result |> should equal expected
 
@@ -458,7 +458,7 @@ let ``Test nullable decimal 100`` () =
     let expected = Some 100M
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<decimal option>() values culture
+    let result = ModelParser.mkParser<decimal option>() culture values
 
     result |> should equal expected
 
@@ -468,7 +468,7 @@ let ``Test some string null`` () =
     let expected = None
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string option>() values culture
+    let result = ModelParser.mkParser<string option>() culture values
 
     result |> should equal expected
 
@@ -478,7 +478,7 @@ let ``Test nullable string empty`` () =
     let expected = Some String.Empty
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string option>() values culture
+    let result = ModelParser.mkParser<string option>() culture values
 
     result |> should equal expected
 
@@ -488,7 +488,7 @@ let ``Test nullable string some-value`` () =
     let expected = Some "some-value"
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string option>() values culture
+    let result = ModelParser.mkParser<string option>() culture values
 
     result |> should equal expected
 
@@ -498,7 +498,7 @@ let ``Test option union case Female`` () =
     let expected = Some Female
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Sex option>() values culture
+    let result = ModelParser.mkParser<Sex option>() culture values
 
     result |> should equal expected
 
@@ -509,7 +509,7 @@ let ``Test array union case`` () =
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Sex array>() values culture
+    let result = ModelParser.mkParser<Sex array>() culture values
 
     result |> should equal expected
 
@@ -520,7 +520,7 @@ let ``Test array union case option`` () =
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Sex option array>() values culture
+    let result = ModelParser.mkParser<Sex option array>() culture values
 
     result |> should equal expected
 
