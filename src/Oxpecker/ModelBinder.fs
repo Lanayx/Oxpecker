@@ -88,7 +88,6 @@ module internal ModelParser =
         let maxIndex = Seq.max data'.Keys
         Some (maxIndex, data')
 
-
     let (|ExactMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(propName) with
         | true, values-> Some (StringValues.toDict values)
@@ -108,7 +107,8 @@ module internal ModelParser =
             |> dict
 
         if data'.Count > 0 then Some data' else None
-        
+
+    type PropertySetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
 
     let rec mkParser<'T> () : CultureInfo -> IDictionary<string, StringValues> -> 'T =
         match cache.TryFind() with
@@ -127,6 +127,19 @@ module internal ModelParser =
     and private mkParserAux<'T> (ctx: TypeGenerationContext) : CultureInfo -> IDictionary<string, StringValues> -> 'T =
         let wrap (v: CultureInfo -> IDictionary<string, StringValues> -> 't) = unbox<CultureInfo -> IDictionary<string, StringValues> -> 'T> v 
         let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
+
+        let mkPropertySetter (shape : IShapeMember<'DeclaringType>) =
+            shape.Accept { new IMemberVisitor<_, _> with
+                member _.Visit<'TProperty>(propShape) =
+                    let parse = mkParser<'TProperty>()
+
+                    PropertySetter (fun culture data instance -> 
+                        match data with
+                        | ExactMatch propShape.Label data'
+                        | PrefixMatch propShape.Label data' ->
+                            parse culture data' |> propShape.Set instance |> ignore
+                        | _ -> ())
+            }
 
         match shapeof<'T> with
         | Shape.String ->
@@ -209,21 +222,15 @@ module internal ModelParser =
             }
 
         | Shape.CliMutable (:? ShapeCliMutable<'T> as shape) ->
-            fun culture data ->
-                let instance = shape.CreateUninitialized()
+                let propertySetters = shape.Properties |> Seq.map mkPropertySetter
 
-                [ for prop in shape.Properties ->
-                    prop.Accept { new IMemberVisitor<_, _> with
-                            member _.Visit<'TProperty>(propShape) =
-                                let parse = mkParser<'TProperty>()
+                fun culture data ->
+                    let instance = shape.CreateUninitialized()
+                    
+                    for propertySetter in propertySetters do
+                        propertySetter.Invoke(culture, data, instance)
 
-                                match data with
-                                | ExactMatch propShape.Label data'
-                                | PrefixMatch propShape.Label data' ->
-                                    parse culture data'  |> propShape.Set instance
-
-                                | _ -> instance
-                    }] |> List.head
+                    instance
 
         | _ ->
             fun culture (RawValueQuick values) ->
