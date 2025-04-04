@@ -110,22 +110,24 @@ module internal ModelParser =
 
     type FieldSetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
 
-    let rec mkParser<'T> () : CultureInfo -> IDictionary<string, StringValues> -> 'T =
+    type Parser<'T> = CultureInfo -> IDictionary<string, StringValues> -> 'T
+
+    let rec mkParser<'T> () : Parser<'T> =
         match cache.TryFind() with
         | Some x -> x
         | None ->
             use ctx = cache.CreateGenerationContext()
             mkParserCached<'T> ctx
 
-    and private mkParserCached<'T> (ctx: TypeGenerationContext) : CultureInfo -> IDictionary<string, StringValues> -> 'T =
+    and private mkParserCached<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         match ctx.InitOrGetCachedValue<CultureInfo -> IDictionary<string, StringValues> -> 'T>(fun c vs -> c.Value vs) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = mkParserAux<'T> ctx
             ctx.Commit t v
 
-    and private mkParserAux<'T> (ctx: TypeGenerationContext) : CultureInfo -> IDictionary<string, StringValues> -> 'T =
-        let wrap (v: CultureInfo -> IDictionary<string, StringValues> -> 't) = unbox<CultureInfo -> IDictionary<string, StringValues> -> 'T> v 
+    and private mkParserAux<'T> (ctx: TypeGenerationContext) : Parser<'T> =
+        let wrap (v: Parser<'t>) = unbox<Parser<'T>> v 
         let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
 
         let mkFieldSetter (shape : IShapeMember<'DeclaringType>) =
