@@ -355,6 +355,36 @@ module internal rec AST =
         | DecisionTree(decisionTree, targets) ->
             DecisionTree(decisionTree, targets |> List.map(fun (target, expr) -> target, transform expr))
             :: currentList
+        | Let({ Name = matchValue }, CurriedApply _, _) as expr when matchValue.StartsWith("matchValue") ->
+            // wrap with self-executing lambda function https://stackoverflow.com/a/66693905/1780648
+            let lambda =
+                Lambda(
+                    {
+                        Name = "self"
+                        Type = Unit
+                        IsMutable = false
+                        IsThisArgument = false
+                        IsCompilerGenerated = true
+                        Range = None
+                    },
+                    transform expr,
+                    None
+                )
+            let newExpr =
+                Call(
+                    callee = lambda,
+                    info = {
+                        ThisArg = None
+                        Args = []
+                        SignatureArgTypes = []
+                        GenericArgs = []
+                        MemberRef = None
+                        Tags = []
+                    },
+                    typ = Unit,
+                    range = None
+                )
+            newExpr :: currentList
         // router cases
         | Call(Get(IdentExpr _, FieldGet _, Any, _), { Args = args }, _, _) ->
             match args with
@@ -544,19 +574,30 @@ module internal rec AST =
             range = range
         )
 
+type SolidComponentFlag =
+    | Default = 0
+    | Debug = 1
+
+
 /// <summary>
 /// Registers a function as a SolidComponent for transformation by
 /// the <c>Oxpecker.Solid.FablePlugin</c>
 /// </summary>
-type SolidComponentAttribute() =
+/// <remarks>
+/// Pass an optional <c>SolidComponentFlag</c> such as <c>Debug</c> to enable helpers like printing AST on compilation.
+/// </remarks>
+type SolidComponentAttribute(flag: int) =
     inherit MemberDeclarationPluginAttribute()
 
     override _.FableMinimumVersion = "4.0"
 
     override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
-        // Console.WriteLine("!Start! MemberDecl")
-        // Console.WriteLine(memberDecl.Body)
-        // Console.WriteLine("!End! MemberDecl")
+        match enum<SolidComponentFlag> flag with
+        | SolidComponentFlag.Debug ->
+            Console.WriteLine("!Start! MemberDecl")
+            Console.WriteLine(memberDecl.Body)
+            Console.WriteLine("!End! MemberDecl")
+        | _ -> ()
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
@@ -564,3 +605,6 @@ type SolidComponentAttribute() =
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr
+
+    new() = SolidComponentAttribute(int SolidComponentFlag.Default)
+    new(compileOptions: SolidComponentFlag) = SolidComponentAttribute(int compileOptions)
