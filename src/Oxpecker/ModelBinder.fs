@@ -18,16 +18,6 @@ module StringValues =
 module String =
     let toDict(v: string | null) = StringValues v |> StringValues.toDict
 
-module Result =
-    let traverse input =
-        Ok []
-        |> List.foldBack
-            (fun v  acc ->
-                match acc, v with
-                | Ok acc, Ok v -> Ok (v :: acc)
-                | Error e, _ | _, Error e -> Error e)
-            input
-
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -40,12 +30,13 @@ module internal ModelParser =
 
     let firstValue (rawValues: StringValues) = if rawValues.Count = 0 then null else rawValues[0]
 
-    let error (values: StringValues) : Result<'T, string> =
+    let error (values: StringValues) : 'T =
         let value =
             match values |> firstValue with
             | null -> "null"
             | _ -> values.ToString()
-        Error $"Could not parse value '{value}' to type '{typeof<'T>}'."
+
+        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
     let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
         String.Equals( case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
@@ -119,28 +110,28 @@ module internal ModelParser =
         if data'.Count > 0 then Some data' else None
         
 
-    let rec mkParser<'T> () : IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string> =
+    let rec mkParser<'T> () : IDictionary<string, StringValues> -> CultureInfo -> 'T =
         match cache.TryFind() with
         | Some x -> x
         | None ->
             use ctx = cache.CreateGenerationContext()
             mkParserCached<'T> ctx
 
-    and private mkParserCached<'T> (ctx: TypeGenerationContext) : IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string> =
-        match ctx.InitOrGetCachedValue<IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string>>(fun c vs -> c.Value vs) with
+    and private mkParserCached<'T> (ctx: TypeGenerationContext) : IDictionary<string, StringValues> -> CultureInfo -> 'T =
+        match ctx.InitOrGetCachedValue<IDictionary<string, StringValues> -> CultureInfo -> 'T>(fun c vs -> c.Value vs) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = mkParserAux<'T> ctx
             ctx.Commit t v
 
-    and private mkParserAux<'T> (ctx: TypeGenerationContext) : IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string> =
-        let wrap (v: IDictionary<string, StringValues> -> CultureInfo -> Result<'t, string>) = unbox<IDictionary<string, StringValues> -> CultureInfo -> Result<'T, string>> v 
+    and private mkParserAux<'T> (ctx: TypeGenerationContext) : IDictionary<string, StringValues> -> CultureInfo -> 'T =
+        let wrap (v: IDictionary<string, StringValues> -> CultureInfo -> 't) = unbox<IDictionary<string, StringValues> -> CultureInfo -> 'T> v 
         let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
 
         match shapeof<'T> with
         | Shape.String ->
             fun (RawValueQuick values) _ ->
-                values |> firstValue |> Ok
+                values |> firstValue
             |> wrap
 
         | Shape.Nullable shape ->
@@ -149,9 +140,9 @@ module internal ModelParser =
                     let parse = mkParserCached<'t> ctx
 
                     fun (RawValueQuick values) culture ->
-                        if values |> firstValue = null then Ok (Nullable()) else
+                        if values |> firstValue = null then Nullable() else
 
-                        parse (StringValues.toDict values) culture |> Result.map Nullable
+                        parse (StringValues.toDict values) culture |> Nullable
                     |> wrap
             }
 
@@ -162,10 +153,10 @@ module internal ModelParser =
 
                     fun data culture ->
                         match data with
-                        | Empty -> Ok None
+                        | Empty -> None
                         | RawValue values when values |> firstValue |> isNull ->
-                            Ok None
-                        | _ ->  parse data culture |> Result.map Some
+                            None
+                        | _ ->  parse data culture |> Some
                     |> wrap
             }
 
@@ -174,10 +165,9 @@ module internal ModelParser =
                 member _.Visit<'t>() = // 'T = 't list
                     let parse = mkParserCached<'t> ctx
                     fun (RawValueQuick values) culture ->
-                        if values |> firstValue = null then Ok List.empty else
+                        if values |> firstValue = null then [] else
 
                         [ for value in values -> parse (String.toDict value) culture ]
-                        |> Result.traverse
                     |> wrap
             }
 
@@ -185,10 +175,10 @@ module internal ModelParser =
             fun (RawValueQuick values) culture ->
                 match values |> firstValue with
                 | NonNull (UnionCase shape case) ->
-                    Ok (case.CreateUninitialized())
+                    case.CreateUninitialized()
 
                 | null when not shape.IsStructUnion ->
-                    Ok Unchecked.defaultof<_>
+                    Unchecked.defaultof<_>
 
                 | _ ->
                     error values
@@ -202,23 +192,19 @@ module internal ModelParser =
                     fun data culture ->
                         match data with
                         | SimpleArray data' ->
-                            [ for value in data' do parse value culture ]
-                            |> Result.traverse
-                            |> Result.map List.toArray
+                            [| for value in data' do parse value culture |]
 
                         | ComplexArray (maxIndex, data') ->
-                            [
-                                for i in 0..maxIndex do
+                            [|
+                                for i in 0..maxIndex ->
                                     match data'.TryGetValue i with
                                     | true, dict ->
                                         parse dict culture
                                     | _ ->
-                                        Ok Unchecked.defaultof<_>
-                            ]
-                            |> Result.traverse
-                            |> Result.map List.toArray
+                                        Unchecked.defaultof<_>
+                            |]
 
-                        | _ -> Ok [||]
+                        | _ -> [||]
                     |> wrap
             }
 
@@ -234,21 +220,20 @@ module internal ModelParser =
                                 match data with
                                 | ExactMatch propShape.Label data'
                                 | PrefixMatch propShape.Label data' ->
-                                    parse data' culture |> Result.map (propShape.Set instance)
+                                    parse data' culture |> propShape.Set instance
 
-                                | _ -> Ok instance
-                    }] |> List.tryFind _.IsError |> Option.defaultValue (Ok instance)
+                                | _ -> instance
+                    }] |> List.head
 
         | _ ->
             fun (RawValueQuick values) culture ->
                 match values |> firstValue with
-                | Null -> Ok Unchecked.defaultof<_>
+                | Null -> Unchecked.defaultof<_>
                 | NonNull value ->
                     try
-                        typeConverter.ConvertFromString(null, culture, value)
-                        |> unbox<'T>
-                        |> Ok
-                    with _ -> error values
+                        typeConverter.ConvertFromString(null, culture, value) |> unbox
+                    with _ ->
+                        error values
 
     and private cache : TypeCache = TypeCache()
 
@@ -277,6 +262,4 @@ type ModelBinder(?options: ModelBinderOptions) =
         /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
         /// </summary>
         member this.Bind<'T>(data) =
-            match ModelParser.parseModel<'T> options.CultureInfo (Dictionary data) with
-            | Ok value -> value
-            | Error msg -> failwith msg
+            ModelParser.parseModel<'T> options.CultureInfo (Dictionary data)

@@ -5,7 +5,7 @@ open System.Globalization
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
-open FsUnitTyped
+open FsUnit.Xunit
 
 type Sex =
     | Male
@@ -45,7 +45,7 @@ let ``ModelParser.parse with model which has primitive array`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model2> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 
 [<Fact>]
@@ -84,7 +84,7 @@ let ``ModelParser.parse with complete model data`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 
 [<Fact>]
@@ -122,7 +122,7 @@ let ``ModelParser.parse with model data without optional parameters`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``ModelParser.parse with missing array items`` () =
@@ -156,7 +156,7 @@ let ``ModelParser.parse with missing array items`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``ModelParser.parse with complete model data but with different order for array of child`` () =
@@ -194,7 +194,7 @@ let ``ModelParser.parse with complete model data but with different order for ar
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``ModelParser.parse with complete model data but wrong union case`` () =
@@ -217,9 +217,9 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
         ]
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
-    result
-    |> shouldEqual(Error "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'.")
+    let result() = ModelParser.parseModel<Model> culture modelData |> ignore
+
+    result |> should (throwWithMessage "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'.") typeof<Exception>
 
 [<Fact>]
 let ``ModelParser.parse with complete model data but wrong data`` () =
@@ -242,9 +242,10 @@ let ``ModelParser.parse with complete model data but wrong data`` () =
         ]
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result() = ModelParser.parseModel<Model> culture modelData |> ignore
+
     result
-    |> shouldEqual(Error "Could not parse value 'wrong' to type 'System.DateTime'.")
+    |> should (throwWithMessage "Could not parse value 'wrong' to type 'System.DateTime'.") typeof<Exception>
 
 // ---------------------------------
 // ModelParser.parse Tests
@@ -287,7 +288,7 @@ let ``ModelParser.parse with complete model data but mixed casing`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 
 [<Fact>]
@@ -316,7 +317,7 @@ let ``ModelParser.parse with incomplete model data`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``ModelParser.parse with incomplete model data and with different order for array of child`` () =
@@ -344,7 +345,7 @@ let ``ModelParser.parse with incomplete model data and with different order for 
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 
 [<Fact>]
@@ -361,7 +362,7 @@ let ``ModelParser.parse with composite model and SecondChild missing data`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<CompositeModel> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``ModelParser.parse with complete composite model data`` () =
@@ -379,7 +380,7 @@ let ``ModelParser.parse with complete composite model data`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<CompositeModel> culture modelData
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``Test string null`` () =
@@ -389,7 +390,7 @@ let ``Test string null`` () =
 
     let result = ModelParser.mkParser<string>() values culture
 
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``Test string empty`` () =
@@ -399,128 +400,128 @@ let ``Test string empty`` () =
 
     let result = ModelParser.mkParser<string>() values culture
 
-    result |> shouldEqual(Ok expected)
+    result |> should equal expected
 
 [<Fact>]
 let ``Test double some-value`` () =
     let values = "some-value" |> String.toDict
-    let expected = Error "Could not parse value 'some-value' to type 'System.Double'."
+    let expected = "Could not parse value 'some-value' to type 'System.Double'."
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<float>() values culture
+    let result() = ModelParser.mkParser<float>() values culture |> ignore
 
-    result |> shouldEqual expected
+    result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
 let ``Test int some-value`` () =
     let values = "some-value" |> String.toDict
-    let expected = Error "Could not parse value 'some-value' to type 'System.Int32'."
+    let expected = "Could not parse value 'some-value' to type 'System.Int32'."
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<int>() values culture
+    let result() = ModelParser.mkParser<int>() values culture |> ignore
 
-    result |> shouldEqual expected
+    result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
 let ``Test nullable int null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
-    let expected = Ok (Nullable())
+    let expected = Nullable()
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<Nullable<int>>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test nullable int 1`` () =
     let values = "1" |> String.toDict
-    let expected = Ok (Nullable 1)
+    let expected = Nullable 1
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<Nullable<int>>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test some decimal null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
-    let expected = Ok None
+    let expected = None
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<decimal option>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test nullable decimal 100`` () =
     let values = "100" |> String.toDict
-    let expected = Ok (Some 100M)
+    let expected = Some 100M
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<decimal option>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test some string null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
-    let expected = Ok None
+    let expected = None
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<string option>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test nullable string empty`` () =
     let values = String.Empty |> String.toDict
-    let expected = Ok (Some String.Empty)
+    let expected = Some String.Empty
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<string option>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test nullable string some-value`` () =
     let values = "some-value" |> String.toDict
-    let expected = Ok (Some "some-value")
+    let expected = Some "some-value"
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<string option>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test option union case Female`` () =
     let values = "Female" |> String.toDict
-    let expected = Ok (Some Female)
+    let expected = Some Female
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<Sex option>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test array union case`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
-    let expected: Result<Sex array, string> = Ok [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
+    let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<Sex array>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 [<Fact>]
 let ``Test array union case option`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
-    let expected = Ok [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
+    let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.mkParser<Sex option array>() values culture
 
-    result |> shouldEqual expected
+    result |> should equal expected
 
 
