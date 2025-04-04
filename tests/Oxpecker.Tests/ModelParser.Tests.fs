@@ -374,148 +374,157 @@ let ``ModelParser.parse with complete composite model data`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<CompositeModel> culture modelData
+
     result |> should equal expected
 
 [<Fact>]
-let ``Test string null`` () =
+let ``parseModel<string> correctly parses null`` () =
     let values =  Unchecked.defaultof<string> |> String.toDict
     let expected = Unchecked.defaultof<string>
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string>() culture values
+    let result = ModelParser.parseModel<string> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test string empty`` () =
+let ``parseModel<string> correctly parses empty string`` () =
     let values = String.Empty |> String.toDict
     let expected = String.Empty
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string>() culture values
+    let result = ModelParser.parseModel<string> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test double some-value`` () =
+let ``parseModel<float> fails to parse 'some-value'`` () =
     let values = "some-value" |> String.toDict
     let expected = "Could not parse value 'some-value' to type 'System.Double'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.mkParser<float>() culture values |> ignore
+    let result() = ModelParser.parseModel<float> culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
-let ``Test int some-value`` () =
+let ``parseModel<int> fails to parse 'some-value'`` () =
     let values = "some-value" |> String.toDict
     let expected = "Could not parse value 'some-value' to type 'System.Int32'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.mkParser<int>() culture values |> ignore
+    let result() = ModelParser.parseModel<int> culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
-let ``Test nullable int null`` () =
+let ``parseModel<int64> fails to parse null`` () =
+    let values = Unchecked.defaultof<string> |> String.toDict
+    let expected = "Could not parse value 'null' to type 'System.Int64'."
+    let culture = CultureInfo.InvariantCulture
+
+    let result() = ModelParser.parseModel<int64> culture values |> ignore
+
+    result |> should (throwWithMessage expected) typeof<Exception>
+
+[<Fact>]
+let ``parseModel<Nullable<int>> correctly parses null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
     let expected = Nullable()
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Nullable<int>>() culture values
+    let result = ModelParser.parseModel<Nullable<int>> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test nullable int 1`` () =
+let ``parseModel<Nullable<int>> correctly parses 1`` () =
     let values = "1" |> String.toDict
     let expected = Nullable 1
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Nullable<int>>() culture values
+    let result = ModelParser.parseModel<Nullable<int>> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test some decimal null`` () =
+let ``parseModel<decimal option> correctly parses null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
     let expected = None
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<decimal option>() culture values
+    let result = ModelParser.parseModel<decimal option> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test nullable decimal 100`` () =
+let ``parseModel<decimal option> correctly parses 100`` () =
     let values = "100" |> String.toDict
     let expected = Some 100M
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<decimal option>() culture values
+    let result = ModelParser.parseModel<decimal option> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test some string null`` () =
+let ``parseModel<string option> correctly parses null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
     let expected = None
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string option>() culture values
+    let result = ModelParser.parseModel<string option> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test nullable string empty`` () =
+let ``parseModel<string option> correctly parses empty string`` () =
     let values = String.Empty |> String.toDict
     let expected = Some String.Empty
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string option>() culture values
+    let result = ModelParser.parseModel<string option> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test nullable string some-value`` () =
+let ``parseModel<string option> correctly parses 'some-value'`` () =
     let values = "some-value" |> String.toDict
     let expected = Some "some-value"
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<string option>() culture values
+    let result = ModelParser.parseModel<string option> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test option union case Female`` () =
+let ``parseModel<Sex option> correctly parses 'Female'`` () =
     let values = "Female" |> String.toDict
     let expected = Some Female
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Sex option>() culture values
+    let result = ModelParser.parseModel<Sex option> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test array union case`` () =
+let ``parseModel<Sex array> correctly parses array contained null`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Sex array>() culture values
+    let result = ModelParser.parseModel<Sex array> culture values
 
     result |> should equal expected
 
 [<Fact>]
-let ``Test array union case option`` () =
+let ``parseModel<Sex option array> correctly parses array contained null`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.mkParser<Sex option array>() culture values
+    let result = ModelParser.parseModel<Sex option array> culture values
 
     result |> should equal expected
-
-
