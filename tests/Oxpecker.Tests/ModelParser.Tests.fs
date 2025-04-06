@@ -593,3 +593,32 @@ let ``parseModel<Bar> correctly parses the model with no matched prefix`` () =
     let result = ModelParser.parseModel<Bar> culture modelData
     result.Bar |> should equal expected.Bar
     result.Baz |> should equal expected.Baz
+
+
+type BookType = Unknown = 0 | Hardcover = 1 | Paperback = 2 | EBook = 3
+
+[<Fact>]
+let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
+    let modelData =
+        dict [
+            "BookType", StringValues "Paperback"
+        ]
+    let expected = BookType.Paperback
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType> culture modelData
+
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<BookType> correctly parses '3'`` () =
+    let modelData =
+        dict [
+            "BookType", StringValues "3"
+        ]
+    let expected = BookType.EBook
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType> culture modelData
+
+    result |> should equal expected
