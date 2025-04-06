@@ -93,7 +93,7 @@ module internal ModelParser =
         | false, _ -> None
 
     let private (|PrefixMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
-        let data' =
+        let matchedData =
             data
             |> Seq.choose (fun (KeyValue (key, value)) ->
                 if not <| key.StartsWith(propName) then None else
@@ -101,11 +101,11 @@ module internal ModelParser =
                 // For example, when the property is 'Foo':
                 // - 'Foo.Bar' becomes 'Bar' (trim the starting '.').
                 // - 'Foo[0].Bar' becomes '[0].Bar' (no trimming needed).
-                let key' = key.[propName.Length..].TrimStart('.')
-                Some (key', value))
+                let matchedKey = key.[propName.Length..].TrimStart('.')
+                Some (matchedKey, value))
             |> dict
 
-        if data'.Count > 0 then Some data' else None
+        if matchedData.Count > 0 then Some matchedData else None
 
     type private FieldSetter<'T> = delegate of CultureInfo * IDictionary<string, StringValues> * 'T -> unit
 
@@ -206,15 +206,15 @@ module internal ModelParser =
 
                     fun culture data ->
                         match data with
-                        | SimpleArray data' ->
-                            [| for dict in data' -> parse culture dict |]
+                        | SimpleArray values ->
+                            [| for dict in values -> parse culture dict |]
 
-                        | ComplexArray data' ->
-                            let maxIndex = Seq.max data'.Keys
+                        | ComplexArray indexedData ->
+                            let maxIndex = Seq.max indexedData.Keys
 
                             [|
                                 for i in 0..maxIndex ->
-                                    match data'.TryGetValue i with
+                                    match indexedData.TryGetValue i with
                                     | true, dict ->
                                         parse culture dict
                                     | _ ->
