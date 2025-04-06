@@ -541,6 +541,57 @@ let ``parseModel<Direction Nullable> correctly parses 'Right'`` () =
 
     result |> should equal expected
 
+type BookType = Unknown = 0 | Hardcover = 1 | Paperback = 2 | EBook = 3
+
+[<Fact>]
+let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
+    let modelData =
+        dict [
+            "BookType", StringValues "Paperback"
+        ]
+    let expected = BookType.Paperback
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType> culture modelData
+
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<BookType> correctly parses '3'`` () =
+    let modelData =
+        dict [
+            "BookType", StringValues "3"
+        ]
+    let expected = BookType.EBook
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType> culture modelData
+
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<BookType> correctly parses '100'`` () =
+    let modelData =
+        dict [
+            "BookType", StringValues "3"
+        ]
+    let expected = BookType.EBook
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType> culture modelData
+
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<BookType> fails to parse null`` () =
+    let values = Unchecked.defaultof<string> |> String.toDict
+    let expected = "Could not parse value 'null' to type 'Oxpecker.Tests.ModelParser+BookType'."
+    let culture = CultureInfo.InvariantCulture
+
+    let result() = ModelParser.parseModel<BookType> culture values |> ignore
+
+    result |> should (throwWithMessage expected) typeof<Exception>
+
 type Baz = { Name: string option; Value: int Nullable }
 
 type Bar = { Bar: string | null; Baz: Baz | null }
@@ -582,6 +633,30 @@ let ``parseModel<Foo> correctly parses the model with no matched prefix`` () =
     result |> should equal expected
 
 [<Fact>]
+let ``parseModel<Foo> correctly parses the model with index access for the type with no index access`` () =
+    let modelData =
+        dict [
+            "Bars[0].Baz[0].Value", StringValues "0"
+        ]
+    let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Foo> culture modelData
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<Foo> correctly parses the model with no index access for the type with index access`` () =
+    let modelData =
+        dict [
+            "Bars.Baz.Value", StringValues "0"
+        ]
+    let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Foo> culture modelData
+    result |> should equal expected
+
+[<Fact>]
 let ``parseModel<Bar> correctly parses the model with no matched prefix`` () =
     let modelData =
         dict [
@@ -593,32 +668,3 @@ let ``parseModel<Bar> correctly parses the model with no matched prefix`` () =
     let result = ModelParser.parseModel<Bar> culture modelData
     result.Bar |> should equal expected.Bar
     result.Baz |> should equal expected.Baz
-
-
-type BookType = Unknown = 0 | Hardcover = 1 | Paperback = 2 | EBook = 3
-
-[<Fact>]
-let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
-    let modelData =
-        dict [
-            "BookType", StringValues "Paperback"
-        ]
-    let expected = BookType.Paperback
-    let culture = CultureInfo.InvariantCulture
-
-    let result = ModelParser.parseModel<BookType> culture modelData
-
-    result |> should equal expected
-
-[<Fact>]
-let ``parseModel<BookType> correctly parses '3'`` () =
-    let modelData =
-        dict [
-            "BookType", StringValues "3"
-        ]
-    let expected = BookType.EBook
-    let culture = CultureInfo.InvariantCulture
-
-    let result = ModelParser.parseModel<BookType> culture modelData
-
-    result |> should equal expected
