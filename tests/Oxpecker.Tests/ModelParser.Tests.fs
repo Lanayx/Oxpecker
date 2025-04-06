@@ -508,7 +508,7 @@ let ``parseModel<Sex option> correctly parses 'Female'`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<Sex array> correctly parses array contained null`` () =
+let ``parseModel<Sex array> correctly parses the array containing null`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
@@ -519,7 +519,7 @@ let ``parseModel<Sex array> correctly parses array contained null`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<Sex option array> correctly parses array contained null`` () =
+let ``parseModel<Sex option array> correctly parses the array containing null`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
@@ -543,12 +543,12 @@ let ``parseModel<Direction Nullable> correctly parses 'Right'`` () =
 
 type Baz = { Name: string option; Value: int Nullable }
 
-type Bar = { Bar: string | null; Baz: Baz }
+type Bar = { Bar: string | null; Baz: Baz | null }
 
 type Foo = { Foo: string; Bars: Bar option array }
 
 [<Fact>]
-let ``parseModel<Foo> correctly parses model`` () =
+let ``parseModel<Foo> correctly parses the model with no seqential index elements`` () =
     let modelData =
         dict [
             "Bars[0].Baz.Value", StringValues "0"
@@ -568,3 +568,28 @@ let ``parseModel<Foo> correctly parses model`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
     result |> should equal expected
+
+[<Fact>]
+let ``parseModel<Foo> correctly parses the model with no matched prefix`` () =
+    let modelData =
+        dict [
+            "Barss[0].Baz.Value", StringValues "0"
+        ]
+    let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Foo> culture modelData
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<Bar> correctly parses the model with no matched prefix`` () =
+    let modelData =
+        dict [
+            "Bazz.Value", StringValues "0"
+        ]
+    let expected = { Bar = null; Baz = null }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Bar> culture modelData
+    result.Bar |> should equal expected.Bar
+    result.Baz |> should equal expected.Baz
