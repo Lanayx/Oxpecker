@@ -64,7 +64,7 @@ module internal ModelParser =
         | _ -> None
 
     let private (|ComplexArray|_|)  (data: IDictionary<string, StringValues>) =
-        let regex = "\[(\d+)\]\.(\w+)" |> Regex
+        let regex = "\[(\d+)\]\.(.+)" |> Regex
 
         let values =
             data
