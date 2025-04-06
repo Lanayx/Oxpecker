@@ -87,22 +87,26 @@ module internal ModelParser =
 
         Some data'
 
-    let private (|ExactMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
-        match data.TryGetValue(propName) with
+    let private (|ExactMatch|_|) (key: string) (data: IDictionary<string, StringValues>) =
+        match data.TryGetValue(key) with
         | true, values-> Some (StringValues.toDict values)
         | false, _ -> None
 
-    let private (|PrefixMatch|_|) (propName: string) (data: IDictionary<string, StringValues>) =
+    let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
         let matchedData =
             data
             |> Seq.choose (fun (KeyValue (key, value)) ->
-                if not <| key.StartsWith(propName) then None else
+                if not <| key.StartsWith(prefix) then None else
 
-                // For example, when the property is 'Foo':
-                // - 'Foo.Bar' becomes 'Bar' (trim the starting '.').
-                // - 'Foo[0].Bar' becomes '[0].Bar' (no trimming needed).
-                let matchedKey = key.[propName.Length..].TrimStart('.')
-                Some (matchedKey, value))
+                let matchedKey = key.[prefix.Length..]
+
+                if matchedKey.StartsWith '.' then
+                    Some (matchedKey.[1..], value)
+                elif matchedKey.StartsWith '[' then
+                    Some (matchedKey, value)
+                else
+                    None)
+
             |> dict
 
         if matchedData.Count > 0 then Some matchedData else None
@@ -131,14 +135,14 @@ module internal ModelParser =
 
         let mkFieldSetter (shape : IShapeMember<'DeclaringType>) =
             shape.Accept { new IMemberVisitor<_, _> with
-                member _.Visit<'TProperty>(propShape) =
-                    let parse = mkParser<'TProperty>()
+                member _.Visit<'Field>(fieldShape) =
+                    let parse = mkParser<'Field>()
 
                     FieldSetter (fun culture data instance -> 
                         match data with
-                        | ExactMatch propShape.Label data'
-                        | PrefixMatch propShape.Label data' ->
-                            parse culture data' |> propShape.Set instance |> ignore
+                        | ExactMatch fieldShape.Label data'
+                        | PrefixMatch fieldShape.Label data' ->
+                            parse culture data' |> fieldShape.Set instance |> ignore
                         | _ -> ())
             }
 
@@ -206,15 +210,15 @@ module internal ModelParser =
 
                     fun culture data ->
                         match data with
-                        | SimpleArray values ->
-                            [| for dict in values -> parse culture dict |]
+                        | SimpleArray dicts ->
+                            [| for dict in dicts -> parse culture dict |]
 
-                        | ComplexArray indexedData ->
-                            let maxIndex = Seq.max indexedData.Keys
+                        | ComplexArray indexedDicts ->
+                            let maxIndex = Seq.max indexedDicts.Keys
 
                             [|
                                 for i in 0..maxIndex ->
-                                    match indexedData.TryGetValue i with
+                                    match indexedDicts.TryGetValue i with
                                     | true, dict ->
                                         parse culture dict
                                     | _ ->
