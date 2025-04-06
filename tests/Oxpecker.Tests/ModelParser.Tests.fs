@@ -528,3 +528,43 @@ let ``parseModel<Sex option array> correctly parses array contained null`` () =
     let result = ModelParser.parseModel<Sex option array> culture values
 
     result |> should equal expected
+
+type [<Struct>] Direction = Left | Right
+
+[<Fact>]
+let ``parseModel<Direction Nullable> correctly parses 'Right'`` () =
+    let values = "right" |> String.toDict
+    let expected = Nullable Right
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Nullable<Direction>> culture values
+
+    result |> should equal expected
+
+type Baz = { Name: string option; Value: int Nullable }
+
+type Bar = { Bar: string | null; Baz: Baz }
+
+type Foo = { Foo: string; Bars: Bar option array }
+
+[<Fact>]
+let ``parseModel<Foo> correctly parses model`` () =
+    let modelData =
+        dict [
+            "Bars[0].Baz.Value", StringValues "0"
+            "Bars[0].Baz.Name", StringValues "abc"
+            "Bars[2].Bar", StringValues "Bar"
+            "Bars[2].Baz.Value", StringValues "1"
+        ]
+    let expected = {
+        Foo = Unchecked.defaultof<_>
+        Bars = [|
+            Some { Bar = null; Baz = { Name = Some "abc"; Value = Nullable 0 } }
+            None
+            Some { Bar = "Bar"; Baz = { Name = None; Value = Nullable 1 } }
+        |]
+    }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Foo> culture modelData
+    result |> should equal expected
