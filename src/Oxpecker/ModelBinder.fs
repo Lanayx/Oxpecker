@@ -119,7 +119,7 @@ module internal ModelParser =
             mkParserCached<'T> ctx
 
     and private mkParserCached<'T> (ctx: TypeGenerationContext) : Parser<'T> =
-        match ctx.InitOrGetCachedValue<CultureInfo -> IDictionary<string, StringValues> -> 'T>(fun c vs -> c.Value vs) with
+        match ctx.InitOrGetCachedValue<Parser<'T>>(fun c vs -> c.Value vs) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = mkParserAux<'T> ctx
