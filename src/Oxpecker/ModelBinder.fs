@@ -64,24 +64,24 @@ module internal ModelParser =
 
         let values =
             data
-            |> Seq.choose (fun item ->
-                match regex.Match(item.Key) with
+            |> Seq.choose (fun (KeyValue (key, value)) ->
+                match regex.Match(key) with
                 | m when m.Success ->
                     let index = int m.Groups.[1].Value
                     let key = m.Groups.[2].Value
-                    Some (index, key, item.Value)
+                    Some (index, key, value)
                 | _ -> None)
 
-        let data' =
+        let matchedData =
             values
             |> Seq.groupBy(fun (index, _, _) -> index)
             |> Seq.map (fun (i, items) ->
                 i, items |> Seq.map (fun (_, k, v) -> k, v) |> dict)
             |> dict
 
-        if data'.Count = 0 then None else
+        if matchedData.Count = 0 then None else
 
-        Some data'
+        Some matchedData
 
     let private (|ExactMatch|_|) (key: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(key) with
@@ -135,9 +135,9 @@ module internal ModelParser =
 
                     FieldSetter (fun culture data instance -> 
                         match data with
-                        | ExactMatch fieldShape.Label data'
-                        | PrefixMatch fieldShape.Label data' ->
-                            parse culture data' |> fieldShape.Set instance |> ignore
+                        | ExactMatch fieldShape.Label matchedData
+                        | PrefixMatch fieldShape.Label matchedData ->
+                            parse culture matchedData |> fieldShape.Set instance |> ignore
                         | _ -> ())
             }
 
