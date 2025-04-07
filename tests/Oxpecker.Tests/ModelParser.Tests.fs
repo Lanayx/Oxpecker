@@ -596,9 +596,9 @@ type Foo = { Foo: string; Bars: Bar option array }
 [<Fact>]
 let ``parseModel<Foo> parses the data with no seqential index elements`` () =
     let modelData = dict [
-        "Bars[0].Baz.Value", StringValues "0"
-        "Bars[0].Baz.Name", StringValues "abc"
         "Bars[2].Bar", StringValues "Bar"
+        "Bars[0].Baz.Name", StringValues "abc"
+        "Bars[0].Baz.Value", StringValues "0"
         "Bars[2].Baz.Value", StringValues "1"
     ]
     let expected = {
