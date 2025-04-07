@@ -12,10 +12,10 @@ open Microsoft.Extensions.Primitives
 type IModelBinder =
     abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
-module StringValues =
+module internal StringValues =
     let toDict(v: StringValues) = dict ["", v]
 
-module String =
+module internal String =
     let toDict(v: string | null) = StringValues v |> StringValues.toDict
 
 /// <summary>
@@ -45,15 +45,14 @@ module internal ModelParser =
         shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
 
     let private (|RawValue|_|) (dict: IDictionary<string, StringValues>) =
-        if dict.Count = 1 then
-            dict |> Seq.head |> _.Value |> Some
-        else
-            None
+        match dict |> Seq.tryExactlyOne with
+        | Some (KeyValue ("", value))-> Some value
+        | _ -> None
 
     let private (|RawValueQuick|) (dict: IDictionary<string, StringValues>) =
         match dict with
         | RawValue v -> v
-        | _ -> failwith ""
+        | _ -> failwith $"Dictionary %A{dict} should contain only one value but it has %i{dict.Count}."
 
     let private (|SimpleArray|_|) (data: IDictionary<string, StringValues>) =
         match data with
@@ -133,7 +132,7 @@ module internal ModelParser =
         let mkFieldSetter (shape : IShapeMember<'DeclaringType>) =
             shape.Accept { new IMemberVisitor<_, _> with
                 member _.Visit<'Field>(fieldShape) =
-                    let parse = mkParser<'Field>()
+                    let parse = mkParserCached<'Field> ctx
 
                     FieldSetter (fun culture data instance -> 
                         match data with
@@ -155,7 +154,7 @@ module internal ModelParser =
                     let parse = mkParserCached<'t> ctx
 
                     fun culture (RawValueQuick values) ->
-                        if values |> firstValue = null then Nullable() else
+                        if values |> firstValue |> isNull then Nullable() else
 
                         parse culture (StringValues.toDict values) |> Nullable
                     |> wrap
@@ -180,7 +179,7 @@ module internal ModelParser =
                     let parse = mkParserCached<'t> ctx
 
                     fun culture (RawValueQuick values) ->
-                        if values |> firstValue = null then [] else
+                        if values |> firstValue |> isNull then [] else
 
                         [ for value in values -> parse culture (String.toDict value) ]
                     |> wrap
