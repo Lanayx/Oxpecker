@@ -177,25 +177,26 @@ module internal ModelParser =
                 member _.Visit<'t>() = // 'T = 't list
                     let parse = mkParserCached<'t> ctx
 
-                    fun culture (RawValueQuick values) ->
-                        if values |> firstValue |> isNull then [] else
+                    fun culture data ->
+                        match data with
+                        | SimpleArray dicts ->
+                            [ for dict in dicts -> parse culture dict ]
 
-                        [ for value in values -> parse culture (String.toDict value) ]
+                        | ComplexArray indexedDicts ->
+                            let maxIndex = Seq.max indexedDicts.Keys
+
+                            [
+                                for i in 0..maxIndex ->
+                                    match indexedDicts.TryGetValue i with
+                                    | true, dict ->
+                                        parse culture dict
+                                    | _ ->
+                                        Unchecked.defaultof<_>
+                            ]
+
+                        | _ -> []
                     |> wrap
             }
-
-        | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
-            fun _ (RawValueQuick values) ->
-                match values |> firstValue with
-                | NonNull (UnionCase shape case) ->
-                    case.CreateUninitialized()
-
-                | Null when not shape.IsStructUnion ->
-                    Unchecked.defaultof<_>
-
-                | _ ->
-                    error values
-            |> wrap
 
         | Shape.Array shape when shape.Rank = 1 ->
             shape.Element.Accept { new ITypeVisitor<_> with
@@ -222,6 +223,48 @@ module internal ModelParser =
                         | _ -> [||]
                     |> wrap
             }
+
+        | Shape.Enumerable shape ->
+            shape.Element.Accept { new ITypeVisitor<_> with
+                member _.Visit<'t>() = // 'T = 't seq
+                    if Type.(<>)(typeof<'T>, typeof<'t seq>) then failwith $"Unsupported type {typeof<'T>}." else
+
+                    let parse = mkParserCached<'t> ctx
+
+                    fun culture data ->
+                        match data with
+                        | SimpleArray dicts ->
+                            seq { for dict in dicts -> parse culture dict }
+                            
+
+                        | ComplexArray indexedDicts ->
+                            let maxIndex = Seq.max indexedDicts.Keys
+                            seq {
+                                for i in 0..maxIndex ->
+                                    match indexedDicts.TryGetValue i with
+                                    | true, dict ->
+                                        parse culture dict
+                                    | _ ->
+                                        Unchecked.defaultof<_>
+                            }
+
+                        | _ -> Seq.empty
+                    |> wrap
+            }
+
+
+        | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
+            fun _ (RawValueQuick values) ->
+                match values |> firstValue with
+                | NonNull (UnionCase shape case) ->
+                    case.CreateUninitialized()
+
+                | Null when not shape.IsStructUnion ->
+                    Unchecked.defaultof<_>
+
+                | _ ->
+                    error values
+            |> wrap
 
         | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
             let fieldSetters = shape.Fields |> Array.map mkFieldSetter

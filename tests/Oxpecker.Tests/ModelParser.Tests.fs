@@ -586,12 +586,42 @@ let ``parseModel<BookType> fails to parse null`` () =
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
+[<Fact>]
+let ``parseModel<ResizeArray<BookType>> fails to parse null`` () =
+    let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
+    let expected = "Unsupported type System.Collections.Generic.List`1[Oxpecker.Tests.ModelParser+BookType]."
+    let culture = CultureInfo.InvariantCulture
+
+    let result() = ModelParser.parseModel<ResizeArray<BookType>> culture values |> ignore
+
+    result |> should (throwWithMessage expected) typeof<Exception>
+
+[<Fact>]
+let ``parseModel<BookType list> parses the data`` () =
+    let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
+    let expected = [ BookType.EBook; BookType.Hardcover; BookType.Paperback; enum<BookType> 100; BookType.Unknown ]
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType list> culture values
+
+    result |> should equal expected
+
+[<Fact>]
+let ``parseModel<BookType seq> parses the data`` () =
+    let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
+    let expected = seq { BookType.EBook; BookType.Hardcover; BookType.Paperback; enum<BookType> 100; BookType.Unknown }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<BookType seq> culture values
+
+    result |> should equalSeq expected
+
 type Baz = { Name: string option; Value: int Nullable }
 
 [<NoEquality; NoComparison>]
 type Bar = { Bar: string | null; Baz: Baz | null }
 
-type Foo = { Foo: string; Bars: Bar option array }
+type Foo = { Foo: string; Bars: Bar option seq }
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with no seqential index elements`` () =
