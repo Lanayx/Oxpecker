@@ -44,9 +44,6 @@ module internal ModelParser =
     let private (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
 
-    let private (|Empty|_|) (dict: IDictionary<string, StringValues>) =
-        dict.Count = 0
-
     let private (|RawValue|_|) (dict: IDictionary<string, StringValues>) =
         if dict.Count = 1 then
             dict |> Seq.head |> _.Value |> Some
@@ -70,11 +67,11 @@ module internal ModelParser =
             data
             |> Seq.choose (fun item ->
                 match regex.Match(item.Key) with
-                    | m when m.Success ->
-                        let index = int m.Groups.[1].Value
-                        let key = m.Groups.[2].Value
-                        Some (index, key, item.Value)
-                    | _ -> None)
+                | m when m.Success ->
+                    let index = int m.Groups.[1].Value
+                    let key = m.Groups.[2].Value
+                    Some (index, key, item.Value)
+                | _ -> None)
 
         let data' =
             values
@@ -171,7 +168,6 @@ module internal ModelParser =
 
                     fun culture data ->
                         match data with
-                        | Empty -> None
                         | RawValue values when values |> firstValue |> isNull ->
                             None
                         | _ ->  parse culture data |> Some
@@ -230,7 +226,7 @@ module internal ModelParser =
             }
 
         | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
-                let fieldSetters = shape.Fields |> Seq.map mkFieldSetter
+                let fieldSetters = shape.Fields |> Array.map mkFieldSetter
 
                 fun culture data ->
                     let instance = shape.CreateUninitialized()
