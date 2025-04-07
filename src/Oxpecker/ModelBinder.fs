@@ -1,4 +1,4 @@
-﻿namespace Oxpecker
+namespace Oxpecker
 
 open System
 open System.Collections.Generic
@@ -119,7 +119,7 @@ module internal ModelParser =
             mkParserCached<'T> ctx
 
     and private mkParserCached<'T> (ctx: TypeGenerationContext) : Parser<'T> =
-        match ctx.InitOrGetCachedValue<Parser<'T>>(fun c vs -> c.Value vs) with
+        match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell culture data -> cell.Value culture data) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = mkParserAux<'T> ctx
