@@ -378,7 +378,7 @@ let ``ModelParser.parse with complete composite model data`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<string> correctly parses null`` () =
+let ``parseModel<string> parses null`` () =
     let values =  Unchecked.defaultof<string> |> String.toDict
     let expected = Unchecked.defaultof<string>
     let culture = CultureInfo.InvariantCulture
@@ -388,7 +388,7 @@ let ``parseModel<string> correctly parses null`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<string> correctly parses empty string`` () =
+let ``parseModel<string> parses empty string`` () =
     let values = String.Empty |> String.toDict
     let expected = String.Empty
     let culture = CultureInfo.InvariantCulture
@@ -428,7 +428,7 @@ let ``parseModel<int64> fails to parse null`` () =
     result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
-let ``parseModel<Nullable<int>> correctly parses null`` () =
+let ``parseModel<Nullable<int>> parses null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
     let expected = Nullable()
     let culture = CultureInfo.InvariantCulture
@@ -438,7 +438,7 @@ let ``parseModel<Nullable<int>> correctly parses null`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<Nullable<int>> correctly parses 1`` () =
+let ``parseModel<Nullable<int>> parses 1`` () =
     let values = "1" |> String.toDict
     let expected = Nullable 1
     let culture = CultureInfo.InvariantCulture
@@ -448,7 +448,7 @@ let ``parseModel<Nullable<int>> correctly parses 1`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<decimal option> correctly parses null`` () =
+let ``parseModel<decimal option> parses null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
     let expected = None
     let culture = CultureInfo.InvariantCulture
@@ -458,7 +458,7 @@ let ``parseModel<decimal option> correctly parses null`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<decimal option> correctly parses 100`` () =
+let ``parseModel<decimal option> parses 100`` () =
     let values = "100" |> String.toDict
     let expected = Some 100M
     let culture = CultureInfo.InvariantCulture
@@ -468,7 +468,7 @@ let ``parseModel<decimal option> correctly parses 100`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<string option> correctly parses null`` () =
+let ``parseModel<string option> parses null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
     let expected = None
     let culture = CultureInfo.InvariantCulture
@@ -478,7 +478,7 @@ let ``parseModel<string option> correctly parses null`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<string option> correctly parses empty string`` () =
+let ``parseModel<string option> parses empty string`` () =
     let values = String.Empty |> String.toDict
     let expected = Some String.Empty
     let culture = CultureInfo.InvariantCulture
@@ -488,7 +488,7 @@ let ``parseModel<string option> correctly parses empty string`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<string option> correctly parses 'some-value'`` () =
+let ``parseModel<string option> parses 'some-value'`` () =
     let values = "some-value" |> String.toDict
     let expected = Some "some-value"
     let culture = CultureInfo.InvariantCulture
@@ -498,7 +498,7 @@ let ``parseModel<string option> correctly parses 'some-value'`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<Sex option> correctly parses 'Female'`` () =
+let ``parseModel<Sex option> parses 'Female'`` () =
     let values = "Female" |> String.toDict
     let expected = Some Female
     let culture = CultureInfo.InvariantCulture
@@ -508,7 +508,7 @@ let ``parseModel<Sex option> correctly parses 'Female'`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<Sex array> correctly parses the array containing null`` () =
+let ``parseModel<Sex array> parses the array containing null`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
@@ -519,7 +519,7 @@ let ``parseModel<Sex array> correctly parses the array containing null`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<Sex option array> correctly parses the array containing null`` () =
+let ``parseModel<Sex option array> parses the array containing null`` () =
     let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let values = xs |> StringValues |> StringValues.toDict
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
@@ -532,7 +532,7 @@ let ``parseModel<Sex option array> correctly parses the array containing null`` 
 type [<Struct>] Direction = Left | Right
 
 [<Fact>]
-let ``parseModel<Direction Nullable> correctly parses 'Right'`` () =
+let ``parseModel<Direction Nullable> parses 'Right'`` () =
     let values = "right" |> String.toDict
     let expected = Nullable Right
     let culture = CultureInfo.InvariantCulture
@@ -544,7 +544,7 @@ let ``parseModel<Direction Nullable> correctly parses 'Right'`` () =
 type BookType = Unknown = 0 | Hardcover = 1 | Paperback = 2 | EBook = 3
 
 [<Fact>]
-let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
+let ``parseModel<BookType> parses 'PaperBack'`` () =
     let modelData =
         dict [
             "", StringValues "Paperback"
@@ -557,7 +557,7 @@ let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<BookType> correctly parses '3'`` () =
+let ``parseModel<BookType> parses '3'`` () =
     let modelData = "3" |> String.toDict
     let expected = BookType.EBook
     let culture = CultureInfo.InvariantCulture
@@ -567,7 +567,7 @@ let ``parseModel<BookType> correctly parses '3'`` () =
     result |> should equal expected
 
 [<Fact>]
-let ``parseModel<BookType> correctly parses '100'`` () =
+let ``parseModel<BookType> parses '100'`` () =
     let modelData = "100" |> String.toDict
 
     let expected = enum<BookType> 100
@@ -589,12 +589,13 @@ let ``parseModel<BookType> fails to parse null`` () =
 
 type Baz = { Name: string option; Value: int Nullable }
 
+[<NoEquality; NoComparison>]
 type Bar = { Bar: string | null; Baz: Baz | null }
 
 type Foo = { Foo: string; Bars: Bar option array }
 
 [<Fact>]
-let ``parseModel<Foo> correctly parses the model with no seqential index elements`` () =
+let ``parseModel<Foo> parses the data with no seqential index elements`` () =
     let modelData =
         dict [
             "Bars[0].Baz.Value", StringValues "0"
@@ -613,10 +614,11 @@ let ``parseModel<Foo> correctly parses the model with no seqential index element
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Foo> culture modelData
-    result |> should equal expected
+
+    Assert.Equivalent(expected, result)
 
 [<Fact>]
-let ``parseModel<Foo> correctly parses the model with no matched prefix`` () =
+let ``parseModel<Foo> parses the data with no matched prefix`` () =
     let modelData =
         dict [
             "Barss[0].Baz.Value", StringValues "0"
@@ -625,34 +627,56 @@ let ``parseModel<Foo> correctly parses the model with no matched prefix`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Foo> culture modelData
-    result |> should equal expected
+
+    Assert.Equivalent(expected, result)
 
 [<Fact>]
-let ``parseModel<Foo> correctly parses the model with index access for the type with no index access`` () =
+let ``parseModel<Foo> parses the data with inproper index access`` () =
     let modelData =
         dict [
             "Bars[0].Baz[0].Value", StringValues "0"
         ]
-    let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
+    let expected = {
+        Foo = Unchecked.defaultof<_>
+        Bars = [| Some { Bar  = null; Baz = { Name = None; Value = Nullable() } } |]
+    }
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Foo> culture modelData
-    result |> should equal expected
+
+    Assert.Equivalent(expected, result)
 
 [<Fact>]
-let ``parseModel<Foo> correctly parses the model with no index access for the type with index access`` () =
+let ``parseModel<Foo> parses the data with partially incorrect key`` () =
+    let modelData =
+        dict [
+            "Bars[0].Test.Descr", StringValues "0"
+        ]
+    let expected = {
+        Foo = Unchecked.defaultof<_>
+        Bars = [| Some { Bar  = null; Baz = null } |]
+    }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Foo> culture modelData
+
+    Assert.Equivalent(expected, result)
+
+[<Fact>]
+let ``parseModel<Foo> parses the data with missing index`` () =
     let modelData =
         dict [
             "Bars.Baz.Value", StringValues "0"
         ]
-    let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
+    let expected = { Foo = Unchecked.defaultof<_>; Bars = [||] }
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Foo> culture modelData
-    result |> should equal expected
+
+    Assert.Equivalent(expected, result)
 
 [<Fact>]
-let ``parseModel<Bar> correctly parses the model with no matched prefix`` () =
+let ``parseModel<Bar> parses the data with no matched prefix`` () =
     let modelData =
         dict [
             "Bazz.Value", StringValues "0"
@@ -661,5 +685,5 @@ let ``parseModel<Bar> correctly parses the model with no matched prefix`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Bar> culture modelData
-    result.Bar |> should equal expected.Bar
-    result.Baz |> should equal expected.Baz
+
+    Assert.Equivalent(expected, result)
