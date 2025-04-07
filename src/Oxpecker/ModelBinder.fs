@@ -126,8 +126,7 @@ module internal ModelParser =
             ctx.Commit t v
 
     and private mkParserAux<'T> (ctx: TypeGenerationContext) : Parser<'T> =
-        let wrap (v: Parser<'t>) = unbox<Parser<'T>> v 
-        let typeConverter = TypeDescriptor.GetConverter(typeof<'T>);
+        let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
 
         let mkFieldSetter (shape : IShapeMember<'DeclaringType>) =
             shape.Accept { new IMemberVisitor<_, _> with
@@ -225,17 +224,19 @@ module internal ModelParser =
             }
 
         | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
-                let fieldSetters = shape.Fields |> Array.map mkFieldSetter
+            let fieldSetters = shape.Fields |> Array.map mkFieldSetter
 
-                fun culture data ->
-                    let instance = shape.CreateUninitialized()
+            fun culture data ->
+                let instance = shape.CreateUninitialized()
                     
-                    for fieldSetter in fieldSetters do
-                        fieldSetter.Invoke(culture, data, instance)
+                for fieldSetter in fieldSetters do
+                    fieldSetter.Invoke(culture, data, instance)
 
-                    instance
+                instance
 
         | shape ->
+            let typeConverter = TypeDescriptor.GetConverter(typeof<'T>)
+            
             fun culture (RawValueQuick values) ->
                 match values |> firstValue with
                 | NonNull value ->
