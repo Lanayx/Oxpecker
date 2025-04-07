@@ -547,7 +547,7 @@ type BookType = Unknown = 0 | Hardcover = 1 | Paperback = 2 | EBook = 3
 let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
     let modelData =
         dict [
-            "BookType", StringValues "Paperback"
+            "", StringValues "Paperback"
         ]
     let expected = BookType.Paperback
     let culture = CultureInfo.InvariantCulture
@@ -558,10 +558,7 @@ let ``parseModel<BookType> correctly parses 'PaperBack'`` () =
 
 [<Fact>]
 let ``parseModel<BookType> correctly parses '3'`` () =
-    let modelData =
-        dict [
-            "BookType", StringValues "3"
-        ]
+    let modelData = "3" |> String.toDict
     let expected = BookType.EBook
     let culture = CultureInfo.InvariantCulture
 
@@ -571,11 +568,9 @@ let ``parseModel<BookType> correctly parses '3'`` () =
 
 [<Fact>]
 let ``parseModel<BookType> correctly parses '100'`` () =
-    let modelData =
-        dict [
-            "BookType", StringValues "3"
-        ]
-    let expected = BookType.EBook
+    let modelData = "100" |> String.toDict
+
+    let expected = enum<BookType> 100
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<BookType> culture modelData
