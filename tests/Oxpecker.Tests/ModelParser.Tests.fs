@@ -569,7 +569,6 @@ let ``parseModel<BookType> parses '3'`` () =
 [<Fact>]
 let ``parseModel<BookType> parses '100'`` () =
     let modelData = "100" |> String.toDict
-
     let expected = enum<BookType> 100
     let culture = CultureInfo.InvariantCulture
 
@@ -596,13 +595,12 @@ type Foo = { Foo: string; Bars: Bar option array }
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with no seqential index elements`` () =
-    let modelData =
-        dict [
-            "Bars[0].Baz.Value", StringValues "0"
-            "Bars[0].Baz.Name", StringValues "abc"
-            "Bars[2].Bar", StringValues "Bar"
-            "Bars[2].Baz.Value", StringValues "1"
-        ]
+    let modelData = dict [
+        "Bars[0].Baz.Value", StringValues "0"
+        "Bars[0].Baz.Name", StringValues "abc"
+        "Bars[2].Bar", StringValues "Bar"
+        "Bars[2].Baz.Value", StringValues "1"
+    ]
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [|
@@ -619,10 +617,9 @@ let ``parseModel<Foo> parses the data with no seqential index elements`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with no matched prefix`` () =
-    let modelData =
-        dict [
-            "Barss[0].Baz.Value", StringValues "0"
-        ]
+    let modelData = dict [
+        "Barss[0].Baz.Value", StringValues "0"
+    ]
     let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
     let culture = CultureInfo.InvariantCulture
 
@@ -632,10 +629,9 @@ let ``parseModel<Foo> parses the data with no matched prefix`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with inproper index access`` () =
-    let modelData =
-        dict [
-            "Bars[0].Baz[0].Value", StringValues "0"
-        ]
+    let modelData = dict [
+        "Bars[0].Baz[0].Value", StringValues "0"
+    ]
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [| Some { Bar  = null; Baz = { Name = None; Value = Nullable() } } |]
@@ -648,10 +644,9 @@ let ``parseModel<Foo> parses the data with inproper index access`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with partially incorrect key`` () =
-    let modelData =
-        dict [
-            "Bars[0].Test.Descr", StringValues "0"
-        ]
+    let modelData = dict [
+        "Bars[0].Test.Descr", StringValues "0"
+    ]
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [| Some { Bar  = null; Baz = null } |]
@@ -664,10 +659,9 @@ let ``parseModel<Foo> parses the data with partially incorrect key`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with missing index`` () =
-    let modelData =
-        dict [
-            "Bars.Baz.Value", StringValues "0"
-        ]
+    let modelData = dict [
+        "Bars.Baz.Value", StringValues "0"
+    ]
     let expected = { Foo = Unchecked.defaultof<_>; Bars = [||] }
     let culture = CultureInfo.InvariantCulture
 
@@ -677,10 +671,9 @@ let ``parseModel<Foo> parses the data with missing index`` () =
 
 [<Fact>]
 let ``parseModel<Bar> parses the data with no matched prefix`` () =
-    let modelData =
-        dict [
-            "Bazz.Value", StringValues "0"
-        ]
+    let modelData = dict [
+        "Bazz.Value", StringValues "0"
+    ]
     let expected = { Bar = null; Baz = null }
     let culture = CultureInfo.InvariantCulture
 
