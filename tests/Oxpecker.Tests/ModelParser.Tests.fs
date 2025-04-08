@@ -711,15 +711,69 @@ let ``parseModel<Bar> parses the data with no matched prefix`` () =
 
     Assert.Equivalent(expected, result)
 
+type AnonymousType1 = {| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |} |}
+
 [<Fact>]
-let ``parseModel<{| Value: {| Value: {| Name: string; Id: int |} |} |} |}> parses the data`` () =
+let ``parseModel<{| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |} |}> parses the data`` () =
     let modelData = dict [
         "Value.Value.Value.Name", StringValues "foo"
         "Value.Value.Value.Id", StringValues "111"
     ]
-    let expected = {| Value =  {| Value = {| Value = {| Name = "foo"; Id = 111 |} |} |} |}
+    let expected : AnonymousType1 = {| Value =  {| Value = {| Value = {| Id = 111; Name = "foo" |} |} |} |}
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<{| Value: {| Value: {| Value: {| Name: string; Id: int |} |} |} |}> culture modelData
+    let result = ModelParser.parseModel<AnonymousType1> culture modelData
+
+    result |> should equal expected
+
+type AnonymousType2 = {|
+    Values: {|
+        Value: {|
+            Values: {|
+                Value: {| Id: int; Name: string | null |}
+            |} array
+        |}
+    |} array
+|}
+
+[<Fact>]
+let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: string |} array |} |} |} array |}> parses the data`` () =
+    let modelData = dict [
+        "Values[2].Value.Values[2].Value.Name", StringValues "foo"
+        "Values[2].Value.Values[2].Value.Id", StringValues "222"
+        "Values[2].Value.Values[0].Value.Id", StringValues "111"
+        "Values[1].Value.Values[0].Value.Name", StringValues "bar"
+
+    ]
+    let expected : AnonymousType2 =
+        {|
+            Values =
+            [|
+                Unchecked.defaultof<_>
+                {|
+                    Value =
+                    {|
+                        Values =
+                        [|
+                            {| Value = {| Id = 0; Name = "bar" |} |}
+                        |]
+                    |}
+                |}
+                {|
+                    Value =
+                    {|
+                        Values =
+                        [|
+                            {| Value = {| Id = 111; Name = null |} |}
+                            Unchecked.defaultof<_>
+                            {| Value = {| Id = 222; Name = "foo" |} |}
+                        |]
+                    |}
+                |}
+            |]
+        |}
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<AnonymousType2> culture modelData
 
     result |> should equal expected
