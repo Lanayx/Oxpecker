@@ -740,9 +740,9 @@ type AnonymousType2 = {|
 let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: string |} array |} |} |} array |}> parses the data`` () =
     let modelData = dict [
         "Values[2].Value.Values[2].Value.Name", StringValues "foo"
-        "Values[2].Value.Values[2].Value.Id", StringValues "222"
         "Values[2].Value.Values[0].Value.Id", StringValues "111"
         "Values[1].Value.Values[0].Value.Name", StringValues "bar"
+        "Values[2].Value.Values[2].Value.Id", StringValues "222"
 
     ]
     let expected : AnonymousType2 =

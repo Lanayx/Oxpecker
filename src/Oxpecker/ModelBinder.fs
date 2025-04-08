@@ -40,10 +40,10 @@ module internal ModelParser =
 
         failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
-    let private unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
-        String.Equals( case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
-
     let private (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
+        let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
+            String.Equals( case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
+
         shape.UnionCases |> Array.tryFind (unionCaseExists caseName)
 
     let private (|RawValue|_|) (dict: IDictionary<string, StringValues>) =
