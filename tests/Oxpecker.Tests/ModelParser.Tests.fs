@@ -589,7 +589,7 @@ let ``parseModel<BookType> fails to parse null`` () =
 [<Fact>]
 let ``parseModel<ResizeArray<BookType>> fails to parse null`` () =
     let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
-    let expected = "Unsupported type System.Collections.Generic.List`1[Oxpecker.Tests.ModelParser+BookType]."
+    let expected = "Unsupported type 'System.Collections.Generic.List`1[Oxpecker.Tests.ModelParser+BookType]'."
     let culture = CultureInfo.InvariantCulture
 
     let result() = ModelParser.parseModel<ResizeArray<BookType>> culture values |> ignore

@@ -30,6 +30,8 @@ module internal ModelParser =
 
     let private firstValue (rawValues: StringValues) = if rawValues.Count = 0 then null else rawValues[0]
 
+    let private unsupported ty = failwith $"Unsupported type '{ty}'."
+
     let private error (values: StringValues) : 'T =
         let value =
             match values |> firstValue with
@@ -227,7 +229,7 @@ module internal ModelParser =
         | Shape.Enumerable shape ->
             shape.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() = // 'T = 't seq
-                    if Type.(<>)(typeof<'T>, typeof<'t seq>) then failwith $"Unsupported type {typeof<'T>}." else
+                    if Type.(<>)(typeof<'T>, typeof<'t seq>) then unsupported typeof<'T> else
 
                     let parse = mkParserCached<'t> ctx
 
@@ -235,7 +237,6 @@ module internal ModelParser =
                         match data with
                         | SimpleArray dicts ->
                             seq { for dict in dicts -> parse culture dict }
-                            
 
                         | ComplexArray indexedDicts ->
                             let maxIndex = Seq.max indexedDicts.Keys
@@ -251,7 +252,6 @@ module internal ModelParser =
                         | _ -> Seq.empty
                     |> wrap
             }
-
 
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
             fun _ (RawValueQuick values) ->
@@ -277,7 +277,7 @@ module internal ModelParser =
 
                 instance
 
-        | shape ->
+        | Shape.Struct shape ->
             let typeConverter = TypeDescriptor.GetConverter(typeof<'T>)
             
             fun culture (RawValueQuick values) ->
@@ -285,17 +285,16 @@ module internal ModelParser =
                 | NonNull value ->
                     try
                         typeConverter.ConvertFromString(null, culture, value) |> unbox
-                    with _ ->
-                        error values
-
-                | Null when not shape.Type.IsValueType  -> Unchecked.defaultof<_>
+                    with _ -> error values
 
                 | _ -> error values
+
+        | _ -> unsupported typeof<'T>
 
     and private cache : TypeCache = TypeCache()
 
     let rec internal parseModel<'T> =
-        let parse = mkParser<'T>()
+        let parse = mkParser<'T> ()
         fun (culture: CultureInfo) (data: IDictionary<string, StringValues>) ->
             parse culture data
 
