@@ -114,7 +114,8 @@ module internal rec AST =
     let (|TagWithChildren|_|) =
         function
         | CallTagWithChildren(tagName, callInfo, range)
-        | Let(_, CallTagWithChildren(tagName, callInfo, range), _) -> TagInfo.WithChildren(tagName, callInfo, range) |> Some
+        | Let(_, CallTagWithChildren(tagName, callInfo, range), _) ->
+            TagInfo.WithChildren(tagName, callInfo, range) |> Some
         | _ -> None
 
     /// <summary>
@@ -134,7 +135,8 @@ module internal rec AST =
     let (|TagNoChildrenWithProps|_|) =
         function
         | CallTagNoChildren(tagName, range) -> TagInfo.NoChildren(tagName, [], range) |> Some
-        | Let(_, CallTagNoChildren(tagName, range), Sequential exprs) -> TagInfo.NoChildren(tagName, exprs, range) |> Some
+        | Let(_, CallTagNoChildren(tagName, range), Sequential exprs) ->
+            TagInfo.NoChildren(tagName, exprs, range) |> Some
         | Let(_, CallTagNoChildren(tagName, range), _) -> TagInfo.NoChildren(tagName, [], range) |> Some
         | _ -> None
 
@@ -144,8 +146,12 @@ module internal rec AST =
     /// <returns><c>TagInfo.NoChildren</c></returns>
     let (|CallTagNoChildrenWithHandler|_|) (expr: Expr) =
         match expr with
-        | Call(HtmlElementExtension, { Args = CallLibraryTagImport(imp, _) :: _ }, _, range) ->
-            TagInfo.NoChildren(LibraryImport imp, [ expr ], range) |> Some
+        | Call(HtmlElementExtension,
+               {
+                   Args = CallLibraryTagImport(imp, _) :: _
+               },
+               _,
+               range) -> TagInfo.NoChildren(LibraryImport imp, [ expr ], range) |> Some
         | Call(HtmlElementExtension,
                {
                    Args = Let(_, CallLibraryTagImport(imp, _), Sequential props) :: _
@@ -190,8 +196,7 @@ module internal rec AST =
 
     let (|LibraryTagImport|_|) =
         function
-        | CallLibraryTagImport(imp, range) ->
-            TagInfo.NoChildren(LibraryImport imp, [], range) |> Some
+        | CallLibraryTagImport(imp, range) -> TagInfo.NoChildren(LibraryImport imp, [], range) |> Some
         | Let(_, CallLibraryTagImport(imp, range), Sequential exprs) ->
             TagInfo.NoChildren(LibraryImport imp, exprs, range) |> Some
         | Let(_, CallLibraryTagImport(imp, range), CallTagWithChildren(_, callInfo, _)) ->
@@ -490,8 +495,7 @@ module internal rec AST =
         | CallTagNoChildrenWithHandler tagInfo
         | Let(IdentElement, CallTagNoChildrenWithHandler tagInfo, _)
         | TagWithChildren tagInfo
-        | LibraryTagImport tagInfo ->
-            transformTagInfo tagInfo
+        | LibraryTagImport tagInfo -> transformTagInfo tagInfo
         | Let(name, value, expr) -> Let(name, value, (transform expr))
         | Sequential expressions ->
             // transform only the last expression
