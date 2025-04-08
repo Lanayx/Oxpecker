@@ -211,9 +211,13 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
         ]
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<Model> culture modelData |> ignore
+    let result () =
+        ModelParser.parseModel<Model> culture modelData |> ignore
 
-    result |> should (throwWithMessage "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'.") typeof<Exception>
+    result
+    |> should
+        (throwWithMessage "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'.")
+        typeof<Exception>
 
 [<Fact>]
 let ``ModelParser.parse with complete model data but wrong data`` () =
@@ -236,7 +240,8 @@ let ``ModelParser.parse with complete model data but wrong data`` () =
         ]
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<Model> culture modelData |> ignore
+    let result () =
+        ModelParser.parseModel<Model> culture modelData |> ignore
 
     result
     |> should (throwWithMessage "Could not parse value 'wrong' to type 'System.DateTime'.") typeof<Exception>
@@ -379,7 +384,7 @@ let ``ModelParser.parse with complete composite model data`` () =
 
 [<Fact>]
 let ``parseModel<string> parses null`` () =
-    let values =  Unchecked.defaultof<string> |> String.toDict
+    let values = Unchecked.defaultof<string> |> String.toDict
     let expected = Unchecked.defaultof<string>
     let culture = CultureInfo.InvariantCulture
 
@@ -403,7 +408,8 @@ let ``parseModel<float> fails to parse 'some-value'`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Double'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<float> culture values |> ignore
+    let result () =
+        ModelParser.parseModel<float> culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
@@ -413,7 +419,8 @@ let ``parseModel<int> fails to parse 'some-value'`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Int32'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<int> culture values |> ignore
+    let result () =
+        ModelParser.parseModel<int> culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
@@ -423,7 +430,8 @@ let ``parseModel<int64> fails to parse null`` () =
     let expected = "Could not parse value 'null' to type 'System.Int64'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<int64> culture values |> ignore
+    let result () =
+        ModelParser.parseModel<int64> culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
@@ -529,7 +537,10 @@ let ``parseModel<Sex option array> parses the array containing null`` () =
 
     result |> should equal expected
 
-type [<Struct>] Direction = Left | Right
+[<Struct>]
+type Direction =
+    | Left
+    | Right
 
 [<Fact>]
 let ``parseModel<Direction Nullable> parses 'Right'`` () =
@@ -541,14 +552,15 @@ let ``parseModel<Direction Nullable> parses 'Right'`` () =
 
     result |> should equal expected
 
-type BookType = Unknown = 0 | Hardcover = 1 | Paperback = 2 | EBook = 3
+type BookType =
+    | Unknown = 0
+    | Hardcover = 1
+    | Paperback = 2
+    | EBook = 3
 
 [<Fact>]
 let ``parseModel<BookType> parses 'PaperBack'`` () =
-    let modelData =
-        dict [
-            "", StringValues "Paperback"
-        ]
+    let modelData = dict [ "", StringValues "Paperback" ]
     let expected = BookType.Paperback
     let culture = CultureInfo.InvariantCulture
 
@@ -579,17 +591,29 @@ let ``parseModel<BookType> parses '100'`` () =
 [<Fact>]
 let ``parseModel<BookType> fails to parse null`` () =
     let values = Unchecked.defaultof<string> |> String.toDict
-    let expected = "Could not parse value 'null' to type 'Oxpecker.Tests.ModelParser+BookType'."
+    let expected =
+        "Could not parse value 'null' to type 'Oxpecker.Tests.ModelParser+BookType'."
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<BookType> culture values |> ignore
+    let result () =
+        ModelParser.parseModel<BookType> culture values |> ignore
 
     result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
 let ``parseModel<ResizeArray<BookType>> parses the data`` () =
-    let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
-    let expected = ResizeArray [ BookType.EBook; BookType.Hardcover; BookType.Paperback; enum<BookType> 100; BookType.Unknown ]
+    let values =
+        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
+        |> StringValues
+        |> StringValues.toDict
+    let expected =
+        ResizeArray [
+            BookType.EBook
+            BookType.Hardcover
+            BookType.Paperback
+            enum<BookType> 100
+            BookType.Unknown
+        ]
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<ResizeArray<BookType>> culture values
@@ -598,8 +622,17 @@ let ``parseModel<ResizeArray<BookType>> parses the data`` () =
 
 [<Fact>]
 let ``parseModel<BookType list> parses the data`` () =
-    let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
-    let expected = [ BookType.EBook; BookType.Hardcover; BookType.Paperback; enum<BookType> 100; BookType.Unknown ]
+    let values =
+        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
+        |> StringValues
+        |> StringValues.toDict
+    let expected = [
+        BookType.EBook
+        BookType.Hardcover
+        BookType.Paperback
+        enum<BookType> 100
+        BookType.Unknown
+    ]
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<BookType list> culture values
@@ -608,15 +641,28 @@ let ``parseModel<BookType list> parses the data`` () =
 
 [<Fact>]
 let ``parseModel<BookType seq> parses the data`` () =
-    let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
-    let expected = seq { BookType.EBook; BookType.Hardcover; BookType.Paperback; enum<BookType> 100; BookType.Unknown }
+    let values =
+        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
+        |> StringValues
+        |> StringValues.toDict
+    let expected =
+        seq {
+            BookType.EBook
+            BookType.Hardcover
+            BookType.Paperback
+            enum<BookType> 100
+            BookType.Unknown
+        }
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<BookType seq> culture values
 
     result |> should equalSeq expected
 
-type Baz = { Name: string option; Value: int Nullable }
+type Baz = {
+    Name: string option
+    Value: int Nullable
+}
 
 [<NoEquality; NoComparison>]
 type Bar = { Bar: string | null; Baz: Baz | null }
@@ -625,18 +671,28 @@ type Foo = { Foo: string; Bars: Bar option seq }
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with no seqential index elements`` () =
-    let modelData = dict [
-        "Bars[2].Bar", StringValues "Bar"
-        "Bars[0].Baz.Name", StringValues "abc"
-        "Bars[0].Baz.Value", StringValues "0"
-        "Bars[2].Baz.Value", StringValues "1"
-    ]
+    let modelData =
+        dict [
+            "Bars[2].Bar", StringValues "Bar"
+            "Bars[0].Baz.Name", StringValues "abc"
+            "Bars[0].Baz.Value", StringValues "0"
+            "Bars[2].Baz.Value", StringValues "1"
+        ]
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [|
-            Some { Bar = null; Baz = { Name = Some "abc"; Value = Nullable 0 } }
+            Some {
+                Bar = null
+                Baz = {
+                    Name = Some "abc"
+                    Value = Nullable 0
+                }
+            }
             None
-            Some { Bar = "Bar"; Baz = { Name = None; Value = Nullable 1 } }
+            Some {
+                Bar = "Bar"
+                Baz = { Name = None; Value = Nullable 1 }
+            }
         |]
     }
     let culture = CultureInfo.InvariantCulture
@@ -647,10 +703,11 @@ let ``parseModel<Foo> parses the data with no seqential index elements`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with no matched prefix`` () =
-    let modelData = dict [
-        "Barss[0].Baz.Value", StringValues "0"
-    ]
-    let expected = { Foo = Unchecked.defaultof<_>; Bars = Unchecked.defaultof<_> }
+    let modelData = dict [ "Barss[0].Baz.Value", StringValues "0" ]
+    let expected = {
+        Foo = Unchecked.defaultof<_>
+        Bars = Unchecked.defaultof<_>
+    }
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Foo> culture modelData
@@ -659,12 +716,15 @@ let ``parseModel<Foo> parses the data with no matched prefix`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with inproper index access`` () =
-    let modelData = dict [
-        "Bars[0].Baz[0].Value", StringValues "0"
-    ]
+    let modelData = dict [ "Bars[0].Baz[0].Value", StringValues "0" ]
     let expected = {
         Foo = Unchecked.defaultof<_>
-        Bars = [| Some { Bar  = null; Baz = { Name = None; Value = Nullable() } } |]
+        Bars = [|
+            Some {
+                Bar = null
+                Baz = { Name = None; Value = Nullable() }
+            }
+        |]
     }
     let culture = CultureInfo.InvariantCulture
 
@@ -674,12 +734,10 @@ let ``parseModel<Foo> parses the data with inproper index access`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with partially incorrect key`` () =
-    let modelData = dict [
-        "Bars[0].Test.Descr", StringValues "0"
-    ]
+    let modelData = dict [ "Bars[0].Test.Descr", StringValues "0" ]
     let expected = {
         Foo = Unchecked.defaultof<_>
-        Bars = [| Some { Bar  = null; Baz = null } |]
+        Bars = [| Some { Bar = null; Baz = null } |]
     }
     let culture = CultureInfo.InvariantCulture
 
@@ -689,10 +747,11 @@ let ``parseModel<Foo> parses the data with partially incorrect key`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with missing index`` () =
-    let modelData = dict [
-        "Bars.Baz.Value", StringValues "0"
-    ]
-    let expected = { Foo = Unchecked.defaultof<_>; Bars = [||] }
+    let modelData = dict [ "Bars.Baz.Value", StringValues "0" ]
+    let expected = {
+        Foo = Unchecked.defaultof<_>
+        Bars = [||]
+    }
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Foo> culture modelData
@@ -701,9 +760,7 @@ let ``parseModel<Foo> parses the data with missing index`` () =
 
 [<Fact>]
 let ``parseModel<Bar> parses the data with no matched prefix`` () =
-    let modelData = dict [
-        "Bazz.Value", StringValues "0"
-    ]
+    let modelData = dict [ "Bazz.Value", StringValues "0" ]
     let expected = { Bar = null; Baz = null }
     let culture = CultureInfo.InvariantCulture
 
@@ -711,15 +768,27 @@ let ``parseModel<Bar> parses the data with no matched prefix`` () =
 
     Assert.Equivalent(expected, result)
 
-type AnonymousType1 = {| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |} |}
+type AnonymousType1 = {|
+    Value:
+        {|
+            Value: {| Value: {| Id: int; Name: string |} |}
+        |}
+|}
 
 [<Fact>]
 let ``parseModel<{| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |} |}> parses the data`` () =
-    let modelData = dict [
-        "Value.Value.Value.Name", StringValues "foo"
-        "Value.Value.Value.Id", StringValues "111"
-    ]
-    let expected : AnonymousType1 = {| Value =  {| Value = {| Value = {| Id = 111; Name = "foo" |} |} |} |}
+    let modelData =
+        dict [
+            "Value.Value.Value.Name", StringValues "foo"
+            "Value.Value.Value.Id", StringValues "111"
+        ]
+    let expected: AnonymousType1 = {|
+        Value = {|
+            Value = {|
+                Value = {| Id = 111; Name = "foo" |}
+            |}
+        |}
+    |}
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<AnonymousType1> culture modelData
@@ -727,51 +796,53 @@ let ``parseModel<{| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |}
     result |> should equal expected
 
 type AnonymousType2 = {|
-    Values: {|
-        Value: {|
-            Values: {|
-                Value: {| Id: int; Name: string | null |}
-            |} array
-        |}
-    |} array
+    Values:
+        {|
+            Value:
+                {|
+                    Values:
+                        {|
+                            Value: {| Id: int; Name: string | null |}
+                        |} array
+                |}
+        |} array
 |}
 
 [<Fact>]
-let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: string |} array |} |} |} array |}> parses the data`` () =
-    let modelData = dict [
-        "Values[2].Value.Values[2].Value.Name", StringValues "foo"
-        "Values[2].Value.Values[0].Value.Id", StringValues "111"
-        "Values[1].Value.Values[0].Value.Name", StringValues "bar"
-        "Values[2].Value.Values[2].Value.Id", StringValues "222"
+let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: string |} array |} |} |} array |}> parses the data``
+    ()
+    =
+    let modelData =
+        dict [
+            "Values[2].Value.Values[2].Value.Name", StringValues "foo"
+            "Values[2].Value.Values[0].Value.Id", StringValues "111"
+            "Values[1].Value.Values[0].Value.Name", StringValues "bar"
+            "Values[2].Value.Values[2].Value.Id", StringValues "222"
 
-    ]
-    let expected : AnonymousType2 =
-        {|
-            Values =
-            [|
-                Unchecked.defaultof<_>
-                {|
-                    Value =
-                    {|
-                        Values =
-                        [|
-                            {| Value = {| Id = 0; Name = "bar" |} |}
-                        |]
-                    |}
+        ]
+    let expected: AnonymousType2 = {|
+        Values = [|
+            Unchecked.defaultof<_>
+            {|
+                Value = {|
+                    Values = [| {| Value = {| Id = 0; Name = "bar" |} |} |]
                 |}
-                {|
-                    Value =
-                    {|
-                        Values =
-                        [|
-                            {| Value = {| Id = 111; Name = null |} |}
-                            Unchecked.defaultof<_>
-                            {| Value = {| Id = 222; Name = "foo" |} |}
-                        |]
-                    |}
+            |}
+            {|
+                Value = {|
+                    Values = [|
+                        {|
+                            Value = {| Id = 111; Name = null |}
+                        |}
+                        Unchecked.defaultof<_>
+                        {|
+                            Value = {| Id = 222; Name = "foo" |}
+                        |}
+                    |]
                 |}
-            |]
-        |}
+            |}
+        |]
+    |}
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<AnonymousType2> culture modelData
