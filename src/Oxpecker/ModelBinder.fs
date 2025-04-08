@@ -246,7 +246,7 @@ module internal ModelParser =
                     error values
             |> wrap
 
-        | Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
+        | Shape.NotStruct _ & Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
             let fieldSetters = shape.Fields |> Array.map (mkFieldSetter ctx)
 
             fun culture data ->
@@ -257,9 +257,11 @@ module internal ModelParser =
 
                 instance
 
-        | Shape.Struct shape ->
+        | Shape.Struct _ ->
             let typeConverter = TypeDescriptor.GetConverter(typeof<'T>)
-            
+
+            if not <| typeConverter.CanConvertFrom(typeof<string>) then unsupported typeof<'T> else
+
             fun culture (RawValueQuick values) ->
                 match values |> firstValue with
                 | NonNull value ->
