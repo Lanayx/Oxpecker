@@ -710,3 +710,16 @@ let ``parseModel<Bar> parses the data with no matched prefix`` () =
     let result = ModelParser.parseModel<Bar> culture modelData
 
     Assert.Equivalent(expected, result)
+
+[<Fact>]
+let ``parseModel<{| Value: {| Value: {| Name: string; Id: int |} |} |} |}> parses the data`` () =
+    let modelData = dict [
+        "Value.Value.Value.Name", StringValues "foo"
+        "Value.Value.Value.Id", StringValues "111"
+    ]
+    let expected = {| Value =  {| Value = {| Value = {| Name = "foo"; Id = 111 |} |} |} |}
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<{| Value: {| Value: {| Value: {| Name: string; Id: int |} |} |} |}> culture modelData
+
+    result |> should equal expected
