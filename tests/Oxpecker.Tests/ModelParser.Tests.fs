@@ -587,14 +587,14 @@ let ``parseModel<BookType> fails to parse null`` () =
     result |> should (throwWithMessage expected) typeof<Exception>
 
 [<Fact>]
-let ``parseModel<ResizeArray<BookType>> fails to parse null`` () =
+let ``parseModel<ResizeArray<BookType>> parses the data`` () =
     let values = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> StringValues.toDict
-    let expected = "Unsupported type 'System.Collections.Generic.List`1[Oxpecker.Tests.ModelParser+BookType]'."
+    let expected = ResizeArray [ BookType.EBook; BookType.Hardcover; BookType.Paperback; enum<BookType> 100; BookType.Unknown ]
     let culture = CultureInfo.InvariantCulture
 
-    let result() = ModelParser.parseModel<ResizeArray<BookType>> culture values |> ignore
+    let result = ModelParser.parseModel<ResizeArray<BookType>> culture values
 
-    result |> should (throwWithMessage expected) typeof<Exception>
+    result |> should equalSeq expected
 
 [<Fact>]
 let ``parseModel<BookType list> parses the data`` () =
