@@ -174,7 +174,7 @@ module internal ModelParser =
         | Shape.FSharpOption shape ->
             shape.Element.Accept
                 { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = option<'t>
+                    member _.Visit<'t>() = // 'T = 't option
                         let parse = mkParserCached<'t> ctx
 
                         fun culture data ->
@@ -207,7 +207,7 @@ module internal ModelParser =
         | Shape.ResizeArray shape ->
             shape.Element.Accept
                 { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = 't array
+                    member _.Visit<'t>() = // 'T = ResizeArray<'t>
                         let parse = mkParserCached<'t> ctx |> mkEnumerableParser
 
                         fun culture data -> parse culture data |> ResizeArray
