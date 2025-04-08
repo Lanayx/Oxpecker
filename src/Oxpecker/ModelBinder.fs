@@ -120,40 +120,6 @@ module internal ModelParser =
             use ctx = cache.CreateGenerationContext()
             mkParserCached<'T> ctx
 
-    and private mkFieldSetter (ctx: TypeGenerationContext) (shape : IShapeMember<'DeclaringType>) =
-        shape.Accept { new IMemberVisitor<_, _> with
-            member _.Visit<'Field>(fieldShape) =
-                let parse = mkParserCached<'Field> ctx
-
-                FieldSetter (fun culture data instance -> 
-                    match data with
-                    | ExactMatch fieldShape.Label matchedData
-                    | PrefixMatch fieldShape.Label matchedData ->
-                        parse culture matchedData |> fieldShape.Set instance |> ignore
-                    | _ -> ())
-        }
-
-    and private mkEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> =
-        let parse = mkParserCached<'Element> ctx
-
-        fun culture data ->
-            match data with
-            | SimpleArray dicts ->
-                seq { for dict in dicts -> parse culture dict }
-
-            | ComplexArray indexedDicts ->
-                let maxIndex = Seq.max indexedDicts.Keys
-                seq {
-                    for i in 0..maxIndex ->
-                        match indexedDicts.TryGetValue i with
-                        | true, dict ->
-                            parse culture dict
-                        | _ ->
-                            Unchecked.defaultof<_>
-                }
-
-            | _ -> Seq.empty
-
     and private mkParserCached<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell culture data -> cell.Value culture data) with
         | Cached(value = v) -> v
@@ -163,6 +129,38 @@ module internal ModelParser =
 
     and private mkParserAux<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
+
+        let mkFieldSetter (shape : IShapeMember<'DeclaringType>) =
+            shape.Accept { new IMemberVisitor<_, _> with
+                member _.Visit<'Field>(fieldShape) =
+                    let parse = mkParserCached<'Field> ctx
+
+                    FieldSetter (fun culture data instance -> 
+                        match data with
+                        | ExactMatch fieldShape.Label matchedData
+                        | PrefixMatch fieldShape.Label matchedData ->
+                            parse culture matchedData |> fieldShape.Set instance |> ignore
+                        | _ -> ())
+            }
+
+        let mkEnumerableParser (parse : Parser<'Element>) : Parser<'Element seq> =
+            fun culture data ->
+                match data with
+                | SimpleArray dicts ->
+                    seq { for dict in dicts -> parse culture dict }
+
+                | ComplexArray indexedDicts ->
+                    let maxIndex = Seq.max indexedDicts.Keys
+                    seq {
+                        for i in 0..maxIndex ->
+                            match indexedDicts.TryGetValue i with
+                            | true, dict ->
+                                parse culture dict
+                            | _ ->
+                                Unchecked.defaultof<_>
+                    }
+
+                | _ -> Seq.empty
 
         match shapeof<'T> with
         | Shape.String ->
@@ -198,7 +196,7 @@ module internal ModelParser =
         | Shape.FSharpList shape ->
             shape.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() = // 'T = 't list
-                    let parse = mkEnumerableParser<'t> ctx
+                    let parse = mkParserCached<'t> ctx |> mkEnumerableParser
 
                     fun culture data ->
                         parse culture data |> Seq.toList
@@ -208,7 +206,7 @@ module internal ModelParser =
         | Shape.Array shape when shape.Rank = 1 ->
             shape.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() = // 'T = 't array
-                    let parse = mkEnumerableParser<'t> ctx
+                    let parse = mkParserCached<'t> ctx |> mkEnumerableParser
                     
                     fun culture data ->
                         parse culture data |> Seq.toArray
@@ -218,7 +216,7 @@ module internal ModelParser =
         | Shape.ResizeArray shape ->
             shape.Element.Accept { new ITypeVisitor<_> with
                 member _.Visit<'t>() = // 'T = 't array
-                    let parse = mkEnumerableParser<'t> ctx
+                    let parse = mkParserCached<'t> ctx |> mkEnumerableParser
             
                     fun culture data ->
                         parse culture data |> ResizeArray
@@ -230,7 +228,7 @@ module internal ModelParser =
                 member _.Visit<'t>() = // 'T = 't seq
                     if Type.(<>)(typeof<'T>, typeof<'t seq>) then unsupported typeof<'T> else
 
-                    mkEnumerableParser<'t> ctx |> wrap
+                    mkParserCached<'t> ctx |> mkEnumerableParser |> wrap
             }
 
         | Shape.FSharpUnion (:? ShapeFSharpUnion<'T> as shape) ->
@@ -247,7 +245,7 @@ module internal ModelParser =
             |> wrap
 
         | Shape.NotStruct _ & Shape.FSharpRecord (:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map (mkFieldSetter ctx)
+            let fieldSetters = shape.Fields |> Array.map mkFieldSetter
 
             fun culture data ->
                 let instance = shape.CreateUninitialized()
