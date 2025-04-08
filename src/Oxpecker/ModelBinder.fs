@@ -78,11 +78,7 @@ module internal ModelParser =
             |> Seq.map(fun (index, items) -> index, items |> Seq.map(fun (_, key, value) -> key, value) |> dict)
             |> dict
 
-        if matchedData.Count = 0 then
-            None
-        else
-
-            Some matchedData
+        if matchedData.Count = 0 then None else Some matchedData
 
     let private (|ExactMatch|_|) (key: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(key) with
@@ -96,7 +92,6 @@ module internal ModelParser =
                 if not <| key.StartsWith(prefix) then
                     None
                 else
-
                     let matchedKey = key.[prefix.Length ..]
 
                     if matchedKey.StartsWith '.' then
@@ -148,7 +143,6 @@ module internal ModelParser =
             fun culture data ->
                 match data with
                 | SimpleArray dicts -> seq { for dict in dicts -> parse culture dict }
-
                 | ComplexArray indexedDicts ->
                     let maxIndex = Seq.max indexedDicts.Keys
                     seq {
@@ -157,7 +151,6 @@ module internal ModelParser =
                             | true, dict -> parse culture dict
                             | _ -> Unchecked.defaultof<_>
                     }
-
                 | _ -> Seq.empty
 
         match shapeof<'T> with
@@ -175,7 +168,6 @@ module internal ModelParser =
                             if values |> firstValue |> isNull then
                                 Nullable()
                             else
-
                                 parse culture (StringValues.toDict values) |> Nullable
                         |> wrap
                 }
@@ -230,7 +222,6 @@ module internal ModelParser =
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
                         else
-
                             mkParserCached<'t> ctx |> mkEnumerableParser |> wrap
                 }
 
@@ -238,9 +229,7 @@ module internal ModelParser =
             fun _ (RawValueQuick values) ->
                 match values |> firstValue with
                 | NonNull(UnionCase shape case) -> case.CreateUninitialized()
-
                 | Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
-
                 | _ -> error values
             |> wrap
 
@@ -261,7 +250,6 @@ module internal ModelParser =
             if not <| typeConverter.CanConvertFrom(typeof<string>) then
                 unsupported typeof<'T>
             else
-
                 fun culture (RawValueQuick values) ->
                     match values |> firstValue with
                     | NonNull value ->
@@ -269,7 +257,6 @@ module internal ModelParser =
                             typeConverter.ConvertFromString(null, culture, value) |> unbox
                         with _ ->
                             error values
-
                     | _ -> error values
 
         | _ -> unsupported typeof<'T>
