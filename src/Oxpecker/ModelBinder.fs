@@ -165,10 +165,9 @@ module internal ModelParser =
                         let parse = mkParserCached<'t> ctx
 
                         fun culture (RawValueQuick values) ->
-                            if values |> firstValue |> isNull then
-                                Nullable()
-                            else
-                                parse culture (StringValues.toDict values) |> Nullable
+                            match values |> firstValue with
+                            | Null -> Nullable()
+                            | _ -> parse culture (StringValues.toDict values) |> Nullable
                         |> wrap
                 }
 
