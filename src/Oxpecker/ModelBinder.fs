@@ -64,7 +64,7 @@ module internal ModelParser =
     let private (|ComplexArray|_|)  (data: IDictionary<string, StringValues>) =
         let regex = "\[(\d+)\]\.(.+)" |> Regex
 
-        let values =
+        let matchedData =
             data
             |> Seq.choose (fun (KeyValue (key, value)) ->
                 match regex.Match(key) with
@@ -73,12 +73,9 @@ module internal ModelParser =
                     let key = m.Groups.[2].Value
                     Some (index, key, value)
                 | _ -> None)
-
-        let matchedData =
-            values
             |> Seq.groupBy(fun (index, _, _) -> index)
-            |> Seq.map (fun (i, items) ->
-                i, items |> Seq.map (fun (_, k, v) -> k, v) |> dict)
+            |> Seq.map (fun (index, items) ->
+                index, items |> Seq.map (fun (_, key, value) -> key, value) |> dict)
             |> dict
 
         if matchedData.Count = 0 then None else
@@ -104,7 +101,6 @@ module internal ModelParser =
                     Some (matchedKey, value)
                 else
                     None)
-
             |> dict
 
         if matchedData.Count > 0 then Some matchedData else None
