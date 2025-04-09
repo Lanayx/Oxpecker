@@ -188,7 +188,7 @@ module internal ModelParser =
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't list
-                        let parse = mkParserCached<'t> ctx |> mkEnumerableParser
+                        let parse = mkParserCached<'t seq> ctx
 
                         fun culture data -> parse culture data |> Seq.toList
                         |> wrap
@@ -198,7 +198,7 @@ module internal ModelParser =
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't array
-                        let parse = mkParserCached<'t> ctx |> mkEnumerableParser
+                        let parse = mkParserCached<'t seq> ctx
 
                         fun culture data -> parse culture data |> Seq.toArray
                         |> wrap
@@ -208,7 +208,7 @@ module internal ModelParser =
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = ResizeArray<'t>
-                        let parse = mkParserCached<'t> ctx |> mkEnumerableParser
+                        let parse = mkParserCached<'t seq> ctx
 
                         fun culture data -> parse culture data |> ResizeArray
                         |> wrap
