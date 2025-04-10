@@ -262,9 +262,9 @@ module internal ModelParser =
 
     and private cache: TypeCache = TypeCache()
 
-    let rec internal parseModel<'T> =
+    let rec internal parseModel<'T> (culture: CultureInfo) (data: IDictionary<string, StringValues>) =
         let parse = mkParser<'T>()
-        fun (culture: CultureInfo) (data: IDictionary<string, StringValues>) -> parse culture data
+        parse culture data
 
 /// <summary>
 /// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
