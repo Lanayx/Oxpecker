@@ -617,6 +617,15 @@ module Bindings =
         static member inline Find(this: SolidStorePath<'T, 'Value array>, predicate: 'Value -> bool) =
             SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| predicate |])
 
+[<Global; AllowNullLiteral>]
+type CreateDeferredOptions [<ParamObject; Emit("$0")>] (
+        ?timeoutMs: int,
+        ?equals: U2<bool, obj * obj -> bool>,
+        ?name: string
+    )  =
+    member val timeoutMs = timeoutMs with get,set
+    member val equals = equals with get,set
+    member val name = name with get,set
 
 [<AutoOpen>]
 [<Erase>]
@@ -700,3 +709,56 @@ type Bindings =
     /// Component lazy loading. Use in combination with `importComponent`
     [<Import("lazy", "solid-js")>]
     static member lazy'(import: unit -> JS.Promise<HtmlElement>) : HtmlElement = jsNative
+    /// <summary>
+    /// <c>createComputed</c> creates a new computation that immediately runs the given function in a tracking,
+    /// thus automatically tracking its dependencies, and automatically reruns the function whenever the dependencies
+    /// changes. The function gets called with an argument equal to the value returned from the function's last
+    /// execution, or on the first call, equal to the optional second argument. Note that the return value of the
+    /// function is not otherwise exposed; in particular, createComputed has no return value.<br/><br/>
+    /// <c>createComputed</c> is the most immediate form of reactivity in Solid, and is most useful for building
+    /// other reactive primitives. For example, some other Solid primitives are built from <c>createComputed</c>.
+    /// However, it should be used with care, as <c>createComputed</c> can easily cause more unnecessary updates
+    /// than other reactive primitives. Before using it, consider the closely related primitives <c>createMemo</c>
+    /// and <c>createRenderEffect</c>.
+    /// </summary>
+    /// <param name="fn">The function to run in a tracking scope.</param>
+    /// <param name="value">The initial value to pass to the function.</param>
+    [<ImportMember("solid-js")>]
+    static member createComputed<'T>(fn: 'T -> 'T, ?value: 'T): unit = jsNative
+    /// <summary>
+    /// Creates a readonly that only notifies downstream changes when the browser is idle. <c>timeoutMs</c> is the
+    /// maximum time to wait before forcing the update.
+    /// </summary>
+    [<ImportMember("solid-js")>]
+    static member createDeferred<'T>(source: unit -> 'T, ?options: CreateDeferredOptions): unit -> 'T = jsNative
+    /// <summary>
+    /// Sometimes it is useful to separate tracking from re-execution. This primitive registers a side-effect
+    /// that is run the first time the expression wrapped by the returned tracking is notified of a change.
+    /// </summary>
+    [<ImportMember("solid-js")>]
+    static member createReaction(onInvalidate: unit -> unit): (unit -> unit) -> unit = jsNative
+    /// <summary>
+    /// A render effect is a computation similar to a regular effect, but differs in when Solid schedules
+    /// the first execution of the effect function. While createEffect waits for the current rendering
+    /// phase to be complete, createRenderEffect immediately calls the function. Thus the effect runs as
+    /// DOM elements are being created and updated, but possibly before specific elements of interest have
+    /// been created, and probably before those elements have been connected to the document. In particular, refs
+    /// will not be set before the initial effect call. Indeed, Solid uses <c>createRenderEffect</c> to implement
+    /// the rendering phase of itself, including setting of <b>refs</b>
+    /// </summary>
+    [<ImportMember("solid-js")>]
+    static member createRenderEffect<'T>(fn: 'T -> 'T, ?value: 'T): unit = jsNative
+    /// <summary>
+    /// Creates a parameterised derived boolean signal <c>selector(key)</c> that indicates whether <c>key</c>
+    /// is equal to the current value of the <c>source</c> signal. These signals are optimised to notify
+    /// each subscriber only when their <c>key</c> starts or stops matching the reactive <c>source</c> value
+    /// (instead of every time <c>key</c> changes). If you have <i>n</i> different subscribers with different
+    /// keys, and the <c>source</c> value changes from <c>a</c> to <c>b</c>, then instead of all <i>n</i> subscribers
+    /// updating, at most two subscribers will update: the signal with key <c>a</c> will change to <c>false</c>, and
+    /// the signal with key <c>b</c> will change to <c>true</c>. Thus it reduces from <i>n</i> updates to 2 updates.<br/>
+    /// <br/>Useful for defining the selection state of several selectable elements.
+    /// </summary>
+    /// <param name="source">The source signal to get the value from and compare with keys.</param>
+    /// <param name="fn">A function to compare the key and the value, returning whether they should be treated as equal. Default: <c>=</c></param>
+    [<ImportMember("solid-js")>]
+    static member createSelector<'T, 'U>(source: unit -> 'T, ?fn: ('U * 'T) -> bool): 'U -> bool = jsNative
