@@ -617,13 +617,6 @@ module Bindings =
         static member inline Find(this: SolidStorePath<'T, 'Value array>, predicate: 'Value -> bool) =
             SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| predicate |])
 
-[<Global; AllowNullLiteral>]
-type CreateDeferredOptions
-    [<ParamObject; Emit("$0")>]
-    (?timeoutMs: int, ?equals: U2<bool, obj * obj -> bool>, ?name: string) =
-    member val timeoutMs = timeoutMs with get, set
-    member val equals = equals with get, set
-    member val name = name with get, set
 
 [<AutoOpen>]
 [<Erase>]
@@ -635,8 +628,11 @@ type Bindings =
     [<ImportMember("solid-js/web")>]
     static member renderToString(fn: unit -> #HtmlElement) : string = jsNative
 
-    [<ImportMember("solid-js")>]
-    static member createSignal(value: 'T) : Signal<'T> = jsNative
+    [<ImportMember("solid-js"); ParamObject(1)>]
+    static member createSignal
+        (value: 'T, ?equals: ('T -> 'T -> bool), ?name: string, ?``internal``: bool)
+        : Signal<'T> =
+        jsNative
 
     [<ImportMember("solid-js")>]
     static member createMemo(value: unit -> 'T) : (unit -> 'T) = jsNative
@@ -727,8 +723,11 @@ type Bindings =
     /// Creates a readonly that only notifies downstream changes when the browser is idle. <c>timeoutMs</c> is the
     /// maximum time to wait before forcing the update.
     /// </summary>
-    [<ImportMember("solid-js")>]
-    static member createDeferred<'T>(source: unit -> 'T, ?options: CreateDeferredOptions) : unit -> 'T = jsNative
+    [<ImportMember("solid-js"); ParamObject(1)>]
+    static member createDeferred<'T>
+        (source: unit -> 'T, ?timeoutMs: int, ?equals: 'T -> 'T -> bool, ?name: string)
+        : unit -> 'T =
+        jsNative
     /// <summary>
     /// Sometimes it is useful to separate tracking from re-execution. This primitive registers a side-effect
     /// that is run the first time the expression wrapped by the returned tracking is notified of a change.
@@ -759,4 +758,4 @@ type Bindings =
     /// <param name="source">The source signal to get the value from and compare with keys.</param>
     /// <param name="fn">A function to compare the key and the value, returning whether they should be treated as equal. Default: <c>=</c></param>
     [<ImportMember("solid-js")>]
-    static member createSelector<'T, 'U>(source: unit -> 'T, ?fn: ('U * 'T) -> bool) : 'U -> bool = jsNative
+    static member createSelector<'T, 'U>(source: unit -> 'T, ?fn: 'U -> 'T -> bool) : 'U -> bool = jsNative
