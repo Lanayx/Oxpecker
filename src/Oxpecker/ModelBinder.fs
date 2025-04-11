@@ -46,9 +46,6 @@ module internal ModelParser =
 
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
-    let private (|SimpleArray|_|) (values: (string | null) array) =
-        if values.Length > 0 then values |> Some else None
-
     let private (|ComplexArray|_|) (data: IDictionary<string, StringValues>) =
         let indexAccess = "\[(\d+)\]\.(.+)"
 
@@ -148,7 +145,7 @@ module internal ModelParser =
         let mkEnumerableParser (parse: Parser<'Element>) : Parser<'Element seq> =
             fun { Culture = culture; RawData = rawData } ->
                 match rawData with
-                | RawArray(SimpleArray values) ->
+                | RawArray values ->
                     seq {
                         for value in values ->
                             parse {
