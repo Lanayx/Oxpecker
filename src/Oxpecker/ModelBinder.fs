@@ -57,6 +57,7 @@ module internal ModelParser =
                     let index = int m.Groups.[1].Value
                     let key = m.Groups.[2].Value
                     Some(index, key, value)
+
                 | _ -> None)
             |> Seq.groupBy(fun (index, _, _) -> index)
             |> Seq.map(fun (index, items) -> index, items |> Seq.map(fun (_, key, value) -> key, value) |> dict)
@@ -71,6 +72,7 @@ module internal ModelParser =
             | [||] -> None
             | [| value |] -> Some(RawString value)
             | array -> Some(RawArray array)
+
         | _ -> None
 
     let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
@@ -89,6 +91,7 @@ module internal ModelParser =
                     else
                         None)
             |> dict
+
         if matchedData.Count > 0 then
             Some(RawValues matchedData)
         else
@@ -156,6 +159,7 @@ module internal ModelParser =
 
                 | RawValues(ComplexArray indexedDicts) ->
                     let maxIndex = Seq.max indexedDicts.Keys
+
                     seq {
                         for index in 0..maxIndex ->
                             match indexedDicts.TryGetValue index with
@@ -167,6 +171,7 @@ module internal ModelParser =
 
                             | _ -> Unchecked.defaultof<_>
                     }
+
                 | _ -> Seq.empty
 
         match shapeof<'T> with
@@ -263,6 +268,7 @@ module internal ModelParser =
                             typeConverter.ConvertFromString(null, culture, value) |> unbox
                         with _ ->
                             error rawData
+
                     | _ -> error rawData
 
         | _ -> unsupported typeof<'T>
