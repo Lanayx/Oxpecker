@@ -37,7 +37,7 @@ let ``ModelParser.parseModel<Model2> parses null SearchTerms as empty array`` ()
     let expected = { SearchTerms = [||] }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
@@ -48,7 +48,7 @@ let ``ModelParser.parseModel<Model2> parses null string array as empty array`` (
     let expected = { SearchTerms = [||] }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
@@ -58,7 +58,7 @@ let ``ModelParser.parseModel<Model2> parses empty string array as empty array`` 
     let expected = { SearchTerms = [||] }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
@@ -70,7 +70,7 @@ let ``ModelParser.parseModel<Model2> parses array with null element`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
@@ -80,7 +80,7 @@ let ``ModelParser.parseModel<Model2> parses single string as single-element arra
     let expected = { SearchTerms = [| "a" |] }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -89,7 +89,7 @@ let ``ModelParser.parseModel<Model2> parses single-element string array`` () =
     let expected = { SearchTerms = [| "a" |] }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -100,7 +100,7 @@ let ``ModelParser.parseModel<Model2> parses multi-element string array`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model2> culture modelData
+    let result = ModelParser.parseModel<Model2> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
@@ -139,7 +139,7 @@ let ``ModelParser.parse with complete model data`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 
@@ -176,7 +176,7 @@ let ``ModelParser.parse with model data without optional parameters`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -210,7 +210,7 @@ let ``ModelParser.parse with missing array items`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -248,7 +248,7 @@ let ``ModelParser.parse with complete model data but with different order for ar
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -273,7 +273,7 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result () =
-        ModelParser.parseModel<Model> culture modelData |> ignore
+        ModelParser.parseModel<Model> culture (RawValues modelData) |> ignore
 
     result
     |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
@@ -300,7 +300,7 @@ let ``ModelParser.parse with complete model data but wrong data`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result () =
-        ModelParser.parseModel<Model> culture modelData |> ignore
+        ModelParser.parseModel<Model> culture (RawValues modelData) |> ignore
 
     result
     |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'System.DateTime'."
@@ -345,7 +345,7 @@ let ``ModelParser.parse with complete model data but mixed casing`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 
@@ -374,7 +374,7 @@ let ``ModelParser.parse with incomplete model data`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -402,7 +402,7 @@ let ``ModelParser.parse with incomplete model data and with different order for 
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Model> culture modelData
+    let result = ModelParser.parseModel<Model> culture (RawValues modelData)
     result |> shouldEqual expected
 
 
@@ -419,7 +419,7 @@ let ``ModelParser.parse with composite model and SecondChild missing data`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<CompositeModel> culture modelData
+    let result = ModelParser.parseModel<CompositeModel> culture (RawValues modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -437,13 +437,13 @@ let ``ModelParser.parse with complete composite model data`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<CompositeModel> culture modelData
+    let result = ModelParser.parseModel<CompositeModel> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<string> parses null`` () =
-    let values = Unchecked.defaultof<string> |> String.toDict
+    let values = RawString Unchecked.defaultof<string>
     let expected = Unchecked.defaultof<string>
     let culture = CultureInfo.InvariantCulture
 
@@ -453,7 +453,7 @@ let ``parseModel<string> parses null`` () =
 
 [<Fact>]
 let ``parseModel<string> parses empty string`` () =
-    let values = String.Empty |> String.toDict
+    let values = RawString String.Empty
     let expected = String.Empty
     let culture = CultureInfo.InvariantCulture
 
@@ -463,8 +463,8 @@ let ``parseModel<string> parses empty string`` () =
 
 [<Fact>]
 let ``parseModel<float> fails to parse 'some-value'`` () =
-    let values = "some-value" |> String.toDict
     let expected = "Could not parse value 'some-value' to type 'System.Double'."
+    let values = RawString "some-value"
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -474,8 +474,8 @@ let ``parseModel<float> fails to parse 'some-value'`` () =
 
 [<Fact>]
 let ``parseModel<int> fails to parse 'some-value'`` () =
-    let values = "some-value" |> String.toDict
     let expected = "Could not parse value 'some-value' to type 'System.Int32'."
+    let values = RawString "some-value"
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -485,8 +485,8 @@ let ``parseModel<int> fails to parse 'some-value'`` () =
 
 [<Fact>]
 let ``parseModel<int64> fails to parse null`` () =
-    let values = Unchecked.defaultof<string> |> String.toDict
-    let expected = "Could not parse value 'null' to type 'System.Int64'."
+    let values = RawString Unchecked.defaultof<string>
+    let expected = "Could not parse value '<null>' to type 'System.Int64'."
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -496,7 +496,7 @@ let ``parseModel<int64> fails to parse null`` () =
 
 [<Fact>]
 let ``parseModel<Nullable<int>> parses null`` () =
-    let values = Unchecked.defaultof<string> |> String.toDict
+    let values = RawString Unchecked.defaultof<string>
     let expected = Nullable()
     let culture = CultureInfo.InvariantCulture
 
@@ -506,7 +506,7 @@ let ``parseModel<Nullable<int>> parses null`` () =
 
 [<Fact>]
 let ``parseModel<Nullable<int>> parses 1`` () =
-    let values = "1" |> String.toDict
+    let values = RawString "1"
     let expected = Nullable 1
     let culture = CultureInfo.InvariantCulture
 
@@ -516,7 +516,7 @@ let ``parseModel<Nullable<int>> parses 1`` () =
 
 [<Fact>]
 let ``parseModel<decimal option> parses null`` () =
-    let values = Unchecked.defaultof<string> |> String.toDict
+    let values = RawString Unchecked.defaultof<string>
     let expected = None
     let culture = CultureInfo.InvariantCulture
 
@@ -526,7 +526,7 @@ let ``parseModel<decimal option> parses null`` () =
 
 [<Fact>]
 let ``parseModel<decimal option> parses 100`` () =
-    let values = "100" |> String.toDict
+    let values = RawString "100"
     let expected = Some 100M
     let culture = CultureInfo.InvariantCulture
 
@@ -536,7 +536,7 @@ let ``parseModel<decimal option> parses 100`` () =
 
 [<Fact>]
 let ``parseModel<string option> parses null`` () =
-    let values = Unchecked.defaultof<string> |> String.toDict
+    let values = RawString Unchecked.defaultof<string>
     let expected = None
     let culture = CultureInfo.InvariantCulture
 
@@ -546,7 +546,7 @@ let ``parseModel<string option> parses null`` () =
 
 [<Fact>]
 let ``parseModel<string option> parses empty string`` () =
-    let values = String.Empty |> String.toDict
+    let values = RawString String.Empty
     let expected = Some String.Empty
     let culture = CultureInfo.InvariantCulture
 
@@ -556,7 +556,7 @@ let ``parseModel<string option> parses empty string`` () =
 
 [<Fact>]
 let ``parseModel<string option> parses 'some-value'`` () =
-    let values = "some-value" |> String.toDict
+    let values = RawString "some-value"
     let expected = Some "some-value"
     let culture = CultureInfo.InvariantCulture
 
@@ -566,7 +566,7 @@ let ``parseModel<string option> parses 'some-value'`` () =
 
 [<Fact>]
 let ``parseModel<Sex option> parses 'Female'`` () =
-    let values = "Female" |> String.toDict
+    let values = RawString "Female"
     let expected = Some Female
     let culture = CultureInfo.InvariantCulture
 
@@ -576,8 +576,8 @@ let ``parseModel<Sex option> parses 'Female'`` () =
 
 [<Fact>]
 let ``parseModel<Sex array> parses the array containing null`` () =
-    let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
-    let values = xs |> StringValues |> StringValues.toDict
+    let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
+    let values = xs |> RawArray
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
     let culture = CultureInfo.InvariantCulture
 
@@ -587,8 +587,8 @@ let ``parseModel<Sex array> parses the array containing null`` () =
 
 [<Fact>]
 let ``parseModel<Sex option array> parses the array containing null`` () =
-    let xs: (string | null) array | null = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
-    let values = xs |> StringValues |> StringValues.toDict
+    let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
+    let values = xs |> RawArray
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
     let culture = CultureInfo.InvariantCulture
 
@@ -603,7 +603,7 @@ type Direction =
 
 [<Fact>]
 let ``parseModel<Direction Nullable> parses 'Right'`` () =
-    let values = "right" |> String.toDict
+    let values = RawString "right"
     let expected = Nullable Right
     let culture = CultureInfo.InvariantCulture
 
@@ -619,7 +619,7 @@ type BookType =
 
 [<Fact>]
 let ``parseModel<BookType> parses 'PaperBack'`` () =
-    let modelData = dict [ "", StringValues "Paperback" ]
+    let modelData = RawString "Paperback"
     let expected = BookType.Paperback
     let culture = CultureInfo.InvariantCulture
 
@@ -629,7 +629,7 @@ let ``parseModel<BookType> parses 'PaperBack'`` () =
 
 [<Fact>]
 let ``parseModel<BookType> parses '3'`` () =
-    let modelData = "3" |> String.toDict
+    let modelData = RawString "3"
     let expected = BookType.EBook
     let culture = CultureInfo.InvariantCulture
 
@@ -639,7 +639,7 @@ let ``parseModel<BookType> parses '3'`` () =
 
 [<Fact>]
 let ``parseModel<BookType> parses '100'`` () =
-    let modelData = "100" |> String.toDict
+    let modelData = RawString "100"
     let expected = enum<BookType> 100
     let culture = CultureInfo.InvariantCulture
 
@@ -649,9 +649,9 @@ let ``parseModel<BookType> parses '100'`` () =
 
 [<Fact>]
 let ``parseModel<BookType> fails to parse null`` () =
-    let values = Unchecked.defaultof<string> |> String.toDict
+    let values = RawString Unchecked.defaultof<string>
     let expected =
-        "Could not parse value 'null' to type 'Oxpecker.Tests.ModelParser+BookType'."
+        "Could not parse value '<null>' to type 'Oxpecker.Tests.ModelParser+BookType'."
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -661,10 +661,8 @@ let ``parseModel<BookType> fails to parse null`` () =
 
 [<Fact>]
 let ``parseModel<ResizeArray<BookType>> parses the data`` () =
-    let values =
-        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
-        |> StringValues
-        |> StringValues.toDict
+    let values = RawArray [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
+
     let expected =
         ResizeArray [
             BookType.EBook
@@ -681,10 +679,8 @@ let ``parseModel<ResizeArray<BookType>> parses the data`` () =
 
 [<Fact>]
 let ``parseModel<BookType list> parses the data`` () =
-    let values =
-        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
-        |> StringValues
-        |> StringValues.toDict
+    let values = RawArray [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
+
     let expected = [
         BookType.EBook
         BookType.Hardcover
@@ -700,10 +696,8 @@ let ``parseModel<BookType list> parses the data`` () =
 
 [<Fact>]
 let ``parseModel<BookType seq> parses the data`` () =
-    let values =
-        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
-        |> StringValues
-        |> StringValues.toDict
+    let values = RawArray [| "3"; "Hardcover"; "Paperback"; "100"; "0" |]
+
     let expected =
         seq {
             BookType.EBook
@@ -756,7 +750,7 @@ let ``parseModel<Foo> parses the data with no seqential index elements`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Foo> culture modelData
+    let result = ModelParser.parseModel<Foo> culture (RawValues modelData)
 
     result |> shouldStructuallyEqual expected
 
@@ -769,7 +763,7 @@ let ``parseModel<Foo> parses the data with no matched prefix`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Foo> culture modelData
+    let result = ModelParser.parseModel<Foo> culture (RawValues modelData)
 
     result |> shouldStructuallyEqual expected
 
@@ -787,7 +781,7 @@ let ``parseModel<Foo> parses the data with inproper index access`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Foo> culture modelData
+    let result = ModelParser.parseModel<Foo> culture (RawValues modelData)
 
     result |> shouldStructuallyEqual expected
 
@@ -800,7 +794,7 @@ let ``parseModel<Foo> parses the data with partially incorrect key`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Foo> culture modelData
+    let result = ModelParser.parseModel<Foo> culture (RawValues modelData)
 
     result |> shouldStructuallyEqual expected
 
@@ -813,7 +807,7 @@ let ``parseModel<Foo> parses the data with missing index`` () =
     }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Foo> culture modelData
+    let result = ModelParser.parseModel<Foo> culture (RawValues modelData)
 
     result |> shouldStructuallyEqual expected
 
@@ -823,7 +817,7 @@ let ``parseModel<Bar> parses the data with no matched prefix`` () =
     let expected = { Bar = null; Baz = null }
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<Bar> culture modelData
+    let result = ModelParser.parseModel<Bar> culture (RawValues modelData)
 
     result |> shouldStructuallyEqual expected
 
@@ -850,7 +844,7 @@ let ``parseModel<{| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |}
     |}
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<AnonymousType1> culture modelData
+    let result = ModelParser.parseModel<AnonymousType1> culture (RawValues modelData)
 
     result |> shouldEqual expected
 
@@ -904,6 +898,23 @@ let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: str
     |}
     let culture = CultureInfo.InvariantCulture
 
-    let result = ModelParser.parseModel<AnonymousType2> culture modelData
+    let result = ModelParser.parseModel<AnonymousType2> culture (RawValues modelData)
 
     result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parse<int> fails to parse wrong data`` () =
+    let modelData =
+        dict [
+            "FirstName", StringValues "Susan"
+            "MiddleName", StringValues "Elisabeth"
+            "LastName", StringValues "Doe"
+        ]
+    let expected =
+        "Could not parse value 'seq [[FirstName, Susan]; [MiddleName, Elisabeth]; [LastName, Doe]]' to type 'System.Int32'."
+    let culture = CultureInfo.InvariantCulture
+
+    let result () =
+        ModelParser.parseModel<int> culture (RawValues modelData) |> ignore
+
+    result |> shouldFailWithMessage<exn> expected
