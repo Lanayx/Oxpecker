@@ -22,9 +22,7 @@
         <Content Include="src\index.css" />
         <Content Include="package.json" />
         <Content Include="index.html" />
-        <Content Include="tailwind.config.js" />
         <Content Include="vite.config.ts" />
-        <Content Include="postcss.config.js" />
     </ItemGroup>
 
 </Project>

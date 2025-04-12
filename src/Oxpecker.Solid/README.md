@@ -2,7 +2,7 @@
 ---
 # Oxpecker.Solid
 
-Fable (4.23.0+) bindings for the **Solid.js**, **Solid-router.js** and **Solid-meta.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
+Fable (4.23.0+) opinionated bindings for the **Solid.js**, **Solid-router.js** and **Solid-meta.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
 
 **Medium article**: [Oxpecker goes full stack](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
 
@@ -46,6 +46,7 @@ This attribute tells `Fable` compiler plugin (`Oxpecker.Solid.FablePlugin`) that
 ### Props
 
 With this library you can forget about props and special helpers created for managing them. You can use regular function arguments instead. You can be as creative as you want with your function arguments, they can be records, functions, ref cells (especially useful for passing refs from child to parent) or any other regular F# types.
+If you *do* want to use props and have merge and split functionality for integrating third-party library, you should use [Partas.Solid](https://github.com/shayanhabibi/Partas.Solid) library, that heavily relies on them.
 
 ### Fragment element
 
@@ -55,8 +56,10 @@ With this library you can forget about props and special helpers created for man
 
 These elements are used to iterate over a list of items (you can read about the difference [here](https://www.solidjs.com/guides/faq#why-shouldnt-i-use-map-in-my-template-and-whats-the-difference-between-for-and-index)). You'll need to use `yield` keyword before the iterating function because currently F# computation expressions don't allow for implicit `yield` for functions.
 
-### Custom elements
+### Custom HTML tags / Web Components
+
 Custom elements can be useful for integration with Web Component based libraries. You can create one by inheriting from `RegularNode` (or `VoidNode`):
+
 ```fsharp
 namespace Oxpecker.Solid.MyTags
 
@@ -68,9 +71,76 @@ type MyTag () =
 ```
 Make sure you put your custom element type definition in a separate module (not to the same module with its usage) in a namespace starting from `Oxpecker.Solid` for compiler plugin to transform it correctly.
 
+### Components
+
+There are two ways you can create components in Oxpecker.Solid:
+
+#### 1. Regular functions
+
+This is the most common way to create components and should be used by default.
+
+```fsharp
+// without children
+[<SolidComponent>]
+let Component1 (getText: Accessor<string>) =
+    h1(onClick = fun _ -> console.log(getText())) {
+        getText()
+    }
+
+// with children
+[<SolidComponent>]
+let Component2 (hello: string) (children: #HtmlElement) =
+    h1() {
+        hello
+        children
+    }
+
+// usage
+[<SolidComponent>]
+let Test () =
+    let getText, _ = createSignal "Hello,"
+
+    div() {
+        Component1 getText
+        Component2 "world" <| span() {
+            "!"
+        }
+    }
+```
+#### 2. Types
+
+This is useful when you are creating a component with a lot of properties, and you want to make some of the optional, so component user won't have to initialize all of them.
+
+```fsharp
+// defniniion
+type MyButton() =
+    // properties with defaults
+    member val btnColor = "" with get, set
+    member val onClick: MouseEvent -> unit = ignore with get, set
+    member val ariaLabel = "" with get, set
+
+    [<SolidComponent>]
+    member this.WithChildren(content: #HtmlElement) = // Can be any name
+        button(type'="button", class'= $"text-base ml-2.5 hover:text-blue-500 {this.btnColor}",
+               onClick = this.onClick, ariaLabel = this.ariaLabel) {
+            content
+        }
+
+// usage
+[<SolidComponent>]
+let Test() =
+    div() {
+        MyButton(onClick = (fun _ -> alert "Deleted"), btnColor = "text-red-500") // ariaLabel is optional
+            .WithChildren(span() { "🗑️" })
+    }
+```
+
+If you want to build even more complicated components that are compiled into JSX components (rather than JS function calls), heavily depends on props spread, merge and split, you can use [Partas.Solid](https://github.com/shayanhabibi/Partas.Solid) library, which supports all of that.
+
 ### Context
 
 This library doesn't provide support for React-like context. I strongly believe it's an antipattern, and encourage you to use global signals or stores instead.
+If you *do* want to use Context, have a look at [Partas.Solid](https://github.com/shayanhabibi/Partas.Solid) library, where it is supported.
 
 ### Special JSX attributes
 
