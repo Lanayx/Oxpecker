@@ -633,6 +633,8 @@ type Bindings =
         (value: 'T, ?equals: ('T -> 'T -> bool), ?name: string, ?``internal``: bool)
         : Signal<'T> =
         jsNative
+    [<ImportMember("solid-js")>]
+    static member createSignal(value: 'T) : Signal<'T> = jsNative
 
     [<ImportMember("solid-js")>]
     static member createMemo(value: unit -> 'T) : (unit -> 'T) = jsNative
@@ -728,6 +730,12 @@ type Bindings =
         (source: unit -> 'T, ?timeoutMs: int, ?equals: 'T -> 'T -> bool, ?name: string)
         : unit -> 'T =
         jsNative
+    /// <summary>
+    /// Creates a readonly that only notifies downstream changes when the browser is idle. <c>timeoutMs</c> is the
+    /// maximum time to wait before forcing the update.
+    /// </summary>
+    [<ImportMember("solid-js")>]
+    static member createDeferred<'T>(source: unit -> 'T) : unit -> 'T = jsNative
     /// <summary>
     /// Sometimes it is useful to separate tracking from re-execution. This primitive registers a side-effect
     /// that is run the first time the expression wrapped by the returned tracking is notified of a change.
