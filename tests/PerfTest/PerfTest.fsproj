@@ -8,11 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="ModelBinder.fs" />
         <Compile Include="ViewEngineBuild.fs" />
         <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="JSON.fs" />
-        <Compile Include="Program.fs"/>
+        <Compile Include="Program.fs" />
     </ItemGroup>
 
     <ItemGroup>
