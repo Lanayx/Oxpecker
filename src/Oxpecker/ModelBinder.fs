@@ -50,7 +50,7 @@ module internal ModelParser =
         let indexAccess = "\[(\d+)\]\.(.+)"
         let matchedData = Dictionary()
 
-        for KeyValue (key, value) in data do
+        for KeyValue(key, value) in data do
             let m = Regex.Match(key, indexAccess)
             if m.Success then
                 let index = int m.Groups.[1].Value
@@ -76,7 +76,7 @@ module internal ModelParser =
     let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
         let matchedData = Dictionary()
 
-        for KeyValue (key, value) in data do
+        for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
                 let matchedKey = key.[prefix.Length ..]
                 if matchedKey.StartsWith '.' then
