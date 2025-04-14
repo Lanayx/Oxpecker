@@ -74,21 +74,15 @@ module internal ModelParser =
         | _ -> None
 
     let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
-        let matchedData =
-            data
-            |> Seq.choose(fun (KeyValue(key, value)) ->
-                if not <| key.StartsWith(prefix) then
-                    None
-                else
-                    let matchedKey = key.[prefix.Length ..]
+        let matchedData = Dictionary()
 
-                    if matchedKey.StartsWith '.' then
-                        Some(matchedKey.[1..], value)
-                    elif matchedKey.StartsWith '[' then
-                        Some(matchedKey, value)
-                    else
-                        None)
-            |> dict
+        for KeyValue (key, value) in data do
+            if key.StartsWith(prefix) then
+                let matchedKey = key.[prefix.Length ..]
+                if matchedKey.StartsWith '.' then
+                    matchedData[matchedKey.[1..]] <- value
+                elif matchedKey.StartsWith '[' then
+                    matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
             Some(RawValues matchedData)
