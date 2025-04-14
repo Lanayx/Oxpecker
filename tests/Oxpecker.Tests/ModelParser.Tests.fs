@@ -32,7 +32,68 @@ type CompositeModel = {
 }
 
 [<Fact>]
-let ``ModelParser.parse with model which has primitive array`` () =
+let ``ModelParser.parseModel<Model2> parses null SearchTerms as empty array`` () =
+    let modelData = dict [ "SearchTerms", StringValues Unchecked.defaultof<string> ]
+    let expected = { SearchTerms = [||] }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Model2> culture modelData
+
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parseModel<Model2> parses null string array as empty array`` () =
+    let modelData =
+        dict [ "SearchTerms", StringValues Unchecked.defaultof<string array> ]
+    let expected = { SearchTerms = [||] }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Model2> culture modelData
+
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parseModel<Model2> parses empty string array as empty array`` () =
+    let modelData = dict [ "SearchTerms", StringValues [||] ]
+    let expected = { SearchTerms = [||] }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Model2> culture modelData
+
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parseModel<Model2> parses array with null element`` () =
+    let modelData = dict [ "SearchTerms", StringValues [| null |] ]
+    let expected = {
+        SearchTerms = [| Unchecked.defaultof<_> |]
+    }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Model2> culture modelData
+
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parseModel<Model2> parses single string as single-element array`` () =
+    let modelData = dict [ "SearchTerms", StringValues "a" ]
+    let expected = { SearchTerms = [| "a" |] }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Model2> culture modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parseModel<Model2> parses single-element string array`` () =
+    let modelData = dict [ "SearchTerms", StringValues [| "a" |] ]
+    let expected = { SearchTerms = [| "a" |] }
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Model2> culture modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``ModelParser.parseModel<Model2> parses multi-element string array`` () =
     let modelData = dict [ "SearchTerms", StringValues [| "a"; "abc"; "abcdef" |] ]
     let expected = {
         SearchTerms = [| "a"; "abc"; "abcdef" |]
@@ -40,8 +101,8 @@ let ``ModelParser.parse with model which has primitive array`` () =
     let culture = CultureInfo.InvariantCulture
 
     let result = ModelParser.parseModel<Model2> culture modelData
-    result |> shouldEqual expected
 
+    result |> shouldEqual expected
 
 [<Fact>]
 let ``ModelParser.parse with complete model data`` () =
@@ -214,7 +275,8 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
     let result () =
         ModelParser.parseModel<Model> culture modelData |> ignore
 
-    result |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
+    result
+    |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
 
 [<Fact>]
 let ``ModelParser.parse with complete model data but wrong data`` () =
