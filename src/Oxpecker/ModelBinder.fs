@@ -48,20 +48,18 @@ module internal ModelParser =
 
     let private (|ComplexArray|_|) (data: IDictionary<string, StringValues>) =
         let indexAccess = "\[(\d+)\]\.(.+)"
+        let matchedData = Dictionary()
 
-        let matchedData =
-            data
-            |> Seq.choose(fun (KeyValue(key, value)) ->
-                match Regex.Match(key, indexAccess) with
-                | m when m.Success ->
-                    let index = int m.Groups.[1].Value
-                    let key = m.Groups.[2].Value
-                    Some(index, key, value)
+        for KeyValue (key, value) in data do
+            let m = Regex.Match(key, indexAccess)
+            if m.Success then
+                let index = int m.Groups.[1].Value
+                let key = m.Groups.[2].Value
 
-                | _ -> None)
-            |> Seq.groupBy(fun (index, _, _) -> index)
-            |> Seq.map(fun (index, items) -> index, items |> Seq.map(fun (_, key, value) -> key, value) |> dict)
-            |> dict
+                if not <| matchedData.ContainsKey(index) then
+                    matchedData[index] <- Dictionary()
+
+                matchedData[index][key] <- value
 
         if matchedData.Count = 0 then None else Some matchedData
 
