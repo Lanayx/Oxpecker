@@ -23,10 +23,8 @@ type internal RawData =
 module internal ModelParser =
 
     open System.ComponentModel
-    open System.Text.RegularExpressions
     open TypeShape.Core
     open TypeShape.Core.Utils
-    open System.Linq
 
     let private (|RawValue|_|) (rawValue: StringValues) =
         if rawValue.Count = 0 then ValueSome null
