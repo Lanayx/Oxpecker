@@ -92,10 +92,10 @@ module internal ModelParser =
 
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
-                let matchedKey = key.[prefix.Length ..]
-                if matchedKey.StartsWith('.') then
-                    matchedData[matchedKey.[1..]] <- value
-                elif matchedKey.StartsWith('[') then
+                let matchedKey = key[prefix.Length ..]
+                if matchedKey[0] = '.' then // property access
+                    matchedData[matchedKey[1..]] <- value
+                elif matchedKey[0] = '[' then // index access
                     matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
