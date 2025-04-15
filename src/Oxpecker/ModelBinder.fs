@@ -27,21 +27,10 @@ module internal ModelParser =
     open TypeShape.Core
     open TypeShape.Core.Utils
 
-    let private unsupported ty = failwith $"Unsupported type '{ty}'."
-
-    let (|RawValue|_|) (rawValue: StringValues) =
+    let private (|RawValue|_|) (rawValue: StringValues) =
         if rawValue.Count = 0 then ValueSome null
         elif rawValue.Count = 1 then ValueSome rawValue[0]
         else ValueNone
-
-    let private error (rawData: RawData) : 'T =
-        let value =
-            match rawData with
-            | SimpleData(RawValue Null) -> "<null>"
-            | SimpleData data -> $"{data}"
-            | ComplexData data -> $"%A{data}"
-
-        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
     let private (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
@@ -89,6 +78,17 @@ module internal ModelParser =
             ValueSome(ComplexData matchedData)
         else
             ValueNone
+
+    let private unsupported ty = failwith $"Unsupported type '{ty}'."
+
+    let private error (rawData: RawData) : 'T =
+        let value =
+            match rawData with
+            | SimpleData(RawValue Null) -> "<null>"
+            | SimpleData data -> $"{data}"
+            | ComplexData data -> $"%A{data}"
+
+        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
     [<Struct>]
     type internal ParserContext = {
