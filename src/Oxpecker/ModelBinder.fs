@@ -30,9 +30,9 @@ module internal ModelParser =
     let private unsupported ty = failwith $"Unsupported type '{ty}'."
 
     let (|RawValue|_|) (rawValue: StringValues) =
-        if rawValue.Count = 0 then Some null
-        elif rawValue.Count = 1 then Some rawValue[0]
-        else None
+        if rawValue.Count = 0 then ValueSome null
+        elif rawValue.Count = 1 then ValueSome rawValue[0]
+        else ValueNone
 
     let private error (rawData: RawData) : 'T =
         let value =
@@ -64,12 +64,15 @@ module internal ModelParser =
 
                 matchedData[index][key] <- value
 
-        if matchedData.Count = 0 then None else Some matchedData
+        if matchedData.Count = 0 then
+            ValueNone
+        else
+            ValueSome matchedData
 
     let private (|ExactMatch|_|) (key: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(key) with
-        | true, values -> Some(SimpleData values)
-        | _ -> None
+        | true, values -> ValueSome(SimpleData values)
+        | _ -> ValueNone
 
     let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
         let matchedData = Dictionary()
@@ -83,9 +86,9 @@ module internal ModelParser =
                     matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
-            Some(ComplexData matchedData)
+            ValueSome(ComplexData matchedData)
         else
-            None
+            ValueNone
 
     [<Struct>]
     type internal ParserContext = {
