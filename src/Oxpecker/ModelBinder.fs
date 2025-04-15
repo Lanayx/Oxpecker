@@ -14,16 +14,8 @@ type IModelBinder =
 
 [<Struct>]
 type internal RawData =
-    | RawString of rawString: (string | null)
-    | RawArray of rawArray: (string | null) array
-    | RawValues of rawDictionary: IDictionary<string, StringValues>
-
-    override this.ToString() =
-        match this with
-        | RawString Null -> "<null>"
-        | RawString(NonNull v) -> v
-        | RawArray v -> $"%A{v}"
-        | RawValues v -> $"%A{v}"
+    | SimpleData of simpleData: StringValues
+    | ComplexData of complexData: IDictionary<string, StringValues>
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -37,8 +29,19 @@ module internal ModelParser =
 
     let private unsupported ty = failwith $"Unsupported type '{ty}'."
 
+    let (|RawValue|_|) (rawValue: StringValues) =
+        if rawValue.Count = 0 then Some null
+        elif rawValue.Count = 1 then Some rawValue[0]
+        else None
+
     let private error (rawData: RawData) : 'T =
-        failwith $"Could not parse value '{rawData}' to type '{typeof<'T>}'."
+        let value =
+            match rawData with
+            | SimpleData(RawValue Null) -> "<null>"
+            | SimpleData data -> $"{data}"
+            | ComplexData data -> $"%A{data}"
+
+        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
     let private (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
@@ -65,12 +68,7 @@ module internal ModelParser =
 
     let private (|ExactMatch|_|) (key: string) (data: IDictionary<string, StringValues>) =
         match data.TryGetValue(key) with
-        | true, values ->
-            match values.ToArray() with
-            | [||] -> None
-            | [| value |] -> Some(RawString value)
-            | array -> Some(RawArray array)
-
+        | true, values -> Some(SimpleData values)
         | _ -> None
 
     let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
@@ -85,7 +83,7 @@ module internal ModelParser =
                     matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
-            Some(RawValues matchedData)
+            Some(ComplexData matchedData)
         else
             None
 
@@ -124,8 +122,8 @@ module internal ModelParser =
 
                         FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
                             match rawData with
-                            | RawValues(ExactMatch fieldShape.Label matchedData)
-                            | RawValues(PrefixMatch fieldShape.Label matchedData) ->
+                            | ComplexData(ExactMatch fieldShape.Label matchedData)
+                            | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
                                 {
                                     Culture = culture
                                     RawData = matchedData
@@ -140,16 +138,16 @@ module internal ModelParser =
         let mkEnumerableParser (parse: Parser<'Element>) : Parser<'Element seq> =
             fun { Culture = culture; RawData = rawData } ->
                 match rawData with
-                | RawArray values ->
+                | SimpleData values ->
                     seq {
                         for value in values ->
                             parse {
                                 Culture = culture
-                                RawData = RawString value
+                                RawData = SimpleData(StringValues value)
                             }
                     }
 
-                | RawValues(ComplexArray indexedDicts) ->
+                | ComplexData(ComplexArray indexedDicts) ->
                     let maxIndex = Seq.max indexedDicts.Keys
 
                     seq {
@@ -158,7 +156,7 @@ module internal ModelParser =
                             | true, dict ->
                                 parse {
                                     Culture = culture
-                                    RawData = RawValues dict
+                                    RawData = ComplexData dict
                                 }
 
                             | _ -> Unchecked.defaultof<_>
@@ -169,7 +167,7 @@ module internal ModelParser =
         match shapeof<'T> with
         | Shape.String ->
             function
-            | { RawData = RawString value } -> value
+            | { RawData = SimpleData(RawValue value) } -> value
             | { RawData = rawData } -> error rawData
             |> wrap
 
@@ -180,7 +178,7 @@ module internal ModelParser =
                         let parse = mkParserCached<'t> ctx
 
                         function
-                        | { RawData = RawString Null } -> Nullable()
+                        | { RawData = SimpleData(RawValue Null) } -> Nullable()
                         | parserContext -> parse parserContext |> Nullable
                         |> wrap
                 }
@@ -192,7 +190,7 @@ module internal ModelParser =
                         let parse = mkParserCached<'t> ctx
 
                         function
-                        | { RawData = RawString Null } -> None
+                        | { RawData = SimpleData(RawValue Null) } -> None
                         | parserContext -> parse parserContext |> Some
                         |> wrap
                 }
@@ -231,8 +229,8 @@ module internal ModelParser =
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
             fun { RawData = rawData } ->
                 match rawData with
-                | RawString Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
-                | RawString(NonNull(UnionCase shape case)) -> case.CreateUninitialized()
+                | SimpleData(RawValue Null) when not shape.IsStructUnion -> Unchecked.defaultof<_>
+                | SimpleData(RawValue(NonNull(UnionCase shape case))) -> case.CreateUninitialized()
                 | _ -> error rawData
             |> wrap
 
@@ -255,7 +253,7 @@ module internal ModelParser =
             else
                 fun { Culture = culture; RawData = rawData } ->
                     match rawData with
-                    | RawString(NonNull value) ->
+                    | SimpleData(RawValue(NonNull value)) ->
                         try
                             typeConverter.ConvertFromString(null, culture, value) |> unbox
                         with _ ->
@@ -291,4 +289,4 @@ type ModelBinder(?options: ModelBinderOptions) =
         /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
         /// </summary>
         member this.Bind<'T>(data) =
-            ModelParser.parseModel<'T> options.CultureInfo (RawValues(Dictionary data))
+            ModelParser.parseModel<'T> options.CultureInfo (ComplexData(Dictionary data))
