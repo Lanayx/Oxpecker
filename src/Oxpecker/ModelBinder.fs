@@ -26,6 +26,7 @@ module internal ModelParser =
     open System.Text.RegularExpressions
     open TypeShape.Core
     open TypeShape.Core.Utils
+    open System.Linq
 
     let private (|RawValue|_|) (rawValue: StringValues) =
         if rawValue.Count = 0 then ValueSome null
@@ -38,20 +39,39 @@ module internal ModelParser =
 
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
+    let inline private (|IndexAccess|_|) (key: string) =
+        let key = key.AsSpan()
+
+        if (key[0] <> '[') then
+            ValueNone
+        else
+            let mutable currentIndex = 1
+
+            while currentIndex <> key.Length - 1 && Char.IsDigit(key[currentIndex]) do
+                currentIndex <- currentIndex + 1
+
+            if currentIndex = 1 || currentIndex = key.Length - 1 then
+                ValueNone
+            elif key[currentIndex] <> ']' && key[currentIndex + 1] <> '.' then
+                ValueNone
+            else
+                let index = Int32.Parse(key.Slice(1, currentIndex - 1))
+                let subKey = key.Slice(currentIndex + 2)
+
+                ValueSome(struct (index, subKey.ToString()))
+
     let private (|ComplexArray|_|) (data: IDictionary<string, StringValues>) =
-        let indexAccess = "\[(\d+)\]\.(.+)"
         let matchedData = Dictionary()
 
         for KeyValue(key, value) in data do
-            let m = Regex.Match(key, indexAccess)
-            if m.Success then
-                let index = int m.Groups.[1].Value
-                let key = m.Groups.[2].Value
-
+            match key with
+            | IndexAccess(index, subKey) ->
                 if not <| matchedData.ContainsKey(index) then
                     matchedData[index] <- Dictionary()
 
-                matchedData[index][key] <- value
+                matchedData[index][subKey] <- value
+
+            | _ -> ()
 
         if matchedData.Count = 0 then
             ValueNone
@@ -69,9 +89,9 @@ module internal ModelParser =
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
                 let matchedKey = key.[prefix.Length ..]
-                if matchedKey.StartsWith '.' then
+                if matchedKey.StartsWith('.') then
                     matchedData[matchedKey.[1..]] <- value
-                elif matchedKey.StartsWith '[' then
+                elif matchedKey.StartsWith('[') then
                     matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
