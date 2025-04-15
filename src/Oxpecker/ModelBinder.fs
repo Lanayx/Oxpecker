@@ -120,7 +120,7 @@ module internal ModelParser =
 
     type private Parser<'T> = ParserContext -> 'T
 
-    type private FieldSetter<'T> = delegate of ParserContext * 'T -> unit
+    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
 
     let rec private mkParser<'T> () : Parser<'T> =
         match cache.TryFind() with
@@ -149,13 +149,13 @@ module internal ModelParser =
                             match rawData with
                             | ComplexData(ExactMatch fieldShape.Label matchedData)
                             | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
-                                {
-                                    Culture = culture
-                                    RawData = matchedData
-                                }
-                                |> parse
-                                |> fieldShape.Set instance
-                                |> ignore
+                                let field =
+                                    parse {
+                                        Culture = culture
+                                        RawData = matchedData
+                                    }
+
+                                fieldShape.SetByRef(&instance, field)
 
                             | _ -> ())
                 }
@@ -259,14 +259,14 @@ module internal ModelParser =
                 | _ -> error rawData
             |> wrap
 
-        | Shape.NotStruct _ & Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
+        | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
             let fieldSetters = shape.Fields |> Array.map mkFieldSetter
 
             fun parserContext ->
-                let instance = shape.CreateUninitialized()
+                let mutable instance = shape.CreateUninitialized()
 
                 for fieldSetter in fieldSetters do
-                    fieldSetter.Invoke(parserContext, instance)
+                    fieldSetter.Invoke(parserContext, &instance)
 
                 instance
 
