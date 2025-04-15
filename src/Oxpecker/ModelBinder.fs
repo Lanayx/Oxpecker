@@ -39,26 +39,30 @@ module internal ModelParser =
 
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
-    let inline private (|IndexAccess|_|) (key: string) =
+    /// Active pattern for parsing keys in the format "[index].subKey".
+    let private (|IndexAccess|_|) (key: string) =
         let key = key.AsSpan()
-
-        if (key[0] <> '[') then
-            ValueNone
-        else
+        if (key[0] = '[') then
+            let lastIndex = key.Length - 1
             let mutable currentIndex = 1
 
-            while currentIndex <> key.Length - 1 && Char.IsDigit(key[currentIndex]) do
+            while key[currentIndex] |> Char.IsDigit do
                 currentIndex <- currentIndex + 1
 
-            if currentIndex = 1 || currentIndex = key.Length - 1 then
-                ValueNone
-            elif key[currentIndex] <> ']' && key[currentIndex + 1] <> '.' then
-                ValueNone
-            else
+            if
+                currentIndex > 1 // at least one digit
+                && key[currentIndex] = ']'
+                && key[currentIndex + 1] = '.'
+                && currentIndex + 2 < lastIndex // at least one symbol after '].'
+            then
                 let index = Int32.Parse(key.Slice(1, currentIndex - 1))
                 let subKey = key.Slice(currentIndex + 2)
 
                 ValueSome(struct (index, subKey.ToString()))
+            else
+                ValueNone
+        else
+            ValueNone
 
     let private (|ComplexArray|_|) (data: IDictionary<string, StringValues>) =
         let matchedData = Dictionary()
