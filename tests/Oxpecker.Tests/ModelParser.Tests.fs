@@ -24,6 +24,7 @@ type Model = {
     Children: Child[]
 }
 
+[<Struct>]
 type Model2 = { SearchTerms: string[] }
 
 type CompositeModel = {
@@ -720,7 +721,7 @@ type Baz = {
     Value: int Nullable
 }
 
-[<NoEquality; NoComparison>]
+[<Struct; NoEquality; NoComparison>]
 type Bar = { Bar: string | null; Baz: Baz | null }
 
 type Foo = { Foo: string; Bars: Bar option seq }
