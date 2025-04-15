@@ -12,8 +12,7 @@ module CustomTopLevelOperators =
         f |> should (throwWithMessage message) typeof<'exn>
 
     [<DebuggerStepThrough>]
-    let shouldEqualSeq (expected: #seq<'a>) (actual: #seq<'a>) =
-        actual |> should equalSeq expected
+    let shouldEqualSeq (expected: #seq<'a>) (actual: #seq<'a>) = actual |> should equalSeq expected
 
     let private structuallyEqual expected = Is.StructurallyEqualTo(expected)
 
