@@ -349,41 +349,41 @@ type ModelBinding() =
         }
 
     static let directModelBinder =
-        let firstValue (rawValues: StringValues) = if rawValues.Count > 0 then rawValues[0] else null
-        let bindModel (data: IDictionary<string, StringValues>) =
-            {
-                Id = data["Id"] |> firstValue |> nonNull |> Guid.Parse
-                FirstName = data["FirstName"] |> firstValue
-                MiddleName = data["MiddleName"] |> firstValue |> Option.ofObj
-                LastName = data["LastName"] |> firstValue
-                Sex =
-                    match data["Sex"] |> firstValue with
-                    | "Female" -> Female
-                    | "Male" -> Male
-                    | value -> failwith $"Value '{value}' could not be parsed to {typeof<Sex>}"
-                BirthDate = data["BirthDate"] |> firstValue |> nonNull |> DateTime.Parse
-                Nicknames = Some [ yield! data["Nicknames"] |> Seq.cast]
-                Children =
-                    [|
-                        {
-                            Name = data["Children[0].Name"] |> firstValue
-                            Age = data["Children[0].Age"] |> firstValue |> int
-                        }
-                        {
-                            Name = data["Children[1].Name"] |> firstValue
-                            Age = data["Children[1].Age"] |> firstValue |> int
-                        }
-                        {
-                            Name = data["Children[2].Name"] |> firstValue
-                            Age = data["Children[2].Age"] |> firstValue |> int
-                        }
-                    |]
-            }
+        let firstValue (rawValues: StringValues) =
+            if rawValues.Count > 0 then rawValues[0] else null
+        let bindModel (data: IDictionary<string, StringValues>) = {
+            Id = data["Id"] |> firstValue |> nonNull |> Guid.Parse
+            FirstName = data["FirstName"] |> firstValue
+            MiddleName = data["MiddleName"] |> firstValue |> Option.ofObj
+            LastName = data["LastName"] |> firstValue
+            Sex =
+                match data["Sex"] |> firstValue with
+                | "Female" -> Female
+                | "Male" -> Male
+                | value -> failwith $"Value '{value}' could not be parsed to {typeof<Sex>}"
+            BirthDate = data["BirthDate"] |> firstValue |> nonNull |> DateTime.Parse
+            Nicknames = Some [ yield! data["Nicknames"] |> Seq.cast ]
+            Children = [|
+                {
+                    Name = data["Children[0].Name"] |> firstValue
+                    Age = data["Children[0].Age"] |> firstValue |> int
+                }
+                {
+                    Name = data["Children[1].Name"] |> firstValue
+                    Age = data["Children[1].Age"] |> firstValue |> int
+                }
+                {
+                    Name = data["Children[2].Name"] |> firstValue
+                    Age = data["Children[2].Age"] |> firstValue |> int
+                }
+            |]
+        }
         { new IModelBinder with
             member this.Bind<'T>(data) =
                 if Type.(<>)(typeof<'T>, typeof<Model>) then
                     failwith "Type 'Model' only"
-                else bindModel (Dictionary data) |> unbox<'T>
+                else
+                    bindModel(Dictionary data) |> unbox<'T>
         }
 
     static let typeShapeBasedModelBinder =
@@ -394,8 +394,7 @@ type ModelBinding() =
         reflectionBasedModelBinder.Bind<Model> modelData
 
     [<Benchmark>]
-    member this.DirectModelBinder() =
-        directModelBinder.Bind<Model> modelData
+    member this.DirectModelBinder() = directModelBinder.Bind<Model> modelData
 
     [<Benchmark>]
     member this.TypeShapeBasedModelBinder() =
