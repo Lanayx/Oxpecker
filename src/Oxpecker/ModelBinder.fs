@@ -15,7 +15,7 @@ type IModelBinder =
 [<Struct>]
 type internal RawData =
     | SimpleData of simpleData: StringValues
-    | ComplexData of complexData: IDictionary<string, StringValues>
+    | ComplexData of complexData: Dictionary<string, StringValues>
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -62,7 +62,7 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private (|ComplexArray|_|) (data: IDictionary<string, StringValues>) =
+    let private (|ComplexArray|_|) (data: Dictionary<string, StringValues>) =
         let matchedData = Dictionary()
 
         for KeyValue(key, value) in data do
@@ -80,12 +80,12 @@ module internal ModelParser =
         else
             ValueSome matchedData
 
-    let private (|ExactMatch|_|) (key: string) (data: IDictionary<string, StringValues>) =
+    let private (|ExactMatch|_|) (key: string) (data: Dictionary<string, StringValues>) =
         match data.TryGetValue(key) with
         | true, values -> ValueSome(SimpleData values)
         | _ -> ValueNone
 
-    let private (|PrefixMatch|_|) (prefix: string) (data: IDictionary<string, StringValues>) =
+    let private (|PrefixMatch|_|) (prefix: string) (data: Dictionary<string, StringValues>) =
         let matchedData = Dictionary()
 
         for KeyValue(key, value) in data do

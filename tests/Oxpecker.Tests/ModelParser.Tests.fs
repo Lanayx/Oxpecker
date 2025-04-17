@@ -1,11 +1,15 @@
 module Oxpecker.Tests.ModelParser
 
 open System
+open System.Collections.Generic
 open System.Globalization
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
 open FsUnitTyped
+
+let toDictionary (data: (string * StringValues) list) =
+    data |> List.map(fun (k, v) -> KeyValuePair.Create(k, v)) |> Dictionary
 
 type Sex =
     | Male
@@ -34,7 +38,8 @@ type CompositeModel = {
 
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses null SearchTerms as empty array`` () =
-    let modelData = dict [ "SearchTerms", StringValues Unchecked.defaultof<string> ]
+    let modelData =
+        [ "SearchTerms", StringValues Unchecked.defaultof<string> ] |> toDictionary
     let expected = { SearchTerms = [||] }
     let culture = CultureInfo.InvariantCulture
 
@@ -45,7 +50,8 @@ let ``ModelParser.parseModel<Model2> parses null SearchTerms as empty array`` ()
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses null string array as empty array`` () =
     let modelData =
-        dict [ "SearchTerms", StringValues Unchecked.defaultof<string array> ]
+        [ "SearchTerms", StringValues Unchecked.defaultof<string array> ]
+        |> toDictionary
     let expected = { SearchTerms = [||] }
     let culture = CultureInfo.InvariantCulture
 
@@ -55,7 +61,7 @@ let ``ModelParser.parseModel<Model2> parses null string array as empty array`` (
 
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses empty string array as empty array`` () =
-    let modelData = dict [ "SearchTerms", StringValues [||] ]
+    let modelData = [ "SearchTerms", StringValues [||] ] |> toDictionary
     let expected = { SearchTerms = [||] }
     let culture = CultureInfo.InvariantCulture
 
@@ -65,7 +71,7 @@ let ``ModelParser.parseModel<Model2> parses empty string array as empty array`` 
 
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses array with null element`` () =
-    let modelData = dict [ "SearchTerms", StringValues [| null |] ]
+    let modelData = [ "SearchTerms", StringValues [| null |] ] |> toDictionary
     let expected = {
         SearchTerms = [| Unchecked.defaultof<_> |]
     }
@@ -77,7 +83,7 @@ let ``ModelParser.parseModel<Model2> parses array with null element`` () =
 
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses single string as single-element array`` () =
-    let modelData = dict [ "SearchTerms", StringValues "a" ]
+    let modelData = [ "SearchTerms", StringValues "a" ] |> toDictionary
     let expected = { SearchTerms = [| "a" |] }
     let culture = CultureInfo.InvariantCulture
 
@@ -86,7 +92,7 @@ let ``ModelParser.parseModel<Model2> parses single string as single-element arra
 
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses single-element string array`` () =
-    let modelData = dict [ "SearchTerms", StringValues [| "a" |] ]
+    let modelData = [ "SearchTerms", StringValues [| "a" |] ] |> toDictionary
     let expected = { SearchTerms = [| "a" |] }
     let culture = CultureInfo.InvariantCulture
 
@@ -95,7 +101,8 @@ let ``ModelParser.parseModel<Model2> parses single-element string array`` () =
 
 [<Fact>]
 let ``ModelParser.parseModel<Model2> parses multi-element string array`` () =
-    let modelData = dict [ "SearchTerms", StringValues [| "a"; "abc"; "abcdef" |] ]
+    let modelData =
+        [ "SearchTerms", StringValues [| "a"; "abc"; "abcdef" |] ] |> toDictionary
     let expected = {
         SearchTerms = [| "a"; "abc"; "abcdef" |]
     }
@@ -109,7 +116,7 @@ let ``ModelParser.parseModel<Model2> parses multi-element string array`` () =
 let ``ModelParser.parse with complete model data`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "Id", StringValues(id.ToString())
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
@@ -124,6 +131,7 @@ let ``ModelParser.parse with complete model data`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
         ]
+        |> toDictionary
     let expected = {
         Id = id
         FirstName = "Susan"
@@ -148,7 +156,7 @@ let ``ModelParser.parse with complete model data`` () =
 let ``ModelParser.parse with model data without optional parameters`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "Id", StringValues(id.ToString())
             "FirstName", StringValues "Susan"
             "LastName", StringValues "Doe"
@@ -161,6 +169,7 @@ let ``ModelParser.parse with model data without optional parameters`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
         ]
+        |> toDictionary
     let expected = {
         Id = id
         FirstName = "Susan"
@@ -184,7 +193,7 @@ let ``ModelParser.parse with model data without optional parameters`` () =
 let ``ModelParser.parse with missing array items`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "Id", StringValues(id.ToString())
             "FirstName", StringValues "Susan"
             "LastName", StringValues "Doe"
@@ -195,6 +204,7 @@ let ``ModelParser.parse with missing array items`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
         ]
+        |> toDictionary
     let expected = {
         Id = id
         FirstName = "Susan"
@@ -218,7 +228,7 @@ let ``ModelParser.parse with missing array items`` () =
 let ``ModelParser.parse with complete model data but with different order for array of child`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "Id", StringValues(id.ToString())
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
@@ -233,6 +243,7 @@ let ``ModelParser.parse with complete model data but with different order for ar
             "Children[1].Name", StringValues "Ali"
             "Children[0].Age", StringValues "32"
         ]
+        |> toDictionary
     let expected = {
         Id = id
         FirstName = "Susan"
@@ -256,7 +267,7 @@ let ``ModelParser.parse with complete model data but with different order for ar
 let ``ModelParser.parse with complete model data but wrong union case`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "Id", StringValues(id.ToString())
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
@@ -271,6 +282,7 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
         ]
+        |> toDictionary
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -283,7 +295,7 @@ let ``ModelParser.parse with complete model data but wrong union case`` () =
 let ``ModelParser.parse with complete model data but wrong data`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "Id", StringValues(id.ToString())
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
@@ -298,6 +310,7 @@ let ``ModelParser.parse with complete model data but wrong data`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "wrongAge"
         ]
+        |> toDictionary
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -315,7 +328,7 @@ let ``ModelParser.parse with complete model data but wrong data`` () =
 let ``ModelParser.parse with complete model data but mixed casing`` () =
     let id = Guid.NewGuid()
     let modelData =
-        dict [
+        [
             "id", StringValues(id.ToString())
             "firstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
@@ -330,6 +343,7 @@ let ``ModelParser.parse with complete model data but mixed casing`` () =
             "Children[2].Name", StringValues "Gholi"
             "Children[2].age", StringValues "44"
         ]
+        |> toDictionary
     let expected = {
         Id = Guid.Empty
         FirstName = null
@@ -353,7 +367,7 @@ let ``ModelParser.parse with complete model data but mixed casing`` () =
 [<Fact>]
 let ``ModelParser.parse with incomplete model data`` () =
     let modelData =
-        dict [
+        [
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
             "Sex", StringValues "Female"
@@ -362,6 +376,7 @@ let ``ModelParser.parse with incomplete model data`` () =
             "Children[0].Name", StringValues "Hamed"
             "Children[1].Age", StringValues "44"
         ]
+        |> toDictionary
 
     let expected = {
         Id = Guid.Empty
@@ -381,7 +396,7 @@ let ``ModelParser.parse with incomplete model data`` () =
 [<Fact>]
 let ``ModelParser.parse with incomplete model data and with different order for array of child`` () =
     let modelData =
-        dict [
+        [
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
             "Sex", StringValues "Female"
@@ -390,6 +405,7 @@ let ``ModelParser.parse with incomplete model data and with different order for 
             "Children[1].Age", StringValues "44"
             "Children[0].Name", StringValues "Hamed"
         ]
+        |> toDictionary
 
     let expected = {
         Id = Guid.Empty
@@ -410,10 +426,11 @@ let ``ModelParser.parse with incomplete model data and with different order for 
 [<Fact>]
 let ``ModelParser.parse with composite model and SecondChild missing data`` () =
     let modelData =
-        dict [
+        [
             "FirstChild.Name", StringValues "FirstName"
             "FirstChild.Age", StringValues "2"
         ]
+        |> toDictionary
     let expected = {
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = None
@@ -426,12 +443,13 @@ let ``ModelParser.parse with composite model and SecondChild missing data`` () =
 [<Fact>]
 let ``ModelParser.parse with complete composite model data`` () =
     let modelData =
-        dict [
+        [
             "FirstChild.Name", StringValues "FirstName"
             "FirstChild.Age", StringValues "2"
             "SecondChild.Name", StringValues "SecondName"
             "SecondChild.Age", StringValues "10"
         ]
+        |> toDictionary
     let expected = {
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = Some { Name = "SecondName"; Age = 10 }
@@ -729,12 +747,13 @@ type Foo = { Foo: string; Bars: Bar option seq }
 [<Fact>]
 let ``parseModel<Foo> parses the data with no seqential index elements`` () =
     let modelData =
-        dict [
+        [
             "Bars[2].Bar", StringValues "Bar"
             "Bars[0].Baz.Name", StringValues "abc"
             "Bars[0].Baz.Value", StringValues "0"
             "Bars[2].Baz.Value", StringValues "1"
         ]
+        |> toDictionary
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [|
@@ -760,7 +779,7 @@ let ``parseModel<Foo> parses the data with no seqential index elements`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with no matched prefix`` () =
-    let modelData = dict [ "Barss[0].Baz.Value", StringValues "0" ]
+    let modelData = [ "Barss[0].Baz.Value", StringValues "0" ] |> toDictionary
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = Unchecked.defaultof<_>
@@ -773,7 +792,7 @@ let ``parseModel<Foo> parses the data with no matched prefix`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with inproper index access`` () =
-    let modelData = dict [ "Bars[0].Baz[0].Value", StringValues "0" ]
+    let modelData = [ "Bars[0].Baz[0].Value", StringValues "0" ] |> toDictionary
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [|
@@ -791,7 +810,7 @@ let ``parseModel<Foo> parses the data with inproper index access`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with partially incorrect key`` () =
-    let modelData = dict [ "Bars[0].Test.Descr", StringValues "0" ]
+    let modelData = [ "Bars[0].Test.Descr", StringValues "0" ] |> toDictionary
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [| Some { Bar = null; Baz = null } |]
@@ -804,7 +823,7 @@ let ``parseModel<Foo> parses the data with partially incorrect key`` () =
 
 [<Fact>]
 let ``parseModel<Foo> parses the data with missing index`` () =
-    let modelData = dict [ "Bars.Baz.Value", StringValues "0" ]
+    let modelData = [ "Bars.Baz.Value", StringValues "0" ] |> toDictionary
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [||]
@@ -817,7 +836,7 @@ let ``parseModel<Foo> parses the data with missing index`` () =
 
 [<Fact>]
 let ``parseModel<Bar> parses the data with no matched prefix`` () =
-    let modelData = dict [ "Bazz.Value", StringValues "0" ]
+    let modelData = [ "Bazz.Value", StringValues "0" ] |> toDictionary
     let expected = { Bar = null; Baz = null }
     let culture = CultureInfo.InvariantCulture
 
@@ -835,10 +854,11 @@ type AnonymousType1 = {|
 [<Fact>]
 let ``parseModel<{| Value: {| Value: {| Value: {| Id: int; Name: string |} |} |} |}> parses the data`` () =
     let modelData =
-        dict [
+        [
             "Value.Value.Value.Name", StringValues "foo"
             "Value.Value.Value.Id", StringValues "111"
         ]
+        |> toDictionary
     let expected: AnonymousType1 = {|
         Value = {|
             Value = {|
@@ -870,13 +890,14 @@ let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: str
     ()
     =
     let modelData =
-        dict [
+        [
             "Values[2].Value.Values[2].Value.Name", StringValues "foo"
             "Values[2].Value.Values[0].Value.Id", StringValues "111"
             "Values[1].Value.Values[0].Value.Name", StringValues "bar"
             "Values[2].Value.Values[2].Value.Id", StringValues "222"
 
         ]
+        |> toDictionary
     let expected: AnonymousType2 = {|
         Values = [|
             Unchecked.defaultof<_>
@@ -909,11 +930,12 @@ let ``parseModel<{| Values: {| Value: {| Values: {| Value: {| Id: int; Name: str
 [<Fact>]
 let ``ModelParser.parse<int> fails to parse wrong data`` () =
     let modelData =
-        dict [
+        [
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
             "LastName", StringValues "Doe"
         ]
+        |> toDictionary
     let expected =
         "Could not parse value 'seq [[FirstName, Susan]; [MiddleName, Elisabeth]; [LastName, Doe]]' to type 'System.Int32'."
     let culture = CultureInfo.InvariantCulture
