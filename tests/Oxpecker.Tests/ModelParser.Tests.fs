@@ -324,11 +324,6 @@ let ``ModelParser.parseModel<Model> fails when data contains invalid values`` ()
     result
     |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'System.DateTime'."
 
-// ---------------------------------
-// ModelParser.parse Tests
-// ---------------------------------
-
-
 [<Fact>]
 let ``ModelParser.parseModel<Model> handles mixed casing in keys`` () =
     let id = Guid.NewGuid()
