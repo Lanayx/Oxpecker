@@ -40,6 +40,7 @@ module internal ModelParser =
     /// Active pattern for parsing keys in the format "[index].subKey".
     let private (|IndexAccess|_|) (key: string) =
         let key = key.AsSpan()
+
         if (key[0] = '[') then
             let lastIndex = key.Length - 1
             let mutable currentIndex = 1
@@ -91,6 +92,7 @@ module internal ModelParser =
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
                 let matchedKey = key[prefix.Length ..]
+
                 if matchedKey[0] = '.' then // property access
                     matchedData[matchedKey[1..]] <- value
                 elif matchedKey[0] = '[' then // index access
