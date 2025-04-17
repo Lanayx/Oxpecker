@@ -164,28 +164,30 @@ module internal ModelParser =
             fun { Culture = culture; RawData = rawData } ->
                 match rawData with
                 | SimpleData values ->
-                    seq {
-                        for value in values ->
+                    let res = Array.zeroCreate(values.Count)
+
+                    for i in 0 .. values.Count - 1 do
+                        res[i] <-
                             parse {
                                 Culture = culture
-                                RawData = SimpleData(StringValues value)
+                                RawData = SimpleData(StringValues values[i])
                             }
-                    }
 
+                    res
                 | ComplexData(ComplexArray indexedDicts) ->
                     let maxIndex = Seq.max indexedDicts.Keys
+                    let res = Array.zeroCreate(maxIndex + 1)
 
-                    seq {
-                        for index in 0..maxIndex ->
-                            match indexedDicts.TryGetValue index with
-                            | true, dict ->
+                    for i in 0..maxIndex do
+                        let mutable dict = Unchecked.defaultof<_>
+                        if indexedDicts.TryGetValue(i, &dict) then
+                            res[i] <-
                                 parse {
                                     Culture = culture
                                     RawData = ComplexData dict
                                 }
 
-                            | _ -> Unchecked.defaultof<_>
-                    }
+                    res
 
                 | _ -> Seq.empty
 
