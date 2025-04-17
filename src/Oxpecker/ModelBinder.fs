@@ -41,7 +41,7 @@ module internal ModelParser =
     let private (|IndexAccess|_|) (key: string) =
         let key = key.AsSpan()
 
-        if (key[0] = '[') then
+        if key[0] = '[' then
             let lastIndex = key.Length - 1
             let mutable currentIndex = 1
 
