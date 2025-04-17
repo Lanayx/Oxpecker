@@ -10,10 +10,8 @@ type Sex =
     | Male
     | Female
 
-[<CLIMutable>]
 type Child = { Name: string | null; Age: int }
 
-[<CLIMutable>]
 type Model = {
     Id: Guid
     FirstName: string | null
