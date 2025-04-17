@@ -8,7 +8,7 @@ open Oxpecker
 open Xunit
 open FsUnitTyped
 
-let toComplexData (data: (string * StringValues) list) =
+let private toComplexData (data: (string * StringValues) list) =
     data
     |> List.map(fun (k, v) -> KeyValuePair.Create(k, v))
     |> Dictionary
@@ -319,7 +319,6 @@ let ``ModelParser.parseModel<Model> fails when data contains invalid values`` ()
             "Children[2].Age", StringValues "wrongAge"
         ]
         |> toComplexData
-        |> ComplexData
     let culture = CultureInfo.InvariantCulture
 
     let result () =
@@ -348,7 +347,6 @@ let ``ModelParser.parseModel<Model> handles mixed casing in keys`` () =
             "Children[2].age", StringValues "44"
         ]
         |> toComplexData
-        |> ComplexData
     let expected = {
         Id = Guid.Empty
         FirstName = null
