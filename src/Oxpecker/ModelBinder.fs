@@ -122,28 +122,28 @@ module internal ModelParser =
 
     type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
 
-    let rec private mkParser<'T> () : Parser<'T> =
+    let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
         | Some x -> x
         | None ->
             use ctx = cache.CreateGenerationContext()
-            mkParserCached<'T> ctx
+            getOrCacheParser<'T> ctx
 
-    and private mkParserCached<'T> (ctx: TypeGenerationContext) : Parser<'T> =
+    and private getOrCacheParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell parserContext -> cell.Value parserContext) with
         | Cached(value = v) -> v
         | NotCached t ->
-            let v = mkParserAux<'T> ctx
+            let v = createParser<'T> ctx
             ctx.Commit t v
 
-    and private mkParserAux<'T> (ctx: TypeGenerationContext) : Parser<'T> =
+    and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
 
-        let mkFieldSetter (shape: IShapeMember<'DeclaringType>) =
+        let makeFieldSetter (shape: IShapeMember<'DeclaringType>) =
             shape.Accept
                 { new IMemberVisitor<_, _> with
                     member _.Visit<'Field>(fieldShape) =
-                        let parse = mkParserCached<'Field> ctx
+                        let parse = getOrCacheParser<'Field> ctx
 
                         FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
                             match rawData with
@@ -160,7 +160,7 @@ module internal ModelParser =
                             | _ -> ())
                 }
 
-        let mkEnumerableParser (parse: Parser<'Element>) : Parser<'Element seq> =
+        let makeEnumerableParser (parse: Parser<'Element>) : Parser<'Element seq> =
             fun { Culture = culture; RawData = rawData } ->
                 match rawData with
                 | SimpleData values ->
@@ -180,6 +180,7 @@ module internal ModelParser =
 
                     for i in 0..maxIndex do
                         let mutable dict = Unchecked.defaultof<_>
+
                         if indexedDicts.TryGetValue(i, &dict) then
                             res[i] <-
                                 parse {
@@ -202,7 +203,7 @@ module internal ModelParser =
             shape.Accept
                 { new INullableVisitor<_> with
                     member _.Visit<'t when 't: (new: unit -> 't) and 't: struct and 't :> ValueType>() = // 'T = Nullable<'t>
-                        let parse = mkParserCached<'t> ctx
+                        let parse = getOrCacheParser<'t> ctx
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> Nullable()
@@ -214,7 +215,7 @@ module internal ModelParser =
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't option
-                        let parse = mkParserCached<'t> ctx
+                        let parse = getOrCacheParser<'t> ctx
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> None
@@ -226,21 +227,21 @@ module internal ModelParser =
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't list
-                        mkParserCached<'t seq> ctx >> Seq.toList |> wrap
+                        getOrCacheParser<'t seq> ctx >> Seq.toList |> wrap
                 }
 
         | Shape.Array shape when shape.Rank = 1 ->
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't array
-                        mkParserCached<'t seq> ctx >> Seq.toArray |> wrap
+                        getOrCacheParser<'t seq> ctx >> Seq.toArray |> wrap
                 }
 
         | Shape.ResizeArray shape ->
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = ResizeArray<'t>
-                        mkParserCached<'t seq> ctx >> ResizeArray |> wrap
+                        getOrCacheParser<'t seq> ctx >> ResizeArray |> wrap
                 }
 
         | Shape.Enumerable shape ->
@@ -250,7 +251,7 @@ module internal ModelParser =
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
                         else
-                            mkParserCached<'t> ctx |> mkEnumerableParser |> wrap
+                            getOrCacheParser<'t> ctx |> makeEnumerableParser |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
@@ -262,7 +263,7 @@ module internal ModelParser =
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map mkFieldSetter
+            let fieldSetters = shape.Fields |> Array.map makeFieldSetter
 
             fun parserContext ->
                 let mutable instance = shape.CreateUninitialized()
@@ -293,7 +294,7 @@ module internal ModelParser =
     and private cache: TypeCache = TypeCache()
 
     let rec internal parseModel<'T> (culture: CultureInfo) (rawData: RawData) =
-        let parse = mkParser<'T>()
+        let parse = getOrCreateParser<'T>()
         parse { Culture = culture; RawData = rawData }
 
 /// <summary>
