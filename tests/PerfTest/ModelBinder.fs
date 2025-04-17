@@ -76,8 +76,7 @@ type ModelBinding() =
             |]
         }
         { new IModelBinder with
-            member this.Bind<'T>(data) =
-                bindModel(Dictionary data) |> unbox<'T>
+            member this.Bind<'T>(data) = bindModel(Dictionary data) |> unbox<'T>
         }
 
     static let typeShapeBasedModelBinder =
