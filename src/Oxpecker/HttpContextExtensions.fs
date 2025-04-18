@@ -369,7 +369,7 @@ type HttpContextExtensions() =
         task {
             try
                 let! form = ctx.Request.ReadFormAsync()
-                return binder.Bind<'T> form
+                return binder.Bind<'T> <| FormCollectionWrapper(form)
             with ex ->
                 return raise <| ModelBindException("Unable to deserialize model from form", ex)
         }
@@ -384,6 +384,6 @@ type HttpContextExtensions() =
     static member BindQuery<'T>(ctx: HttpContext) =
         try
             let binder = ctx.GetModelBinder()
-            binder.Bind<'T> ctx.Request.Query
+            binder.Bind<'T> <| QueryCollectionWrapper(ctx.Request.Query)
         with ex ->
             raise <| ModelBindException("Unable to deserialize model from query", ex)
