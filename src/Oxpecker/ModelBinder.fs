@@ -125,7 +125,7 @@ module internal ModelParser =
 
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
 
-    type private Enum<'T, 'U when Struct<'T> and 'T : enum<'U> > = 'T
+    type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
 
     type private Nullable<'T when Struct<'T>> = 'T
 
