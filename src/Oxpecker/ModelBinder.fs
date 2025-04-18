@@ -153,7 +153,6 @@ module internal ModelParser =
                     result
                 else
                     error rawData
-
             | _ -> error rawData
 
     and private createEnumerableParser (parser: Parser<'Element>) : Parser<'Element seq> =
@@ -196,18 +195,17 @@ module internal ModelParser =
             shape.Accept
                 { new IMemberVisitor<_, _> with
                     member _.Visit<'Field>(fieldShape) =
-                        let parse = getOrCacheParser<'Field> ctx
+                        let parser = getOrCacheParser<'Field> ctx
 
                         FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
                             match rawData with
                             | ComplexData(ExactMatch fieldShape.Label matchedData)
                             | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
                                 let field =
-                                    parse {
+                                    parser {
                                         Culture = culture
                                         RawData = matchedData
                                     }
-
                                 fieldShape.SetByRef(&instance, field)
                             | _ -> ())
                 }
@@ -242,14 +240,13 @@ module internal ModelParser =
             shape.Accept
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
-                        function
-                        | {
-                              RawData = SimpleData(RawValue rawValue) as rawData
-                          } ->
-                            match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
-                            | true, value -> value
-                            | false, _ -> error rawData
-                        | { RawData = rawData } -> error rawData
+                        fun { RawData = rawData } ->
+                            match rawData with
+                            | SimpleData(RawValue(NonNull rawValue)) ->
+                                match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
+                                | true, value -> value
+                                | false, _ -> error rawData
+                            | _ -> error rawData
                         |> wrap
                 }
 
@@ -257,11 +254,11 @@ module internal ModelParser =
             shape.Accept
                 { new INullableVisitor<_> with
                     member _.Visit<'t when Nullable<'t>>() = // 'T = Nullable<'t>
-                        let parse = getOrCacheParser<'t> ctx
+                        let parser = getOrCacheParser<'t> ctx
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> Nullable()
-                        | parserContext -> parse parserContext |> Nullable
+                        | parserContext -> parser parserContext |> Nullable
                         |> wrap
                 }
 
@@ -269,11 +266,11 @@ module internal ModelParser =
             shape.Element.Accept
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't option
-                        let parse = getOrCacheParser<'t> ctx
+                        let parser = getOrCacheParser<'t> ctx
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> None
-                        | parserContext -> parse parserContext |> Some
+                        | parserContext -> parser parserContext |> Some
                         |> wrap
                 }
 
@@ -332,8 +329,9 @@ module internal ModelParser =
     and private cache: TypeCache = TypeCache()
 
     let rec internal parseModel<'T> (culture: CultureInfo) (rawData: RawData) =
-        let parse = getOrCreateParser<'T>()
-        parse { Culture = culture; RawData = rawData }
+        let parser = getOrCreateParser<'T>()
+
+        parser { Culture = culture; RawData = rawData }
 
 /// <summary>
 /// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
