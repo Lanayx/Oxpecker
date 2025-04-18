@@ -130,16 +130,6 @@ module internal ModelParser =
 
     type private Parsable<'T when 'T: (static member TryParse: string * IFormatProvider * byref<'T> -> bool)> = 'T
 
-    let inline parseValue<'T when Parsable<'T>> { RawData = rawData; Culture = culture } =
-        match rawData with
-        | SimpleData(RawValue(NonNull value)) ->
-            let mutable result = Unchecked.defaultof<'T>
-            if 'T.TryParse(value, culture, &result) then
-                result
-            else
-                error rawData
-        | _ -> error rawData
-
     let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
         | Some x -> x
@@ -153,6 +143,18 @@ module internal ModelParser =
         | NotCached t ->
             let v = createParser<'T> ctx
             ctx.Commit t v
+
+    and inline createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
+        fun { RawData = rawData; Culture = culture } ->
+            match rawData with
+            | SimpleData(RawValue(NonNull value)) ->
+                let mutable result = Unchecked.defaultof<'T>
+                if 'T.TryParse(value, culture, &result) then
+                    result
+                else
+                    error rawData
+
+            | _ -> error rawData
 
     and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
@@ -174,7 +176,6 @@ module internal ModelParser =
                                     }
 
                                 fieldShape.SetByRef(&instance, field)
-
                             | _ -> ())
                 }
 
@@ -212,22 +213,22 @@ module internal ModelParser =
                 | _ -> Seq.empty
 
         match shapeof<'T> with
-        | Shape.Guid -> wrap parseValue<Guid>
-        | Shape.Int32 -> wrap parseValue<int>
-        | Shape.Int64 -> wrap parseValue<int64>
-        | Shape.BigInt -> wrap parseValue<bigint>
-        | Shape.Double -> wrap parseValue<double>
-        | Shape.Decimal -> wrap parseValue<decimal>
-        | Shape.DateTime -> wrap parseValue<DateTime>
-        | Shape.TimeSpan -> wrap parseValue<TimeSpan>
-        | Shape.DateTimeOffset -> wrap parseValue<DateTimeOffset>
+        | Shape.Guid -> wrap createSimpleParser<Guid>
+        | Shape.Int32 -> wrap createSimpleParser<int>
+        | Shape.Int64 -> wrap createSimpleParser<int64>
+        | Shape.BigInt -> wrap createSimpleParser<bigint>
+        | Shape.Double -> wrap createSimpleParser<double>
+        | Shape.Decimal -> wrap createSimpleParser<decimal>
+        | Shape.DateTime -> wrap createSimpleParser<DateTime>
+        | Shape.TimeSpan -> wrap createSimpleParser<TimeSpan>
+        | Shape.DateTimeOffset -> wrap createSimpleParser<DateTimeOffset>
         | Shape.Bool ->
             fun { RawData = rawData } ->
                 match rawData with
-                | SimpleData(RawValue("True")) -> true
-                | SimpleData(RawValue("true")) -> true
-                | SimpleData(RawValue("False")) -> false
-                | SimpleData(RawValue("false")) -> false
+                | SimpleData(RawValue(NonNull rawValue)) ->
+                    match Boolean.TryParse(rawValue) with
+                    | true, value -> value
+                    | false, _ -> error rawData
                 | _ -> error rawData
             |> wrap
 
@@ -248,7 +249,6 @@ module internal ModelParser =
                             match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
                             | true, value -> value
                             | false, _ -> error rawData
-
                         | { RawData = rawData } -> error rawData
                         |> wrap
                 }
