@@ -144,7 +144,7 @@ module internal ModelParser =
             let v = createParser<'T> ctx
             ctx.Commit t v
 
-    and inline createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
+    and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
         fun { RawData = rawData; Culture = culture } ->
             match rawData with
             | SimpleData(RawValue(NonNull value)) ->
@@ -156,10 +156,43 @@ module internal ModelParser =
 
             | _ -> error rawData
 
+    and private createEnumerableParser (parser: Parser<'Element>) : Parser<'Element seq> =
+        fun { Culture = culture; RawData = rawData } ->
+            match rawData with
+            | SimpleData values ->
+                let res = Array.zeroCreate(values.Count)
+
+                for i in 0 .. values.Count - 1 do
+                    res[i] <-
+                        parser {
+                            Culture = culture
+                            RawData = SimpleData(StringValues values[i])
+                        }
+
+                res
+
+            | ComplexData(ComplexArray indexedDicts) ->
+                let maxIndex = Seq.max indexedDicts.Keys
+                let res = Array.zeroCreate(maxIndex + 1)
+
+                for i in 0..maxIndex do
+                    let mutable dict = Unchecked.defaultof<_>
+
+                    if indexedDicts.TryGetValue(i, &dict) then
+                        res[i] <-
+                            parser {
+                                Culture = culture
+                                RawData = ComplexData dict
+                            }
+
+                res
+
+            | _ -> Seq.empty
+
     and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
 
-        let makeFieldSetter (shape: IShapeMember<'DeclaringType>) =
+        let createFieldSetter (shape: IShapeMember<'DeclaringType>) =
             shape.Accept
                 { new IMemberVisitor<_, _> with
                     member _.Visit<'Field>(fieldShape) =
@@ -178,39 +211,6 @@ module internal ModelParser =
                                 fieldShape.SetByRef(&instance, field)
                             | _ -> ())
                 }
-
-        let makeEnumerableParser (parse: Parser<'Element>) : Parser<'Element seq> =
-            fun { Culture = culture; RawData = rawData } ->
-                match rawData with
-                | SimpleData values ->
-                    let res = Array.zeroCreate(values.Count)
-
-                    for i in 0 .. values.Count - 1 do
-                        res[i] <-
-                            parse {
-                                Culture = culture
-                                RawData = SimpleData(StringValues values[i])
-                            }
-
-                    res
-
-                | ComplexData(ComplexArray indexedDicts) ->
-                    let maxIndex = Seq.max indexedDicts.Keys
-                    let res = Array.zeroCreate(maxIndex + 1)
-
-                    for i in 0..maxIndex do
-                        let mutable dict = Unchecked.defaultof<_>
-
-                        if indexedDicts.TryGetValue(i, &dict) then
-                            res[i] <-
-                                parse {
-                                    Culture = culture
-                                    RawData = ComplexData dict
-                                }
-
-                    res
-
-                | _ -> Seq.empty
 
         match shapeof<'T> with
         | Shape.Guid -> wrap createSimpleParser<Guid>
@@ -305,7 +305,7 @@ module internal ModelParser =
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
                         else
-                            getOrCacheParser<'t> ctx |> makeEnumerableParser |> wrap
+                            getOrCacheParser<'t> ctx |> createEnumerableParser |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
@@ -317,7 +317,7 @@ module internal ModelParser =
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map makeFieldSetter
+            let fieldSetters = shape.Fields |> Array.map createFieldSetter
 
             fun parserContext ->
                 let mutable instance = shape.CreateUninitialized()
