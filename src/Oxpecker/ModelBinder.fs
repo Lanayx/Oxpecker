@@ -22,7 +22,6 @@ type internal RawData =
 /// </summary>
 module internal ModelParser =
 
-    open System.ComponentModel
     open TypeShape.Core
     open TypeShape.Core.Utils
 
@@ -30,12 +29,6 @@ module internal ModelParser =
         if rawValue.Count = 0 then ValueSome null
         elif rawValue.Count = 1 then ValueSome rawValue[0]
         else ValueNone
-
-    let private (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
-        let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
-            String.Equals(case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
-
-        shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
     /// Active pattern for parsing keys in the format "[index].subKey".
     let private (|IndexAccess|_|) (key: string) =
@@ -103,6 +96,12 @@ module internal ModelParser =
         else
             ValueNone
 
+    let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
+        let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
+            String.Equals(case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
+
+        shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
+
     let private unsupported ty = failwith $"Unsupported type '{ty}'."
 
     let private error (rawData: RawData) : 'T =
@@ -124,9 +123,11 @@ module internal ModelParser =
 
     type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
 
-    type private Enum<'T, 'U when 'T: enum<'U> and 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
+    type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
 
-    type private Nullable<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
+    type private Enum<'T, 'U when Struct<'T> and 'T : enum<'U> > = 'T
+
+    type private Nullable<'T when Struct<'T>> = 'T
 
     type private Parsable<'T when 'T: (static member TryParse: string * IFormatProvider * byref<'T> -> bool)> = 'T
 
@@ -155,7 +156,7 @@ module internal ModelParser =
                     error rawData
             | _ -> error rawData
 
-    and private createEnumerableParser (parser: Parser<'Element>) : Parser<'Element seq> =
+    and private createEnumerableParser (parser: Parser<'Element>) : Parser<'Element seq> = // 'T = 'Element seq
         fun { Culture = culture; RawData = rawData } ->
             match rawData with
             | SimpleData values ->
@@ -188,27 +189,27 @@ module internal ModelParser =
 
             | _ -> Seq.empty
 
+    and private createFieldSetter (ctx: TypeGenerationContext) (shape: IShapeMember<'T>) : FieldSetter<'T> =
+        shape.Accept
+            { new IMemberVisitor<_, _> with
+                member _.Visit<'Field>(fieldShape) =
+                    let parser = getOrCacheParser<'Field> ctx
+
+                    FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
+                        match rawData with
+                        | ComplexData(ExactMatch fieldShape.Label matchedData)
+                        | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
+                            let field =
+                                parser {
+                                    Culture = culture
+                                    RawData = matchedData
+                                }
+                            fieldShape.SetByRef(&instance, field)
+                        | _ -> ())
+            }
+
     and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
-
-        let createFieldSetter (shape: IShapeMember<'DeclaringType>) =
-            shape.Accept
-                { new IMemberVisitor<_, _> with
-                    member _.Visit<'Field>(fieldShape) =
-                        let parser = getOrCacheParser<'Field> ctx
-
-                        FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
-                            match rawData with
-                            | ComplexData(ExactMatch fieldShape.Label matchedData)
-                            | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
-                                let field =
-                                    parser {
-                                        Culture = culture
-                                        RawData = matchedData
-                                    }
-                                fieldShape.SetByRef(&instance, field)
-                            | _ -> ())
-                }
 
         match shapeof<'T> with
         | Shape.Guid -> wrap createSimpleParser<Guid>
@@ -314,7 +315,7 @@ module internal ModelParser =
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map createFieldSetter
+            let fieldSetters = shape.Fields |> Array.map(createFieldSetter ctx)
 
             fun parserContext ->
                 let mutable instance = shape.CreateUninitialized()
