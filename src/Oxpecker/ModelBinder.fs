@@ -191,7 +191,7 @@ module internal ModelParser =
 
             | _ -> Seq.empty
 
-    and private createFieldSetter (ctx: TypeGenerationContext) : FieldParser<'T> =
+    and private createFieldParser (ctx: TypeGenerationContext) : FieldParser<'T> =
         fun shape ->
             shape.Accept
                 { new IMemberVisitor<_, _> with
@@ -318,7 +318,7 @@ module internal ModelParser =
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map(createFieldSetter ctx)
+            let fieldSetters = shape.Fields |> Array.map(createFieldParser ctx)
 
             fun parserContext ->
                 let mutable instance = shape.CreateUninitialized()
