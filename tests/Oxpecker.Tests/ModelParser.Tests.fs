@@ -3,6 +3,7 @@ module Oxpecker.Tests.ModelParser
 open System
 open System.Collections.Generic
 open System.Globalization
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
@@ -12,6 +13,9 @@ let private toComplexData (data: (string * StringValues) list) =
     data
     |> List.map(fun (k, v) -> KeyValuePair.Create(k, v))
     |> Dictionary
+    |> FormCollection
+    |> FormCollectionWrapper
+    :> IDictionaryWrapper
     |> ComplexData
 
 type Sex =

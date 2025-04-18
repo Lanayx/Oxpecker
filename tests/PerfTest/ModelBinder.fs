@@ -83,4 +83,4 @@ type ModelBinding() =
 
     [<Benchmark>]
     member this.TypeShapeBasedModelBinder() =
-        typeShapeBasedModelBinder.Bind<Model> modelData
+        typeShapeBasedModelBinder.Bind<Model> (FormCollectionWrapper(modelData))
