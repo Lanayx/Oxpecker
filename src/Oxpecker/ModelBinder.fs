@@ -113,16 +113,6 @@ module internal ModelParser =
 
         failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
-    [<Struct>]
-    type internal ParserContext = {
-        Culture: CultureInfo
-        RawData: RawData
-    }
-
-    type private Parser<'T> = ParserContext -> 'T
-
-    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
-
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
 
     type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
@@ -130,6 +120,18 @@ module internal ModelParser =
     type private Nullable<'T when Struct<'T>> = 'T
 
     type private Parsable<'T when 'T: (static member TryParse: string * IFormatProvider * byref<'T> -> bool)> = 'T
+
+    [<Struct>]
+    type internal ParserContext = {
+        Culture: CultureInfo
+        RawData: RawData
+    }
+
+    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
+
+    type private Parser<'T> = ParserContext -> 'T
+
+    type private FieldParser<'T> = IShapeMember<'T> -> FieldSetter<'T>
 
     let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
@@ -189,24 +191,25 @@ module internal ModelParser =
 
             | _ -> Seq.empty
 
-    and private createFieldSetter (ctx: TypeGenerationContext) (shape: IShapeMember<'T>) : FieldSetter<'T> =
-        shape.Accept
-            { new IMemberVisitor<_, _> with
-                member _.Visit<'Field>(fieldShape) =
-                    let parser = getOrCacheParser<'Field> ctx
+    and private createFieldSetter (ctx: TypeGenerationContext) : FieldParser<'T> =
+        fun shape ->
+            shape.Accept
+                { new IMemberVisitor<_, _> with
+                    member _.Visit<'Field>(fieldShape) =
+                        let parser = getOrCacheParser<'Field> ctx
 
-                    FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
-                        match rawData with
-                        | ComplexData(ExactMatch fieldShape.Label matchedData)
-                        | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
-                            let field =
-                                parser {
-                                    Culture = culture
-                                    RawData = matchedData
-                                }
-                            fieldShape.SetByRef(&instance, field)
-                        | _ -> ())
-            }
+                        FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
+                            match rawData with
+                            | ComplexData(ExactMatch fieldShape.Label matchedData)
+                            | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
+                                let field =
+                                    parser {
+                                        Culture = culture
+                                        RawData = matchedData
+                                    }
+                                fieldShape.SetByRef(&instance, field)
+                            | _ -> ())
+                }
 
     and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
