@@ -176,6 +176,7 @@ module internal ModelParser =
                             }
 
                     res
+
                 | ComplexData(ComplexArray indexedDicts) ->
                     let maxIndex = Seq.max indexedDicts.Keys
                     let res = Array.zeroCreate(maxIndex + 1)
