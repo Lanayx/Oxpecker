@@ -3,6 +3,7 @@ namespace PerfTest
 open System
 open System.Collections.Generic
 open BenchmarkDotNet.Attributes
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 open Oxpecker
 
@@ -41,47 +42,44 @@ type ModelBinding() =
             "Children[1].Age", StringValues "22"
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
-        ]
+        ] |> Dictionary |> FormCollection
 
-    static let directModelBinder =
-        let firstValue (rawValues: StringValues) =
-            if rawValues.Count > 0 then rawValues[0] else null
-        let bindModel (data: IDictionary<string, StringValues>) = {
-            Id = data["Id"] |> firstValue |> nonNull |> Guid.Parse
-            FirstName = data["FirstName"] |> firstValue
-            MiddleName = data["MiddleName"] |> firstValue |> Option.ofObj
-            LastName = data["LastName"] |> firstValue
-            Sex =
-                match data["Sex"] |> firstValue with
-                | "Female" -> Female
-                | "Male" -> Male
-                | value -> failwith $"Value '{value}' could not be parsed to {typeof<Sex>}"
-            BirthDate = data["BirthDate"] |> firstValue |> nonNull |> DateTime.Parse
-            Nicknames = Some [ yield! data["Nicknames"] |> Seq.cast ]
-            Children = [|
-                {
-                    Name = data["Children[0].Name"] |> firstValue
-                    Age = data["Children[0].Age"] |> firstValue |> int
-                }
-                {
-                    Name = data["Children[1].Name"] |> firstValue
-                    Age = data["Children[1].Age"] |> firstValue |> int
-                }
-                {
-                    Name = data["Children[2].Name"] |> firstValue
-                    Age = data["Children[2].Age"] |> firstValue |> int
-                }
-            |]
-        }
-        { new IModelBinder with
-            member this.Bind<'T>(data) = bindModel(Dictionary data) |> unbox<'T>
-        }
+    let firstValue (rawValues: StringValues) =
+        if rawValues.Count > 0 then rawValues[0] else null
+
+    let bindModel (data: FormCollection) = {
+        Id = data["Id"] |> firstValue |> nonNull |> Guid.Parse
+        FirstName = data["FirstName"] |> firstValue
+        MiddleName = data["MiddleName"] |> firstValue |> Option.ofObj
+        LastName = data["LastName"] |> firstValue
+        Sex =
+            match data["Sex"] |> firstValue with
+            | "Female" -> Female
+            | "Male" -> Male
+            | value -> failwith $"Value '{value}' could not be parsed to {typeof<Sex>}"
+        BirthDate = data["BirthDate"] |> firstValue |> nonNull |> DateTime.Parse
+        Nicknames = Some [ yield! data["Nicknames"] |> Seq.cast ]
+        Children = [|
+            {
+                Name = data["Children[0].Name"] |> firstValue
+                Age = data["Children[0].Age"] |> firstValue |> int
+            }
+            {
+                Name = data["Children[1].Name"] |> firstValue
+                Age = data["Children[1].Age"] |> firstValue |> int
+            }
+            {
+                Name = data["Children[2].Name"] |> firstValue
+                Age = data["Children[2].Age"] |> firstValue |> int
+            }
+        |]
+    }
 
     static let typeShapeBasedModelBinder =
         ModelBinder(ModelBinderOptions.Default) :> IModelBinder
 
     [<Benchmark(Baseline = true)>]
-    member this.DirectModelBinder() = directModelBinder.Bind<Model> modelData
+    member this.DirectModelBinder() = bindModel modelData
 
     [<Benchmark>]
     member this.TypeShapeBasedModelBinder() =
