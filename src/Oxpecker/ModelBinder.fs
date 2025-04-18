@@ -124,6 +124,22 @@ module internal ModelParser =
 
     type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
 
+    type private Enum<'T, 'U when 'T: enum<'U> and 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
+
+    type private Nullable<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
+
+    type private Parsable<'T when 'T: (static member TryParse: string * IFormatProvider * byref<'T> -> bool)> = 'T
+
+    let inline parseValue<'T when Parsable<'T>> { RawData = rawData; Culture = culture } =
+        match rawData with
+        | SimpleData(RawValue(NonNull value)) ->
+            let mutable result = Unchecked.defaultof<'T>
+            if 'T.TryParse(value, culture, &result) then
+                result
+            else
+                error rawData
+        | _ -> error rawData
+
     let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
         | Some x -> x
@@ -196,16 +212,51 @@ module internal ModelParser =
                 | _ -> Seq.empty
 
         match shapeof<'T> with
+        | Shape.Guid -> wrap parseValue<Guid>
+        | Shape.Int32 -> wrap parseValue<int>
+        | Shape.Int64 -> wrap parseValue<int64>
+        | Shape.BigInt -> wrap parseValue<bigint>
+        | Shape.Double -> wrap parseValue<double>
+        | Shape.Decimal -> wrap parseValue<decimal>
+        | Shape.DateTime -> wrap parseValue<DateTime>
+        | Shape.TimeSpan -> wrap parseValue<TimeSpan>
+        | Shape.DateTimeOffset -> wrap parseValue<DateTimeOffset>
+        | Shape.Bool ->
+            fun { RawData = rawData } ->
+                match rawData with
+                | SimpleData(RawValue("True")) -> true
+                | SimpleData(RawValue("true")) -> true
+                | SimpleData(RawValue("False")) -> false
+                | SimpleData(RawValue("false")) -> false
+                | _ -> error rawData
+            |> wrap
+
         | Shape.String ->
             function
             | { RawData = SimpleData(RawValue value) } -> value
             | { RawData = rawData } -> error rawData
             |> wrap
 
+        | Shape.Enum shape ->
+            shape.Accept
+                { new IEnumVisitor<_> with
+                    member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
+                        function
+                        | {
+                              RawData = SimpleData(RawValue rawValue) as rawData
+                          } ->
+                            match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
+                            | true, value -> value
+                            | false, _ -> error rawData
+
+                        | { RawData = rawData } -> error rawData
+                        |> wrap
+                }
+
         | Shape.Nullable shape ->
             shape.Accept
                 { new INullableVisitor<_> with
-                    member _.Visit<'t when 't: (new: unit -> 't) and 't: struct and 't :> ValueType>() = // 'T = Nullable<'t>
+                    member _.Visit<'t when Nullable<'t>>() = // 'T = Nullable<'t>
                         let parse = getOrCacheParser<'t> ctx
 
                         function
@@ -275,22 +326,6 @@ module internal ModelParser =
                     fieldSetter.Invoke(parserContext, &instance)
 
                 instance
-
-        | Shape.Struct _ ->
-            let typeConverter = TypeDescriptor.GetConverter(typeof<'T>)
-
-            if not <| typeConverter.CanConvertFrom(typeof<string>) then
-                unsupported typeof<'T>
-            else
-                fun { Culture = culture; RawData = rawData } ->
-                    match rawData with
-                    | SimpleData(RawValue(NonNull value)) ->
-                        try
-                            typeConverter.ConvertFromString(null, culture, value) |> unbox
-                        with _ ->
-                            error rawData
-
-                    | _ -> error rawData
 
         | _ -> unsupported typeof<'T>
 
