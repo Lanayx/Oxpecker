@@ -148,17 +148,23 @@ module internal ModelParser =
             ctx.Commit t v
 
     and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
-        fun { RawData = rawData; Culture = culture } ->
-            match rawData with
-            | SimpleData(RawValue(NonNull value)) ->
+        let stringParser = getOrCreateParser<string>()
+
+        fun ({ Culture = culture; RawData = rawData } as parserContext) ->
+            try
+                let rawValue = stringParser parserContext
                 let mutable result = Unchecked.defaultof<'T>
-                if 'T.TryParse(value, culture, &result) then
+
+                if 'T.TryParse(rawValue, culture, &result) then
                     result
                 else
                     error rawData
-            | _ -> error rawData
+            with _ ->
+                error rawData
 
-    and private createEnumerableParser (parser: Parser<'Element>) : Parser<'Element seq> = // 'T = 'Element seq
+    and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> = // 'T = 'Element seq
+        let parser = getOrCacheParser<'Element> ctx
+
         fun { Culture = culture; RawData = rawData } ->
             match rawData with
             | SimpleData values ->
@@ -225,13 +231,17 @@ module internal ModelParser =
         | Shape.TimeSpan -> wrap createSimpleParser<TimeSpan>
         | Shape.DateTimeOffset -> wrap createSimpleParser<DateTimeOffset>
         | Shape.Bool ->
-            fun { RawData = rawData } ->
-                match rawData with
-                | SimpleData(RawValue(NonNull rawValue)) ->
+            let parser = getOrCreateParser<string>()
+
+            fun ({ RawData = rawData } as parserContext) ->
+                try
+                    let rawValue = parser parserContext
+
                     match Boolean.TryParse(rawValue) with
                     | true, value -> value
                     | false, _ -> error rawData
-                | _ -> error rawData
+                with _ ->
+                    error rawData
             |> wrap
 
         | Shape.String ->
@@ -244,13 +254,16 @@ module internal ModelParser =
             shape.Accept
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
-                        fun { RawData = rawData } ->
-                            match rawData with
-                            | SimpleData(RawValue(NonNull rawValue)) ->
+                        let parser = getOrCreateParser<string>()
+
+                        fun ({ RawData = rawData } as parserContext) ->
+                            try
+                                let rawValue = parser parserContext
                                 match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
                                 | true, value -> value
                                 | false, _ -> error rawData
-                            | _ -> error rawData
+                            with _ ->
+                                error rawData
                         |> wrap
                 }
 
@@ -306,15 +319,20 @@ module internal ModelParser =
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
                         else
-                            getOrCacheParser<'t> ctx |> createEnumerableParser |> wrap
+                            createEnumerableParser<'t> ctx |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
-            fun { RawData = rawData } ->
-                match rawData with
-                | SimpleData(RawValue Null) when not shape.IsStructUnion -> Unchecked.defaultof<_>
-                | SimpleData(RawValue(NonNull(UnionCase shape case))) -> case.CreateUninitialized()
-                | _ -> error rawData
+            let parser = getOrCacheParser<string | null> ctx
+
+            fun ({ RawData = rawData } as parserContext) ->
+                try
+                    match parser parserContext with
+                    | Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
+                    | NonNull(UnionCase shape case) -> case.CreateUninitialized()
+                    | _ -> error rawData
+                with _ ->
+                    error rawData
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
