@@ -30,7 +30,6 @@
         <PackageReference Include="TypeShape" Version="10.0.0" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="AssemblyInfo.fs" />
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Helpers.fs" />
@@ -49,5 +48,8 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
+    </ItemGroup>
+    <ItemGroup>
+      <InternalsVisibleTo Include="$(ProjectName).Tests" />
     </ItemGroup>
 </Project>
