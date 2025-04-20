@@ -3,9 +3,9 @@ namespace PerfTest
 open System
 open System.Collections.Generic
 open BenchmarkDotNet.Attributes
-open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 open Oxpecker
+open System.Globalization
 
 type Sex =
     | Male
@@ -25,11 +25,10 @@ type Model = {
 }
 
 [<MemoryDiagnoser>]
-type ModelBinding() =
+type ModelParsing() =
     static let modelData =
-        let id = Guid.NewGuid()
-        dict [
-            "Id", StringValues(id.ToString())
+        [
+            "Id", StringValues(Guid.NewGuid().ToString())
             "FirstName", StringValues "Susan"
             "MiddleName", StringValues "Elisabeth"
             "LastName", StringValues "Doe"
@@ -42,13 +41,17 @@ type ModelBinding() =
             "Children[1].Age", StringValues "22"
             "Children[2].Name", StringValues "Gholi"
             "Children[2].Age", StringValues "44"
-        ] |> Dictionary |> FormCollection
+        ]
+        |> List.map KeyValuePair.Create
+        |> Dictionary
 
     let firstValue (rawValues: StringValues) =
         if rawValues.Count > 0 then rawValues[0] else null
 
-    let bindModel (data: FormCollection) = {
-        Id = data["Id"] |> firstValue |> nonNull |> Guid.Parse
+    let parseModel (culture: CultureInfo) (data: Dictionary<string, StringValues>) = {
+        Id =
+            let guid = data["Id"] |> firstValue |> nonNull
+            Guid.Parse(guid, culture)
         FirstName = data["FirstName"] |> firstValue
         MiddleName = data["MiddleName"] |> firstValue |> Option.ofObj
         LastName = data["LastName"] |> firstValue
@@ -57,30 +60,37 @@ type ModelBinding() =
             | "Female" -> Female
             | "Male" -> Male
             | value -> failwith $"Value '{value}' could not be parsed to {typeof<Sex>}"
-        BirthDate = data["BirthDate"] |> firstValue |> nonNull |> DateTime.Parse
+        BirthDate =
+            let dt = data["BirthDate"] |> firstValue |> nonNull
+            DateTime.Parse(dt, culture)
+
         Nicknames = Some [ yield! data["Nicknames"] |> Seq.cast ]
         Children = [|
+            let age = data["Children[0].Age"] |> firstValue |> nonNull
             {
                 Name = data["Children[0].Name"] |> firstValue
-                Age = data["Children[0].Age"] |> firstValue |> int
+                Age = Int32.Parse(age, culture)
             }
+
+            let age = data["Children[1].Age"] |> firstValue |> nonNull
             {
                 Name = data["Children[1].Name"] |> firstValue
-                Age = data["Children[1].Age"] |> firstValue |> int
+                Age = Int32.Parse(age, culture)
             }
+
+            let age = data["Children[2].Age"] |> firstValue |> nonNull
             {
                 Name = data["Children[2].Name"] |> firstValue
-                Age = data["Children[2].Age"] |> firstValue |> int
+                Age = Int32.Parse(age, culture)
             }
         |]
     }
 
-    static let typeShapeBasedModelBinder =
-        ModelBinder(ModelBinderOptions.Default) :> IModelBinder
+    static let culture = CultureInfo.InvariantCulture
 
     [<Benchmark(Baseline = true)>]
-    member this.DirectModelBinder() = bindModel modelData
+    member _.DirectModelParser() = parseModel culture modelData
 
     [<Benchmark>]
-    member this.TypeShapeBasedModelBinder() =
-        typeShapeBasedModelBinder.Bind<Model> (FormCollectionWrapper(modelData))
+    member _.TypeShapeBasedModelParser() =
+        ModelParser.parseModel<Model> culture (ComplexData modelData)

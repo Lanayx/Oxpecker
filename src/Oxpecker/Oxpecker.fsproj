@@ -51,5 +51,6 @@
     </ItemGroup>
     <ItemGroup>
       <InternalsVisibleTo Include="$(ProjectName).Tests" />
+      <InternalsVisibleTo Include="PerfTest"/>
     </ItemGroup>
 </Project>

@@ -6,55 +6,17 @@ open System.Globalization
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 
-type IDictionaryWrapper =
-    inherit IEnumerable<KeyValuePair<string, StringValues>>
-    abstract member Item: string -> StringValues
-    abstract member Keys: ICollection<string>
-    abstract member Count: int
-    abstract member ContainsKey: string -> bool
-    abstract member TryGetValue: string * [<System.Runtime.InteropServices.Out>]value:byref<StringValues> -> bool
-
-type DictionaryWrapper(d: Dictionary<string, StringValues>) =
-    interface IDictionaryWrapper with
-        member this.Item key = d.Item key
-        member this.Keys = d.Keys :> ICollection<string>
-        member this.Count = d.Count
-        member this.GetEnumerator() : IEnumerator<KeyValuePair<string,StringValues>> = d.GetEnumerator()
-        member this.ContainsKey(key) = d.ContainsKey(key)
-        member this.GetEnumerator(): Collections.IEnumerator = d.GetEnumerator()
-        member this.TryGetValue(key, value) = d.TryGetValue(key, &value)
-
-type FormCollectionWrapper(form: IFormCollection) =
-    interface IDictionaryWrapper with
-        member this.Item key = form.Item key
-        member this.Keys = form.Keys
-        member this.Count = form.Count
-        member this.GetEnumerator() : IEnumerator<KeyValuePair<string,StringValues>> = form.GetEnumerator()
-        member this.ContainsKey(key) = form.ContainsKey(key)
-        member this.GetEnumerator(): Collections.IEnumerator = form.GetEnumerator()
-        member this.TryGetValue(key, value) = form.TryGetValue(key, &value)
-
-type QueryCollectionWrapper(query: IQueryCollection) =
-    interface IDictionaryWrapper with
-        member this.Item key = query.Item key
-        member this.Keys = query.Keys
-        member this.Count = query.Count
-        member this.GetEnumerator() : IEnumerator<KeyValuePair<string,StringValues>> = query.GetEnumerator()
-        member this.ContainsKey(key) = query.ContainsKey(key)
-        member this.GetEnumerator(): Collections.IEnumerator = query.GetEnumerator()
-        member this.TryGetValue(key, value) = query.TryGetValue(key, &value)
-
 /// <summary>
 /// Interface defining Form and Query parsing methods.
 /// Use this interface to customize Form and Query parsing in Oxpecker.
 /// </summary>
 type IModelBinder =
-    abstract member Bind<'T> : IDictionaryWrapper -> 'T
+    abstract member Bind<'T> : Dictionary<string, StringValues> -> 'T
 
 [<Struct>]
 type internal RawData =
     | SimpleData of simpleData: StringValues
-    | ComplexData of complexData: IDictionaryWrapper
+    | ComplexData of complexData: Dictionary<string, StringValues>
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -95,7 +57,7 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private (|ComplexArray|_|) (data: IDictionaryWrapper) =
+    let private (|ComplexArray|_|) (data: Dictionary<string, StringValues>) =
         let matchedData = Dictionary()
 
         for KeyValue(key, value) in data do
@@ -113,12 +75,12 @@ module internal ModelParser =
         else
             ValueSome matchedData
 
-    let private (|ExactMatch|_|) (key: string) (data: IDictionaryWrapper) =
+    let private (|ExactMatch|_|) (key: string) (data: Dictionary<string, StringValues>) =
         match data.TryGetValue(key) with
         | true, values -> ValueSome(SimpleData values)
         | _ -> ValueNone
 
-    let private (|PrefixMatch|_|) (prefix: string) (data: IDictionaryWrapper) =
+    let private (|PrefixMatch|_|) (prefix: string) (data: Dictionary<string, StringValues>) =
         let matchedData = Dictionary()
 
         for KeyValue(key, value) in data do
@@ -131,7 +93,7 @@ module internal ModelParser =
                     matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
-            ValueSome(ComplexData (DictionaryWrapper(matchedData)))
+            ValueSome(ComplexData matchedData)
         else
             ValueNone
 
@@ -229,7 +191,7 @@ module internal ModelParser =
                         res[i] <-
                             parser {
                                 Culture = culture
-                                RawData = ComplexData (DictionaryWrapper dict)
+                                RawData = ComplexData dict
                             }
 
                 res
