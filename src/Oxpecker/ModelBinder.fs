@@ -150,9 +150,9 @@ module internal ModelParser =
     and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
         let parser = getOrCreateParser<string | null>()
 
-        fun ({ Culture = culture; RawData = rawData } as parserContext) ->
+        fun { Culture = culture; RawData = rawData } ->
             try
-                let rawValue = parser parserContext
+                let rawValue = parser { Culture = culture; RawData = rawData }
                 let mutable result = Unchecked.defaultof<'T>
 
                 if 'T.TryParse(rawValue, culture, &result) then
@@ -233,9 +233,9 @@ module internal ModelParser =
         | Shape.Bool ->
             let parser = getOrCreateParser<string | null>()
 
-            fun ({ RawData = rawData } as parserContext) ->
+            fun { Culture = culture; RawData = rawData } ->
                 try
-                    let rawValue = parser parserContext
+                    let rawValue = parser { Culture = culture; RawData = rawData }
 
                     match Boolean.TryParse(rawValue) with
                     | true, value -> value
@@ -256,9 +256,9 @@ module internal ModelParser =
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
                         let parser = getOrCreateParser<string | null>()
 
-                        fun ({ RawData = rawData } as parserContext) ->
+                        fun { Culture = culture; RawData = rawData } ->
                             try
-                                let rawValue = parser parserContext
+                                let rawValue = parser { Culture = culture; RawData = rawData }
                                 match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
                                 | true, value -> value
                                 | false, _ -> error rawData
@@ -275,7 +275,8 @@ module internal ModelParser =
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> Nullable()
-                        | parserContext -> parser parserContext |> Nullable
+                        | { Culture = culture; RawData = rawData } ->
+                            parser { Culture = culture; RawData = rawData } |> Nullable
                         |> wrap
                 }
 
@@ -287,7 +288,8 @@ module internal ModelParser =
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> None
-                        | parserContext -> parser parserContext |> Some
+                        | { Culture = culture; RawData = rawData } ->
+                            parser { Culture = culture; RawData = rawData } |> Some
                         |> wrap
                 }
 
@@ -325,9 +327,9 @@ module internal ModelParser =
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
             let parser = getOrCacheParser<string | null> ctx
 
-            fun ({ RawData = rawData } as parserContext) ->
+            fun { Culture = culture; RawData = rawData } ->
                 try
-                    match parser parserContext with
+                    match parser { Culture = culture; RawData = rawData } with
                     | Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
                     | NonNull(UnionCase shape case) -> case.CreateUninitialized()
                     | _ -> error rawData
