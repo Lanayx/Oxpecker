@@ -3,7 +3,6 @@ namespace Oxpecker
 open System
 open System.Collections.Generic
 open System.Globalization
-open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 
 /// <summary>
@@ -120,7 +119,7 @@ module internal ModelParser =
 
     type private Nullable<'T when Struct<'T>> = 'T
 
-    type private Parsable<'T when 'T: (static member TryParse: string * IFormatProvider * byref<'T> -> bool)> = 'T
+    type private Parsable<'T when 'T: (static member TryParse: string | null * IFormatProvider * byref<'T> -> bool)> = 'T
 
     [<Struct>]
     type internal ParserContext = {
@@ -128,9 +127,9 @@ module internal ModelParser =
         RawData: RawData
     }
 
-    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
-
     type private Parser<'T> = ParserContext -> 'T
+
+    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
 
     type private FieldParser<'T> = IShapeMember<'T> -> FieldSetter<'T>
 
@@ -149,11 +148,11 @@ module internal ModelParser =
             ctx.Commit t v
 
     and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
-        let stringParser = getOrCreateParser<string>()
+        let parser = getOrCreateParser<string | null>()
 
         fun ({ Culture = culture; RawData = rawData } as parserContext) ->
             try
-                let rawValue = stringParser parserContext
+                let rawValue = parser parserContext
                 let mutable result = Unchecked.defaultof<'T>
 
                 if 'T.TryParse(rawValue, culture, &result) then
@@ -232,7 +231,7 @@ module internal ModelParser =
         | Shape.TimeSpan -> wrap createSimpleParser<TimeSpan>
         | Shape.DateTimeOffset -> wrap createSimpleParser<DateTimeOffset>
         | Shape.Bool ->
-            let parser = getOrCreateParser<string>()
+            let parser = getOrCreateParser<string | null>()
 
             fun ({ RawData = rawData } as parserContext) ->
                 try
@@ -255,7 +254,7 @@ module internal ModelParser =
             shape.Accept
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
-                        let parser = getOrCreateParser<string>()
+                        let parser = getOrCreateParser<string | null>()
 
                         fun ({ RawData = rawData } as parserContext) ->
                             try
