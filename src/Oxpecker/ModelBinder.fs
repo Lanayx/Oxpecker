@@ -119,7 +119,8 @@ module internal ModelParser =
 
     type private Nullable<'T when Struct<'T>> = 'T
 
-    type private Parsable<'T when 'T: (static member TryParse: string | null * IFormatProvider * byref<'T> -> bool)> = 'T
+    type private Parsable<'T when 'T: (static member TryParse: string | null * IFormatProvider * byref<'T> -> bool)> =
+        'T
 
     [<Struct>]
     type internal ParserContext = {
