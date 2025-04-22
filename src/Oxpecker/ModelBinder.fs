@@ -3,6 +3,7 @@ namespace Oxpecker
 open System
 open System.Collections.Generic
 open System.Globalization
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 
 /// <summary>
@@ -371,6 +372,14 @@ type ModelBinderOptions = {
 /// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
 type ModelBinder(?options: ModelBinderOptions) =
     let options = defaultArg options <| ModelBinderOptions.Default
+    let formCollectionType = typeof<FormCollection>
+    let queryCollectionType = typeof<QueryCollection>
+    let formCollectionDictionaryAccessor =
+        formCollectionType.GetProperty("Store", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+        |> Unchecked.nonNull
+    let queryCollectionDictionaryAccessor =
+        queryCollectionType.GetProperty("Store", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+        |> Unchecked.nonNull
 
     interface IModelBinder with
         /// <summary>
@@ -378,4 +387,14 @@ type ModelBinder(?options: ModelBinderOptions) =
         /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
         /// </summary>
         member this.Bind<'T>(data) =
-            ModelParser.parseModel<'T> options.CultureInfo (ComplexData (Dictionary data))
+            let dictionary =
+                match data with
+                | :? FormCollection ->
+                    formCollectionDictionaryAccessor.GetValue(data)
+                    |> unbox<Dictionary<string, StringValues>>
+                | :? QueryCollection ->
+                    queryCollectionDictionaryAccessor.GetValue(data)
+                    |> unbox<Dictionary<string, StringValues>>
+                | _ ->
+                    Dictionary data
+            ModelParser.parseModel<'T> options.CultureInfo (ComplexData dictionary)

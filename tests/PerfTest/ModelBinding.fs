@@ -90,11 +90,12 @@ type ModelBinding() =
     //   DefaultJob : .NET 9.0.3 (9.0.325.11113), X64 RyuJIT AVX2
     //
     //
-    // | Method         | Mean      | Error    | StdDev   | Median    | Gen0   | Allocated |
-    // |--------------- |----------:|---------:|---------:|----------:|-------:|----------:|
-    // | OxpeckerPost   |  31.00 us | 0.617 us | 1.406 us |  30.46 us | 1.9531 |  16.15 KB |
-    // | GiraffePost    | 137.88 us | 1.007 us | 0.942 us | 137.71 us | 7.8125 |  65.42 KB |
-    // | MinimalApiPost |  28.71 us | 0.526 us | 0.492 us |  28.58 us | 1.7090 |  14.55 KB |
+    // | Method         | Mean      | Error    | StdDev   | Gen0   | Allocated |
+    // |--------------- |----------:|---------:|---------:|-------:|----------:|
+    // | OxpeckerPost   |  31.48 us | 0.586 us | 0.576 us | 1.7090 |  15.13 KB |
+    // | GiraffePost    | 138.94 us | 1.915 us | 1.599 us | 7.8125 |  65.42 KB |
+    // | MinimalApiPost |  29.38 us | 0.586 us | 1.072 us | 1.7090 |  14.55 KB |
+
 
 
     let oxpeckerServer = OxpeckerBinder.webApp()

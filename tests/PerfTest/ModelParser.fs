@@ -3,6 +3,7 @@ namespace PerfTest
 open System
 open System.Collections.Generic
 open BenchmarkDotNet.Attributes
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open System.Globalization
@@ -44,11 +45,12 @@ type ModelParsing() =
         ]
         |> List.map KeyValuePair.Create
         |> Dictionary
+        |> FormCollection
 
     let firstValue (rawValues: StringValues) =
         if rawValues.Count > 0 then rawValues[0] else null
 
-    let parseModel (culture: CultureInfo) (data: Dictionary<string, StringValues>) = {
+    let parseModel (culture: CultureInfo) (data: FormCollection) = {
         Id =
             let guid = data["Id"] |> firstValue |> nonNull
             Guid.Parse(guid, culture)
@@ -95,14 +97,16 @@ type ModelParsing() =
     //
     // | Method                    | Mean       | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
     // |-------------------------- |-----------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
-    // | DirectModelParser         |   522.9 ns |  5.85 ns |  5.19 ns |  1.00 |    0.01 | 0.0906 |     760 B |        1.00 |
-    // | TypeShapeBasedModelParser | 1,933.9 ns | 12.48 ns | 10.42 ns |  3.70 |    0.04 | 0.2842 |    2392 B |        3.15 |
+    // | DirectModelParser         |   538.6 ns |  5.21 ns |  4.88 ns |  1.00 |    0.01 | 0.0906 |     760 B |        1.00 |
+    // | TypeShapeBasedModelParser | 2,083.1 ns | 41.61 ns | 49.54 ns |  3.87 |    0.10 | 0.2823 |    2392 B |        3.15 |
+
 
     static let culture = CultureInfo.InvariantCulture
+    static let modelBinder = ModelBinder({ CultureInfo = culture }) :> IModelBinder
 
     [<Benchmark(Baseline = true)>]
     member _.DirectModelParser() = parseModel culture modelData
 
     [<Benchmark>]
     member _.TypeShapeBasedModelParser() =
-        ModelParser.parseModel<Model> culture (ComplexData modelData)
+        modelBinder.Bind<Model>(modelData)
