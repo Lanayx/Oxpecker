@@ -86,6 +86,18 @@ type ModelParsing() =
         |]
     }
 
+    // BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.3775)
+    // AMD Ryzen 5 5600H with Radeon Graphics, 1 CPU, 12 logical and 6 physical cores
+    // .NET SDK 9.0.201
+    //   [Host]     : .NET 9.0.3 (9.0.325.11113), X64 RyuJIT AVX2 DEBUG
+    //   DefaultJob : .NET 9.0.3 (9.0.325.11113), X64 RyuJIT AVX2
+    //
+    //
+    // | Method                    | Mean       | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
+    // |-------------------------- |-----------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
+    // | DirectModelParser         |   522.9 ns |  5.85 ns |  5.19 ns |  1.00 |    0.01 | 0.0906 |     760 B |        1.00 |
+    // | TypeShapeBasedModelParser | 1,933.9 ns | 12.48 ns | 10.42 ns |  3.70 |    0.04 | 0.2842 |    2392 B |        3.15 |
+
     static let culture = CultureInfo.InvariantCulture
 
     [<Benchmark(Baseline = true)>]

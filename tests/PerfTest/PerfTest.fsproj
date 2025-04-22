@@ -12,6 +12,7 @@
         <Compile Include="ViewEngineBuild.fs" />
         <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Routing.fs" />
+        <Compile Include="ModelBinding.fs" />
         <Compile Include="JSON.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>
@@ -28,6 +29,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
       <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
+      <ProjectReference Include="..\PerfTest.Csharp\PerfTest.Csharp.csproj" />
     </ItemGroup>
 
 </Project>
