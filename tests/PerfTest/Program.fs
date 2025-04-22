@@ -3,7 +3,7 @@ open PerfTest
 
 [<EntryPoint>]
 let main args =
-    let summary = BenchmarkRunner.Run<ModelBinding>()
+    let summary = BenchmarkRunner.Run<ModelParsing>()
     //ModelBinding().OxpeckerPost().Wait()
 
     0

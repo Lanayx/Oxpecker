@@ -10,7 +10,7 @@ open Microsoft.Extensions.Primitives
 /// Use this interface to customize Form and Query parsing in Oxpecker.
 /// </summary>
 type IModelBinder =
-    abstract member Bind<'T> : Dictionary<string, StringValues> -> 'T
+    abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
 [<Struct>]
 type internal RawData =
@@ -378,4 +378,4 @@ type ModelBinder(?options: ModelBinderOptions) =
         /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
         /// </summary>
         member this.Bind<'T>(data) =
-            ModelParser.parseModel<'T> options.CultureInfo (ComplexData data)
+            ModelParser.parseModel<'T> options.CultureInfo (ComplexData (Dictionary data))
