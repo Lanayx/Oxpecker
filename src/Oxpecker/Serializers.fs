@@ -59,4 +59,5 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
             task {
                 match! ctx.Request.ReadFromJsonAsync(options) with
                 | null -> return Unchecked.defaultof<_>
-                | v -> return v }
+                | v -> return v
+            }
