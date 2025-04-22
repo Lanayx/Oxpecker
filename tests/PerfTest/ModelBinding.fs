@@ -33,11 +33,10 @@ module OxpeckerBinder =
         task {
             let! model = ctx.BindForm<BindingModel>()
             return! setStatusCode model.StatusCode ctx
-        } :> Task
+        }
+        :> Task
 
-    let endpoints = [
-        POST [ route "/bindModel" bindModel ]
-    ]
+    let endpoints = [ POST [ route "/bindModel" bindModel ] ]
 
     let webApp () =
         let builder =
@@ -50,16 +49,14 @@ module OxpeckerBinder =
 module GiraffeBinder =
     open Giraffe
 
-    let bindModel : HttpHandler =
+    let bindModel: HttpHandler =
         fun next (ctx: HttpContext) ->
             task {
                 let! model = ctx.BindFormAsync<BindingModel>()
                 return! setStatusCode model.StatusCode next ctx
             }
 
-    let endpoints = choose [
-        POST >=> route "/bindModel" >=> bindModel
-    ]
+    let endpoints = choose [ POST >=> route "/bindModel" >=> bindModel ]
 
     let webApp () =
         let builder =
@@ -77,8 +74,9 @@ module MinimalApiBinder =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseEndpoints(fun x ->
-                    ModelBindingTest.MapEndpoints(x)) |> ignore)
+                .Configure(fun app ->
+                    app.UseRouting().UseEndpoints(fun x -> ModelBindingTest.MapEndpoints(x))
+                    |> ignore)
                 .ConfigureServices(fun services -> services.AddRouting() |> ignore)
         new TestServer(builder)
 
@@ -113,20 +111,23 @@ type ModelBinding() =
     [<Benchmark>]
     member this.OxpeckerPost() =
         task {
-            use content = new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
+            use content =
+                new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
             return! oxpeckerClient.PostAsync("/bindModel", content)
         }
 
     [<Benchmark>]
     member this.GiraffePost() =
         task {
-            use content = new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
+            use content =
+                new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
             return! giraffeClient.PostAsync("/bindModel", content)
         }
 
     [<Benchmark>]
     member this.MinimalApiPost() =
         task {
-            use content = new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
+            use content =
+                new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
             return! minimalApiClient.PostAsync("/bindModel", content)
         }
