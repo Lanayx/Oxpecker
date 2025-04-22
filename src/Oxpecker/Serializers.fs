@@ -1,5 +1,3 @@
-#nowarn 3261
-
 namespace Oxpecker
 
 open System.IO
@@ -58,4 +56,7 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
                 }
 
         member this.Deserialize(ctx) =
-            ctx.Request.ReadFromJsonAsync(options).AsTask()
+            task {
+                match! ctx.Request.ReadFromJsonAsync(options) with
+                | null -> return Unchecked.defaultof<_>
+                | v -> return v }
