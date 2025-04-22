@@ -1,5 +1,3 @@
-﻿#nowarn 3261
-
 namespace Oxpecker
 
 open System
@@ -12,301 +10,353 @@ open Microsoft.Extensions.Primitives
 /// Use this interface to customize Form and Query parsing in Oxpecker.
 /// </summary>
 type IModelBinder =
-    abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
+    abstract member Bind<'T> : Dictionary<string, StringValues> -> 'T
+
+[<Struct>]
+type internal RawData =
+    | SimpleData of simpleData: StringValues
+    | ComplexData of complexData: Dictionary<string, StringValues>
 
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
 module internal ModelParser =
 
-    open System.Reflection
-    open System.ComponentModel
-    open System.Text.RegularExpressions
-    open Microsoft.FSharp.Reflection
-    open Microsoft.FSharp.Collections
+    open TypeShape.Core
+    open TypeShape.Core.Utils
 
-    let listGenericType = typedefof<List<_>>
-    let optionGenericType = typedefof<Option<_>>
-    let nullableGenericType = typedefof<Nullable<_>>
+    let private (|RawValue|_|) (rawValue: StringValues) =
+        if rawValue.Count = 0 then ValueSome null
+        elif rawValue.Count = 1 then ValueSome rawValue[0]
+        else ValueNone
 
-    type private Type with
-        member this.IsGeneric() = this.GetTypeInfo().IsGenericType
+    /// Active pattern for parsing keys in the format "[index].subKey".
+    let private (|IndexAccess|_|) (key: string) =
+        let key = key.AsSpan()
 
-        member this.IsFSharpList() =
-            match this.IsGeneric() with
-            | false -> false
-            | true -> this.GetGenericTypeDefinition() = listGenericType
+        if key[0] = '[' then
+            let lastIndex = key.Length - 1
+            let mutable currentIndex = 1
 
-        member this.IsFSharpOption() =
-            match this.IsGeneric() with
-            | false -> false
-            | true -> this.GetGenericTypeDefinition() = optionGenericType
+            while key[currentIndex] |> Char.IsDigit do
+                currentIndex <- currentIndex + 1
 
-        member this.GetGenericType() = this.GetGenericArguments().[0]
+            if
+                currentIndex > 1 // at least one digit
+                && key[currentIndex] = ']'
+                && key[currentIndex + 1] = '.'
+                && currentIndex + 2 < lastIndex // at least one symbol after '].'
+            then
+                let index = Int32.Parse(key.Slice(1, currentIndex - 1))
+                let subKey = key.Slice(currentIndex + 2)
 
-        member this.MakeNoneCase() =
-            let cases = FSharpType.GetUnionCases this
-            FSharpValue.MakeUnion(cases[0], [||])
-
-        member this.MakeSomeCase(value: obj) =
-            let cases = FSharpType.GetUnionCases this
-            FSharpValue.MakeUnion(cases[1], [| value |])
-
-    /// Returns either a successfully parsed object `'T` or a `string` error message containing the parsing error.
-    let rec private parseValue (t: Type) (rawValues: StringValues) (culture: CultureInfo) : Result<obj | null, string> =
-
-        // First establish some basic type information:
-        let isGeneric = t.IsGeneric()
-        let isList, isOption, genArgType =
-            match isGeneric with
-            | true -> t.IsFSharpList(), t.IsFSharpOption(), t.GetGenericType()
-            | false -> false, false, Unchecked.defaultof<Type>
-
-        if t.IsArray then
-            let arrArgType = t.GetElementType() |> nonNull
-            let arrLen = rawValues.Count
-            let arr = Array.CreateInstance(arrArgType, arrLen)
-            if arrLen = 0 then
-                Ok(box arr)
+                ValueSome(struct (index, subKey.ToString()))
             else
-                let items, _, error =
-                    Array.fold
-                        (fun (items: Array, idx: int, error: string option) (rawValue: string | null) ->
-                            let nIdx = idx + 1
-                            match error with
-                            | Some _ -> arr, nIdx, error
-                            | None ->
-                                match parseValue arrArgType (StringValues rawValue) culture with
-                                | Error err -> arr, nIdx, Some err
-                                | Ok item ->
-                                    items.SetValue(item, idx)
-                                    items, nIdx, None)
-                        (arr, 0, None)
-                        (rawValues.ToArray())
-                match error with
-                | Some err -> Error err
-                | None -> Ok(box items)
-        elif isList then
-            let cases = FSharpType.GetUnionCases t
-            let emptyList = FSharpValue.MakeUnion(cases[0], [||])
-            if rawValues.Count = 0 then
-                Ok emptyList
-            else
-                let consCase = cases[1]
-                let items, error =
-                    Array.foldBack
-                        (fun (rawValue: string | null) (items: obj | null, error: string option) ->
-                            match error with
-                            | Some _ -> emptyList, error
-                            | None ->
-                                match parseValue genArgType (StringValues rawValue) culture with
-                                | Error err -> emptyList, Some err
-                                | Ok item -> FSharpValue.MakeUnion(consCase, [| item; items |]), None)
-                        (rawValues.ToArray())
-                        (emptyList, None)
-                match error with
-                | Some err -> Error err
-                | None -> Ok items
-        elif isGeneric then
-            let result = parseValue genArgType rawValues culture
-            match result with
-            | Error err -> Error err
-            | Ok value ->
-                match isOption with
-                | false -> Ok value
-                | true ->
-                    match value with
-                    | null -> t.MakeNoneCase()
-                    | v -> t.MakeSomeCase(v)
-                    |> Ok
-        elif FSharpType.IsUnion t then
-            let unionName = rawValues.ToString()
-            let cases = FSharpType.GetUnionCases t
-            if String.IsNullOrWhiteSpace unionName then
-                Error $"Cannot parse an empty value to type %s{t.ToString()}."
-            else
-                cases
-                |> Array.tryFind(_.Name.Equals(unionName, StringComparison.OrdinalIgnoreCase))
-                |> function
-                    | Some case -> Ok(FSharpValue.MakeUnion(case, [||]))
-                    | None -> Error $"The value '%s{unionName}' is not a valid case for type %s{t.ToString()}."
+                ValueNone
         else
-            let converter =
-                if t.GetTypeInfo().IsValueType then
-                    nullableGenericType.MakeGenericType([| t |])
-                else
-                    t
-                |> TypeDescriptor.GetConverter
-            let rawValue = rawValues.ToString()
+            ValueNone
+
+    let private (|ComplexArray|_|) (data: Dictionary<string, StringValues>) =
+        let matchedData = Dictionary()
+
+        for KeyValue(key, value) in data do
+            match key with
+            | IndexAccess(index, subKey) ->
+                if not <| matchedData.ContainsKey(index) then
+                    matchedData[index] <- Dictionary()
+
+                matchedData[index][subKey] <- value
+
+            | _ -> ()
+
+        if matchedData.Count = 0 then
+            ValueNone
+        else
+            ValueSome matchedData
+
+    let private (|ExactMatch|_|) (key: string) (data: Dictionary<string, StringValues>) =
+        match data.TryGetValue(key) with
+        | true, values -> ValueSome(SimpleData values)
+        | _ -> ValueNone
+
+    let private (|PrefixMatch|_|) (prefix: string) (data: Dictionary<string, StringValues>) =
+        let matchedData = Dictionary()
+
+        for KeyValue(key, value) in data do
+            if key.StartsWith(prefix) then
+                let matchedKey = key[prefix.Length ..]
+
+                if matchedKey[0] = '.' then // property access
+                    matchedData[matchedKey[1..]] <- value
+                elif matchedKey[0] = '[' then // index access
+                    matchedData[matchedKey] <- value
+
+        if matchedData.Count > 0 then
+            ValueSome(ComplexData matchedData)
+        else
+            ValueNone
+
+    let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
+        let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
+            String.Equals(case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
+
+        shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
+
+    let private unsupported ty = failwith $"Unsupported type '{ty}'."
+
+    let private error (rawData: RawData) : 'T =
+        let value =
+            match rawData with
+            | SimpleData(RawValue Null) -> "<null>"
+            | SimpleData data -> $"{data}"
+            | ComplexData data -> $"%A{data}"
+
+        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
+
+    type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
+
+    type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
+
+    type private Nullable<'T when Struct<'T>> = 'T
+
+    type private Parsable<'T when 'T: (static member TryParse: string | null * IFormatProvider * byref<'T> -> bool)> =
+        'T
+
+    [<Struct>]
+    type internal ParserContext = {
+        Culture: CultureInfo
+        RawData: RawData
+    }
+
+    type private Parser<'T> = ParserContext -> 'T
+
+    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
+
+    type private FieldParser<'T> = IShapeMember<'T> -> FieldSetter<'T>
+
+    let rec private getOrCreateParser<'T> () : Parser<'T> =
+        match cache.TryFind() with
+        | Some x -> x
+        | None ->
+            use ctx = cache.CreateGenerationContext()
+            getOrCacheParser<'T> ctx
+
+    and private getOrCacheParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
+        match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell parserContext -> cell.Value parserContext) with
+        | Cached(value = v) -> v
+        | NotCached t ->
+            let v = createParser<'T> ctx
+            ctx.Commit t v
+
+    and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
+        let parser = getOrCreateParser<string | null>()
+
+        fun { Culture = culture; RawData = rawData } ->
             try
-                converter.ConvertFromString(null, culture, rawValue) |> Ok
-            with _ ->
-                $"Could not parse value '%s{rawValue}' to type %s{t.ToString()}." |> Error
+                let rawValue = parser { Culture = culture; RawData = rawData }
+                let mutable result = Unchecked.defaultof<'T>
 
-
-    [<RequireQualifiedAccess>]
-    type internal ParseResult =
-        | Success of obj
-        | Error of string
-        | Skip
-
-    let rec internal parseModel<'T>
-        (model: 'T)
-        (culture: CultureInfo)
-        (data: IDictionary<string, StringValues>)
-        : Result<'T, string> =
-        // Normalize data
-        let normalizeKey (key: string) = key.TrimEnd([| '['; ']' |])
-        let data = data |> Seq.map(fun i -> normalizeKey i.Key, i.Value) |> dict
-        let boxedModel = box model
-
-        let error =
-            // Iterate through all properties of the model
-            boxedModel.GetType().GetProperties(BindingFlags.Instance ||| BindingFlags.Public)
-            |> Seq.filter _.CanWrite
-            |> Seq.fold
-                (fun (error: string option) (prop: PropertyInfo) ->
-                    // If previous property failed to parse then short circuit the parsing and return the error.
-                    if error.IsSome then
-                        error
-                    else
-                        let parsingResult =
-                            // Check the provided dictionary for an entry which matches the
-                            // current property name. If no entry can be found, then try to
-                            // generate a value without any data (will only work for an option type).
-                            // If there was an entry then try to parse the raw value.
-                            match data.TryGetValue(prop.Name) with
-                            | false, _ ->
-                                match getValueForArrayOfGenericType culture data prop with
-                                | Some v -> ParseResult.Success v
-                                | None ->
-                                    match getValueForComplexType culture data prop with
-                                    | Some v -> ParseResult.Success v
-                                    | None ->
-                                        match getValueForMissingProperty prop.PropertyType with
-                                        | Some v -> ParseResult.Success v
-                                        | None -> ParseResult.Skip
-                            | true, rawValue ->
-                                match parseValue prop.PropertyType rawValue culture with
-                                | Ok v -> ParseResult.Success v
-                                | Error e -> ParseResult.Error e
-
-                        // Check if a value was able to get successfully parsed.
-                        // If there was an error then return the error.
-                        // If no corresponding data was found then skip setting a value
-                        // but don't return an error so that the parsing of other properties can continue.
-                        // If a value was successfully parsed, then set the value on the property of the model.
-                        match parsingResult with
-                        | ParseResult.Error err -> Some err
-                        | ParseResult.Skip -> None
-                        | ParseResult.Success value ->
-                            prop.SetValue(model, value, null)
-                            None)
-                None
-        // Only return the model if all properties were successfully
-        match error with
-        | Some err -> Error err
-        | _ -> Ok model
-
-    /// Returns a value (the None union case) if the type is `Option<'T>` otherwise `None`.
-    and getValueForMissingProperty (t: Type) =
-        match t.IsFSharpOption() with
-        | false -> None
-        | true -> Some(t.MakeNoneCase())
-
-    and getValueForComplexType
-        (culture: CultureInfo)
-        (data: IDictionary<string, StringValues>)
-        (prop: PropertyInfo)
-        : obj option =
-        let isMaybeComplexType = data.Keys |> Seq.exists(_.StartsWith(prop.Name + "."))
-        let isRecordType = FSharpType.IsRecord prop.PropertyType
-        let isGenericType = prop.PropertyType.IsGenericType
-        let tryResolveComplexType = isMaybeComplexType && (isRecordType || isGenericType)
-
-        if tryResolveComplexType then
-            let regex = prop.Name |> Regex.Escape |> sprintf @"%s\.(\w+)" |> Regex
-
-            let dictData =
-                data
-                |> Seq.filter(fun item -> regex.IsMatch item.Key)
-                |> Seq.map(fun item ->
-                    let matchedData = regex.Match item.Key
-                    let key = matchedData.Groups[1].Value
-                    let value = item.Value
-                    key, value)
-                |> Seq.fold (fun (state: Map<string, StringValues>) -> state.Add) Map.empty
-
-            match prop.PropertyType.IsFSharpOption() with
-            | false ->
-                let model = Activator.CreateInstance(prop.PropertyType)
-                let res = parseModel model culture dictData
-                match res with
-                | Ok o -> o |> Option.ofObj
-                | Error _ -> None
-            | true ->
-                let genericType = prop.PropertyType.GetGenericType()
-                let model = Activator.CreateInstance(genericType)
-                let res = parseModel model culture dictData
-                match res with
-                | Ok o -> prop.PropertyType.MakeSomeCase(o) |> Option.ofObj
-                | Error _ -> None
-        else
-            None
-
-    and getValueForArrayOfGenericType
-        (culture: CultureInfo)
-        (data: IDictionary<string, StringValues>)
-        (prop: PropertyInfo)
-        : obj option =
-
-        if prop.PropertyType.IsArray then
-            let regex = prop.Name |> Regex.Escape |> sprintf @"%s\[(\d+)\]\.(\w+)" |> Regex
-
-            let innerType = prop.PropertyType.GetElementType()
-
-            let arrOfValues =
-                data
-                |> Seq.filter(fun item -> regex.IsMatch item.Key)
-                |> Seq.map(fun item ->
-                    let matchedData = regex.Match item.Key
-                    let index = matchedData.Groups[1].Value
-                    let key = matchedData.Groups[2].Value
-                    let value = item.Value
-                    index, key, value)
-                |> Seq.groupBy(fun (index, _, _) -> index |> int)
-                |> Seq.sortBy fst
-                |> Seq.choose(fun (index, values) ->
-                    let dictData =
-                        values
-                        |> Seq.fold
-                            (fun (state: Map<string, StringValues>) (_, key, value) -> state.Add(key, value))
-                            Map.empty
-
-                    let model = Activator.CreateInstance(innerType)
-                    let res = parseModel model culture dictData
-
-                    match res with
-                    | Ok o -> Some(index, o)
-                    | Error _ -> None)
-                |> Seq.toArray
-
-            let arrayOfObjects =
-                if (arrOfValues |> Array.length > 0) then
-                    let arraySize = (arrOfValues |> Array.last |> fst) + 1
-                    let arrayOfObjects = Array.CreateInstance(innerType, arraySize)
-
-                    arrOfValues
-                    |> Array.iter(fun (index, item) -> arrayOfObjects.SetValue(item, index))
-
-                    arrayOfObjects
+                if 'T.TryParse(rawValue, culture, &result) then
+                    result
                 else
-                    Array.CreateInstance(innerType, 0)
+                    error rawData
+            with _ ->
+                error rawData
 
-            arrayOfObjects |> box |> Option.ofObj
-        else
-            None
+    and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> = // 'T = 'Element seq
+        let parser = getOrCacheParser<'Element> ctx
 
+        fun { Culture = culture; RawData = rawData } ->
+            match rawData with
+            | SimpleData values ->
+                let res = Array.zeroCreate(values.Count)
+
+                for i in 0 .. values.Count - 1 do
+                    res[i] <-
+                        parser {
+                            Culture = culture
+                            RawData = SimpleData(StringValues values[i])
+                        }
+
+                res
+
+            | ComplexData(ComplexArray indexedDicts) ->
+                let maxIndex = Seq.max indexedDicts.Keys
+                let res = Array.zeroCreate(maxIndex + 1)
+
+                for i in 0..maxIndex do
+                    let mutable dict = Unchecked.defaultof<_>
+
+                    if indexedDicts.TryGetValue(i, &dict) then
+                        res[i] <-
+                            parser {
+                                Culture = culture
+                                RawData = ComplexData dict
+                            }
+
+                res
+
+            | _ -> Seq.empty
+
+    and private createFieldParser (ctx: TypeGenerationContext) : FieldParser<'T> =
+        fun shape ->
+            shape.Accept
+                { new IMemberVisitor<_, _> with
+                    member _.Visit<'Field>(fieldShape) =
+                        let parser = getOrCacheParser<'Field> ctx
+
+                        FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
+                            match rawData with
+                            | ComplexData(ExactMatch fieldShape.Label matchedData)
+                            | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
+                                let field =
+                                    parser {
+                                        Culture = culture
+                                        RawData = matchedData
+                                    }
+                                fieldShape.SetByRef(&instance, field)
+                            | _ -> ())
+                }
+
+    and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
+        let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
+
+        match shapeof<'T> with
+        | Shape.Guid -> wrap createSimpleParser<Guid>
+        | Shape.Int32 -> wrap createSimpleParser<int>
+        | Shape.Int64 -> wrap createSimpleParser<int64>
+        | Shape.BigInt -> wrap createSimpleParser<bigint>
+        | Shape.Double -> wrap createSimpleParser<double>
+        | Shape.Decimal -> wrap createSimpleParser<decimal>
+        | Shape.DateTime -> wrap createSimpleParser<DateTime>
+        | Shape.TimeSpan -> wrap createSimpleParser<TimeSpan>
+        | Shape.DateTimeOffset -> wrap createSimpleParser<DateTimeOffset>
+        | Shape.Bool ->
+            let parser = getOrCreateParser<string | null>()
+
+            fun { Culture = culture; RawData = rawData } ->
+                try
+                    let rawValue = parser { Culture = culture; RawData = rawData }
+
+                    match Boolean.TryParse(rawValue) with
+                    | true, value -> value
+                    | false, _ -> error rawData
+                with _ ->
+                    error rawData
+            |> wrap
+
+        | Shape.String ->
+            function
+            | { RawData = SimpleData(RawValue value) } -> value
+            | { RawData = rawData } -> error rawData
+            |> wrap
+
+        | Shape.Enum shape ->
+            shape.Accept
+                { new IEnumVisitor<_> with
+                    member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
+                        let parser = getOrCreateParser<string | null>()
+
+                        fun { Culture = culture; RawData = rawData } ->
+                            try
+                                let rawValue = parser { Culture = culture; RawData = rawData }
+                                match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
+                                | true, value -> value
+                                | false, _ -> error rawData
+                            with _ ->
+                                error rawData
+                        |> wrap
+                }
+
+        | Shape.Nullable shape ->
+            shape.Accept
+                { new INullableVisitor<_> with
+                    member _.Visit<'t when Nullable<'t>>() = // 'T = Nullable<'t>
+                        let parser = getOrCacheParser<'t> ctx
+
+                        function
+                        | { RawData = SimpleData(RawValue Null) } -> Nullable()
+                        | { Culture = culture; RawData = rawData } ->
+                            parser { Culture = culture; RawData = rawData } |> Nullable
+                        |> wrap
+                }
+
+        | Shape.FSharpOption shape ->
+            shape.Element.Accept
+                { new ITypeVisitor<_> with
+                    member _.Visit<'t>() = // 'T = 't option
+                        let parser = getOrCacheParser<'t> ctx
+
+                        function
+                        | { RawData = SimpleData(RawValue Null) } -> None
+                        | { Culture = culture; RawData = rawData } ->
+                            parser { Culture = culture; RawData = rawData } |> Some
+                        |> wrap
+                }
+
+        | Shape.FSharpList shape ->
+            shape.Element.Accept
+                { new ITypeVisitor<_> with
+                    member _.Visit<'t>() = // 'T = 't list
+                        getOrCacheParser<'t seq> ctx >> Seq.toList |> wrap
+                }
+
+        | Shape.Array shape when shape.Rank = 1 ->
+            shape.Element.Accept
+                { new ITypeVisitor<_> with
+                    member _.Visit<'t>() = // 'T = 't array
+                        getOrCacheParser<'t seq> ctx >> Seq.toArray |> wrap
+                }
+
+        | Shape.ResizeArray shape ->
+            shape.Element.Accept
+                { new ITypeVisitor<_> with
+                    member _.Visit<'t>() = // 'T = ResizeArray<'t>
+                        getOrCacheParser<'t seq> ctx >> ResizeArray |> wrap
+                }
+
+        | Shape.Enumerable shape ->
+            shape.Element.Accept
+                { new ITypeVisitor<_> with
+                    member _.Visit<'t>() = // 'T = 't seq
+                        if Type.(<>)(typeof<'T>, typeof<'t seq>) then
+                            unsupported typeof<'T>
+                        else
+                            createEnumerableParser<'t> ctx |> wrap
+                }
+
+        | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
+            let parser = getOrCacheParser<string | null> ctx
+
+            fun { Culture = culture; RawData = rawData } ->
+                try
+                    match parser { Culture = culture; RawData = rawData } with
+                    | Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
+                    | NonNull(UnionCase shape case) -> case.CreateUninitialized()
+                    | _ -> error rawData
+                with _ ->
+                    error rawData
+            |> wrap
+
+        | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
+            let fieldSetters = shape.Fields |> Array.map(createFieldParser ctx)
+
+            fun parserContext ->
+                let mutable instance = shape.CreateUninitialized()
+
+                for fieldSetter in fieldSetters do
+                    fieldSetter.Invoke(parserContext, &instance)
+
+                instance
+
+        | _ -> unsupported typeof<'T>
+
+    and private cache: TypeCache = TypeCache()
+
+    let rec internal parseModel<'T> (culture: CultureInfo) (rawData: RawData) =
+        let parser = getOrCreateParser<'T>()
+
+        parser { Culture = culture; RawData = rawData }
 
 /// <summary>
 /// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
@@ -328,7 +378,4 @@ type ModelBinder(?options: ModelBinderOptions) =
         /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
         /// </summary>
         member this.Bind<'T>(data) =
-            let model = Activator.CreateInstance<'T>()
-            match ModelParser.parseModel<'T> model options.CultureInfo (Dictionary data) with
-            | Ok value -> value
-            | Error msg -> failwith msg
+            ModelParser.parseModel<'T> options.CultureInfo (ComplexData data)
