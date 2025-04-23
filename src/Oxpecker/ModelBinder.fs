@@ -18,6 +18,29 @@ type internal RawData =
     | SimpleData of simpleData: StringValues
     | ComplexData of complexData: Dictionary<string, StringValues>
 
+module private DictionaryPool =
+    let private dictionaryPool = Stack<Dictionary<string, StringValues>>()
+    let private indexedDictionaryPool =
+        Stack<Dictionary<int, Dictionary<string, StringValues>>>()
+
+    let get () =
+        match dictionaryPool.TryPop() with
+        | true, dict ->
+            dict.Clear()
+            dict
+        | false, _ -> Dictionary()
+
+    let getIndexed () =
+        match indexedDictionaryPool.TryPop() with
+        | true, dict ->
+            dict.Clear()
+            dict
+        | false, _ -> Dictionary()
+
+    let release (dict: Dictionary<string, StringValues>) = dictionaryPool.Push(dict)
+
+    let releaseIndexed (dict: Dictionary<int, Dictionary<string, StringValues>>) = indexedDictionaryPool.Push(dict)
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -58,13 +81,13 @@ module internal ModelParser =
             ValueNone
 
     let private (|ComplexArray|_|) (data: Dictionary<string, StringValues>) =
-        let matchedData = Dictionary()
+        let matchedData = DictionaryPool.getIndexed()
 
         for KeyValue(key, value) in data do
             match key with
             | IndexAccess(index, subKey) ->
                 if not <| matchedData.ContainsKey(index) then
-                    matchedData[index] <- Dictionary()
+                    matchedData[index] <- DictionaryPool.get()
 
                 matchedData[index][subKey] <- value
 
@@ -77,11 +100,11 @@ module internal ModelParser =
 
     let private (|ExactMatch|_|) (key: string) (data: Dictionary<string, StringValues>) =
         match data.TryGetValue(key) with
-        | true, values -> ValueSome(SimpleData values)
+        | true, matchedValues -> ValueSome matchedValues
         | _ -> ValueNone
 
     let private (|PrefixMatch|_|) (prefix: string) (data: Dictionary<string, StringValues>) =
-        let matchedData = Dictionary()
+        let matchedData = DictionaryPool.get()
 
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
@@ -93,7 +116,7 @@ module internal ModelParser =
                     matchedData[matchedKey] <- value
 
         if matchedData.Count > 0 then
-            ValueSome(ComplexData matchedData)
+            ValueSome matchedData
         else
             ValueNone
 
@@ -194,6 +217,9 @@ module internal ModelParser =
                             RawData = ComplexData dict
                         }
 
+                    DictionaryPool.release dict
+
+                DictionaryPool.releaseIndexed indexedDicts
                 res
 
             | _ -> Seq.empty
@@ -207,13 +233,24 @@ module internal ModelParser =
 
                         FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
                             match rawData with
-                            | ComplexData(ExactMatch fieldShape.Label matchedData)
+                            | ComplexData(ExactMatch fieldShape.Label rawValues) ->
+                                let field =
+                                    parser {
+                                        Culture = culture
+                                        RawData = SimpleData rawValues
+                                    }
+
+                                fieldShape.SetByRef(&instance, field)
+
                             | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
                                 let field =
                                     parser {
                                         Culture = culture
-                                        RawData = matchedData
+                                        RawData = ComplexData matchedData
                                     }
+
+                                DictionaryPool.release matchedData
+
                                 fieldShape.SetByRef(&instance, field)
                             | _ -> ())
                 }
