@@ -405,22 +405,33 @@ type ModelBinderOptions = {
         CultureInfo = CultureInfo.InvariantCulture
     }
 
+[<AutoOpen>]
+module private DictionaryLikeCollectionHelper =
+    open System.Linq.Expressions
+
+    type DictionaryLikeCollection<'T
+        when 'T: (member ContainsKey: string -> bool)
+        and 'T: (member Keys: ICollection<string>)
+        and 'T: (member TryGetValue: string * byref<StringValues> -> bool)> = 'T
+
+    let inline private getUnderlyingDict<'T when DictionaryLikeCollection<'T>> =
+        let param = Expression.Parameter(typeof<'T>)
+        let storeProp = Expression.Property(param, "Store")
+        let getSourceExpr = Expression.Lambda<_>(storeProp, param)
+
+        let getSourceDel: Func<'T, Dictionary<string, StringValues>> =
+            getSourceExpr.Compile()
+
+        fun collection -> getSourceDel.Invoke(collection)
+
+
+    let formCollectionDict = getUnderlyingDict<FormCollection>
+
+    let queryCollectionDict = getUnderlyingDict<QueryCollection>
+
 /// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
 type ModelBinder(?options: ModelBinderOptions) =
     let options = defaultArg options <| ModelBinderOptions.Default
-    let formCollectionType = typeof<FormCollection>
-    let queryCollectionType = typeof<QueryCollection>
-    let flags = System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance
-    let formCollectionDictionaryAccessor =
-        formCollectionType.GetProperty("Store", flags)
-        |> Unchecked.nonNull
-        |> _.GetGetMethod(true)
-        |> Unchecked.nonNull
-    let queryCollectionDictionaryAccessor =
-        queryCollectionType.GetProperty("Store", flags)
-        |> Unchecked.nonNull
-        |> _.GetGetMethod(true)
-        |> Unchecked.nonNull
 
     interface IModelBinder with
         /// <summary>
@@ -430,12 +441,7 @@ type ModelBinder(?options: ModelBinderOptions) =
         member this.Bind<'T>(data) =
             let dictionary =
                 match data with
-                | :? FormCollection ->
-                    formCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
-                    |> unbox<Dictionary<string, StringValues>>
-                | :? QueryCollection ->
-                    queryCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
-                    |> unbox<Dictionary<string, StringValues>>
-                | _ ->
-                    Dictionary data
+                | :? FormCollection as formCollection -> formCollection |> formCollectionDict
+                | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
+                | _ -> Dictionary data
             ModelParser.parseModel<'T> options.CultureInfo (ComplexData dictionary)
