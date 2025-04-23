@@ -108,5 +108,4 @@ type ModelParsing() =
     member _.DirectModelParser() = parseModel culture modelData
 
     [<Benchmark>]
-    member _.TypeShapeBasedModelParser() =
-        modelBinder.Bind<Model>(modelData)
+    member _.TypeShapeBasedModelParser() = modelBinder.Bind<Model>(modelData)
