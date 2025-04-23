@@ -374,11 +374,16 @@ type ModelBinder(?options: ModelBinderOptions) =
     let options = defaultArg options <| ModelBinderOptions.Default
     let formCollectionType = typeof<FormCollection>
     let queryCollectionType = typeof<QueryCollection>
+    let flags = System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance
     let formCollectionDictionaryAccessor =
-        formCollectionType.GetProperty("Store", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+        formCollectionType.GetProperty("Store", flags)
+        |> Unchecked.nonNull
+        |> _.GetGetMethod(true)
         |> Unchecked.nonNull
     let queryCollectionDictionaryAccessor =
-        queryCollectionType.GetProperty("Store", System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance)
+        queryCollectionType.GetProperty("Store", flags)
+        |> Unchecked.nonNull
+        |> _.GetGetMethod(true)
         |> Unchecked.nonNull
 
     interface IModelBinder with
@@ -390,10 +395,10 @@ type ModelBinder(?options: ModelBinderOptions) =
             let dictionary =
                 match data with
                 | :? FormCollection ->
-                    formCollectionDictionaryAccessor.GetValue(data)
+                    formCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
                     |> unbox<Dictionary<string, StringValues>>
                 | :? QueryCollection ->
-                    queryCollectionDictionaryAccessor.GetValue(data)
+                    queryCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
                     |> unbox<Dictionary<string, StringValues>>
                 | _ ->
                     Dictionary data
