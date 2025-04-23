@@ -182,18 +182,17 @@ module internal ModelParser =
                 res
 
             | ComplexData(ComplexArray indexedDicts) ->
-                let maxIndex = Seq.max indexedDicts.Keys
-                let res = Array.zeroCreate(maxIndex + 1)
+                let res = ResizeArray()
 
-                for i in 0..maxIndex do
-                    let mutable dict = Unchecked.defaultof<_>
+                for KeyValue(i, dict) in indexedDicts do
+                    while i > res.Count - 1 do
+                        res.Add(Unchecked.defaultof<_>)
 
-                    if indexedDicts.TryGetValue(i, &dict) then
-                        res[i] <-
-                            parser {
-                                Culture = culture
-                                RawData = ComplexData dict
-                            }
+                    res[i] <-
+                        parser {
+                            Culture = culture
+                            RawData = ComplexData dict
+                        }
 
                 res
 
