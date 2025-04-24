@@ -18,28 +18,37 @@ type internal RawData =
     | SimpleData of simpleData: StringValues
     | ComplexData of complexData: Dictionary<string, StringValues>
 
+[<AbstractClass>]
+type private PooledDictionary<'Key, 'Value when 'Key: not null and 'Key: equality>() =
+    inherit Dictionary<'Key, 'Value>()
+
+    abstract member Dispose: unit -> unit
+
+    interface IDisposable with
+        member this.Dispose() = this.Dispose()
+
 module private DictionaryPool =
-    let private dictionaryPool = Stack<Dictionary<string, StringValues>>()
-    let private indexedDictionaryPool =
-        Stack<Dictionary<int, Dictionary<string, StringValues>>>()
+    open System.Collections.Concurrent
+
+    [<AbstractClass; Sealed>]
+    type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() =
+        static let pool = ConcurrentStack<PooledDictionary<'Key, 'Value>>()
+
+        static member Get() =
+            match pool.TryPop() with
+            | true, dict ->
+                dict.Clear()
+                dict
+            | false, _ ->
+                { new PooledDictionary<'Key, 'Value>() with
+                    member this.Dispose() = pool.Push(this)
+                }
 
     let get () =
-        match dictionaryPool.TryPop() with
-        | true, dict ->
-            dict.Clear()
-            dict
-        | false, _ -> Dictionary()
+        DictionaryPool<string, StringValues>.Get()
 
     let getIndexed () =
-        match indexedDictionaryPool.TryPop() with
-        | true, dict ->
-            dict.Clear()
-            dict
-        | false, _ -> Dictionary()
-
-    let release (dict: Dictionary<string, StringValues>) = dictionaryPool.Push(dict)
-
-    let releaseIndexed (dict: Dictionary<int, Dictionary<string, StringValues>>) = indexedDictionaryPool.Push(dict)
+        DictionaryPool<int, PooledDictionary<string, StringValues>>.Get()
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -80,9 +89,10 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private (|ComplexArray|_|) (data: Dictionary<string, StringValues>) =
-        let matchedData = DictionaryPool.getIndexed()
-
+    let private complexArrayData
+        (data: Dictionary<string, StringValues>)
+        (matchedData: PooledDictionary<int, PooledDictionary<string, StringValues>>)
+        =
         for KeyValue(key, value) in data do
             match key with
             | IndexAccess(index, subKey) ->
@@ -93,18 +103,18 @@ module internal ModelParser =
 
             | _ -> ()
 
-        if matchedData.Count = 0 then
-            ValueNone
-        else
-            ValueSome matchedData
+        matchedData
 
     let private (|ExactMatch|_|) (key: string) (data: Dictionary<string, StringValues>) =
         match data.TryGetValue(key) with
         | true, matchedValues -> ValueSome matchedValues
         | _ -> ValueNone
 
-    let private (|PrefixMatch|_|) (prefix: string) (data: Dictionary<string, StringValues>) =
-        let matchedData = DictionaryPool.get()
+    let private matchedDataByPrefix
+        (prefix: string)
+        (data: Dictionary<string, StringValues>)
+        (matchedData: PooledDictionary<string, StringValues>)
+        =
 
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
@@ -115,10 +125,7 @@ module internal ModelParser =
                 elif matchedKey[0] = '[' then // index access
                     matchedData[matchedKey] <- value
 
-        if matchedData.Count > 0 then
-            ValueSome matchedData
-        else
-            ValueNone
+        matchedData
 
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
@@ -204,10 +211,16 @@ module internal ModelParser =
 
                 res
 
-            | ComplexData(ComplexArray indexedDicts) ->
+            | ComplexData complexData ->
+                use indexedDicts =
+                    DictionaryPool.getIndexed()
+                    |> complexArrayData complexData
+
                 let res = ResizeArray()
 
                 for KeyValue(i, dict) in indexedDicts do
+                    use dict = dict
+
                     while i > res.Count - 1 do
                         res.Add(Unchecked.defaultof<_>)
 
@@ -217,12 +230,7 @@ module internal ModelParser =
                             RawData = ComplexData dict
                         }
 
-                    DictionaryPool.release dict
-
-                DictionaryPool.releaseIndexed indexedDicts
                 res
-
-            | _ -> Seq.empty
 
     and private createFieldParser (ctx: TypeGenerationContext) : FieldParser<'T> =
         fun shape ->
@@ -242,16 +250,19 @@ module internal ModelParser =
 
                                 fieldShape.SetByRef(&instance, field)
 
-                            | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
-                                let field =
-                                    parser {
-                                        Culture = culture
-                                        RawData = ComplexData matchedData
-                                    }
+                            | ComplexData complexData ->
+                                use matchedData =
+                                    DictionaryPool.get()
+                                    |> matchedDataByPrefix fieldShape.Label complexData
 
-                                DictionaryPool.release matchedData
+                                if matchedData.Count > 0 then
+                                    let field =
+                                        parser {
+                                            Culture = culture
+                                            RawData = ComplexData matchedData
+                                        }
 
-                                fieldShape.SetByRef(&instance, field)
+                                    fieldShape.SetByRef(&instance, field)
                             | _ -> ())
                 }
 
