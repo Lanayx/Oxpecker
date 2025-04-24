@@ -53,12 +53,12 @@ module private DictionaryPool =
 [<AutoOpen>]
 module TypeShapeImpl =
     type IParsableVisitor<'R> =
-        abstract Visit<'T when 'T :> IParsable<'T>> : unit -> 'R
+        abstract Visit<'T when IParsable<'T>> : unit -> 'R
 
     type IShapeParsable =
         abstract Accept: IParsableVisitor<'R> -> 'R
 
-    type ShapeParsable<'T when 'T :> IParsable<'T>>() =
+    type ShapeParsable<'T when IParsable<'T>>() =
         interface IShapeParsable with
             member _.Accept v = v.Visit<'T>()
 
@@ -66,13 +66,13 @@ module TypeShapeImpl =
 module Shape =
     open TypeShape.Core
 
-    let (|Parsable|_|) (s: TypeShape) =
+    let (|Parsable|_|) (shape: TypeShape) =
         let parsable =
-            s.Type.GetInterfaces()
+            shape.Type.GetInterfaces()
             |> Seq.tryFind(fun x -> x.IsGenericType && x.GetGenericTypeDefinition() = typedefof<IParsable<int>>)
         match parsable with
         | Some _ ->
-            Activator.CreateInstanceGeneric<ShapeParsable<int>>([| s.Type |]) :?> IShapeParsable
+            Activator.CreateInstanceGeneric<ShapeParsable<int>>([| shape.Type |]) :?> IShapeParsable
             |> Some
         | None -> None
 
