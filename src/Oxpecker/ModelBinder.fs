@@ -140,7 +140,6 @@ module internal ModelParser =
         (data: Dictionary<string, StringValues>)
         (matchedData: PooledDictionary<string, StringValues>)
         =
-
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
                 let matchedKey = key[prefix.Length ..]
@@ -174,9 +173,6 @@ module internal ModelParser =
     type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
 
     type private Nullable<'T when Struct<'T>> = 'T
-
-    type private Parsable<'T when 'T: (static member TryParse: string | null * IFormatProvider * byref<'T> -> bool)> =
-        'T
 
     [<Struct>]
     type internal ParserContext = {
