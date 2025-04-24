@@ -50,11 +50,36 @@ module private DictionaryPool =
     let getIndexed () =
         DictionaryPool<int, PooledDictionary<string, StringValues>>.Get()
 
+[<AutoOpen>]
+module TypeShapeImpl =
+    type IParsableVisitor<'R> =
+        abstract Visit<'T when 'T :> IParsable<'T>> : unit -> 'R
+
+    type IShapeParsable =
+        abstract Accept: IParsableVisitor<'R> -> 'R
+
+    type ShapeParsable<'T when 'T :> IParsable<'T>>() =
+        interface IShapeParsable with
+            member _.Accept v = v.Visit<'T>()
+
+#nowarn 3536
+module Shape =
+    open TypeShape.Core
+
+    let (|Parsable|_|) (s: TypeShape) =
+        let parsable =
+            s.Type.GetInterfaces()
+            |> Seq.tryFind(fun x -> x.IsGenericType && x.GetGenericTypeDefinition() = typedefof<IParsable<int>>)
+        match parsable with
+        | Some _ ->
+            Activator.CreateInstanceGeneric<ShapeParsable<int>>([| s.Type |]) :?> IShapeParsable
+            |> Some
+        | None -> None
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
 module internal ModelParser =
-
     open TypeShape.Core
     open TypeShape.Core.Utils
 
@@ -179,21 +204,6 @@ module internal ModelParser =
             let v = createParser<'T> ctx
             ctx.Commit t v
 
-    and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
-        let parser = getOrCreateParser<string | null>()
-
-        fun { Culture = culture; RawData = rawData } ->
-            try
-                let rawValue = parser { Culture = culture; RawData = rawData }
-                let mutable result = Unchecked.defaultof<'T>
-
-                if 'T.TryParse(rawValue, culture, &result) then
-                    result
-                else
-                    error rawData
-            with _ ->
-                error rawData
-
     and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> = // 'T = 'Element seq
         let parser = getOrCacheParser<'Element> ctx
 
@@ -268,15 +278,30 @@ module internal ModelParser =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
 
         match shapeof<'T> with
-        | Shape.Guid -> wrap createSimpleParser<Guid>
-        | Shape.Int32 -> wrap createSimpleParser<int>
-        | Shape.Int64 -> wrap createSimpleParser<int64>
-        | Shape.BigInt -> wrap createSimpleParser<bigint>
-        | Shape.Double -> wrap createSimpleParser<double>
-        | Shape.Decimal -> wrap createSimpleParser<decimal>
-        | Shape.DateTime -> wrap createSimpleParser<DateTime>
-        | Shape.TimeSpan -> wrap createSimpleParser<TimeSpan>
-        | Shape.DateTimeOffset -> wrap createSimpleParser<DateTimeOffset>
+        | Shape.String ->
+            function
+            | { RawData = SimpleData(RawValue value) } -> value
+            | { RawData = rawData } -> error rawData
+            |> wrap
+
+        | Shape.Parsable shape ->
+            shape.Accept
+                { new IParsableVisitor<_> with
+                    member _.Visit<'t when 't :> IParsable<'t>>() =
+                        let parser = getOrCreateParser<string | null>()
+
+                        fun { Culture = culture; RawData = rawData } ->
+                            try
+                                let rawValue = parser { Culture = culture; RawData = rawData }
+                                let mutable result = Unchecked.defaultof<'t>
+                                if 't.TryParse(rawValue, culture, &result) then
+                                    result
+                                else
+                                    error rawData
+                            with _ ->
+                                error rawData
+                        |> wrap
+                }
         | Shape.Bool ->
             let parser = getOrCreateParser<string | null>()
 
@@ -289,12 +314,6 @@ module internal ModelParser =
                     | false, _ -> error rawData
                 with _ ->
                     error rawData
-            |> wrap
-
-        | Shape.String ->
-            function
-            | { RawData = SimpleData(RawValue value) } -> value
-            | { RawData = rawData } -> error rawData
             |> wrap
 
         | Shape.Enum shape ->
