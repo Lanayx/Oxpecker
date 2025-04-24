@@ -32,16 +32,16 @@ module private DictionaryPool =
 
     [<AbstractClass; Sealed>]
     type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() =
-        static let pool = ConcurrentStack<PooledDictionary<'Key, 'Value>>()
+        static let pool = ConcurrentBag<PooledDictionary<'Key, 'Value>>()
 
         static member Get() =
-            match pool.TryPop() with
+            match pool.TryTake() with
             | true, dict ->
                 dict.Clear()
                 dict
             | false, _ ->
                 { new PooledDictionary<'Key, 'Value>() with
-                    member this.Dispose() = pool.Push(this)
+                    member this.Dispose() = pool.Add(this)
                 }
 
     let get () =
@@ -89,7 +89,7 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private complexArrayData
+    let private fillIndexedComplexData
         (data: Dictionary<string, StringValues>)
         (matchedData: PooledDictionary<int, PooledDictionary<string, StringValues>>)
         =
@@ -110,7 +110,7 @@ module internal ModelParser =
         | true, matchedValues -> ValueSome matchedValues
         | _ -> ValueNone
 
-    let private matchedDataByPrefix
+    let private fillComplexDataByPrefix
         (prefix: string)
         (data: Dictionary<string, StringValues>)
         (matchedData: PooledDictionary<string, StringValues>)
@@ -212,13 +212,12 @@ module internal ModelParser =
                 res
 
             | ComplexData complexData ->
-                use indexedDicts =
-                    DictionaryPool.getIndexed()
-                    |> complexArrayData complexData
+                use indexedComplexData =
+                    DictionaryPool.getIndexed() |> fillIndexedComplexData complexData
 
                 let res = ResizeArray()
 
-                for KeyValue(i, dict) in indexedDicts do
+                for KeyValue(i, dict) in indexedComplexData do
                     use dict = dict
 
                     while i > res.Count - 1 do
@@ -252,8 +251,7 @@ module internal ModelParser =
 
                             | ComplexData complexData ->
                                 use matchedData =
-                                    DictionaryPool.get()
-                                    |> matchedDataByPrefix fieldShape.Label complexData
+                                    DictionaryPool.get() |> fillComplexDataByPrefix fieldShape.Label complexData
 
                                 if matchedData.Count > 0 then
                                     let field =
