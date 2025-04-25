@@ -28,27 +28,33 @@ type private PooledDictionary<'Key, 'Value when 'Key: not null and 'Key: equalit
         member this.Dispose() = this.Dispose()
 
 module private DictionaryPool =
-    open System.Collections.Concurrent
+    open Microsoft.Extensions.ObjectPool
 
-    [<AbstractClass; Sealed>]
-    type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() =
-        static let pool = ConcurrentBag<PooledDictionary<'Key, 'Value>>()
+    let private maximumRetained = Environment.ProcessorCount * 2
 
-        static member Get() =
-            match pool.TryTake() with
-            | true, dict ->
-                dict.Clear()
-                dict
-            | false, _ ->
+    type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>
+        (policy: PooledDictionaryPolicy<'Key, 'Value>) as this =
+        inherit DefaultObjectPool<PooledDictionary<'Key, 'Value>>(policy, maximumRetained)
+
+        do policy.Pool <- this
+
+    and private PooledDictionaryPolicy<'Key, 'Value when 'Key: not null and 'Key: equality>() =
+        member val Pool: DictionaryPool<'Key, 'Value> = Unchecked.defaultof<_> with get, set
+
+        interface IPooledObjectPolicy<PooledDictionary<'Key, 'Value>> with
+            member that.Create() =
                 { new PooledDictionary<'Key, 'Value>() with
-                    member this.Dispose() = pool.Add(this)
+                    member this.Dispose() = that.Pool.Return(this) |> ignore
                 }
 
-    let get () =
-        DictionaryPool<string, StringValues>.Get()
+            member _.Return(dict) =
+                dict.Clear()
+                dict.Count = 0
 
-    let getIndexed () =
-        DictionaryPool<int, PooledDictionary<string, StringValues>>.Get()
+    let get = DictionaryPool<string, StringValues>(PooledDictionaryPolicy()).Get
+
+    let getIndexed =
+        DictionaryPool<int, PooledDictionary<string, StringValues>>(PooledDictionaryPolicy()).Get
 
 [<AutoOpen>]
 module TypeShapeImpl =
