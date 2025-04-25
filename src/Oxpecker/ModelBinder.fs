@@ -32,29 +32,25 @@ module private DictionaryPool =
 
     let private maximumRetained = Environment.ProcessorCount * 2
 
-    type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>
-        (policy: PooledDictionaryPolicy<'Key, 'Value>) as this =
-        inherit DefaultObjectPool<PooledDictionary<'Key, 'Value>>(policy, maximumRetained)
+    type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() as that =
+        inherit
+            DefaultObjectPool<PooledDictionary<'Key, 'Value>>(
+                { new IPooledObjectPolicy<_> with
+                    member _.Create() =
+                        { new PooledDictionary<_, _>() with
+                            member this.Dispose() = that.Return(this) |> ignore
+                        }
 
-        do policy.Pool <- this
+                    member _.Return(dict) =
+                        dict.Clear()
+                        dict.Count = 0
+                },
+                maximumRetained
+            )
 
-    and private PooledDictionaryPolicy<'Key, 'Value when 'Key: not null and 'Key: equality>() =
-        member val Pool: DictionaryPool<'Key, 'Value> = Unchecked.defaultof<_> with get, set
+    let get = DictionaryPool<string, StringValues>().Get
 
-        interface IPooledObjectPolicy<PooledDictionary<'Key, 'Value>> with
-            member that.Create() =
-                { new PooledDictionary<'Key, 'Value>() with
-                    member this.Dispose() = that.Pool.Return(this) |> ignore
-                }
-
-            member _.Return(dict) =
-                dict.Clear()
-                dict.Count = 0
-
-    let get = DictionaryPool<string, StringValues>(PooledDictionaryPolicy()).Get
-
-    let getIndexed =
-        DictionaryPool<int, PooledDictionary<string, StringValues>>(PooledDictionaryPolicy()).Get
+    let getIndexed = DictionaryPool<int, PooledDictionary<string, StringValues>>().Get
 
 [<AutoOpen>]
 module TypeShapeImpl =
