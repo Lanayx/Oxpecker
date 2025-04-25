@@ -107,7 +107,8 @@ type ModelBinding() =
 
     let requestBody =
         "Id=4e213598-5b45-4cd7-a87c-429d7b6b2f03&FirstName=Susan&MiddleName=Elisabeth&LastName=Doe&BirthDate=1986-12-29&StatusCode=200&Nicknames=Susi&Nicknames=Eli&Nicknames=Liz&Children[0].Name=Hamed&Children[0].Age=32&Children[1].Name=Ali&Children[1].Age=22&Children[2].Name=Gholi&Children[2].Age=44"
-    let content = new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
+    let content =
+        new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
 
 
     [<Benchmark>]

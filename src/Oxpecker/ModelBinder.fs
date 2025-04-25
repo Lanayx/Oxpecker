@@ -16,7 +16,7 @@ type IModelBinder =
 [<Struct>]
 type internal RawData =
     | SimpleData of simpleData: StringValues
-    | ComplexData of complexData: Dictionary<string, StringValues>
+    | ComplexData of complexData: Dictionary<string, StringValues> * offset: int
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -32,8 +32,8 @@ module internal ModelParser =
         else ValueNone
 
     /// Active pattern for parsing keys in the format "[index].subKey".
-    let private (|IndexAccess|_|) (key: string) =
-        let key = key.AsSpan()
+    let private (|IndexAccess|_|) (offset: int) (key: string) =
+        let key = key.AsSpan(offset)
 
         if key[0] = '[' then
             let lastIndex = key.Length - 1
@@ -49,24 +49,25 @@ module internal ModelParser =
                 && currentIndex + 2 < lastIndex // at least one symbol after '].'
             then
                 let index = Int32.Parse(key.Slice(1, currentIndex - 1))
-                let subKey = key.Slice(currentIndex + 2)
+                let newOffset = offset + currentIndex + 2
 
-                ValueSome(struct (index, subKey.ToString()))
+                ValueSome(struct (index, newOffset))
             else
                 ValueNone
         else
             ValueNone
 
-    let private (|ComplexArray|_|) (data: Dictionary<string, StringValues>) =
+    let private (|ComplexArray|_|) offset (data: Dictionary<string, StringValues>) =
         let matchedData = Dictionary()
 
         for KeyValue(key, value) in data do
             match key with
-            | IndexAccess(index, subKey) ->
+            | IndexAccess offset (index, newOffset) ->
                 if not <| matchedData.ContainsKey(index) then
-                    matchedData[index] <- Dictionary()
+                    matchedData[index] <- struct (newOffset, Dictionary())
 
-                matchedData[index][subKey] <- value
+                let struct (_, d) = matchedData[index]
+                d[key] <- value
 
             | _ -> ()
 
@@ -75,25 +76,38 @@ module internal ModelParser =
         else
             ValueSome matchedData
 
-    let private (|ExactMatch|_|) (key: string) (data: Dictionary<string, StringValues>) =
-        match data.TryGetValue(key) with
-        | true, values -> ValueSome(SimpleData values)
-        | _ -> ValueNone
+    let private (|ExactMatch|_|) (fieldName: string) offset (data: Dictionary<string, StringValues>) =
+        if offset = 0 then
+            match data.TryGetValue(fieldName) with
+            | true, values -> ValueSome(SimpleData values)
+            | _ -> ValueNone
+        else
+            let mutable result = ValueNone
+            let mutable enumerator = data.GetEnumerator()
 
-    let private (|PrefixMatch|_|) (prefix: string) (data: Dictionary<string, StringValues>) =
+            while result.IsValueNone && enumerator.MoveNext() do
+                let (KeyValue(key, value)) = enumerator.Current
+                let s1 = key.AsSpan(offset)
+                let s2 = fieldName.AsSpan()
+                if s1.SequenceEqual(s2) then
+                    result <- ValueSome(SimpleData value)
+            result
+
+    let private (|PrefixMatch|_|) (prefix: string) (offset: int) (data: Dictionary<string, StringValues>) =
         let matchedData = Dictionary()
+        let mutable newOffset = 0
 
         for KeyValue(key, value) in data do
-            if key.StartsWith(prefix) then
-                let matchedKey = key[prefix.Length ..]
-
-                if matchedKey[0] = '.' then // property access
-                    matchedData[matchedKey[1..]] <- value
-                elif matchedKey[0] = '[' then // index access
-                    matchedData[matchedKey] <- value
+            if key.AsSpan(offset).StartsWith(prefix) then
+                let tempOffset = offset + prefix.Length
+                if key[tempOffset] = '.' then // property access
+                    newOffset <- tempOffset + 1
+                else // index access
+                    newOffset <- tempOffset
+                matchedData[key] <- value
 
         if matchedData.Count > 0 then
-            ValueSome(ComplexData matchedData)
+            ValueSome(ComplexData(matchedData, newOffset))
         else
             ValueNone
 
@@ -110,7 +124,7 @@ module internal ModelParser =
             match rawData with
             | SimpleData(RawValue Null) -> "<null>"
             | SimpleData data -> $"{data}"
-            | ComplexData data -> $"%A{data}"
+            | ComplexData(data, _) -> $"%A{data}"
 
         failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
 
@@ -181,23 +195,24 @@ module internal ModelParser =
 
                 res
 
-            | ComplexData(ComplexArray indexedDicts) ->
-                let maxIndex = Seq.max indexedDicts.Keys
-                let res = Array.zeroCreate(maxIndex + 1)
+            | ComplexData(data, offset) ->
+                match data with
+                | ComplexArray offset indexedDicts ->
+                    let maxIndex = Seq.max indexedDicts.Keys
+                    let res = Array.zeroCreate(maxIndex + 1)
 
-                for i in 0..maxIndex do
-                    let mutable dict = Unchecked.defaultof<_>
+                    for i in 0..maxIndex do
+                        match indexedDicts.TryGetValue i with
+                        | true, (offset, dict) ->
+                            res[i] <-
+                                parser {
+                                    Culture = culture
+                                    RawData = ComplexData(dict, offset)
+                                }
+                        | _ -> ()
 
-                    if indexedDicts.TryGetValue(i, &dict) then
-                        res[i] <-
-                            parser {
-                                Culture = culture
-                                RawData = ComplexData dict
-                            }
-
-                res
-
-            | _ -> Seq.empty
+                    res
+                | _ -> Seq.empty
 
     and private createFieldParser (ctx: TypeGenerationContext) : FieldParser<'T> =
         fun shape ->
@@ -208,14 +223,17 @@ module internal ModelParser =
 
                         FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
                             match rawData with
-                            | ComplexData(ExactMatch fieldShape.Label matchedData)
-                            | ComplexData(PrefixMatch fieldShape.Label matchedData) ->
-                                let field =
-                                    parser {
-                                        Culture = culture
-                                        RawData = matchedData
-                                    }
-                                fieldShape.SetByRef(&instance, field)
+                            | ComplexData(data, offset) ->
+                                match data with
+                                | ExactMatch fieldShape.Label offset matchedData
+                                | PrefixMatch fieldShape.Label offset matchedData ->
+                                    let field =
+                                        parser {
+                                            Culture = culture
+                                            RawData = matchedData
+                                        }
+                                    fieldShape.SetByRef(&instance, field)
+                                | _ -> ()
                             | _ -> ())
                 }
 
@@ -374,7 +392,9 @@ type ModelBinder(?options: ModelBinderOptions) =
     let options = defaultArg options <| ModelBinderOptions.Default
     let formCollectionType = typeof<FormCollection>
     let queryCollectionType = typeof<QueryCollection>
-    let flags = System.Reflection.BindingFlags.NonPublic ||| System.Reflection.BindingFlags.Instance
+    let flags =
+        System.Reflection.BindingFlags.NonPublic
+        ||| System.Reflection.BindingFlags.Instance
     let formCollectionDictionaryAccessor =
         formCollectionType.GetProperty("Store", flags)
         |> Unchecked.nonNull
@@ -400,6 +420,5 @@ type ModelBinder(?options: ModelBinderOptions) =
                 | :? QueryCollection ->
                     queryCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
                     |> unbox<Dictionary<string, StringValues>>
-                | _ ->
-                    Dictionary data
-            ModelParser.parseModel<'T> options.CultureInfo (ComplexData dictionary)
+                | _ -> Dictionary data
+            ModelParser.parseModel<'T> options.CultureInfo (ComplexData(dictionary, 0))
