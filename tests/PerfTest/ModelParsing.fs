@@ -45,7 +45,6 @@ type ModelParsing() =
         ]
         |> List.map KeyValuePair.Create
         |> Dictionary
-        |> FormCollection
 
     let firstValue (rawValues: StringValues) =
         if rawValues.Count > 0 then rawValues[0] else null
@@ -100,12 +99,13 @@ type ModelParsing() =
     // | DirectModelParser         |   538.6 ns |  5.21 ns |  4.88 ns |  1.00 |    0.01 | 0.0906 |     760 B |        1.00 |
     // | TypeShapeBasedModelParser | 2,083.1 ns | 41.61 ns | 49.54 ns |  3.87 |    0.10 | 0.2823 |    2392 B |        3.15 |
 
-
     static let culture = CultureInfo.InvariantCulture
-    static let modelBinder = ModelBinder({ CultureInfo = culture }) :> IModelBinder
+    static let formCollection = FormCollection modelData
+    static let complexData = ComplexData modelData
 
     [<Benchmark(Baseline = true)>]
-    member _.DirectModelParser() = parseModel culture modelData
+    member _.DirectModelParser() = parseModel culture formCollection
 
     [<Benchmark>]
-    member _.TypeShapeBasedModelParser() = modelBinder.Bind<Model>(modelData)
+    member _.TypeShapeBasedModelParser() =
+        ModelParser.parseModel<Model> culture complexData
