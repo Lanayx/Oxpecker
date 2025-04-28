@@ -297,7 +297,8 @@ let ``ModelParser.parseModel<Model> fails when union case is invalid`` () =
         ModelParser.parseModel<Model> culture modelData |> ignore
 
     result
-    |> shouldFailWithMessage<NotParsedException> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
+    |> shouldFailWithMessage<NotParsedException>
+        "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
 
 [<Fact>]
 let ``ModelParser.parseModel<Model> fails when data contains invalid values`` () =

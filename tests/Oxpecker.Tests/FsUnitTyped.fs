@@ -19,5 +19,4 @@ module CustomTopLevelOperators =
     let private structuallyEqual expected = Is.StructurallyEqualTo(expected)
 
     [<DebuggerStepThrough>]
-    let shouldEquivalent<'a> (expected: 'a) (actual: 'a) =
-        Assert.Equivalent(expected, actual)
+    let shouldEquivalent<'a> (expected: 'a) (actual: 'a) = Assert.Equivalent(expected, actual)

@@ -107,4 +107,5 @@ type ModelParsing() =
     member _.DirectModelParser() = parseModel culture formCollection
 
     [<Benchmark>]
-    member _.TypeShapeBasedModelParser() = ModelParser.parseModel<Model> culture complexData
+    member _.TypeShapeBasedModelParser() =
+        ModelParser.parseModel<Model> culture complexData
