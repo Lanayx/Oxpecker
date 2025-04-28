@@ -12,7 +12,7 @@ let private toComplexData data =
     data
     |> List.map KeyValuePair.Create
     |> Dictionary
-    |> (fun d -> ComplexData(d, 0))
+    |> (fun d -> ComplexData(0, d))
 
 type Sex =
     | Male

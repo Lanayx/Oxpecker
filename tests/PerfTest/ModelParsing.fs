@@ -101,10 +101,10 @@ type ModelParsing() =
 
     static let culture = CultureInfo.InvariantCulture
     static let formCollection = FormCollection modelData
-    static let complexData = ComplexData modelData
+    static let complexData = ComplexData (0, modelData)
 
     [<Benchmark(Baseline = true)>]
     member _.DirectModelParser() = parseModel culture formCollection
 
     [<Benchmark>]
-    member _.TypeShapeBasedModelParser() = modelBinder.Bind<Model>(modelData)
+    member _.TypeShapeBasedModelParser() = ModelParser.parseModel<Model> culture complexData
