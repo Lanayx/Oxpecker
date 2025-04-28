@@ -78,8 +78,10 @@ module Shape =
             |> Some
         | None -> None
 
-type UnsupportedTypeException(ty: Type) = inherit exn($"Unsupported type '{ty}'.")
-type NotParsedException(value: string, ty: Type) = inherit exn($"Could not parse value '{value}' to type '{ty}'.")
+type UnsupportedTypeException(ty: Type) =
+    inherit exn($"Unsupported type '{ty}'.")
+type NotParsedException(value: string, ty: Type) =
+    inherit exn($"Could not parse value '{value}' to type '{ty}'.")
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -159,17 +161,6 @@ module internal ModelParser =
 
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
-    let private unsupported ty = raise <| UnsupportedTypeException ty
-
-    let private error (rawData: RawData) : 'T =
-        let value =
-            match rawData with
-            | SimpleData(RawValue Null) -> "<null>"
-            | SimpleData data -> $"{data}"
-            | ComplexData data -> $"%A{data}"
-
-        raise <| NotParsedException(value, typeof<'T>)
-
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
 
     type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
@@ -177,16 +168,27 @@ module internal ModelParser =
     type private Nullable<'T when Struct<'T>> = 'T
 
     [<Struct>]
-    type internal ParserContext = {
+    type internal ParsingState = {
         Culture: CultureInfo
         RawData: RawData
     }
 
-    type private Parser<'T> = ParserContext -> 'T
+    type private Parser<'T> = ParsingState -> 'T
 
-    type private MemberSetter<'T> = delegate of ParserContext * 'T byref -> unit
+    type private MemberSetter<'T> = delegate of ParsingState * 'T byref -> unit
 
     type private MemberParser<'T> = IShapeMember<'T> -> MemberSetter<'T>
+
+    let private unsupported ty = raise <| UnsupportedTypeException ty
+
+    let private notParsed { RawData = rawData } : 'T =
+        let value =
+            match rawData with
+            | SimpleData(RawValue Null) -> "<null>"
+            | SimpleData data -> $"{data}"
+            | ComplexData data -> $"%A{data}"
+
+        raise <| NotParsedException(value, typeof<'T>)
 
     let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
@@ -196,7 +198,7 @@ module internal ModelParser =
             getOrCacheParser<'T> ctx
 
     and private getOrCacheParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
-        match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell parserContext -> cell.Value parserContext) with
+        match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell state -> cell.Value state) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = createParser<'T> ctx
@@ -205,17 +207,15 @@ module internal ModelParser =
     and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> = // 'T = 'Element seq
         let parser = getOrCacheParser<'Element> ctx
 
-        fun { Culture = culture; RawData = rawData } ->
-            match rawData with
+        fun state ->
+            match state.RawData with
             | SimpleData values ->
                 let res = Array.zeroCreate(values.Count)
 
                 for i in 0 .. values.Count - 1 do
                     res[i] <-
-                        parser {
-                            Culture = culture
-                            RawData = SimpleData(StringValues values[i])
-                        }
+                        let rawData = SimpleData(StringValues values[i])
+                        parser { state with RawData = rawData }
 
                 res
 
@@ -231,10 +231,8 @@ module internal ModelParser =
                         res.Add(Unchecked.defaultof<_>)
 
                     res[i] <-
-                        parser {
-                            Culture = culture
-                            RawData = ComplexData dict
-                        }
+                        let rawData = ComplexData dict
+                        parser { state with RawData = rawData }
 
                 res
 
@@ -245,14 +243,11 @@ module internal ModelParser =
                     member _.Visit<'Member>(memberShape) =
                         let parser = getOrCacheParser<'Member> ctx
 
-                        MemberSetter(fun { Culture = culture; RawData = rawData } instance ->
-                            match rawData with
+                        MemberSetter(fun state instance ->
+                            match state.RawData with
                             | ComplexData(ExactMatch memberShape.Label rawValues) ->
-                                let memberValue =
-                                    parser {
-                                        Culture = culture
-                                        RawData = SimpleData rawValues
-                                    }
+                                let rawData = SimpleData rawValues
+                                let memberValue = parser { state with RawData = rawData }
 
                                 memberShape.SetByRef(&instance, memberValue)
 
@@ -260,11 +255,8 @@ module internal ModelParser =
                                 use matchedData = matchedData
 
                                 if matchedData.Count > 0 then
-                                    let memberValue =
-                                        parser {
-                                            Culture = culture
-                                            RawData = ComplexData matchedData
-                                        }
+                                    let rawData = ComplexData matchedData
+                                    let memberValue = parser { state with RawData = rawData }
 
                                     memberShape.SetByRef(&instance, memberValue)
 
@@ -278,7 +270,7 @@ module internal ModelParser =
         | Shape.String ->
             function
             | { RawData = SimpleData(RawValue value) } -> value
-            | { RawData = rawData } -> error rawData
+            | state -> notParsed state
             |> wrap
 
         | Shape.Parsable shape ->
@@ -287,16 +279,16 @@ module internal ModelParser =
                     member _.Visit<'t when 't :> IParsable<'t>>() =
                         let parser = getOrCacheParser<string | null> ctx
 
-                        fun { Culture = culture; RawData = rawData } ->
+                        fun state ->
                             try
-                                let rawValue = parser { Culture = culture; RawData = rawData }
+                                let rawValue = parser state
                                 let mutable result = Unchecked.defaultof<'t>
-                                if 't.TryParse(rawValue, culture, &result) then
+                                if 't.TryParse(rawValue, state.Culture, &result) then
                                     result
                                 else
-                                    error rawData
+                                    notParsed state
                             with _ ->
-                                error rawData
+                                notParsed state
                         |> wrap
                 }
 
@@ -306,14 +298,14 @@ module internal ModelParser =
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
                         let parser = getOrCacheParser<string | null> ctx
 
-                        fun { Culture = culture; RawData = rawData } ->
+                        fun state ->
                             try
-                                let rawValue = parser { Culture = culture; RawData = rawData }
+                                let rawValue = parser state
                                 match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
                                 | true, value -> value
-                                | false, _ -> error rawData
+                                | false, _ -> notParsed state
                             with _ ->
-                                error rawData
+                                notParsed state
                         |> wrap
                 }
 
@@ -325,8 +317,7 @@ module internal ModelParser =
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> Nullable()
-                        | { Culture = culture; RawData = rawData } ->
-                            parser { Culture = culture; RawData = rawData } |> Nullable
+                        | state -> parser state |> Nullable
                         |> wrap
                 }
 
@@ -338,8 +329,7 @@ module internal ModelParser =
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> None
-                        | { Culture = culture; RawData = rawData } ->
-                            parser { Culture = culture; RawData = rawData } |> Some
+                        | state -> parser state |> Some
                         |> wrap
                 }
 
@@ -377,35 +367,35 @@ module internal ModelParser =
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
             let parser = getOrCacheParser<string | null> ctx
 
-            fun { Culture = culture; RawData = rawData } ->
+            fun state ->
                 try
-                    match parser { Culture = culture; RawData = rawData } with
+                    match parser state with
                     | Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
                     | NonNull(UnionCase shape case) -> case.CreateUninitialized()
-                    | _ -> error rawData
+                    | _ -> notParsed state
                 with _ ->
-                    error rawData
+                    notParsed state
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
             let fieldSetters = shape.Fields |> Array.map(createMemberParser ctx)
 
-            fun parserContext ->
+            fun state ->
                 let mutable instance = shape.CreateUninitialized()
 
                 for fieldSetter in fieldSetters do
-                    fieldSetter.Invoke(parserContext, &instance)
+                    fieldSetter.Invoke(state, &instance)
 
                 instance
 
         | Shape.CliMutable(:? ShapeCliMutable<'T> as shape) ->
             let propertySetters = shape.Properties |> Array.map(createMemberParser ctx)
 
-            fun parserContext ->
+            fun state ->
                 let mutable instance = shape.CreateUninitialized()
 
                 for propertySetter in propertySetters do
-                    propertySetter.Invoke(parserContext, &instance)
+                    propertySetter.Invoke(state, &instance)
 
                 instance
 
