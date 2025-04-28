@@ -607,6 +607,17 @@ let ``ModelParser.parseModel<Sex array> parses an array containing null values``
     result |> shouldEqual expected
 
 [<Fact>]
+let ``ModelParser.parseModel<bool array> parses an array with valid data`` () =
+    let xs: (string | null) array = [| "true"; "false"; "True"; "falsE"; "TRUE"; "FALSE" |]
+    let data = xs |> StringValues |> SimpleData
+    let expected: bool array = [| true; false; true; false; true; false |]
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<bool array> culture data
+
+    result |> shouldEqual expected
+
+[<Fact>]
 let ``ModelParser.parseModel<Sex option array> parses an array containing null values`` () =
     let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let data = xs |> StringValues |> SimpleData
