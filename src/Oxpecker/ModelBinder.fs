@@ -384,8 +384,8 @@ module internal ModelParser =
                     member _.Visit<'t>() = // 'T = 't seq
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
-                        else
-                            createEnumerableParser<'t> ctx |> wrap
+                        
+                        createEnumerableParser<'t> ctx |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
