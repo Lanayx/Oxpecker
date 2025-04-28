@@ -116,10 +116,9 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private fillIndexedComplexData
-        (data: Dictionary<string, StringValues>)
-        (matchedData: PooledDictionary<int, PooledDictionary<string, StringValues>>)
-        =
+    let private (|ComplexArray|) (data: Dictionary<string, StringValues>) =
+        let matchedData = DictionaryPool.getIndexed()
+
         for KeyValue(key, value) in data do
             match key with
             | IndexAccess(index, subKey) ->
@@ -137,11 +136,9 @@ module internal ModelParser =
         | true, matchedValues -> ValueSome matchedValues
         | _ -> ValueNone
 
-    let private fillComplexDataByPrefix
-        (prefix: string)
-        (data: Dictionary<string, StringValues>)
-        (matchedData: PooledDictionary<string, StringValues>)
-        =
+    let private (|PrefixMatch|) (prefix: string) (data: Dictionary<string, StringValues>) =
+        let matchedData = DictionaryPool.get()
+
         for KeyValue(key, value) in data do
             if key.StartsWith(prefix) then
                 let matchedKey = key[prefix.Length ..]
@@ -219,13 +216,12 @@ module internal ModelParser =
 
                 res
 
-            | ComplexData complexData ->
-                use indexedComplexData =
-                    DictionaryPool.getIndexed() |> fillIndexedComplexData complexData
+            | ComplexData(ComplexArray indexedDicts) ->
+                use indexedDicts = indexedDicts
 
                 let res = ResizeArray()
 
-                for KeyValue(i, dict) in indexedComplexData do
+                for KeyValue(i, dict) in indexedDicts do
                     use dict = dict
 
                     while i > res.Count - 1 do
@@ -257,18 +253,18 @@ module internal ModelParser =
 
                                 memberShape.SetByRef(&instance, memberValue)
 
-                            | ComplexData complexData ->
-                                use matchedData =
-                                    DictionaryPool.get() |> fillComplexDataByPrefix memberShape.Label complexData
+                            | ComplexData(PrefixMatch memberShape.Label matchedData) ->
+                                use matchedData = matchedData
 
                                 if matchedData.Count > 0 then
-                                    let field =
+                                    let memberValue =
                                         parser {
                                             Culture = culture
                                             RawData = ComplexData matchedData
                                         }
 
-                                    memberShape.SetByRef(&instance, field)
+                                    memberShape.SetByRef(&instance, memberValue)
+
                             | _ -> ())
                 }
 
