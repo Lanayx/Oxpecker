@@ -430,8 +430,10 @@ module private DictionaryLikeCollectionHelper =
     open System.Linq.Expressions
 
     type DictionaryLikeCollection<'T
-        when 'T: (member ContainsKey: string -> bool)
+        when 'T :> IEnumerable<KeyValuePair<string, StringValues>>
         and 'T: (member Keys: ICollection<string>)
+        and 'T: (member get_Item: string -> StringValues)
+        and 'T: (member ContainsKey: string -> bool)
         and 'T: (member TryGetValue: string * byref<StringValues> -> bool)> = 'T
 
     let inline private getUnderlyingDict<'T when DictionaryLikeCollection<'T>> =
