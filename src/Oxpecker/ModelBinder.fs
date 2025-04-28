@@ -14,9 +14,15 @@ type IModelBinder =
     abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
 [<Struct>]
+type internal RawComplexData = {
+    KeyOffset: int
+    Data: Dictionary<string, StringValues>
+}
+
+[<Struct>]
 type internal RawData =
     | SimpleData of rawValue: StringValues
-    | ComplexData of offset: int * rawData: Dictionary<string, StringValues>
+    | ComplexData of rawData: RawComplexData
 
 [<AbstractClass>]
 type private PooledDictionary<'Key, 'Value when 'Key: not null and 'Key: equality>() =
@@ -126,23 +132,23 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private (|ComplexArray|) (offset, data) =
+    let private (|ComplexArray|) { KeyOffset = keyOffset; Data = data } =
         let matchedData = DictionaryPool.getIndexed()
 
         for KeyValue(key, value) in data do
             match key with
-            | IndexAccess offset (index, newOffset) ->
-                if not <| matchedData.ContainsKey(index) then
-                    matchedData[index] <- (newOffset, DictionaryPool.get())
-
-                let struct (_, d) = matchedData[index]
-                d[key] <- value
-
+            | IndexAccess keyOffset (index, newOffset) ->
+                match matchedData.TryGetValue(index) with
+                | true, struct (_, subdict) -> subdict[key] <- value
+                | false, _ ->
+                    let subdict = DictionaryPool.get()
+                    subdict[key] <- value
+                    matchedData[index] <- struct (newOffset, subdict)
             | _ -> ()
 
         matchedData
 
-    let private (|ExactMatch|_|) (fieldName: string) (offset, data: Dictionary<string, StringValues>) =
+    let private (|ExactMatch|_|) (fieldName: string) { KeyOffset = offset; Data = data } =
         if offset = 0 then
             match data.TryGetValue(fieldName) with
             | true, values -> ValueSome values
@@ -159,7 +165,7 @@ module internal ModelParser =
                     result <- ValueSome value
             result
 
-    let private (|PrefixMatch|) (prefix: string) (offset: int, data: Dictionary<string, StringValues>) =
+    let private (|PrefixMatch|) (prefix: string) { KeyOffset = offset; Data = data } =
         let mutable newOffset = 0
         let matchedData = DictionaryPool.get()
         for KeyValue(key, value) in data do
@@ -237,29 +243,27 @@ module internal ModelParser =
 
                 res
 
-            | ComplexData(offset, data) ->
-                match (offset, data) with
-                | ComplexArray indexedDicts ->
-                    use indexedDicts = indexedDicts
+            | ComplexData(ComplexArray indexedDicts) ->
+                use indexedDicts = indexedDicts
 
-                    if indexedDicts.Count > 0 then
-                        let maxIndex = Seq.max indexedDicts.Keys
-                        let res = Array.zeroCreate(maxIndex + 1)
+                if indexedDicts.Count > 0 then
+                    let maxIndex = Seq.max indexedDicts.Keys
+                    let res = Array.zeroCreate(maxIndex + 1)
 
-                        for i in 0..maxIndex do
-                            match indexedDicts.TryGetValue i with
-                            | true, (offset, dict) ->
-                                use dict = dict
+                    for i in 0..maxIndex do
+                        match indexedDicts.TryGetValue i with
+                        | true, (offset, dict) ->
+                            use dict = dict
 
-                                res[i] <-
-                                    let rawData = ComplexData(offset, dict)
-                                    parser { state with RawData = rawData }
+                            res[i] <-
+                                let rawData = ComplexData { KeyOffset = offset; Data = dict }
+                                parser { state with RawData = rawData }
 
-                            | false, _ -> ()
+                        | false, _ -> ()
 
-                        res
-                    else
-                        Unchecked.defaultof<_>
+                    res
+                else
+                    Seq.empty
 
     and private createMemberParser (ctx: TypeGenerationContext) : MemberParser<'T> =
         fun shape ->
@@ -270,22 +274,24 @@ module internal ModelParser =
 
                         MemberSetter(fun state instance ->
                             match state.RawData with
-                            | ComplexData(offset, data) ->
-                                match offset, data with
-                                | ExactMatch memberShape.Label rawValues ->
-                                    let rawData = SimpleData rawValues
+                            | ComplexData(ExactMatch memberShape.Label rawValues) ->
+                                let rawData = SimpleData rawValues
+                                let memberValue = parser { state with RawData = rawData }
+
+                                memberShape.SetByRef(&instance, memberValue)
+
+                            | ComplexData(PrefixMatch memberShape.Label (offset, matchedData)) ->
+                                use matchedData = matchedData
+
+                                if matchedData.Count > 0 then
+                                    let rawData =
+                                        ComplexData {
+                                            KeyOffset = offset
+                                            Data = matchedData
+                                        }
                                     let memberValue = parser { state with RawData = rawData }
 
                                     memberShape.SetByRef(&instance, memberValue)
-
-                                | PrefixMatch memberShape.Label (offset, matchedData) ->
-                                    use matchedData = matchedData
-
-                                    if matchedData.Count > 0 then
-                                        let rawData = ComplexData(offset, matchedData)
-                                        let memberValue = parser { state with RawData = rawData }
-
-                                        memberShape.SetByRef(&instance, memberValue)
 
                             | _ -> ())
                 }
@@ -486,4 +492,4 @@ type ModelBinder(?options: ModelBinderOptions) =
                 | :? FormCollection as formCollection -> formCollection |> formCollectionDict
                 | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
                 | _ -> Dictionary data
-            ModelParser.parseModel<'T> options.CultureInfo (ComplexData(0, dictionary))
+            ModelParser.parseModel<'T> options.CultureInfo (ComplexData { KeyOffset = 0; Data = dictionary })

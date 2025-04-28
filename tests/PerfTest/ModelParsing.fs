@@ -101,7 +101,7 @@ type ModelParsing() =
 
     static let culture = CultureInfo.InvariantCulture
     static let formCollection = FormCollection modelData
-    static let complexData = ComplexData (0, modelData)
+    static let complexData = ComplexData { KeyOffset = 0; Data = modelData }
 
     [<Benchmark(Baseline = true)>]
     member _.DirectModelParser() = parseModel culture formCollection
