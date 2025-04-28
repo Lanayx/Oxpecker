@@ -1,24 +1,25 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 namespace PerfTest.Csharp;
 
-public class BindingModelChild
+public record BindingModelChild
 {
-    public string? Name { get; set; }
-    public int Age { get; set; }
+    required public string? Name { get; init; }
+    required public int Age { get; init; }
 }
 
-public class BindingModel
+public record BindingModel
 {
-    public Guid Id { get; set; }
-    public string? FirstName { get; set; }
-    public string? MiddleName { get; set; }
-    public DateTime BirthDate { get; set; }
-    public int StatusCode { get; set; }
-    public BindingModelChild[] Children { get; set; } = Array.Empty<BindingModelChild>();
+    required public Guid Id { get; init; }
+    required public string? FirstName { get; init; }
+    required public string? MiddleName { get; init; }
+    required public string? LastName { get; init; }
+    required public DateTime BirthDate { get; init; }
+    required public int StatusCode { get; init; }
+    required public BindingModelChild[] Children { get; init; } = Array.Empty<BindingModelChild>();
 }
 
 public class ModelBindingTest

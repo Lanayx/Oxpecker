@@ -1,6 +1,5 @@
-﻿namespace PerfTest
+namespace PerfTest
 
-open System
 open System.Net.Http
 open System.Net.Http.Headers
 open System.Threading.Tasks
@@ -10,21 +9,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
-
-[<CLIMutable>]
-type BindingModelChild = { Name: string | null; Age: int }
-
-[<CLIMutable>]
-type BindingModel = {
-    Id: Guid
-    FirstName: string | null
-    MiddleName: string | null
-    LastName: string | null
-    BirthDate: DateTime
-    StatusCode: int
-    Children: BindingModelChild[]
-}
-
+open PerfTest.Csharp
 
 module OxpeckerBinder =
     open Oxpecker
@@ -107,17 +92,18 @@ type ModelBinding() =
 
     let requestBody =
         "Id=4e213598-5b45-4cd7-a87c-429d7b6b2f03&FirstName=Susan&MiddleName=Elisabeth&LastName=Doe&BirthDate=1986-12-29&StatusCode=200&Nicknames=Susi&Nicknames=Eli&Nicknames=Liz&Children[0].Name=Hamed&Children[0].Age=32&Children[1].Name=Ali&Children[1].Age=22&Children[2].Name=Gholi&Children[2].Age=44"
-    let content = new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
+    let content =
+        new StringContent(requestBody, MediaTypeHeaderValue.Parse("application/x-www-form-urlencoded"))
 
 
     [<Benchmark>]
-    member this.OxpeckerPost() =
+    member _.OxpeckerPost() =
         oxpeckerClient.PostAsync("/bindModel", content)
 
     [<Benchmark>]
-    member this.GiraffePost() =
+    member _.GiraffePost() =
         giraffeClient.PostAsync("/bindModel", content)
 
     [<Benchmark>]
-    member this.MinimalApiPost() =
+    member _.MinimalApiPost() =
         minimalApiClient.PostAsync("/bindModel", content)
