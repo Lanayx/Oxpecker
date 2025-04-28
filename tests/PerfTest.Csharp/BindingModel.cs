@@ -14,12 +14,12 @@ public record BindingModelChild
 public record BindingModel
 {
     required public Guid Id { get; init; }
-    required public string? FirstName { get; init; }
+    required public string FirstName { get; init; }
     required public string? MiddleName { get; init; }
-    required public string? LastName { get; init; }
+    required public string LastName { get; init; }
     required public DateTime BirthDate { get; init; }
     required public int StatusCode { get; init; }
-    required public BindingModelChild[] Children { get; init; } = Array.Empty<BindingModelChild>();
+    required public BindingModelChild[] Children { get; init; } = [];
 }
 
 public class ModelBindingTest
