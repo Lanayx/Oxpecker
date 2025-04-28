@@ -1,11 +1,13 @@
 namespace FsUnitTyped
 
+
 [<AutoOpen>]
 module CustomTopLevelOperators =
 
-    open FsUnit.Xunit
     open System.Diagnostics
+    open FsUnit.Xunit
     open NHamcrest
+    open Xunit
 
     [<DebuggerStepThrough>]
     let shouldFailWithMessage<'exn when 'exn :> exn> message (f: unit -> unit) =
@@ -17,5 +19,5 @@ module CustomTopLevelOperators =
     let private structuallyEqual expected = Is.StructurallyEqualTo(expected)
 
     [<DebuggerStepThrough>]
-    let shouldStructuallyEqual<'a> (expected: 'a) (actual: 'a) =
-        actual |> should structuallyEqual expected
+    let shouldEquivalent<'a> (expected: 'a) (actual: 'a) =
+        Assert.Equivalent(expected, actual)

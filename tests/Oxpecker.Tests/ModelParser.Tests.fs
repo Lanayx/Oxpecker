@@ -777,7 +777,7 @@ let ``ModelParser.parseModel<Foo> parses data with non-sequential index elements
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with unmatched prefix`` () =
@@ -790,7 +790,7 @@ let ``ModelParser.parseModel<Foo> parses data with unmatched prefix`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with improper index access`` () =
@@ -808,7 +808,7 @@ let ``ModelParser.parseModel<Foo> parses data with improper index access`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with partially incorrect keys`` () =
@@ -821,7 +821,7 @@ let ``ModelParser.parseModel<Foo> parses data with partially incorrect keys`` ()
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with missing index`` () =
@@ -834,7 +834,7 @@ let ``ModelParser.parseModel<Foo> parses data with missing index`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Bar> parses data with no matched prefix`` () =
@@ -844,7 +844,7 @@ let ``ModelParser.parseModel<Bar> parses data with no matched prefix`` () =
 
     let result = ModelParser.parseModel<Bar> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 type AnonymousType1 = {|
     Value:
