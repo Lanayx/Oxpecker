@@ -184,9 +184,9 @@ module internal ModelParser =
 
     type private Parser<'T> = ParserContext -> 'T
 
-    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
+    type private MemberSetter<'T> = delegate of ParserContext * 'T byref -> unit
 
-    type private FieldParser<'T> = IShapeMember<'T> -> FieldSetter<'T>
+    type private MemberParser<'T> = IShapeMember<'T> -> MemberSetter<'T>
 
     let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
@@ -239,27 +239,27 @@ module internal ModelParser =
 
                 res
 
-    and private createFieldParser (ctx: TypeGenerationContext) : FieldParser<'T> =
+    and private createMemberParser (ctx: TypeGenerationContext) : MemberParser<'T> =
         fun shape ->
             shape.Accept
                 { new IMemberVisitor<_, _> with
-                    member _.Visit<'Field>(fieldShape) =
-                        let parser = getOrCacheParser<'Field> ctx
+                    member _.Visit<'Member>(memberShape) =
+                        let parser = getOrCacheParser<'Member> ctx
 
-                        FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
+                        MemberSetter(fun { Culture = culture; RawData = rawData } instance ->
                             match rawData with
-                            | ComplexData(ExactMatch fieldShape.Label rawValues) ->
-                                let field =
+                            | ComplexData(ExactMatch memberShape.Label rawValues) ->
+                                let memberValue =
                                     parser {
                                         Culture = culture
                                         RawData = SimpleData rawValues
                                     }
 
-                                fieldShape.SetByRef(&instance, field)
+                                memberShape.SetByRef(&instance, memberValue)
 
                             | ComplexData complexData ->
                                 use matchedData =
-                                    DictionaryPool.get() |> fillComplexDataByPrefix fieldShape.Label complexData
+                                    DictionaryPool.get() |> fillComplexDataByPrefix memberShape.Label complexData
 
                                 if matchedData.Count > 0 then
                                     let field =
@@ -268,7 +268,7 @@ module internal ModelParser =
                                             RawData = ComplexData matchedData
                                         }
 
-                                    fieldShape.SetByRef(&instance, field)
+                                    memberShape.SetByRef(&instance, field)
                             | _ -> ())
                 }
 
@@ -384,7 +384,7 @@ module internal ModelParser =
                     member _.Visit<'t>() = // 'T = 't seq
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
-                        
+
                         createEnumerableParser<'t> ctx |> wrap
                 }
 
@@ -402,13 +402,24 @@ module internal ModelParser =
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map(createFieldParser ctx)
+            let fieldSetters = shape.Fields |> Array.map(createMemberParser ctx)
 
             fun parserContext ->
                 let mutable instance = shape.CreateUninitialized()
 
                 for fieldSetter in fieldSetters do
                     fieldSetter.Invoke(parserContext, &instance)
+
+                instance
+
+        | Shape.CliMutable(:? ShapeCliMutable<'T> as shape) ->
+            let propertySetters = shape.Properties |> Array.map(createMemberParser ctx)
+
+            fun parserContext ->
+                let mutable instance = shape.CreateUninitialized()
+
+                for propertySetter in propertySetters do
+                    propertySetter.Invoke(parserContext, &instance)
 
                 instance
 

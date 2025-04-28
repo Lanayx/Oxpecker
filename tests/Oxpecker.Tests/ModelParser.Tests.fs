@@ -943,3 +943,24 @@ let ``ModelParser.parseModel<int> fails to parse non-integer data`` () =
         ModelParser.parseModel<int> culture modelData |> ignore
 
     result |> shouldFailWithMessage<exn> expected
+
+type Poco() =
+    member val Id = 0 with get, set
+    member val Name = "" with get, set
+    member val Value = 0 with get, set
+
+[<Fact>]
+let ``ModelParser.parseModel<Poco> parses valid POCO data`` () =
+    let modelData =
+        [
+            "Id", StringValues "666"
+            "Name", StringValues "Lorem ipsum"
+            "Value", StringValues "1234"
+        ]
+        |> toComplexData
+    let expected = Poco(Id = 666, Name = "Lorem ipsum", Value = 1_234)
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Poco> culture modelData
+
+    result |> shouldEquivalent expected
