@@ -78,6 +78,7 @@ module Shape =
             |> Some
         | None -> None
 
+type UnsupportedTypeException(ty: Type) = inherit exn($"Unsupported type '{ty}'.")
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -156,7 +157,7 @@ module internal ModelParser =
 
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
-    let private unsupported ty = failwith $"Unsupported type '{ty}'."
+    let private unsupported ty = raise <| UnsupportedTypeException ty
 
     let private error (rawData: RawData) : 'T =
         let value =
