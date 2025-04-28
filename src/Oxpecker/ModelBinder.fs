@@ -79,6 +79,8 @@ module Shape =
         | None -> None
 
 type UnsupportedTypeException(ty: Type) = inherit exn($"Unsupported type '{ty}'.")
+type NotParsedException(value: string, ty: Type) = inherit exn($"Could not parse value '{value}' to type '{ty}'.")
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -166,7 +168,7 @@ module internal ModelParser =
             | SimpleData data -> $"{data}"
             | ComplexData data -> $"%A{data}"
 
-        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
+        raise <| NotParsedException(value, typeof<'T>)
 
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
 

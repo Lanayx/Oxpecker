@@ -294,7 +294,7 @@ let ``ModelParser.parseModel<Model> fails when union case is invalid`` () =
         ModelParser.parseModel<Model> culture modelData |> ignore
 
     result
-    |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
+    |> shouldFailWithMessage<NotParsedException> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
 
 [<Fact>]
 let ``ModelParser.parseModel<Model> fails when data contains invalid values`` () =
@@ -322,7 +322,7 @@ let ``ModelParser.parseModel<Model> fails when data contains invalid values`` ()
         ModelParser.parseModel<Model> culture modelData |> ignore
 
     result
-    |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'System.DateTime'."
+    |> shouldFailWithMessage<NotParsedException> "Could not parse value 'wrong' to type 'System.DateTime'."
 
 [<Fact>]
 let ``ModelParser.parseModel<Model> handles mixed casing in keys`` () =
@@ -491,7 +491,7 @@ let ``ModelParser.parseModel<float> fails to parse invalid string value`` () =
     let result () =
         ModelParser.parseModel<float> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<int> fails to parse invalid string value`` () =
@@ -502,7 +502,7 @@ let ``ModelParser.parseModel<int> fails to parse invalid string value`` () =
     let result () =
         ModelParser.parseModel<int> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<int64> fails to parse null value`` () =
@@ -513,7 +513,7 @@ let ``ModelParser.parseModel<int64> fails to parse null value`` () =
     let result () =
         ModelParser.parseModel<int64> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Nullable<int>> parses null value`` () =
@@ -689,7 +689,7 @@ let ``ModelParser.parseModel<BookType> fails to parse null value`` () =
     let result () =
         ModelParser.parseModel<BookType> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<ResizeArray<BookType>> parses a collection of enum values`` () =
@@ -953,7 +953,7 @@ let ``ModelParser.parseModel<int> fails to parse non-integer data`` () =
     let result () =
         ModelParser.parseModel<int> culture modelData |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 type Poco() =
     member val Id = 0 with get, set
