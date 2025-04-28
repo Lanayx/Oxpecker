@@ -96,8 +96,8 @@ type ModelParsing() =
     //
     // | Method                    | Mean       | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
     // |-------------------------- |-----------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
-    // | DirectModelParser         |   538.6 ns |  5.21 ns |  4.88 ns |  1.00 |    0.01 | 0.0906 |     760 B |        1.00 |
-    // | TypeShapeBasedModelParser | 2,083.1 ns | 41.61 ns | 49.54 ns |  3.87 |    0.10 | 0.2823 |    2392 B |        3.15 |
+    // | DirectModelParser         |   569.6 ns | 10.59 ns |  9.90 ns |  1.00 |    0.02 | 0.0906 |     760 B |        1.00 |
+    // | TypeShapeBasedModelParser | 1,729.2 ns | 20.52 ns | 19.19 ns |  3.04 |    0.06 | 0.2365 |    1984 B |        2.61 |
 
     static let culture = CultureInfo.InvariantCulture
     static let formCollection = FormCollection modelData
@@ -107,5 +107,4 @@ type ModelParsing() =
     member _.DirectModelParser() = parseModel culture formCollection
 
     [<Benchmark>]
-    member _.TypeShapeBasedModelParser() =
-        ModelParser.parseModel<Model> culture complexData
+    member _.TypeShapeBasedModelParser() = modelBinder.Bind<Model>(modelData)
