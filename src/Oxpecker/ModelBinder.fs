@@ -28,6 +28,7 @@ type private PooledDictionary<'Key, 'Value when 'Key: not null and 'Key: equalit
         member this.Dispose() = this.Dispose()
 
 module private DictionaryPool =
+
     open Microsoft.Extensions.ObjectPool
 
     let private maximumRetained = Environment.ProcessorCount * 2
@@ -66,6 +67,7 @@ module TypeShapeImpl =
 
 #nowarn 3536
 module Shape =
+
     open TypeShape.Core
 
     let (|Parsable|_|) (shape: TypeShape) =
@@ -80,6 +82,7 @@ module Shape =
 
 type UnsupportedTypeException(ty: Type) =
     inherit exn($"Unsupported type '{ty}'.")
+
 type NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '{value}' to type '{ty}'.")
 
@@ -87,6 +90,7 @@ type NotParsedException(value: string, ty: Type) =
 /// Module for parsing models from a generic data set.
 /// </summary>
 module internal ModelParser =
+
     open TypeShape.Core
     open TypeShape.Core.Utils
 
@@ -420,6 +424,7 @@ type ModelBinderOptions = {
 
 [<AutoOpen>]
 module private DictionaryLikeCollectionHelper =
+
     open System.Linq.Expressions
 
     type DictionaryLikeCollection<'T
