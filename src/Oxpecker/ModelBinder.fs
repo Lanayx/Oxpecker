@@ -296,19 +296,6 @@ module internal ModelParser =
                                 error rawData
                         |> wrap
                 }
-        | Shape.Bool ->
-            let parser = getOrCacheParser<string | null> ctx
-
-            fun { Culture = culture; RawData = rawData } ->
-                try
-                    let rawValue = parser { Culture = culture; RawData = rawData }
-
-                    match Boolean.TryParse(rawValue) with
-                    | true, value -> value
-                    | false, _ -> error rawData
-                with _ ->
-                    error rawData
-            |> wrap
 
         | Shape.Enum shape ->
             shape.Accept
