@@ -437,13 +437,11 @@ module private DictionaryLikeCollectionHelper =
     let inline private getUnderlyingDict<'T when DictionaryLikeCollection<'T>> =
         let param = Expression.Parameter(typeof<'T>)
         let storeProp = Expression.Property(param, "Store")
-        let getSourceExpr = Expression.Lambda<_>(storeProp, param)
+        let getStoreExpr = Expression.Lambda<_>(storeProp, param)
 
-        let getSourceDel: Func<'T, Dictionary<string, StringValues>> =
-            getSourceExpr.Compile()
+        let getStoreDel: Func<'T, Dictionary<string, StringValues>> = getStoreExpr.Compile()
 
-        fun collection -> getSourceDel.Invoke(collection)
-
+        fun collection -> getStoreDel.Invoke(collection)
 
     let formCollectionDict = getUnderlyingDict<FormCollection>
 
