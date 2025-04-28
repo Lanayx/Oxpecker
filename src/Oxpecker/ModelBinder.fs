@@ -282,7 +282,7 @@ module internal ModelParser =
             shape.Accept
                 { new IParsableVisitor<_> with
                     member _.Visit<'t when 't :> IParsable<'t>>() =
-                        let parser = getOrCreateParser<string | null>()
+                        let parser = getOrCacheParser<string | null> ctx
 
                         fun { Culture = culture; RawData = rawData } ->
                             try
@@ -297,7 +297,7 @@ module internal ModelParser =
                         |> wrap
                 }
         | Shape.Bool ->
-            let parser = getOrCreateParser<string | null>()
+            let parser = getOrCacheParser<string | null> ctx
 
             fun { Culture = culture; RawData = rawData } ->
                 try
@@ -314,7 +314,7 @@ module internal ModelParser =
             shape.Accept
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
-                        let parser = getOrCreateParser<string | null>()
+                        let parser = getOrCacheParser<string | null> ctx
 
                         fun { Culture = culture; RawData = rawData } ->
                             try
