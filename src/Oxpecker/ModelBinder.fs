@@ -24,6 +24,9 @@ type internal RawData =
     | SimpleData of rawValue: StringValues
     | ComplexData of rawData: RawComplexData
 
+module internal RawData =
+    let initComplexData data = ComplexData { Offset = 0; Data = data }
+
 [<AbstractClass>]
 type private PooledDictionary<'Key, 'Value when 'Key: not null and 'Key: equality>() =
     inherit Dictionary<'Key, 'Value>()
@@ -484,4 +487,4 @@ type ModelBinder(?options: ModelBinderOptions) =
                 | :? FormCollection as formCollection -> formCollection |> formCollectionDict
                 | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
                 | _ -> Dictionary data
-            ModelParser.parseModel<'T> options.CultureInfo (ComplexData { KeyOffset = 0; Data = dictionary })
+            ModelParser.parseModel<'T> options.CultureInfo (RawData.initComplexData dictionary)

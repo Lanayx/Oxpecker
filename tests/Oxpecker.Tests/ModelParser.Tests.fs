@@ -9,10 +9,7 @@ open Xunit
 open FsUnitTyped
 
 let private toComplexData data =
-    data
-    |> List.map KeyValuePair.Create
-    |> Dictionary
-    |> (fun d -> ComplexData { KeyOffset = 0; Data = d })
+    data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
 
 type Sex =
     | Male
