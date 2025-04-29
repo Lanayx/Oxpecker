@@ -164,6 +164,7 @@ module internal ModelParser =
                 let (KeyValue(key, value)) = enumerator.Current
                 let current = key.AsSpan(offset)
                 let candidate = memberName.AsSpan()
+
                 if current.SequenceEqual(candidate) then
                     result <- ValueSome value
 
@@ -313,6 +314,7 @@ module internal ModelParser =
                             try
                                 let rawValue = parser state
                                 let mutable result = Unchecked.defaultof<'t>
+
                                 if 't.TryParse(rawValue, state.Culture, &result) then
                                     result
                                 else
