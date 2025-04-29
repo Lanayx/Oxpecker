@@ -1,12 +1,10 @@
 namespace FsUnitTyped
 
-
 [<AutoOpen>]
 module CustomTopLevelOperators =
 
     open System.Diagnostics
     open FsUnit.Xunit
-    open NHamcrest
     open Xunit
 
     [<DebuggerStepThrough>]
@@ -15,8 +13,6 @@ module CustomTopLevelOperators =
 
     [<DebuggerStepThrough>]
     let shouldEqualSeq (expected: #seq<'a>) (actual: #seq<'a>) = actual |> should equalSeq expected
-
-    let private structuallyEqual expected = Is.StructurallyEqualTo(expected)
 
     [<DebuggerStepThrough>]
     let shouldEquivalent<'a> (expected: 'a) (actual: 'a) = Assert.Equivalent(expected, actual)
