@@ -151,9 +151,9 @@ module internal ModelParser =
 
         matchedData
 
-    let private (|ExactMatch|_|) (fieldName: string) { Offset = offset; Data = data } =
+    let private (|ExactMatch|_|) (memberName: string) { Offset = offset; Data = data } =
         if offset = 0 then
-            match data.TryGetValue(fieldName) with
+            match data.TryGetValue(memberName) with
             | true, values -> ValueSome values
             | _ -> ValueNone
         else
@@ -162,10 +162,11 @@ module internal ModelParser =
 
             while result.IsValueNone && enumerator.MoveNext() do
                 let (KeyValue(key, value)) = enumerator.Current
-                let s1 = key.AsSpan(offset)
-                let s2 = fieldName.AsSpan()
-                if s1.SequenceEqual(s2) then
+                let current = key.AsSpan(offset)
+                let candidate = memberName.AsSpan()
+                if current.SequenceEqual(candidate) then
                     result <- ValueSome value
+
             result
 
     let private (|PrefixMatch|) (prefix: string) { Offset = offset; Data = data } =
