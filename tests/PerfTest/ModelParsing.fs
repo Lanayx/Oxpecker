@@ -12,8 +12,10 @@ type Sex =
     | Male
     | Female
 
+[<CLIMutable>]
 type Child = { Name: string | null; Age: int }
 
+[<CLIMutable>]
 type Model = {
     Id: Guid
     FirstName: string | null
@@ -49,7 +51,7 @@ type ModelParsing() =
     let firstValue (rawValues: StringValues) =
         if rawValues.Count > 0 then rawValues[0] else null
 
-    let parseModel (culture: CultureInfo) (data: FormCollection) = {
+    let parseModel (culture: CultureInfo) (data: Dictionary<string,StringValues>) = {
         Id =
             let guid = data["Id"] |> firstValue |> nonNull
             Guid.Parse(guid, culture)
@@ -101,12 +103,13 @@ type ModelParsing() =
 
 
     static let culture = CultureInfo.InvariantCulture
-    static let formCollection = FormCollection modelData
     static let complexData = RawData.initComplexData modelData
 
     [<Benchmark(Baseline = true)>]
-    member _.DirectModelParser() = parseModel culture formCollection
+    member _.DirectModelParser() = parseModel culture modelData
 
     [<Benchmark>]
-    member _.TypeShapeBasedModelParser() =
-        ModelParser.parseModel<Model> culture complexData
+    member _.OxpeckerModelParser() = ModelParser.parseModel<Model> culture complexData
+
+    [<Benchmark>]
+    member _.GiraffeModelParser() = Giraffe.ModelParser.parse<Model> (Some culture) modelData
