@@ -89,7 +89,8 @@ module Shape =
         if shape.Type |> implements<IParsable<Any>> then
             Activator.CreateInstanceGeneric<ShapeParsable<Any>>([| shape.Type |]) :?> IShapeParsable
             |> Some
-        else None
+        else
+            None
 
 type UnsupportedTypeException(ty: Type) =
     inherit exn($"Unsupported type '{ty}'.")
