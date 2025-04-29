@@ -171,19 +171,19 @@ module internal ModelParser =
 
     let private (|PrefixMatch|) (prefix: string) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.get()
-        let mutable newOffset = 0
+        let mutable nextOffset = 0
 
         for KeyValue(key, value) in data do
             if key.AsSpan(offset).StartsWith(prefix) then
-                let tempOffset = offset + prefix.Length
-                if key[tempOffset] = '.' then // property access
-                    newOffset <- tempOffset + 1
+                nextOffset <- offset + prefix.Length
+
+                if key[nextOffset] = '.' then // property access
+                    nextOffset <- nextOffset + 1
                     matchedData[key] <- value
-                elif key[tempOffset] = '[' then // index access
-                    newOffset <- tempOffset
+                elif key[nextOffset] = '[' then // index access
                     matchedData[key] <- value
 
-        struct (newOffset, matchedData)
+        struct (nextOffset, matchedData)
 
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
