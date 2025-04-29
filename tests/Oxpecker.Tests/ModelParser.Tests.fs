@@ -9,10 +9,7 @@ open Xunit
 open FsUnitTyped
 
 let private toComplexData data =
-    data
-    |> List.map KeyValuePair.Create
-    |> Dictionary
-    |> (fun d -> ComplexData(d, 0))
+    data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
 
 type Sex =
     | Male
@@ -297,7 +294,8 @@ let ``ModelParser.parseModel<Model> fails when union case is invalid`` () =
         ModelParser.parseModel<Model> culture modelData |> ignore
 
     result
-    |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
+    |> shouldFailWithMessage<NotParsedException>
+        "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
 
 [<Fact>]
 let ``ModelParser.parseModel<Model> fails when data contains invalid values`` () =
@@ -325,7 +323,7 @@ let ``ModelParser.parseModel<Model> fails when data contains invalid values`` ()
         ModelParser.parseModel<Model> culture modelData |> ignore
 
     result
-    |> shouldFailWithMessage<exn> "Could not parse value 'wrong' to type 'System.DateTime'."
+    |> shouldFailWithMessage<NotParsedException> "Could not parse value 'wrong' to type 'System.DateTime'."
 
 [<Fact>]
 let ``ModelParser.parseModel<Model> handles mixed casing in keys`` () =
@@ -494,7 +492,7 @@ let ``ModelParser.parseModel<float> fails to parse invalid string value`` () =
     let result () =
         ModelParser.parseModel<float> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<int> fails to parse invalid string value`` () =
@@ -505,7 +503,7 @@ let ``ModelParser.parseModel<int> fails to parse invalid string value`` () =
     let result () =
         ModelParser.parseModel<int> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<int64> fails to parse null value`` () =
@@ -516,7 +514,7 @@ let ``ModelParser.parseModel<int64> fails to parse null value`` () =
     let result () =
         ModelParser.parseModel<int64> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Nullable<int>> parses null value`` () =
@@ -610,6 +608,17 @@ let ``ModelParser.parseModel<Sex array> parses an array containing null values``
     result |> shouldEqual expected
 
 [<Fact>]
+let ``ModelParser.parseModel<bool array> parses an array with valid data`` () =
+    let xs: (string | null) array = [| "true"; "false"; "True"; "falsE"; "TRUE"; "FALSE" |]
+    let data = xs |> StringValues |> SimpleData
+    let expected: bool array = [| true; false; true; false; true; false |]
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<bool array> culture data
+
+    result |> shouldEqual expected
+
+[<Fact>]
 let ``ModelParser.parseModel<Sex option array> parses an array containing null values`` () =
     let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let data = xs |> StringValues |> SimpleData
@@ -681,7 +690,7 @@ let ``ModelParser.parseModel<BookType> fails to parse null value`` () =
     let result () =
         ModelParser.parseModel<BookType> culture data |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``ModelParser.parseModel<ResizeArray<BookType>> parses a collection of enum values`` () =
@@ -780,7 +789,7 @@ let ``ModelParser.parseModel<Foo> parses data with non-sequential index elements
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with unmatched prefix`` () =
@@ -793,7 +802,7 @@ let ``ModelParser.parseModel<Foo> parses data with unmatched prefix`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with improper index access`` () =
@@ -811,7 +820,7 @@ let ``ModelParser.parseModel<Foo> parses data with improper index access`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with partially incorrect keys`` () =
@@ -824,7 +833,7 @@ let ``ModelParser.parseModel<Foo> parses data with partially incorrect keys`` ()
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Foo> parses data with missing index`` () =
@@ -837,7 +846,7 @@ let ``ModelParser.parseModel<Foo> parses data with missing index`` () =
 
     let result = ModelParser.parseModel<Foo> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 [<Fact>]
 let ``ModelParser.parseModel<Bar> parses data with no matched prefix`` () =
@@ -847,7 +856,7 @@ let ``ModelParser.parseModel<Bar> parses data with no matched prefix`` () =
 
     let result = ModelParser.parseModel<Bar> culture modelData
 
-    result |> shouldStructuallyEqual expected
+    result |> shouldEquivalent expected
 
 type AnonymousType1 = {|
     Value:
@@ -945,4 +954,25 @@ let ``ModelParser.parseModel<int> fails to parse non-integer data`` () =
     let result () =
         ModelParser.parseModel<int> culture modelData |> ignore
 
-    result |> shouldFailWithMessage<exn> expected
+    result |> shouldFailWithMessage<NotParsedException> expected
+
+type Poco() =
+    member val Id = 0 with get, set
+    member val Name = "" with get, set
+    member val Value = 0 with get, set
+
+[<Fact>]
+let ``ModelParser.parseModel<Poco> parses valid POCO data`` () =
+    let modelData =
+        [
+            "Id", StringValues "666"
+            "Name", StringValues "Lorem ipsum"
+            "Value", StringValues "1234"
+        ]
+        |> toComplexData
+    let expected = Poco(Id = 666, Name = "Lorem ipsum", Value = 1_234)
+    let culture = CultureInfo.InvariantCulture
+
+    let result = ModelParser.parseModel<Poco> culture modelData
+
+    result |> shouldEquivalent expected

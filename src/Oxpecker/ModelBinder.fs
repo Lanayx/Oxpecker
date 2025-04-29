@@ -14,9 +14,89 @@ type IModelBinder =
     abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
 [<Struct>]
+type internal ComplexData = {
+    Offset: int
+    Data: Dictionary<string, StringValues>
+}
+
+[<Struct>]
 type internal RawData =
-    | SimpleData of simpleData: StringValues
-    | ComplexData of complexData: Dictionary<string, StringValues> * offset: int
+    | SimpleData of rawValue: StringValues
+    | ComplexData of rawData: ComplexData
+
+module internal RawData =
+    let initComplexData data = ComplexData { Offset = 0; Data = data }
+
+[<AbstractClass>]
+type private PooledDictionary<'Key, 'Value when 'Key: not null and 'Key: equality>() =
+    inherit Dictionary<'Key, 'Value>()
+
+    abstract member Dispose: unit -> unit
+
+    interface IDisposable with
+        member this.Dispose() = this.Dispose()
+
+module private DictionaryPool =
+
+    open Microsoft.Extensions.ObjectPool
+
+    let private maximumRetained = Environment.ProcessorCount * 2
+
+    type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() as that =
+        inherit
+            DefaultObjectPool<PooledDictionary<'Key, 'Value>>(
+                { new IPooledObjectPolicy<_> with
+                    member _.Create() =
+                        { new PooledDictionary<_, _>() with
+                            member this.Dispose() = that.Return(this) |> ignore
+                        }
+
+                    member _.Return(dict) =
+                        dict.Clear()
+                        dict.Count = 0
+                },
+                maximumRetained
+            )
+
+    let get = DictionaryPool<string, StringValues>().Get
+
+    let getIndexed =
+        DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
+
+[<AutoOpen>]
+module TypeShapeImpl =
+    type IParsableVisitor<'R> =
+        abstract Visit<'T when IParsable<'T>> : unit -> 'R
+
+    type IShapeParsable =
+        abstract Accept: IParsableVisitor<'R> -> 'R
+
+    type ShapeParsable<'T when IParsable<'T>>() =
+        interface IShapeParsable with
+            member _.Accept v = v.Visit<'T>()
+
+#nowarn 3536
+module Shape =
+
+    open TypeShape.Core
+
+    let private implements<'T> (ty: Type) =
+        typedefof<'T>.FullName |> Unchecked.nonNull |> ty.GetInterface |> isNull |> not
+
+    type private Any = int // represents any type that implements IParsable<_>
+
+    let (|Parsable|_|) (shape: TypeShape) =
+        if shape.Type |> implements<IParsable<Any>> then
+            Activator.CreateInstanceGeneric<ShapeParsable<Any>>([| shape.Type |]) :?> IShapeParsable
+            |> Some
+        else
+            None
+
+type UnsupportedTypeException(ty: Type) =
+    inherit exn($"Unsupported type '{ty}'.")
+
+type NotParsedException(value: string, ty: Type) =
+    inherit exn($"Could not parse value '{value}' to type '{ty}'.")
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -57,29 +137,26 @@ module internal ModelParser =
         else
             ValueNone
 
-    let private (|ComplexArray|_|) offset (data: Dictionary<string, StringValues>) =
-        let matchedData = Dictionary()
+    let private (|ComplexArray|) { Offset = offset; Data = data } =
+        let matchedData = DictionaryPool.getIndexed()
 
         for KeyValue(key, value) in data do
             match key with
             | IndexAccess offset (index, newOffset) ->
-                if not <| matchedData.ContainsKey(index) then
-                    matchedData[index] <- struct (newOffset, Dictionary())
-
-                let struct (_, d) = matchedData[index]
-                d[key] <- value
-
+                match matchedData.TryGetValue(index) with
+                | true, struct (_, subdict) -> subdict[key] <- value
+                | false, _ ->
+                    let subdict = DictionaryPool.get()
+                    subdict[key] <- value
+                    matchedData[index] <- struct (newOffset, subdict)
             | _ -> ()
 
-        if matchedData.Count = 0 then
-            ValueNone
-        else
-            ValueSome matchedData
+        matchedData
 
-    let private (|ExactMatch|_|) (fieldName: string) offset (data: Dictionary<string, StringValues>) =
+    let private (|ExactMatch|_|) (memberName: string) { Offset = offset; Data = data } =
         if offset = 0 then
-            match data.TryGetValue(fieldName) with
-            | true, values -> ValueSome(SimpleData values)
+            match data.TryGetValue(memberName) with
+            | true, values -> ValueSome values
             | _ -> ValueNone
         else
             let mutable result = ValueNone
@@ -87,29 +164,29 @@ module internal ModelParser =
 
             while result.IsValueNone && enumerator.MoveNext() do
                 let (KeyValue(key, value)) = enumerator.Current
-                let s1 = key.AsSpan(offset)
-                let s2 = fieldName.AsSpan()
-                if s1.SequenceEqual(s2) then
-                    result <- ValueSome(SimpleData value)
+                let current = key.AsSpan(offset)
+                let candidate = memberName.AsSpan()
+
+                if current.SequenceEqual(candidate) then
+                    result <- ValueSome value
+
             result
 
-    let private (|PrefixMatch|_|) (prefix: string) (offset: int) (data: Dictionary<string, StringValues>) =
-        let matchedData = Dictionary()
-        let mutable newOffset = 0
+    let private (|PrefixMatch|) (prefix: string) { Offset = offset; Data = data } =
+        let matchedData = DictionaryPool.get()
+        let mutable nextOffset = 0
 
         for KeyValue(key, value) in data do
             if key.AsSpan(offset).StartsWith(prefix) then
-                let tempOffset = offset + prefix.Length
-                if key[tempOffset] = '.' then // property access
-                    newOffset <- tempOffset + 1
-                else // index access
-                    newOffset <- tempOffset
-                matchedData[key] <- value
+                nextOffset <- offset + prefix.Length
 
-        if matchedData.Count > 0 then
-            ValueSome(ComplexData(matchedData, newOffset))
-        else
-            ValueNone
+                if key[nextOffset] = '.' then // property access
+                    nextOffset <- nextOffset + 1
+                    matchedData[key] <- value
+                elif key[nextOffset] = '[' then // index access
+                    matchedData[key] <- value
+
+        struct (nextOffset, matchedData)
 
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
@@ -117,37 +194,34 @@ module internal ModelParser =
 
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
-    let private unsupported ty = failwith $"Unsupported type '{ty}'."
-
-    let private error (rawData: RawData) : 'T =
-        let value =
-            match rawData with
-            | SimpleData(RawValue Null) -> "<null>"
-            | SimpleData data -> $"{data}"
-            | ComplexData(data, _) -> $"%A{data}"
-
-        failwith $"Could not parse value '{value}' to type '{typeof<'T>}'."
-
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
 
     type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
 
     type private Nullable<'T when Struct<'T>> = 'T
 
-    type private Parsable<'T when 'T: (static member TryParse: string | null * IFormatProvider * byref<'T> -> bool)> =
-        'T
-
     [<Struct>]
-    type internal ParserContext = {
+    type internal ParsingState = {
         Culture: CultureInfo
         RawData: RawData
     }
 
-    type private Parser<'T> = ParserContext -> 'T
+    type private Parser<'T> = ParsingState -> 'T
 
-    type private FieldSetter<'T> = delegate of ParserContext * 'T byref -> unit
+    type private MemberSetter<'T> = delegate of ParsingState * 'T byref -> unit
 
-    type private FieldParser<'T> = IShapeMember<'T> -> FieldSetter<'T>
+    type private MemberParser<'T> = IShapeMember<'T> -> MemberSetter<'T>
+
+    let private unsupported ty = raise <| UnsupportedTypeException ty
+
+    let private notParsed { RawData = rawData } : 'T =
+        let value =
+            match rawData with
+            | SimpleData(RawValue Null) -> "<null>"
+            | SimpleData rawValue -> $"{rawValue}"
+            | ComplexData { Data = rawData } -> $"%A{rawData}"
+
+        raise <| NotParsedException(value, typeof<'T>)
 
     let rec private getOrCreateParser<'T> () : Parser<'T> =
         match cache.TryFind() with
@@ -157,83 +231,68 @@ module internal ModelParser =
             getOrCacheParser<'T> ctx
 
     and private getOrCacheParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
-        match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell parserContext -> cell.Value parserContext) with
+        match ctx.InitOrGetCachedValue<Parser<'T>>(fun cell state -> cell.Value state) with
         | Cached(value = v) -> v
         | NotCached t ->
             let v = createParser<'T> ctx
             ctx.Commit t v
 
-    and inline private createSimpleParser<'T when Parsable<'T>> : Parser<'T> =
-        let parser = getOrCreateParser<string | null>()
-
-        fun { Culture = culture; RawData = rawData } ->
-            try
-                let rawValue = parser { Culture = culture; RawData = rawData }
-                let mutable result = Unchecked.defaultof<'T>
-
-                if 'T.TryParse(rawValue, culture, &result) then
-                    result
-                else
-                    error rawData
-            with _ ->
-                error rawData
-
     and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> = // 'T = 'Element seq
         let parser = getOrCacheParser<'Element> ctx
 
-        fun { Culture = culture; RawData = rawData } ->
-            match rawData with
+        fun state ->
+            match state.RawData with
             | SimpleData values ->
                 let res = Array.zeroCreate(values.Count)
 
                 for i in 0 .. values.Count - 1 do
                     res[i] <-
-                        parser {
-                            Culture = culture
-                            RawData = SimpleData(StringValues values[i])
-                        }
+                        let rawData = SimpleData(StringValues values[i])
+                        parser { state with RawData = rawData }
 
                 res
 
-            | ComplexData(data, offset) ->
-                match data with
-                | ComplexArray offset indexedDicts ->
-                    let maxIndex = Seq.max indexedDicts.Keys
-                    let res = Array.zeroCreate(maxIndex + 1)
+            | ComplexData(ComplexArray indexedDicts) ->
+                use indexedDicts = indexedDicts
+                let res = ResizeArray()
 
-                    for i in 0..maxIndex do
-                        match indexedDicts.TryGetValue i with
-                        | true, (offset, dict) ->
-                            res[i] <-
-                                parser {
-                                    Culture = culture
-                                    RawData = ComplexData(dict, offset)
-                                }
-                        | _ -> ()
+                for i in indexedDicts.Keys do
+                    while i > res.Count - 1 do
+                        res.Add(Unchecked.defaultof<_>)
 
-                    res
-                | _ -> Seq.empty
+                    let struct (offset, dict) = indexedDicts[i]
+                    use dict = dict
 
-    and private createFieldParser (ctx: TypeGenerationContext) : FieldParser<'T> =
+                    res[i] <-
+                        let rawData = ComplexData { Offset = offset; Data = dict }
+                        parser { state with RawData = rawData }
+
+                res
+
+    and private createMemberParser (ctx: TypeGenerationContext) : MemberParser<'T> =
         fun shape ->
             shape.Accept
                 { new IMemberVisitor<_, _> with
-                    member _.Visit<'Field>(fieldShape) =
-                        let parser = getOrCacheParser<'Field> ctx
+                    member _.Visit<'Member>(memberShape) =
+                        let parser = getOrCacheParser<'Member> ctx
 
-                        FieldSetter(fun { Culture = culture; RawData = rawData } instance ->
-                            match rawData with
-                            | ComplexData(data, offset) ->
-                                match data with
-                                | ExactMatch fieldShape.Label offset matchedData
-                                | PrefixMatch fieldShape.Label offset matchedData ->
-                                    let field =
-                                        parser {
-                                            Culture = culture
-                                            RawData = matchedData
-                                        }
-                                    fieldShape.SetByRef(&instance, field)
-                                | _ -> ()
+                        MemberSetter(fun state instance ->
+                            match state.RawData with
+                            | ComplexData(ExactMatch memberShape.Label rawValues) ->
+                                let rawData = SimpleData rawValues
+                                let memberValue = parser { state with RawData = rawData }
+
+                                memberShape.SetByRef(&instance, memberValue)
+
+                            | ComplexData(PrefixMatch memberShape.Label (offset, matchedData)) ->
+                                use matchedData = matchedData
+
+                                if matchedData.Count > 0 then
+                                    let rawData = ComplexData { Offset = offset; Data = matchedData }
+                                    let memberValue = parser { state with RawData = rawData }
+
+                                    memberShape.SetByRef(&instance, memberValue)
+
                             | _ -> ())
                 }
 
@@ -241,49 +300,46 @@ module internal ModelParser =
         let wrap (v: Parser<'t>) = unbox<Parser<'T>> v
 
         match shapeof<'T> with
-        | Shape.Guid -> wrap createSimpleParser<Guid>
-        | Shape.Int32 -> wrap createSimpleParser<int>
-        | Shape.Int64 -> wrap createSimpleParser<int64>
-        | Shape.BigInt -> wrap createSimpleParser<bigint>
-        | Shape.Double -> wrap createSimpleParser<double>
-        | Shape.Decimal -> wrap createSimpleParser<decimal>
-        | Shape.DateTime -> wrap createSimpleParser<DateTime>
-        | Shape.TimeSpan -> wrap createSimpleParser<TimeSpan>
-        | Shape.DateTimeOffset -> wrap createSimpleParser<DateTimeOffset>
-        | Shape.Bool ->
-            let parser = getOrCreateParser<string | null>()
-
-            fun { Culture = culture; RawData = rawData } ->
-                try
-                    let rawValue = parser { Culture = culture; RawData = rawData }
-
-                    match Boolean.TryParse(rawValue) with
-                    | true, value -> value
-                    | false, _ -> error rawData
-                with _ ->
-                    error rawData
-            |> wrap
-
         | Shape.String ->
             function
             | { RawData = SimpleData(RawValue value) } -> value
-            | { RawData = rawData } -> error rawData
+            | state -> notParsed state
             |> wrap
+
+        | Shape.Parsable shape ->
+            shape.Accept
+                { new IParsableVisitor<_> with
+                    member _.Visit<'t when 't :> IParsable<'t>>() =
+                        let parser = getOrCacheParser<string | null> ctx
+
+                        fun state ->
+                            try
+                                let rawValue = parser state
+                                let mutable result = Unchecked.defaultof<'t>
+
+                                if 't.TryParse(rawValue, state.Culture, &result) then
+                                    result
+                                else
+                                    notParsed state
+                            with _ ->
+                                notParsed state
+                        |> wrap
+                }
 
         | Shape.Enum shape ->
             shape.Accept
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
-                        let parser = getOrCreateParser<string | null>()
+                        let parser = getOrCacheParser<string | null> ctx
 
-                        fun { Culture = culture; RawData = rawData } ->
+                        fun state ->
                             try
-                                let rawValue = parser { Culture = culture; RawData = rawData }
+                                let rawValue = parser state
                                 match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
                                 | true, value -> value
-                                | false, _ -> error rawData
+                                | false, _ -> notParsed state
                             with _ ->
-                                error rawData
+                                notParsed state
                         |> wrap
                 }
 
@@ -295,8 +351,7 @@ module internal ModelParser =
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> Nullable()
-                        | { Culture = culture; RawData = rawData } ->
-                            parser { Culture = culture; RawData = rawData } |> Nullable
+                        | state -> parser state |> Nullable
                         |> wrap
                 }
 
@@ -308,8 +363,7 @@ module internal ModelParser =
 
                         function
                         | { RawData = SimpleData(RawValue Null) } -> None
-                        | { Culture = culture; RawData = rawData } ->
-                            parser { Culture = culture; RawData = rawData } |> Some
+                        | state -> parser state |> Some
                         |> wrap
                 }
 
@@ -340,31 +394,42 @@ module internal ModelParser =
                     member _.Visit<'t>() = // 'T = 't seq
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
-                        else
-                            createEnumerableParser<'t> ctx |> wrap
+
+                        createEnumerableParser<'t> ctx |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
             let parser = getOrCacheParser<string | null> ctx
 
-            fun { Culture = culture; RawData = rawData } ->
+            fun state ->
                 try
-                    match parser { Culture = culture; RawData = rawData } with
+                    match parser state with
                     | Null when not shape.IsStructUnion -> Unchecked.defaultof<_>
                     | NonNull(UnionCase shape case) -> case.CreateUninitialized()
-                    | _ -> error rawData
+                    | _ -> notParsed state
                 with _ ->
-                    error rawData
+                    notParsed state
             |> wrap
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
-            let fieldSetters = shape.Fields |> Array.map(createFieldParser ctx)
+            let fieldSetters = shape.Fields |> Array.map(createMemberParser ctx)
 
-            fun parserContext ->
+            fun state ->
                 let mutable instance = shape.CreateUninitialized()
 
                 for fieldSetter in fieldSetters do
-                    fieldSetter.Invoke(parserContext, &instance)
+                    fieldSetter.Invoke(state, &instance)
+
+                instance
+
+        | Shape.CliMutable(:? ShapeCliMutable<'T> as shape) ->
+            let propertySetters = shape.Properties |> Array.map(createMemberParser ctx)
+
+            fun state ->
+                let mutable instance = shape.CreateUninitialized()
+
+                for propertySetter in propertySetters do
+                    propertySetter.Invoke(state, &instance)
 
                 instance
 
@@ -387,24 +452,34 @@ type ModelBinderOptions = {
         CultureInfo = CultureInfo.InvariantCulture
     }
 
+[<AutoOpen>]
+module private DictionaryLikeCollectionHelper =
+
+    open System.Linq.Expressions
+
+    type DictionaryLikeCollection<'T
+        when 'T :> IEnumerable<KeyValuePair<string, StringValues>>
+        and 'T: (member Keys: ICollection<string>)
+        and 'T: (member get_Item: string -> StringValues)
+        and 'T: (member ContainsKey: string -> bool)
+        and 'T: (member TryGetValue: string * byref<StringValues> -> bool)> = 'T
+
+    let inline private getUnderlyingDict<'T when DictionaryLikeCollection<'T>> =
+        let param = Expression.Parameter(typeof<'T>)
+        let storeProp = Expression.Property(param, "Store")
+        let getStoreExpr = Expression.Lambda<_>(storeProp, param)
+
+        let getStore: Func<'T, Dictionary<string, StringValues>> = getStoreExpr.Compile()
+
+        fun collection -> getStore.Invoke(collection)
+
+    let formCollectionDict = getUnderlyingDict<FormCollection>
+
+    let queryCollectionDict = getUnderlyingDict<QueryCollection>
+
 /// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
 type ModelBinder(?options: ModelBinderOptions) =
     let options = defaultArg options <| ModelBinderOptions.Default
-    let formCollectionType = typeof<FormCollection>
-    let queryCollectionType = typeof<QueryCollection>
-    let flags =
-        System.Reflection.BindingFlags.NonPublic
-        ||| System.Reflection.BindingFlags.Instance
-    let formCollectionDictionaryAccessor =
-        formCollectionType.GetProperty("Store", flags)
-        |> Unchecked.nonNull
-        |> _.GetGetMethod(true)
-        |> Unchecked.nonNull
-    let queryCollectionDictionaryAccessor =
-        queryCollectionType.GetProperty("Store", flags)
-        |> Unchecked.nonNull
-        |> _.GetGetMethod(true)
-        |> Unchecked.nonNull
 
     interface IModelBinder with
         /// <summary>
@@ -414,11 +489,7 @@ type ModelBinder(?options: ModelBinderOptions) =
         member this.Bind<'T>(data) =
             let dictionary =
                 match data with
-                | :? FormCollection ->
-                    formCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
-                    |> unbox<Dictionary<string, StringValues>>
-                | :? QueryCollection ->
-                    queryCollectionDictionaryAccessor.Invoke(data, flags, null, null, options.CultureInfo)
-                    |> unbox<Dictionary<string, StringValues>>
+                | :? FormCollection as formCollection -> formCollection |> formCollectionDict
+                | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
                 | _ -> Dictionary data
-            ModelParser.parseModel<'T> options.CultureInfo (ComplexData(dictionary, 0))
+            ModelParser.parseModel<'T> options.CultureInfo (RawData.initComplexData dictionary)

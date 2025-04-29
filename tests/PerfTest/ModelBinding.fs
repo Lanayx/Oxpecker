@@ -1,6 +1,5 @@
-﻿namespace PerfTest
+namespace PerfTest
 
-open System
 open System.Net.Http
 open System.Net.Http.Headers
 open System.Threading.Tasks
@@ -10,21 +9,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
-
-[<CLIMutable>]
-type BindingModelChild = { Name: string | null; Age: int }
-
-[<CLIMutable>]
-type BindingModel = {
-    Id: Guid
-    FirstName: string | null
-    MiddleName: string | null
-    LastName: string | null
-    BirthDate: DateTime
-    StatusCode: int
-    Children: BindingModelChild[]
-}
-
+open PerfTest.Csharp
 
 module OxpeckerBinder =
     open Oxpecker
@@ -111,13 +96,13 @@ type ModelBinding() =
 
 
     [<Benchmark>]
-    member this.OxpeckerPost() =
+    member _.OxpeckerPost() =
         oxpeckerClient.PostAsync("/bindModel", content)
 
     [<Benchmark>]
-    member this.GiraffePost() =
+    member _.GiraffePost() =
         giraffeClient.PostAsync("/bindModel", content)
 
     [<Benchmark>]
-    member this.MinimalApiPost() =
+    member _.MinimalApiPost() =
         minimalApiClient.PostAsync("/bindModel", content)
