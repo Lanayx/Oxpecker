@@ -579,7 +579,7 @@ module Bindings =
         /// </summary>
         /// <remarks>
         /// If <c>refetch</c> is called with an argument, that argument is supplied instead.
-        /// You can use the <c>_.refetchingAs</c> helper which takes a type argument and returns
+        /// You can use the <c>_.refetchingWith</c> helper which takes a type argument and returns
         /// an erased union of the type and bool.
         /// </remarks>
         abstract refetching: bool
