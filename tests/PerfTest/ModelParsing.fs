@@ -96,20 +96,22 @@ type ModelParsing() =
     //   DefaultJob : .NET 9.0.3 (9.0.325.11113), X64 RyuJIT AVX2
     //
     //
-    // | Method                    | Mean       | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
-    // |-------------------------- |-----------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
-    // | DirectModelParser         |   555.7 ns |  8.11 ns |  7.19 ns |  1.00 |    0.02 | 0.0906 |     760 B |        1.00 |
-    // | TypeShapeBasedModelParser | 1,661.0 ns | 14.91 ns | 13.95 ns |  2.99 |    0.04 | 0.0725 |     608 B |        0.80 |
+    // | Method              | Mean         | Error       | StdDev    | Ratio  | RatioSD | Gen0   | Allocated | Alloc Ratio |
+    // |-------------------- |-------------:|------------:|----------:|-------:|--------:|-------:|----------:|------------:|
+    // | DirectModelParser   |     543.1 ns |     4.65 ns |   4.12 ns |   1.00 |    0.01 | 0.0906 |     760 B |        1.00 |
+    // | OxpeckerModelParser |   1,776.6 ns |    19.53 ns |  16.31 ns |   3.27 |    0.04 | 0.0725 |     608 B |        0.80 |
+    // | GiraffeModelParser  | 123,657.0 ns | 1,058.06 ns | 937.94 ns | 227.71 |    2.37 | 7.3242 |   62546 B |       82.30 |
 
 
-    static let culture = CultureInfo.InvariantCulture
+
+    static let options  = ModelBinderOptions.Default
     static let complexData = RawData.initComplexData modelData
 
     [<Benchmark(Baseline = true)>]
-    member _.DirectModelParser() = parseModel culture modelData
+    member _.DirectModelParser() = parseModel options.CultureInfo modelData
 
     [<Benchmark>]
-    member _.OxpeckerModelParser() = ModelParser.parseModel<Model> culture complexData
+    member _.OxpeckerModelParser() = ModelParser.parseModel<Model> options complexData
 
     [<Benchmark>]
-    member _.GiraffeModelParser() = Giraffe.ModelParser.parse<Model> (Some culture) modelData
+    member _.GiraffeModelParser() = Giraffe.ModelParser.parse<Model> (Some options.CultureInfo) modelData

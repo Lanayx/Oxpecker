@@ -7,6 +7,18 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 
 /// <summary>
+/// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
+/// </summary>
+type ModelBinderOptions = {
+    CultureInfo: CultureInfo
+    IgnoreMemberCase: bool
+} with
+    static member Default = {
+        CultureInfo = CultureInfo.InvariantCulture
+        IgnoreMemberCase = false
+    }
+
+/// <summary>
 /// Interface defining Form and Query parsing methods.
 /// Use this interface to customize Form and Query parsing in Oxpecker.
 /// </summary>
@@ -58,9 +70,7 @@ module private DictionaryPool =
             )
 
     let get = DictionaryPool<string, StringValues>().Get
-
-    let getIndexed =
-        DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
+    let getIndexed = DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
 
 [<AutoOpen>]
 module TypeShapeImpl =
@@ -113,14 +123,11 @@ module internal ModelParser =
     /// Active pattern for parsing keys in the format "[index].subKey".
     let private (|IndexAccess|_|) (offset: int) (key: string) =
         let key = key.AsSpan(offset)
-
         if key[0] = '[' then
             let lastIndex = key.Length - 1
             let mutable currentIndex = 1
-
             while key[currentIndex] |> Char.IsDigit do
                 currentIndex <- currentIndex + 1
-
             if
                 currentIndex > 1 // at least one digit
                 && key[currentIndex] = ']'
@@ -129,7 +136,6 @@ module internal ModelParser =
             then
                 let index = Int32.Parse(key.Slice(1, currentIndex - 1))
                 let newOffset = offset + currentIndex + 2
-
                 ValueSome(struct (index, newOffset))
             else
                 ValueNone
@@ -138,7 +144,6 @@ module internal ModelParser =
 
     let private (|ComplexArray|) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.getIndexed()
-
         for KeyValue(key, value) in data do
             match key with
             | IndexAccess offset (index, newOffset) ->
@@ -149,42 +154,37 @@ module internal ModelParser =
                     subdict[key] <- value
                     matchedData[index] <- struct (newOffset, subdict)
             | _ -> ()
-
         matchedData
 
-    let private (|ExactMatch|_|) (memberName: string) { Offset = offset; Data = data } =
-        if offset = 0 then
+    let private (|ExactMatch|_|) (memberName: string) (ignoreMemberCase: bool) { Offset = offset; Data = data } =
+        if offset = 0 && (not ignoreMemberCase) then
             match data.TryGetValue(memberName) with
             | true, values -> ValueSome values
             | _ -> ValueNone
         else
             let mutable result = ValueNone
             let mutable enumerator = data.GetEnumerator()
-
+            let comparisonType = if ignoreMemberCase then StringComparison.OrdinalIgnoreCase else StringComparison.Ordinal
             while result.IsValueNone && enumerator.MoveNext() do
                 let (KeyValue(key, value)) = enumerator.Current
                 let current = key.AsSpan(offset)
                 let candidate = memberName.AsSpan()
-
-                if current.SequenceEqual(candidate) then
+                if MemoryExtensions.Equals(current, candidate, comparisonType) then
                     result <- ValueSome value
-
             result
 
-    let private (|PrefixMatch|) (prefix: string) { Offset = offset; Data = data } =
+    let private (|PrefixMatch|) (prefix: string) (ignoreMemberCase: bool) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.get()
         let mutable nextOffset = 0
-
+        let comparisonType = if ignoreMemberCase then StringComparison.OrdinalIgnoreCase else StringComparison.Ordinal
         for KeyValue(key, value) in data do
-            if key.AsSpan(offset).StartsWith(prefix) then
+            if key.AsSpan(offset).StartsWith(prefix, comparisonType) then
                 nextOffset <- offset + prefix.Length
-
                 if key[nextOffset] = '.' then // property access
                     nextOffset <- nextOffset + 1
                     matchedData[key] <- value
                 elif key[nextOffset] = '[' then // index access
                     matchedData[key] <- value
-
         struct (nextOffset, matchedData)
 
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
@@ -202,6 +202,7 @@ module internal ModelParser =
     [<Struct>]
     type internal ParsingState = {
         Culture: CultureInfo
+        IgnoreMemberCase: bool
         RawData: RawData
     }
 
@@ -238,34 +239,26 @@ module internal ModelParser =
 
     and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> =
         let parser = getOrCacheParser<'Element> ctx
-
         fun state ->
             match state.RawData with
             | SimpleData values ->
                 let res = Array.zeroCreate(values.Count)
-
                 for i in 0 .. values.Count - 1 do
                     res[i] <-
                         let rawData = SimpleData(StringValues values[i])
                         parser { state with RawData = rawData }
-
                 res
-
             | ComplexData(ComplexArray indexedDicts) ->
                 use indexedDicts = indexedDicts
                 let res = ResizeArray()
-
                 for i in indexedDicts.Keys do
                     while i > res.Count - 1 do
                         res.Add(Unchecked.defaultof<_>)
-
                     let struct (offset, dict) = indexedDicts[i]
                     use dict = dict
-
                     res[i] <-
                         let rawData = ComplexData { Offset = offset; Data = dict }
                         parser { state with RawData = rawData }
-
                 res
 
     and private createMemberParser (ctx: TypeGenerationContext) : MemberParser<'T> =
@@ -274,25 +267,21 @@ module internal ModelParser =
                 { new IMemberVisitor<_, _> with
                     member _.Visit<'Member>(memberShape) =
                         let parser = getOrCacheParser<'Member> ctx
-
-                        MemberSetter(fun state instance ->
+                        MemberSetter (fun state instance ->
                             match state.RawData with
-                            | ComplexData(ExactMatch memberShape.Label rawValues) ->
+                            | ComplexData(ExactMatch memberShape.Label state.IgnoreMemberCase rawValues) ->
                                 let rawData = SimpleData rawValues
                                 let memberValue = parser { state with RawData = rawData }
-
                                 memberShape.SetByRef(&instance, memberValue)
-
-                            | ComplexData(PrefixMatch memberShape.Label (offset, matchedData)) ->
+                            | ComplexData(PrefixMatch memberShape.Label state.IgnoreMemberCase (offset, matchedData)) ->
                                 use matchedData = matchedData
-
                                 if matchedData.Count > 0 then
                                     let rawData = ComplexData { Offset = offset; Data = matchedData }
                                     let memberValue = parser { state with RawData = rawData }
-
                                     memberShape.SetByRef(&instance, memberValue)
-
-                            | _ -> ())
+                            | _ ->
+                                ()
+                        )
                 }
 
     and private createParser<'T> (ctx: TypeGenerationContext) : Parser<'T> =
@@ -310,7 +299,6 @@ module internal ModelParser =
                 { new IParsableVisitor<_> with
                     member _.Visit<'t when 't :> IParsable<'t>>() =
                         let parser = getOrCacheParser<string | null> ctx
-
                         fun state ->
                             try
                                 let rawValue = parser state
@@ -327,7 +315,6 @@ module internal ModelParser =
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
                         let parser = getOrCacheParser<string | null> ctx
-
                         fun state ->
                             try
                                 let rawValue = parser state
@@ -344,7 +331,6 @@ module internal ModelParser =
                 { new INullableVisitor<_> with
                     member _.Visit<'t when Nullable<'t>>() = // 'T = Nullable<'t>
                         let parser = getOrCacheParser<'t> ctx
-
                         function
                         | { RawData = SimpleData(RawValue Null) } -> Nullable()
                         | state -> parser state |> Nullable
@@ -356,7 +342,6 @@ module internal ModelParser =
                 { new ITypeVisitor<_> with
                     member _.Visit<'t>() = // 'T = 't option
                         let parser = getOrCacheParser<'t> ctx
-
                         function
                         | { RawData = SimpleData(RawValue Null) } -> None
                         | state -> parser state |> Some
@@ -390,13 +375,11 @@ module internal ModelParser =
                     member _.Visit<'t>() = // 'T = 't seq
                         if Type.(<>)(typeof<'T>, typeof<'t seq>) then
                             unsupported typeof<'T>
-
                         createEnumerableParser<'t> ctx |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
             let parser = getOrCacheParser<string | null> ctx
-
             fun state ->
                 try
                     match parser state with
@@ -409,44 +392,28 @@ module internal ModelParser =
 
         | Shape.FSharpRecord(:? ShapeFSharpRecord<'T> as shape) ->
             let fieldSetters = shape.Fields |> Array.map(createMemberParser ctx)
-
             fun state ->
                 let mutable instance = shape.CreateUninitialized()
-
                 for fieldSetter in fieldSetters do
                     fieldSetter.Invoke(state, &instance)
-
                 instance
 
         | Shape.CliMutable(:? ShapeCliMutable<'T> as shape) ->
             let propertySetters = shape.Properties |> Array.map(createMemberParser ctx)
-
             fun state ->
                 let mutable instance = shape.CreateUninitialized()
-
                 for propertySetter in propertySetters do
                     propertySetter.Invoke(state, &instance)
-
                 instance
 
         | _ -> unsupported typeof<'T>
 
     and private cache: TypeCache = TypeCache()
 
-    let rec internal parseModel<'T> (culture: CultureInfo) (rawData: RawData) =
+    let rec internal parseModel<'T> (options: ModelBinderOptions) (rawData: RawData) =
         let parser = getOrCreateParser<'T>()
 
-        parser { Culture = culture; RawData = rawData }
-
-/// <summary>
-/// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
-/// </summary>
-type ModelBinderOptions = {
-    CultureInfo: CultureInfo
-} with
-    static member Default = {
-        CultureInfo = CultureInfo.InvariantCulture
-    }
+        parser { Culture = options.CultureInfo; IgnoreMemberCase = options.IgnoreMemberCase; RawData = rawData }
 
 [<AutoOpen>]
 module private DictionaryLikeCollectionHelper =
@@ -464,13 +431,10 @@ module private DictionaryLikeCollectionHelper =
         let param = Expression.Parameter(typeof<'T>)
         let storeProp = Expression.Property(param, "Store")
         let getStoreExpr = Expression.Lambda<_>(storeProp, param)
-
         let getStore: Func<'T, Dictionary<string, StringValues>> = getStoreExpr.Compile()
-
         fun collection -> getStore.Invoke(collection)
 
     let formCollectionDict = getUnderlyingDict<FormCollection>
-
     let queryCollectionDict = getUnderlyingDict<QueryCollection>
 
 /// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
@@ -488,4 +452,4 @@ type ModelBinder(?options: ModelBinderOptions) =
                 | :? FormCollection as formCollection -> formCollection |> formCollectionDict
                 | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
                 | _ -> Dictionary data
-            ModelParser.parseModel<'T> options.CultureInfo (RawData.initComplexData dictionary)
+            ModelParser.parseModel<'T> options (RawData.initComplexData dictionary)
