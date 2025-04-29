@@ -542,6 +542,29 @@ module Bindings =
             runExpr Unchecked.defaultof<_>
             this
 
+    [<Interface; AllowNullLiteral>]
+    type ResourceFetcherInfo<'T> =
+        /// Previous value
+        abstract value: 'T
+        /// <summary>
+        /// Is true when the <c>fetcher</c> was triggered using the refetch function.
+        /// </summary>
+        /// <remarks>
+        /// If <c>refetch</c> is called with an argument, that argument is supplied instead.
+        /// You can use the <c>_.refetchingAs</c> helper which takes a type argument and returns
+        /// an erased union of the type and bool.
+        /// </remarks>
+        abstract refetching: bool
+
+
+    /// <summary>
+    /// Arguments that are available to consume within the handler. The first is the source signal
+    /// if any was provided (else null), and the second is an object with two properties, the previous
+    /// value via <c>_.value</c>, and whether the fetcher was initiated by a <c>refetch</c> via <c>_.refetching</c>.
+    /// </summary>
+    /// <remarks>The signature was chosen as a tuple because it is easier to dispose, and has better backwards compatibility.</remarks>
+    type ResourceFetcher<'U, 'T> = 'U * ResourceFetcherInfo<'T> -> JS.Promise<'T>
+
     [<RequireQualifiedAccess; StringEnum>]
     type SolidResourceState =
         /// Hasn't started loading, no value yet
@@ -569,6 +592,24 @@ module Bindings =
     type SolidResourceManager<'T> =
         abstract mutate: 'T -> 'T
         abstract refetch: unit -> JS.Promise<'T>
+
+    [<Erase; AutoOpen; Extension>]
+    type ResourceExtensions =
+        /// <summary>
+        /// Alias for the second property of the second argument provided in a resource fetching function
+        /// to be provided as an erased union of a provided type and bool instead of just bool.
+        /// </summary>
+        [<Extension; Erase>]
+        static member inline refetchingWith<'T>(this: ResourceFetcherInfo<_>): U2<'T, bool> = unbox<U2<'T, bool>> this.refetching
+        [<Extension; Erase>]
+        static member inline refetchingWith<'T, 'U>(this: ResourceFetcherInfo<'U>): U2<'T, bool> = unbox<U2<'T, bool>> this.refetching
+        [<Emit("$0.refetch($1)")>]
+        [<Extension; Erase>]
+        static member inline refetchWith<'U>(this: SolidResourceManager<'T>, input: 'U): JS.Promise<'T> = jsNative
+        [<Emit("$0.refetch($1)")>]
+        [<Extension; Erase>]
+        static member inline refetchWith<'U, 'T>(this: SolidResourceManager<'T>, input: 'U): JS.Promise<'T> = jsNative
+
 
     type SolidStoreSetter<'T> =
         /// Replace old store value with new
@@ -639,6 +680,18 @@ type Bindings =
 
     [<ImportMember("solid-js")>]
     static member createEffect(effect: 'T -> 'T, initialValue: 'T) : unit = jsNative
+    [<ImportMember("solid-js"); ParamObject(fromIndex = 2)>]
+    static member createResource
+        (source: unit -> 'U option, fetcher: ResourceFetcher<'U option, 'T>, ?initialValue: 'T, ?name: string, ?deferStream: bool, ?onHydrated: (unit -> unit), ?ssrLoadFrom: string, ?storage: Signal<'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+    [<ImportMember("solid-js"); ParamObject(fromIndex = 1)>]
+    static member createResource
+        (fetcher: ResourceFetcher<unit, 'T>, ?initialValue: 'T, ?name: string, ?deferStream: bool, ?onHydrated: (unit -> unit), ?ssrLoadFrom: string, ?storage: Signal<'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+    [<ImportMember("solid-js")>]
+    static member createResource
+        (fetcher: ResourceFetcher<unit, 'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+    [<ImportMember("solid-js")>]
+    static member createResource
+        (source: unit -> 'U option, fetcher: ResourceFetcher<'U option, 'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
 
     /// Fetcher will be called immediately
     [<ImportMember("solid-js"); ParamObject(fromIndex = 1)>]
