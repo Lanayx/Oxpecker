@@ -77,9 +77,9 @@ type ModelBinding() =
     //
     // | Method         | Mean      | Error    | StdDev   | Gen0   | Allocated |
     // |--------------- |----------:|---------:|---------:|-------:|----------:|
-    // | OxpeckerPost   |  27.85 us | 0.552 us | 1.322 us | 1.7090 |  13.97 KB |
-    // | GiraffePost    | 136.51 us | 1.284 us | 1.002 us | 7.8125 |  64.73 KB |
-    // | MinimalApiPost |  27.04 us | 0.534 us | 1.321 us | 1.4648 |  13.79 KB |
+    // | OxpeckerPost   |  27.03 us | 0.532 us | 0.780 us | 1.4648 |  12.63 KB |
+    // | GiraffePost    | 139.54 us | 1.851 us | 1.731 us | 7.8125 |  65.17 KB |
+    // | MinimalApiPost |  28.04 us | 0.518 us | 0.836 us | 1.4648 |   13.8 KB |
 
 
     let oxpeckerServer = OxpeckerBinder.webApp()

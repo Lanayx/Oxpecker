@@ -96,8 +96,9 @@ type ModelParsing() =
     //
     // | Method                    | Mean       | Error    | StdDev   | Ratio | RatioSD | Gen0   | Allocated | Alloc Ratio |
     // |-------------------------- |-----------:|---------:|---------:|------:|--------:|-------:|----------:|------------:|
-    // | DirectModelParser         |   569.6 ns | 10.59 ns |  9.90 ns |  1.00 |    0.02 | 0.0906 |     760 B |        1.00 |
-    // | TypeShapeBasedModelParser | 1,729.2 ns | 20.52 ns | 19.19 ns |  3.04 |    0.06 | 0.2365 |    1984 B |        2.61 |
+    // | DirectModelParser         |   555.7 ns |  8.11 ns |  7.19 ns |  1.00 |    0.02 | 0.0906 |     760 B |        1.00 |
+    // | TypeShapeBasedModelParser | 1,661.0 ns | 14.91 ns | 13.95 ns |  2.99 |    0.04 | 0.0725 |     608 B |        0.80 |
+
 
     static let culture = CultureInfo.InvariantCulture
     static let formCollection = FormCollection modelData

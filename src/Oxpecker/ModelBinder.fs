@@ -48,9 +48,8 @@ module private DictionaryPool =
                 { new IPooledObjectPolicy<_> with
                     member _.Create() =
                         { new PooledDictionary<_, _>() with
-                            member this.Dispose() = that.Return(this) |> ignore
+                            member this.Dispose() = that.Return(this)
                         }
-
                     member _.Return(dict) =
                         dict.Clear()
                         dict.Count = 0
@@ -96,7 +95,7 @@ type UnsupportedTypeException(ty: Type) =
     inherit exn($"Unsupported type '{ty}'.")
 
 type NotParsedException(value: string, ty: Type) =
-    inherit exn($"Could not parse value '{value}' to type '{ty}'.")
+    inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
 /// <summary>
 /// Module for parsing models from a generic data set.
@@ -237,7 +236,7 @@ module internal ModelParser =
             let v = createParser<'T> ctx
             ctx.Commit t v
 
-    and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> = // 'T = 'Element seq
+    and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> =
         let parser = getOrCacheParser<'Element> ctx
 
         fun state ->
@@ -315,12 +314,9 @@ module internal ModelParser =
                         fun state ->
                             try
                                 let rawValue = parser state
-                                let mutable result = Unchecked.defaultof<'t>
-
-                                if 't.TryParse(rawValue, state.Culture, &result) then
-                                    result
-                                else
-                                    notParsed state
+                                match 't.TryParse(rawValue, state.Culture) with
+                                | true, value -> value
+                                | false, _ -> notParsed state
                             with _ ->
                                 notParsed state
                         |> wrap
