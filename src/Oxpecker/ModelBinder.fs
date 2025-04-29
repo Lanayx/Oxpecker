@@ -80,15 +80,16 @@ module Shape =
 
     open TypeShape.Core
 
+    let private implements<'T> (ty: Type) =
+        typedefof<'T>.FullName |> Unchecked.nonNull |> ty.GetInterface |> isNull |> not
+
+    type private Any = int // represents any type that implements IParsable<_>
+
     let (|Parsable|_|) (shape: TypeShape) =
-        let parsable =
-            shape.Type.GetInterfaces()
-            |> Seq.tryFind(fun x -> x.IsGenericType && x.GetGenericTypeDefinition() = typedefof<IParsable<int>>)
-        match parsable with
-        | Some _ ->
-            Activator.CreateInstanceGeneric<ShapeParsable<int>>([| shape.Type |]) :?> IShapeParsable
+        if shape.Type |> implements<IParsable<Any>> then
+            Activator.CreateInstanceGeneric<ShapeParsable<Any>>([| shape.Type |]) :?> IShapeParsable
             |> Some
-        | None -> None
+        else None
 
 type UnsupportedTypeException(ty: Type) =
     inherit exn($"Unsupported type '{ty}'.")
