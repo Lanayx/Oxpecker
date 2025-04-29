@@ -600,15 +600,17 @@ module Bindings =
         /// to be provided as an erased union of a provided type and bool instead of just bool.
         /// </summary>
         [<Extension; Erase>]
-        static member inline refetchingWith<'T>(this: ResourceFetcherInfo<_>): U2<'T, bool> = unbox<U2<'T, bool>> this.refetching
+        static member inline refetchingWith<'T>(this: ResourceFetcherInfo<_>) : U2<'T, bool> =
+            unbox<U2<'T, bool>> this.refetching
         [<Extension; Erase>]
-        static member inline refetchingWith<'T, 'U>(this: ResourceFetcherInfo<'U>): U2<'T, bool> = unbox<U2<'T, bool>> this.refetching
+        static member inline refetchingWith<'T, 'U>(this: ResourceFetcherInfo<'U>) : U2<'T, bool> =
+            unbox<U2<'T, bool>> this.refetching
         [<Emit("$0.refetch($1)")>]
         [<Extension; Erase>]
-        static member inline refetchWith<'U>(this: SolidResourceManager<'T>, input: 'U): JS.Promise<'T> = jsNative
+        static member inline refetchWith<'U>(this: SolidResourceManager<'T>, input: 'U) : JS.Promise<'T> = jsNative
         [<Emit("$0.refetch($1)")>]
         [<Extension; Erase>]
-        static member inline refetchWith<'U, 'T>(this: SolidResourceManager<'T>, input: 'U): JS.Promise<'T> = jsNative
+        static member inline refetchWith<'U, 'T>(this: SolidResourceManager<'T>, input: 'U) : JS.Promise<'T> = jsNative
 
 
     type SolidStoreSetter<'T> =
@@ -682,16 +684,37 @@ type Bindings =
     static member createEffect(effect: 'T -> 'T, initialValue: 'T) : unit = jsNative
     [<ImportMember("solid-js"); ParamObject(fromIndex = 2)>]
     static member createResource
-        (source: unit -> 'U option, fetcher: ResourceFetcher<'U option, 'T>, ?initialValue: 'T, ?name: string, ?deferStream: bool, ?onHydrated: (unit -> unit), ?ssrLoadFrom: string, ?storage: Signal<'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+        (
+            source: unit -> 'U option,
+            fetcher: ResourceFetcher<'U option, 'T>,
+            ?initialValue: 'T,
+            ?name: string,
+            ?deferStream: bool,
+            ?onHydrated: (unit -> unit),
+            ?ssrLoadFrom: string,
+            ?storage: Signal<'T>
+        ) : SolidResource<'T> * SolidResourceManager<'T> =
+        jsNative
     [<ImportMember("solid-js"); ParamObject(fromIndex = 1)>]
     static member createResource
-        (fetcher: ResourceFetcher<unit, 'T>, ?initialValue: 'T, ?name: string, ?deferStream: bool, ?onHydrated: (unit -> unit), ?ssrLoadFrom: string, ?storage: Signal<'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+        (
+            fetcher: ResourceFetcher<unit, 'T>,
+            ?initialValue: 'T,
+            ?name: string,
+            ?deferStream: bool,
+            ?onHydrated: (unit -> unit),
+            ?ssrLoadFrom: string,
+            ?storage: Signal<'T>
+        ) : SolidResource<'T> * SolidResourceManager<'T> =
+        jsNative
+    [<ImportMember("solid-js")>]
+    static member createResource(fetcher: ResourceFetcher<unit, 'T>) : SolidResource<'T> * SolidResourceManager<'T> =
+        jsNative
     [<ImportMember("solid-js")>]
     static member createResource
-        (fetcher: ResourceFetcher<unit, 'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
-    [<ImportMember("solid-js")>]
-    static member createResource
-        (source: unit -> 'U option, fetcher: ResourceFetcher<'U option, 'T>): SolidResource<'T> * SolidResourceManager<'T> = jsNative
+        (source: unit -> 'U option, fetcher: ResourceFetcher<'U option, 'T>)
+        : SolidResource<'T> * SolidResourceManager<'T> =
+        jsNative
 
     /// Fetcher will be called immediately
     [<ImportMember("solid-js"); ParamObject(fromIndex = 1)>]
