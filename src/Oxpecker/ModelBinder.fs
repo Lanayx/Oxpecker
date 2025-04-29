@@ -182,7 +182,7 @@ module internal ModelParser =
                     newOffset <- tempOffset
                     matchedData[key] <- value
 
-        newOffset, matchedData
+        struct (newOffset, matchedData)
 
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
