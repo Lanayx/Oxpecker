@@ -152,17 +152,22 @@ module internal ModelParser =
         matchedData
 
     let private (|ExactMatch|_|) (memberName: string) { Offset = offset; Data = data } =
-        let mutable result = ValueNone
-        let mutable enumerator = data.GetEnumerator()
+        if offset = 0 then
+            match data.TryGetValue(memberName) with
+            | true, values -> ValueSome values
+            | _ -> ValueNone
+        else
+            let mutable result = ValueNone
+            let mutable enumerator = data.GetEnumerator()
 
-        while result.IsValueNone && enumerator.MoveNext() do
-            let (KeyValue(key, value)) = enumerator.Current
-            let current = key.AsSpan(offset)
-            let candidate = memberName.AsSpan()
-            if current.SequenceEqual(candidate) then
-                result <- ValueSome value
+            while result.IsValueNone && enumerator.MoveNext() do
+                let (KeyValue(key, value)) = enumerator.Current
+                let current = key.AsSpan(offset)
+                let candidate = memberName.AsSpan()
+                if current.SequenceEqual(candidate) then
+                    result <- ValueSome value
 
-        result
+            result
 
     let private (|PrefixMatch|) (prefix: string) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.get()
