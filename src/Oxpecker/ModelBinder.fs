@@ -14,7 +14,7 @@ type IModelBinder =
     abstract member Bind<'T> : seq<KeyValuePair<string, StringValues>> -> 'T
 
 [<Struct>]
-type internal RawComplexData = {
+type internal ComplexData = {
     Offset: int
     Data: Dictionary<string, StringValues>
 }
@@ -22,7 +22,7 @@ type internal RawComplexData = {
 [<Struct>]
 type internal RawData =
     | SimpleData of rawValue: StringValues
-    | ComplexData of rawData: RawComplexData
+    | ComplexData of rawData: ComplexData
 
 module internal RawData =
     let initComplexData data = ComplexData { Offset = 0; Data = data }
