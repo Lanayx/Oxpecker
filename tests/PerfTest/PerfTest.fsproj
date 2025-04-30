@@ -11,8 +11,8 @@
         <Compile Include="ViewEngineBuild.fs" />
         <Compile Include="ViewEngineRender.fs" />
         <Compile Include="Routing.fs" />
-        <Compile Include="ModelParsing.fs" />
         <Compile Include="ModelBinding.fs" />
+        <Compile Include="Form.fs" />
         <Compile Include="JSON.fs" />
         <Compile Include="Program.fs" />
     </ItemGroup>

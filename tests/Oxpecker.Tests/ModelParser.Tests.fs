@@ -2,7 +2,6 @@ module Oxpecker.Tests.ModelParser
 
 open System
 open System.Collections.Generic
-open System.Globalization
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
@@ -10,6 +9,11 @@ open FsUnitTyped
 
 let private toComplexData data =
     data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
+
+let private defaultParseModel<'T> data =
+    let options = ModelBinderOptions.Default
+    let cache = TypeShape.Core.Utils.TypeCache()
+    ModelParser.parseModel<'T> cache options data
 
 type Sex =
     | Male
@@ -41,10 +45,7 @@ let ``parseModel<Model2> returns empty array for null SearchTerms`` () =
     let modelData =
         [ "SearchTerms", StringValues Unchecked.defaultof<string> ] |> toComplexData
     let expected = { SearchTerms = [||] }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
@@ -53,20 +54,14 @@ let ``parseModel<Model2> returns empty array for null string array`` () =
         [ "SearchTerms", StringValues Unchecked.defaultof<string array> ]
         |> toComplexData
     let expected = { SearchTerms = [||] }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Model2> returns empty array for empty string array`` () =
     let modelData = [ "SearchTerms", StringValues [||] ] |> toComplexData
     let expected = { SearchTerms = [||] }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
@@ -75,30 +70,21 @@ let ``parseModel<Model2> handles array with null element`` () =
     let expected = {
         SearchTerms = [| Unchecked.defaultof<_> |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Model2> converts single string to single-element array`` () =
     let modelData = [ "SearchTerms", StringValues "a" ] |> toComplexData
     let expected = { SearchTerms = [| "a" |] }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Model2> handles single-element string array`` () =
     let modelData = [ "SearchTerms", StringValues [| "a" |] ] |> toComplexData
     let expected = { SearchTerms = [| "a" |] }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
@@ -108,14 +94,11 @@ let ``parseModel<Model2> handles multi-element string array`` () =
     let expected = {
         SearchTerms = [| "a"; "abc"; "abcdef" |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model2> options modelData
-
+    let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> parses complete model data correctly`` () =
+let ``defaultParseModel<Model> parses complete model data correctly`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -148,14 +131,11 @@ let ``ModelParser.parseModel<Model> parses complete model data correctly`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> handles missing optional parameters`` () =
+let ``defaultParseModel<Model> handles missing optional parameters`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -186,14 +166,11 @@ let ``ModelParser.parseModel<Model> handles missing optional parameters`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> handles missing array items`` () =
+let ``defaultParseModel<Model> handles missing array items`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -222,14 +199,11 @@ let ``ModelParser.parseModel<Model> handles missing array items`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> correctly handles unordered array items`` () =
+let ``defaultParseModel<Model> correctly handles unordered array items`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -262,14 +236,11 @@ let ``ModelParser.parseModel<Model> correctly handles unordered array items`` ()
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> fails when union case is invalid`` () =
+let ``defaultParseModel<Model> fails when union case is invalid`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -288,17 +259,14 @@ let ``ModelParser.parseModel<Model> fails when union case is invalid`` () =
             "Children[2].Age", StringValues "44"
         ]
         |> toComplexData
-    let options = ModelBinderOptions.Default
-
     let result () =
-        ModelParser.parseModel<Model> options modelData |> ignore
-
+        defaultParseModel<Model> modelData |> ignore
     result
     |> shouldFailWithMessage<NotParsedException>
         "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> fails when data contains invalid values`` () =
+let ``defaultParseModel<Model> fails when data contains invalid values`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -317,16 +285,13 @@ let ``ModelParser.parseModel<Model> fails when data contains invalid values`` ()
             "Children[2].Age", StringValues "wrongAge"
         ]
         |> toComplexData
-    let options = ModelBinderOptions.Default
-
     let result () =
-        ModelParser.parseModel<Model> options modelData |> ignore
-
+        defaultParseModel<Model> modelData |> ignore
     result
     |> shouldFailWithMessage<NotParsedException> "Could not parse value 'wrong' to type 'System.DateTime'."
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> handles mixed casing in keys`` () =
+let ``defaultParseModel<Model> handles mixed casing in keys`` () =
     let id = Guid.NewGuid()
     let modelData =
         [
@@ -360,15 +325,15 @@ let ``ModelParser.parseModel<Model> handles mixed casing in keys`` () =
         |]
     }
     let options = {
-        ModelBinderOptions.Default with IgnoreMemberCase = true
+        ModelBinderOptions.Default with
+            CaseInsensitiveMatching = true
     }
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let cache = TypeShape.Core.Utils.TypeCache()
+    let result = ModelParser.parseModel<Model> cache options modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> handles incomplete model data`` () =
+let ``defaultParseModel<Model> handles incomplete model data`` () =
     let modelData =
         [
             "FirstName", StringValues "Susan"
@@ -380,7 +345,6 @@ let ``ModelParser.parseModel<Model> handles incomplete model data`` () =
             "Children[1].Age", StringValues "44"
         ]
         |> toComplexData
-
     let expected = {
         Id = Guid.Empty
         FirstName = "Susan"
@@ -391,14 +355,11 @@ let ``ModelParser.parseModel<Model> handles incomplete model data`` () =
         Nicknames = Some [ "Susi"; "Eli"; "Liz" ]
         Children = [| { Name = "Hamed"; Age = 0 }; { Name = null; Age = 44 } |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Model> handles incomplete model data with unordered child array`` () =
+let ``defaultParseModel<Model> handles incomplete model data with unordered child array`` () =
     let modelData =
         [
             "FirstName", StringValues "Susan"
@@ -410,7 +371,6 @@ let ``ModelParser.parseModel<Model> handles incomplete model data with unordered
             "Children[0].Name", StringValues "Hamed"
         ]
         |> toComplexData
-
     let expected = {
         Id = Guid.Empty
         FirstName = "Susan"
@@ -421,14 +381,11 @@ let ``ModelParser.parseModel<Model> handles incomplete model data with unordered
         Nicknames = Some [ "Susi"; "Eli"; "Liz" ]
         Children = [| { Name = "Hamed"; Age = 0 }; { Name = null; Age = 44 } |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Model> options modelData
-
+    let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<CompositeModel> handles missing SecondChild data`` () =
+let ``defaultParseModel<CompositeModel> handles missing SecondChild data`` () =
     let modelData =
         [
             "FirstChild.Name", StringValues "FirstName"
@@ -439,14 +396,11 @@ let ``ModelParser.parseModel<CompositeModel> handles missing SecondChild data`` 
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = None
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<CompositeModel> options modelData
-
+    let result = defaultParseModel<CompositeModel> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<CompositeModel> parses complete composite model data`` () =
+let ``defaultParseModel<CompositeModel> parses complete composite model data`` () =
     let modelData =
         [
             "FirstChild.Name", StringValues "FirstName"
@@ -459,176 +413,123 @@ let ``ModelParser.parseModel<CompositeModel> parses complete composite model dat
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = Some { Name = "SecondName"; Age = 10 }
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<CompositeModel> options modelData
-
+    let result = defaultParseModel<CompositeModel> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<string> parses null value`` () =
+let ``defaultParseModel<string> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = Unchecked.defaultof<string>
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<string> options data
-
+    let result = defaultParseModel<string> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<string> parses empty string value`` () =
+let ``defaultParseModel<string> parses empty string value`` () =
     let data = String.Empty |> StringValues |> SimpleData
     let expected = String.Empty
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<string> options data
+    let result = defaultParseModel<string> data
 
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<float> fails to parse invalid string value`` () =
+let ``defaultParseModel<float> fails to parse invalid string value`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Double'."
     let data = "some-value" |> StringValues |> SimpleData
-    let options = ModelBinderOptions.Default
-
-    let result () =
-        ModelParser.parseModel<float> options data |> ignore
-
+    let result () = defaultParseModel<float> data |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
-let ``ModelParser.parseModel<int> fails to parse invalid string value`` () =
+let ``defaultParseModel<int> fails to parse invalid string value`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Int32'."
     let data = "some-value" |> StringValues |> SimpleData
-    let options = ModelBinderOptions.Default
-
-    let result () =
-        ModelParser.parseModel<int> options data |> ignore
-
+    let result () = defaultParseModel<int> data |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
-let ``ModelParser.parseModel<int64> fails to parse null value`` () =
+let ``defaultParseModel<int64> fails to parse null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = "Could not parse value '<null>' to type 'System.Int64'."
-    let options = ModelBinderOptions.Default
-
-    let result () =
-        ModelParser.parseModel<int64> options data |> ignore
-
+    let result () = defaultParseModel<int64> data |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Nullable<int>> parses null value`` () =
+let ``defaultParseModel<Nullable<int>> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = Nullable()
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Nullable<int>> options data
-
+    let result = defaultParseModel<Nullable<int>> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Nullable<int>> parses a valid integer value`` () =
+let ``defaultParseModel<Nullable<int>> parses a valid integer value`` () =
     let data = "1" |> StringValues |> SimpleData
     let expected = Nullable 1
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Nullable<int>> options data
-
+    let result = defaultParseModel<Nullable<int>> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<decimal option> parses null value`` () =
+let ``defaultParseModel<decimal option> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = None
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<decimal option> options data
-
+    let result = defaultParseModel<decimal option> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<decimal option> parses a valid decimal value`` () =
+let ``defaultParseModel<decimal option> parses a valid decimal value`` () =
     let data = "100" |> StringValues |> SimpleData
     let expected = Some 100M
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<decimal option> options data
-
+    let result = defaultParseModel<decimal option> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<string option> parses null value`` () =
+let ``defaultParseModel<string option> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = None
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<string option> options data
-
+    let result = defaultParseModel<string option> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<string option> parses an empty string value`` () =
+let ``defaultParseModel<string option> parses an empty string value`` () =
     let data = String.Empty |> StringValues |> SimpleData
     let expected = Some String.Empty
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<string option> options data
-
+    let result = defaultParseModel<string option> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<string option> parses a valid string value`` () =
+let ``defaultParseModel<string option> parses a valid string value`` () =
     let data = "some-value" |> StringValues |> SimpleData
     let expected = Some "some-value"
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<string option> options data
-
+    let result = defaultParseModel<string option> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Sex option> parses a valid union case 'Female'`` () =
+let ``defaultParseModel<Sex option> parses a valid union case 'Female'`` () =
     let data = "Female" |> StringValues |> SimpleData
     let expected = Some Female
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Sex option> options data
-
+    let result = defaultParseModel<Sex option> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Sex array> parses an array containing null values`` () =
+let ``defaultParseModel<Sex array> parses an array containing null values`` () =
     let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let data = xs |> StringValues |> SimpleData
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Sex array> options data
-
+    let result = defaultParseModel<Sex array> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<bool array> parses an array with valid data`` () =
+let ``defaultParseModel<bool array> parses an array with valid data`` () =
     let xs: (string | null) array = [| "true"; "false"; "True"; "falsE"; "TRUE"; "FALSE" |]
     let data = xs |> StringValues |> SimpleData
     let expected: bool array = [| true; false; true; false; true; false |]
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<bool array> options data
-
+    let result = defaultParseModel<bool array> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Sex option array> parses an array containing null values`` () =
+let ``defaultParseModel<Sex option array> parses an array containing null values`` () =
     let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let data = xs |> StringValues |> SimpleData
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Sex option array> options data
-
+    let result = defaultParseModel<Sex option array> data
     result |> shouldEqual expected
 
 [<Struct>]
@@ -637,13 +538,10 @@ type Direction =
     | Right
 
 [<Fact>]
-let ``ModelParser.parseModel<Nullable<Direction>> parses a valid direction 'Right'`` () =
+let ``defaultParseModel<Nullable<Direction>> parses a valid direction 'Right'`` () =
     let data = "right" |> StringValues |> SimpleData
     let expected = Nullable Right
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Nullable<Direction>> options data
-
+    let result = defaultParseModel<Nullable<Direction>> data
     result |> shouldEqual expected
 
 type BookType =
@@ -653,52 +551,39 @@ type BookType =
     | EBook = 3
 
 [<Fact>]
-let ``ModelParser.parseModel<BookType> parses a valid enum value 'Paperback'`` () =
+let ``defaultParseModel<BookType> parses a valid enum value 'Paperback'`` () =
     let modelData = "Paperback" |> StringValues |> SimpleData
     let expected = BookType.Paperback
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<BookType> options modelData
-
+    let result = defaultParseModel<BookType> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<BookType> parses a valid numeric value '3'`` () =
+let ``defaultParseModel<BookType> parses a valid numeric value '3'`` () =
     let modelData = "3" |> StringValues |> SimpleData
     let expected = BookType.EBook
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<BookType> options modelData
-
+    let result = defaultParseModel<BookType> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<BookType> parses an out-of-range numeric value '100'`` () =
+let ``defaultParseModel<BookType> parses an out-of-range numeric value '100'`` () =
     let modelData = "100" |> StringValues |> SimpleData
     let expected = enum<BookType> 100
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<BookType> options modelData
-
+    let result = defaultParseModel<BookType> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<BookType> fails to parse null value`` () =
+let ``defaultParseModel<BookType> fails to parse null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected =
         "Could not parse value '<null>' to type 'Oxpecker.Tests.ModelParser+BookType'."
-    let options = ModelBinderOptions.Default
-
     let result () =
-        ModelParser.parseModel<BookType> options data |> ignore
-
+        defaultParseModel<BookType> data |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
-let ``ModelParser.parseModel<ResizeArray<BookType>> parses a collection of enum values`` () =
+let ``defaultParseModel<ResizeArray<BookType>> parses a collection of enum values`` () =
     let data =
         [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
-
     let expected =
         ResizeArray [
             BookType.EBook
@@ -707,17 +592,13 @@ let ``ModelParser.parseModel<ResizeArray<BookType>> parses a collection of enum 
             enum<BookType> 100
             BookType.Unknown
         ]
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<ResizeArray<BookType>> options data
-
+    let result = defaultParseModel<ResizeArray<BookType>> data
     result |> shouldEqualSeq expected
 
 [<Fact>]
-let ``ModelParser.parseModel<BookType list> parses a list of enum values`` () =
+let ``defaultParseModel<BookType list> parses a list of enum values`` () =
     let data =
         [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
-
     let expected = [
         BookType.EBook
         BookType.Hardcover
@@ -725,17 +606,13 @@ let ``ModelParser.parseModel<BookType list> parses a list of enum values`` () =
         enum<BookType> 100
         BookType.Unknown
     ]
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<BookType list> options data
-
+    let result = defaultParseModel<BookType list> data
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<BookType seq> parses a sequence of enum values`` () =
+let ``defaultParseModel<BookType seq> parses a sequence of enum values`` () =
     let data =
         [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
-
     let expected =
         seq {
             BookType.EBook
@@ -744,10 +621,7 @@ let ``ModelParser.parseModel<BookType seq> parses a sequence of enum values`` ()
             enum<BookType> 100
             BookType.Unknown
         }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<BookType seq> options data
-
+    let result = defaultParseModel<BookType seq> data
     result |> shouldEqualSeq expected
 
 type Baz = {
@@ -761,7 +635,7 @@ type Bar = { Bar: string | null; Baz: Baz | null }
 type Foo = { Foo: string; Bars: Bar option seq }
 
 [<Fact>]
-let ``ModelParser.parseModel<Foo> parses data with non-sequential index elements`` () =
+let ``defaultParseModel<Foo> parses data with non-sequential index elements`` () =
     let modelData =
         [
             "Bars[2].Bar", StringValues "Bar"
@@ -787,27 +661,21 @@ let ``ModelParser.parseModel<Foo> parses data with non-sequential index elements
             }
         |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Foo> options modelData
-
+    let result = defaultParseModel<Foo> modelData
     result |> shouldEquivalent expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Foo> parses data with unmatched prefix`` () =
+let ``defaultParseModel<Foo> parses data with unmatched prefix`` () =
     let modelData = [ "Barss[0].Baz.Value", StringValues "0" ] |> toComplexData
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = Unchecked.defaultof<_>
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Foo> options modelData
-
+    let result = defaultParseModel<Foo> modelData
     result |> shouldEquivalent expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Foo> parses data with improper index access`` () =
+let ``defaultParseModel<Foo> parses data with improper index access`` () =
     let modelData = [ "Bars[0].Baz[0].Value", StringValues "0" ] |> toComplexData
     let expected = {
         Foo = Unchecked.defaultof<_>
@@ -818,46 +686,34 @@ let ``ModelParser.parseModel<Foo> parses data with improper index access`` () =
             }
         |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Foo> options modelData
-
+    let result = defaultParseModel<Foo> modelData
     result |> shouldEquivalent expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Foo> parses data with partially incorrect keys`` () =
+let ``defaultParseModel<Foo> parses data with partially incorrect keys`` () =
     let modelData = [ "Bars[0].Test.Descr", StringValues "0" ] |> toComplexData
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [| Some { Bar = null; Baz = null } |]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Foo> options modelData
-
+    let result = defaultParseModel<Foo> modelData
     result |> shouldEquivalent expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Foo> parses data with missing index`` () =
+let ``defaultParseModel<Foo> parses data with missing index`` () =
     let modelData = [ "Bars.Baz.Value", StringValues "0" ] |> toComplexData
     let expected = {
         Foo = Unchecked.defaultof<_>
         Bars = [||]
     }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Foo> options modelData
-
+    let result = defaultParseModel<Foo> modelData
     result |> shouldEquivalent expected
 
 [<Fact>]
-let ``ModelParser.parseModel<Bar> parses data with no matched prefix`` () =
+let ``defaultParseModel<Bar> parses data with no matched prefix`` () =
     let modelData = [ "Bazz.Value", StringValues "0" ] |> toComplexData
     let expected = { Bar = null; Baz = null }
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Bar> options modelData
-
+    let result = defaultParseModel<Bar> modelData
     result |> shouldEquivalent expected
 
 type AnonymousType1 = {|
@@ -868,7 +724,7 @@ type AnonymousType1 = {|
 |}
 
 [<Fact>]
-let ``ModelParser.parseModel<AnonymousType1> parses nested anonymous type data`` () =
+let ``defaultParseModel<AnonymousType1> parses nested anonymous type data`` () =
     let modelData =
         [
             "Value.Value.Value.Name", StringValues "foo"
@@ -882,10 +738,7 @@ let ``ModelParser.parseModel<AnonymousType1> parses nested anonymous type data``
             |}
         |}
     |}
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<AnonymousType1> options modelData
-
+    let result = defaultParseModel<AnonymousType1> modelData
     result |> shouldEqual expected
 
 type AnonymousType2 = {|
@@ -902,7 +755,7 @@ type AnonymousType2 = {|
 |}
 
 [<Fact>]
-let ``ModelParser.parseModel<AnonymousType2> parses deeply nested anonymous type data`` () =
+let ``defaultParseModel<AnonymousType2> parses deeply nested anonymous type data`` () =
     let modelData =
         [
             "Values[2].Value.Values[2].Value.Name", StringValues "foo"
@@ -934,14 +787,11 @@ let ``ModelParser.parseModel<AnonymousType2> parses deeply nested anonymous type
             |}
         |]
     |}
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<AnonymousType2> options modelData
-
+    let result = defaultParseModel<AnonymousType2> modelData
     result |> shouldEqual expected
 
 [<Fact>]
-let ``ModelParser.parseModel<int> fails to parse non-integer data`` () =
+let ``defaultParseModel<int> fails to parse non-integer data`` () =
     let modelData =
         [
             "FirstName", StringValues "Susan"
@@ -951,11 +801,8 @@ let ``ModelParser.parseModel<int> fails to parse non-integer data`` () =
         |> toComplexData
     let expected =
         "Could not parse value 'seq [[FirstName, Susan]; [MiddleName, Elisabeth]; [LastName, Doe]]' to type 'System.Int32'."
-    let options = ModelBinderOptions.Default
-
     let result () =
-        ModelParser.parseModel<int> options modelData |> ignore
-
+        defaultParseModel<int> modelData |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 type Poco() =
@@ -964,7 +811,7 @@ type Poco() =
     member val Value = 0 with get, set
 
 [<Fact>]
-let ``ModelParser.parseModel<Poco> parses valid POCO data`` () =
+let ``defaultParseModel<Poco> parses valid POCO data`` () =
     let modelData =
         [
             "Id", StringValues "666"
@@ -973,8 +820,5 @@ let ``ModelParser.parseModel<Poco> parses valid POCO data`` () =
         ]
         |> toComplexData
     let expected = Poco(Id = 666, Name = "Lorem ipsum", Value = 1_234)
-    let options = ModelBinderOptions.Default
-
-    let result = ModelParser.parseModel<Poco> options modelData
-
+    let result = defaultParseModel<Poco> modelData
     result |> shouldEquivalent expected
