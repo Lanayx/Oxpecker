@@ -75,7 +75,7 @@ module private DictionaryPool =
         DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
 
 [<AutoOpen>]
-module TypeShapeImpl =
+module internal TypeShapeImpl =
     type IParsableVisitor<'R> =
         abstract Visit<'T when IParsable<'T>> : unit -> 'R
 
@@ -87,7 +87,7 @@ module TypeShapeImpl =
             member _.Accept v = v.Visit<'T>()
 
 #nowarn 3536
-module Shape =
+module internal Shape =
 
     open TypeShape.Core
 
@@ -103,10 +103,10 @@ module Shape =
         else
             None
 
-type UnsupportedTypeException(ty: Type) =
+type internal UnsupportedTypeException(ty: Type) =
     inherit exn($"Unsupported type '{ty}'.")
 
-type NotParsedException(value: string, ty: Type) =
+type internal NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
 /// <summary>

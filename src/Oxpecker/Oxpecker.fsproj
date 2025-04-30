@@ -50,7 +50,6 @@
         <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
     </ItemGroup>
     <ItemGroup>
-      <InternalsVisibleTo Include="$(ProjectName).Tests" />
-      <InternalsVisibleTo Include="PerfTest"/>
+      <InternalsVisibleTo Include="Oxpecker.Tests" />
     </ItemGroup>
 </Project>
