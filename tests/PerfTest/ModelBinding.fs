@@ -88,11 +88,11 @@ type ModelBinding() =
     //   DefaultJob : .NET 9.0.3 (9.0.325.11113), X64 RyuJIT AVX2
     //
     //
-    // | Method              | Mean         | Error     | StdDev    | Ratio  | RatioSD | Gen0   | Allocated | Alloc Ratio |
-    // |-------------------- |-------------:|----------:|----------:|-------:|--------:|-------:|----------:|------------:|
-    // | DirectModelBinder   |     485.4 ns |   5.80 ns |   5.43 ns |   1.00 |    0.02 | 0.0801 |     672 B |        1.00 |
-    // | OxpeckerModelBinder |   1,529.6 ns |  15.86 ns |  14.06 ns |   3.15 |    0.04 | 0.0725 |     608 B |        0.90 |
-    // | GiraffeModelBinder  | 123,340.2 ns | 647.92 ns | 574.37 ns | 254.11 |    2.96 | 7.3242 |   62546 B |       93.07 |
+    // | Method              | Mean         | Error       | StdDev      | Ratio  | RatioSD | Gen0   | Allocated | Alloc Ratio |
+    // |-------------------- |-------------:|------------:|------------:|-------:|--------:|-------:|----------:|------------:|
+    // | DirectModelBinder   |     477.9 ns |     3.04 ns |     2.84 ns |   1.00 |    0.01 | 0.0801 |     672 B |        1.00 |
+    // | OxpeckerModelBinder |   1,466.3 ns |    17.57 ns |    16.43 ns |   3.07 |    0.04 | 0.0725 |     608 B |        0.90 |
+    // | GiraffeModelBinder  | 121,709.6 ns | 1,164.21 ns | 1,032.04 ns | 254.70 |    2.55 | 7.3242 |   62545 B |       93.07 |
 
 
     static let binder = ModelBinder() :> IModelBinder

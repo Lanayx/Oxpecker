@@ -164,16 +164,16 @@ module internal ModelParser =
             | _ -> ValueNone
         else
             let mutable result = ValueNone
-            let mutable enumerator = data.GetEnumerator()
+            use mutable enumerator = data.GetEnumerator()
             let comparisonType =
                 if ignoreCase then
                     StringComparison.OrdinalIgnoreCase
                 else
                     StringComparison.Ordinal
+            let candidate = memberName.AsSpan()
             while result.IsValueNone && enumerator.MoveNext() do
                 let (KeyValue(key, value)) = enumerator.Current
                 let current = key.AsSpan(offset)
-                let candidate = memberName.AsSpan()
                 if MemoryExtensions.Equals(current, candidate, comparisonType) then
                     result <- ValueSome value
             result
@@ -199,7 +199,6 @@ module internal ModelParser =
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
             String.Equals(case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
-
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
