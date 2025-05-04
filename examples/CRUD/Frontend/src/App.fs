@@ -3,7 +3,6 @@ module App
 open Frontend.Components.Orders
 open Oxpecker.Solid
 
-
 [<SolidComponent>]
 let App() =
     main(class'="container mx-auto") {

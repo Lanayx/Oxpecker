@@ -7,8 +7,6 @@ open Shared
 open FSharp.UMX
 open Fable.Core.JsInterop
 
-
-
 [<SolidComponent>]
 let CreateOrderButton() =
     let editMode, setEditMode = createSignal false
