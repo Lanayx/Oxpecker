@@ -29,7 +29,6 @@
         <PackageReference Update="FSharp.Core" Version="9.0.100"/>
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="AssemblyInfo.fs" />
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="IdeTweaks.fs" />
@@ -38,5 +37,8 @@
         <Compile Include="Tags.fs" />
         <Compile Include="Aria.fs" />
         <Compile Include="Render.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <InternalsVisibleTo Include="Oxpecker.ViewEngine.Tests" />
     </ItemGroup>
 </Project>

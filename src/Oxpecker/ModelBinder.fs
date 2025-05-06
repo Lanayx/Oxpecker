@@ -69,7 +69,7 @@ module private DictionaryPool =
         DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
 
 [<AutoOpen>]
-module TypeShapeImpl =
+module internal TypeShapeImpl =
     type IParsableVisitor<'R> =
         abstract Visit<'T when IParsable<'T>> : unit -> 'R
 
@@ -81,7 +81,7 @@ module TypeShapeImpl =
             member _.Accept v = v.Visit<'T>()
 
 #nowarn 3536
-module Shape =
+module internal Shape =
 
     open TypeShape.Core
 
@@ -97,10 +97,10 @@ module Shape =
         else
             None
 
-type UnsupportedTypeException(ty: Type) =
+type internal UnsupportedTypeException(ty: Type) =
     inherit exn($"Unsupported type '{ty}'.")
 
-type NotParsedException(value: string, ty: Type) =
+type internal NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
 /// <summary>
@@ -165,11 +165,11 @@ module internal ModelParser =
             | _ -> ValueNone
         else
             let mutable result = ValueNone
-            let mutable enumerator = data.GetEnumerator()
+            use mutable enumerator = data.GetEnumerator()
+            let candidate = memberName.AsSpan()
             while result.IsValueNone && enumerator.MoveNext() do
                 let (KeyValue(key, value)) = enumerator.Current
                 let current = key.AsSpan(offset)
-                let candidate = memberName.AsSpan()
                 if current.Equals(candidate, comparison ignoreCase) then
                     result <- ValueSome value
             result
@@ -190,7 +190,6 @@ module internal ModelParser =
     let (|UnionCase|_|) (shape: ShapeFSharpUnion<'T>) (caseName: string) =
         let unionCaseExists caseName (case: ShapeFSharpUnionCase<'T>) =
             String.Equals(case.CaseInfo.Name, caseName, StringComparison.OrdinalIgnoreCase)
-
         shape.UnionCases |> Array.tryFind(unionCaseExists caseName)
 
     type private Struct<'T when 'T: (new: unit -> 'T) and 'T: struct and 'T :> ValueType> = 'T
