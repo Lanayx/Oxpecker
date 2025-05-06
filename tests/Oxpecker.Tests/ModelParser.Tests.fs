@@ -2,18 +2,19 @@ module Oxpecker.Tests.ModelParser
 
 open System
 open System.Collections.Generic
+open System.Globalization
+open FsUnitTyped
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
-open FsUnitTyped
 
 let private toComplexData data =
     data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
 
 let private defaultParseModel<'T> data =
-    let options = ModelBinderOptions.Default
-    let cache = TypeShape.Core.Utils.TypeCache()
-    ModelParser.parseModel<'T> cache options data
+    let culture = CultureInfo.InvariantCulture
+    let ignoreCase = false
+    ModelParser.parseModel<'T> culture ignoreCase data
 
 type Sex =
     | Male
@@ -324,12 +325,9 @@ let ``defaultParseModel<Model> handles mixed casing in keys`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let options = {
-        ModelBinderOptions.Default with
-            CaseInsensitiveMatching = true
-    }
-    let cache = TypeShape.Core.Utils.TypeCache()
-    let result = ModelParser.parseModel<Model> cache options modelData
+    let culture = CultureInfo.InvariantCulture
+    let ignoreCase = true
+    let result = ModelParser.parseModel<Model> culture ignoreCase modelData
     result |> shouldEqual expected
 
 [<Fact>]
