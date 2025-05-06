@@ -429,15 +429,15 @@ module private DictionaryLikeCollectionHelper =
         and 'T: (member ContainsKey: string -> bool)
         and 'T: (member TryGetValue: string * byref<StringValues> -> bool)> = 'T
 
-    let inline private getUnderlyingDict<'T when DictionaryLikeCollection<'T>> =
+    let inline private underlyingDict<'T when DictionaryLikeCollection<'T>> =
         let param = Expression.Parameter(typeof<'T>)
         let storeProp = Expression.Property(param, "Store")
         let getStoreExpr = Expression.Lambda<_>(storeProp, param)
         let getStore: Func<'T, Dictionary<string, StringValues>> = getStoreExpr.Compile()
         fun collection -> getStore.Invoke(collection)
 
-    let formCollectionDict = getUnderlyingDict<FormCollection>
-    let queryCollectionDict = getUnderlyingDict<QueryCollection>
+    let formCollectionDict = underlyingDict<FormCollection>
+    let queryCollectionDict = underlyingDict<QueryCollection>
 
 /// Default implementation of the <see cref="Oxpecker.IModelBinder"/>
 type ModelBinder(?options: ModelBinderOptions) =
