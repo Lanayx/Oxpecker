@@ -11,19 +11,17 @@ open Xunit
 let private toComplexData data =
     data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
 
-let private caseSensitive rawData =
-    {
-        Culture = CultureInfo.InvariantCulture
-        IgnoreCase = false
-        RawData = rawData
-    }
+let private caseSensitive rawData = {
+    Culture = CultureInfo.InvariantCulture
+    IgnoreCase = false
+    RawData = rawData
+}
 
-let private ignoreCase rawData =
-    {
-        Culture = CultureInfo.InvariantCulture
-        IgnoreCase = true
-        RawData = rawData
-    }
+let private ignoreCase rawData = {
+    Culture = CultureInfo.InvariantCulture
+    IgnoreCase = true
+    RawData = rawData
+}
 
 type Sex =
     | Male
@@ -55,7 +53,7 @@ let ``parseModel<Model2> returns empty array for null SearchTerms`` () =
     let modelData =
         [ "SearchTerms", StringValues Unchecked.defaultof<string> ] |> toComplexData
     let expected = { SearchTerms = [||] }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -64,14 +62,14 @@ let ``parseModel<Model2> returns empty array for null string array`` () =
         [ "SearchTerms", StringValues Unchecked.defaultof<string array> ]
         |> toComplexData
     let expected = { SearchTerms = [||] }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Model2> returns empty array for empty string array`` () =
     let modelData = [ "SearchTerms", StringValues [||] ] |> toComplexData
     let expected = { SearchTerms = [||] }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -80,21 +78,21 @@ let ``parseModel<Model2> handles array with null element`` () =
     let expected = {
         SearchTerms = [| Unchecked.defaultof<_> |]
     }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Model2> converts single string to single-element array`` () =
     let modelData = [ "SearchTerms", StringValues "a" ] |> toComplexData
     let expected = { SearchTerms = [| "a" |] }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Model2> handles single-element string array`` () =
     let modelData = [ "SearchTerms", StringValues [| "a" |] ] |> toComplexData
     let expected = { SearchTerms = [| "a" |] }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -104,7 +102,7 @@ let ``parseModel<Model2> handles multi-element string array`` () =
     let expected = {
         SearchTerms = [| "a"; "abc"; "abcdef" |]
     }
-    let result = ModelParser.parseModel<Model2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -141,7 +139,7 @@ let ``parseModel<Model> parses complete model data correctly`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let result = ModelParser.parseModel<Model> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -176,7 +174,7 @@ let ``parseModel<Model> handles missing optional parameters`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let result = ModelParser.parseModel<Model> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -209,7 +207,7 @@ let ``parseModel<Model> handles missing array items`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let result = ModelParser.parseModel<Model> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -246,7 +244,7 @@ let ``parseModel<Model> correctly handles unordered array items`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let result = ModelParser.parseModel<Model> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -270,7 +268,7 @@ let ``parseModel<Model> fails when union case is invalid`` () =
         ]
         |> toComplexData
     let result () =
-        ModelParser.parseModel<Model> (caseSensitive modelData) |> ignore
+        ModelParser.parseModel<Model>(caseSensitive modelData) |> ignore
     result
     |> shouldFailWithMessage<NotParsedException>
         "Could not parse value 'wrong' to type 'Oxpecker.Tests.ModelParser+Sex'."
@@ -296,7 +294,7 @@ let ``parseModel<Model> fails when data contains invalid values`` () =
         ]
         |> toComplexData
     let result () =
-        ModelParser.parseModel<Model> (caseSensitive modelData) |> ignore
+        ModelParser.parseModel<Model>(caseSensitive modelData) |> ignore
     result
     |> shouldFailWithMessage<NotParsedException> "Could not parse value 'wrong' to type 'System.DateTime'."
 
@@ -334,7 +332,7 @@ let ``parseModel<Model> handles mixed casing in keys`` () =
             { Name = "Gholi"; Age = 44 }
         |]
     }
-    let result = ModelParser.parseModel<Model> (ignoreCase modelData)
+    let result = ModelParser.parseModel<Model>(ignoreCase modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -360,7 +358,7 @@ let ``parseModel<Model> handles incomplete model data`` () =
         Nicknames = Some [ "Susi"; "Eli"; "Liz" ]
         Children = [| { Name = "Hamed"; Age = 0 }; { Name = null; Age = 44 } |]
     }
-    let result = ModelParser.parseModel<Model> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -386,7 +384,7 @@ let ``parseModel<Model> handles incomplete model data with unordered child array
         Nicknames = Some [ "Susi"; "Eli"; "Liz" ]
         Children = [| { Name = "Hamed"; Age = 0 }; { Name = null; Age = 44 } |]
     }
-    let result = ModelParser.parseModel<Model> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Model>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -401,7 +399,7 @@ let ``parseModel<CompositeModel> handles missing SecondChild data`` () =
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = None
     }
-    let result = ModelParser.parseModel<CompositeModel> (caseSensitive modelData)
+    let result = ModelParser.parseModel<CompositeModel>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -418,21 +416,21 @@ let ``parseModel<CompositeModel> parses complete composite model data`` () =
         FirstChild = { Name = "FirstName"; Age = 2 }
         SecondChild = Some { Name = "SecondName"; Age = 10 }
     }
-    let result = ModelParser.parseModel<CompositeModel> (caseSensitive modelData)
+    let result = ModelParser.parseModel<CompositeModel>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<string> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = Unchecked.defaultof<string>
-    let result = ModelParser.parseModel<string> (caseSensitive data)
+    let result = ModelParser.parseModel<string>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<string> parses empty string value`` () =
     let data = String.Empty |> StringValues |> SimpleData
     let expected = String.Empty
-    let result = ModelParser.parseModel<string> (caseSensitive data)
+    let result = ModelParser.parseModel<string>(caseSensitive data)
 
     result |> shouldEqual expected
 
@@ -440,77 +438,80 @@ let ``parseModel<string> parses empty string value`` () =
 let ``parseModel<float> fails to parse invalid string value`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Double'."
     let data = "some-value" |> StringValues |> SimpleData
-    let result () = ModelParser.parseModel<float> (caseSensitive data) |> ignore
+    let result () =
+        ModelParser.parseModel<float>(caseSensitive data) |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``parseModel<int> fails to parse invalid string value`` () =
     let expected = "Could not parse value 'some-value' to type 'System.Int32'."
     let data = "some-value" |> StringValues |> SimpleData
-    let result () = ModelParser.parseModel<int> (caseSensitive data) |> ignore
+    let result () =
+        ModelParser.parseModel<int>(caseSensitive data) |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``parseModel<int64> fails to parse null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = "Could not parse value '<null>' to type 'System.Int64'."
-    let result () = ModelParser.parseModel<int64> (caseSensitive data) |> ignore
+    let result () =
+        ModelParser.parseModel<int64>(caseSensitive data) |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``parseModel<Nullable<int>> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = Nullable()
-    let result = ModelParser.parseModel<Nullable<int>> (caseSensitive data)
+    let result = ModelParser.parseModel<Nullable<int>>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Nullable<int>> parses a valid integer value`` () =
     let data = "1" |> StringValues |> SimpleData
     let expected = Nullable 1
-    let result = ModelParser.parseModel<Nullable<int>> (caseSensitive data)
+    let result = ModelParser.parseModel<Nullable<int>>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<decimal option> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = None
-    let result = ModelParser.parseModel<decimal option> (caseSensitive data)
+    let result = ModelParser.parseModel<decimal option>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<decimal option> parses a valid decimal value`` () =
     let data = "100" |> StringValues |> SimpleData
     let expected = Some 100M
-    let result = ModelParser.parseModel<decimal option> (caseSensitive data)
+    let result = ModelParser.parseModel<decimal option>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<string option> parses null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
     let expected = None
-    let result = ModelParser.parseModel<string option> (caseSensitive data)
+    let result = ModelParser.parseModel<string option>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<string option> parses an empty string value`` () =
     let data = String.Empty |> StringValues |> SimpleData
     let expected = Some String.Empty
-    let result = ModelParser.parseModel<string option> (caseSensitive data)
+    let result = ModelParser.parseModel<string option>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<string option> parses a valid string value`` () =
     let data = "some-value" |> StringValues |> SimpleData
     let expected = Some "some-value"
-    let result = ModelParser.parseModel<string option> (caseSensitive data)
+    let result = ModelParser.parseModel<string option>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<Sex option> parses a valid union case 'Female'`` () =
     let data = "Female" |> StringValues |> SimpleData
     let expected = Some Female
-    let result = ModelParser.parseModel<Sex option> (caseSensitive data)
+    let result = ModelParser.parseModel<Sex option>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -518,7 +519,7 @@ let ``parseModel<Sex array> parses an array containing null values`` () =
     let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let data = xs |> StringValues |> SimpleData
     let expected: Sex array = [| Female; Unchecked.defaultof<_>; Male; Female; Female; Male |]
-    let result = ModelParser.parseModel<Sex array> (caseSensitive data)
+    let result = ModelParser.parseModel<Sex array>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -526,7 +527,7 @@ let ``parseModel<bool array> parses an array with valid data`` () =
     let xs: (string | null) array = [| "true"; "false"; "True"; "falsE"; "TRUE"; "FALSE" |]
     let data = xs |> StringValues |> SimpleData
     let expected: bool array = [| true; false; true; false; true; false |]
-    let result = ModelParser.parseModel<bool array> (caseSensitive data)
+    let result = ModelParser.parseModel<bool array>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -534,7 +535,7 @@ let ``parseModel<Sex option array> parses an array containing null values`` () =
     let xs: (string | null) array = [| "Female"; null; "Male"; "Female"; "Female"; "Male" |]
     let data = xs |> StringValues |> SimpleData
     let expected = [| Some Female; None; Some Male; Some Female; Some Female; Some Male |]
-    let result = ModelParser.parseModel<Sex option array> (caseSensitive data)
+    let result = ModelParser.parseModel<Sex option array>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Struct>]
@@ -546,7 +547,7 @@ type Direction =
 let ``parseModel<Nullable<Direction>> parses a valid direction 'Right'`` () =
     let data = "right" |> StringValues |> SimpleData
     let expected = Nullable Right
-    let result = ModelParser.parseModel<Nullable<Direction>> (caseSensitive data)
+    let result = ModelParser.parseModel<Nullable<Direction>>(caseSensitive data)
     result |> shouldEqual expected
 
 type BookType =
@@ -559,21 +560,21 @@ type BookType =
 let ``parseModel<BookType> parses a valid enum value 'Paperback'`` () =
     let modelData = "Paperback" |> StringValues |> SimpleData
     let expected = BookType.Paperback
-    let result = ModelParser.parseModel<BookType> (caseSensitive modelData)
+    let result = ModelParser.parseModel<BookType>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<BookType> parses a valid numeric value '3'`` () =
     let modelData = "3" |> StringValues |> SimpleData
     let expected = BookType.EBook
-    let result = ModelParser.parseModel<BookType> (caseSensitive modelData)
+    let result = ModelParser.parseModel<BookType>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
 let ``parseModel<BookType> parses an out-of-range numeric value '100'`` () =
     let modelData = "100" |> StringValues |> SimpleData
     let expected = enum<BookType> 100
-    let result = ModelParser.parseModel<BookType> (caseSensitive modelData)
+    let result = ModelParser.parseModel<BookType>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -582,7 +583,7 @@ let ``parseModel<BookType> fails to parse null value`` () =
     let expected =
         "Could not parse value '<null>' to type 'Oxpecker.Tests.ModelParser+BookType'."
     let result () =
-        ModelParser.parseModel<BookType> (caseSensitive data) |> ignore
+        ModelParser.parseModel<BookType>(caseSensitive data) |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
@@ -597,7 +598,7 @@ let ``parseModel<ResizeArray<BookType>> parses a collection of enum values`` () 
             enum<BookType> 100
             BookType.Unknown
         ]
-    let result = ModelParser.parseModel<ResizeArray<BookType>> (caseSensitive data)
+    let result = ModelParser.parseModel<ResizeArray<BookType>>(caseSensitive data)
     result |> shouldEqualSeq expected
 
 [<Fact>]
@@ -611,7 +612,7 @@ let ``parseModel<BookType list> parses a list of enum values`` () =
         enum<BookType> 100
         BookType.Unknown
     ]
-    let result = ModelParser.parseModel<BookType list> (caseSensitive data)
+    let result = ModelParser.parseModel<BookType list>(caseSensitive data)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -626,7 +627,7 @@ let ``parseModel<BookType seq> parses a sequence of enum values`` () =
             enum<BookType> 100
             BookType.Unknown
         }
-    let result = ModelParser.parseModel<BookType seq> (caseSensitive data)
+    let result = ModelParser.parseModel<BookType seq>(caseSensitive data)
     result |> shouldEqualSeq expected
 
 type Baz = {
@@ -666,7 +667,7 @@ let ``parseModel<Foo> parses data with non-sequential index elements`` () =
             }
         |]
     }
-    let result = ModelParser.parseModel<Foo> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Foo>(caseSensitive modelData)
     result |> shouldEquivalent expected
 
 [<Fact>]
@@ -676,7 +677,7 @@ let ``parseModel<Foo> parses data with unmatched prefix`` () =
         Foo = Unchecked.defaultof<_>
         Bars = Unchecked.defaultof<_>
     }
-    let result = ModelParser.parseModel<Foo> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Foo>(caseSensitive modelData)
     result |> shouldEquivalent expected
 
 [<Fact>]
@@ -691,7 +692,7 @@ let ``parseModel<Foo> parses data with improper index access`` () =
             }
         |]
     }
-    let result = ModelParser.parseModel<Foo> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Foo>(caseSensitive modelData)
     result |> shouldEquivalent expected
 
 [<Fact>]
@@ -701,7 +702,7 @@ let ``parseModel<Foo> parses data with partially incorrect keys`` () =
         Foo = Unchecked.defaultof<_>
         Bars = [| Some { Bar = null; Baz = null } |]
     }
-    let result = ModelParser.parseModel<Foo> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Foo>(caseSensitive modelData)
     result |> shouldEquivalent expected
 
 [<Fact>]
@@ -711,14 +712,14 @@ let ``parseModel<Foo> parses data with missing index`` () =
         Foo = Unchecked.defaultof<_>
         Bars = [||]
     }
-    let result = ModelParser.parseModel<Foo> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Foo>(caseSensitive modelData)
     result |> shouldEquivalent expected
 
 [<Fact>]
 let ``parseModel<Bar> parses data with no matched prefix`` () =
     let modelData = [ "Bazz.Value", StringValues "0" ] |> toComplexData
     let expected = { Bar = null; Baz = null }
-    let result = ModelParser.parseModel<Bar> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Bar>(caseSensitive modelData)
     result |> shouldEquivalent expected
 
 type AnonymousType1 = {|
@@ -743,7 +744,7 @@ let ``parseModel<AnonymousType1> parses nested anonymous type data`` () =
             |}
         |}
     |}
-    let result = ModelParser.parseModel<AnonymousType1> (caseSensitive modelData)
+    let result = ModelParser.parseModel<AnonymousType1>(caseSensitive modelData)
     result |> shouldEqual expected
 
 type AnonymousType2 = {|
@@ -792,7 +793,7 @@ let ``parseModel<AnonymousType2> parses deeply nested anonymous type data`` () =
             |}
         |]
     |}
-    let result = ModelParser.parseModel<AnonymousType2> (caseSensitive modelData)
+    let result = ModelParser.parseModel<AnonymousType2>(caseSensitive modelData)
     result |> shouldEqual expected
 
 [<Fact>]
@@ -807,7 +808,7 @@ let ``parseModel<int> fails to parse non-integer data`` () =
     let expected =
         "Could not parse value 'seq [[FirstName, Susan]; [MiddleName, Elisabeth]; [LastName, Doe]]' to type 'System.Int32'."
     let result () =
-        ModelParser.parseModel<int> (caseSensitive modelData) |> ignore
+        ModelParser.parseModel<int>(caseSensitive modelData) |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 type Poco() =
@@ -825,5 +826,5 @@ let ``parseModel<Poco> parses valid POCO data`` () =
         ]
         |> toComplexData
     let expected = Poco(Id = 666, Name = "Lorem ipsum", Value = 1_234)
-    let result = ModelParser.parseModel<Poco> (caseSensitive modelData)
+    let result = ModelParser.parseModel<Poco>(caseSensitive modelData)
     result |> shouldEquivalent expected
