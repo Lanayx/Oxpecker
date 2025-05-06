@@ -24,6 +24,13 @@ type internal RawData =
     | SimpleData of rawValue: StringValues
     | ComplexData of rawData: ComplexData
 
+[<Struct>]
+type internal ParsingState = {
+    Culture: CultureInfo
+    IgnoreCase: bool
+    RawData: RawData
+}
+
 module internal RawData =
     let initComplexData data = ComplexData { Offset = 0; Data = data }
 
@@ -191,13 +198,6 @@ module internal ModelParser =
     type private Enum<'T, 'U when Struct<'T> and 'T: enum<'U>> = 'T
 
     type private Nullable<'T when Struct<'T>> = 'T
-
-    [<Struct>]
-    type internal ParsingState = {
-        Culture: CultureInfo
-        IgnoreCase: bool
-        RawData: RawData
-    }
 
     type private Parser<'T> = ParsingState -> 'T
 
@@ -404,13 +404,9 @@ module internal ModelParser =
 
     and private cache: TypeCache = TypeCache()
 
-    let internal parseModel<'T> (culture: CultureInfo) (ignoreCase: bool) (rawData: RawData) =
+    let internal parseModel<'T> state =
         let parser = getOrCreateParser<'T>()
-        parser {
-            Culture = culture
-            IgnoreCase = ignoreCase
-            RawData = rawData
-        }
+        parser state
 
 /// <summary>
 /// Configuration options for the default <see cref="Oxpecker.ModelBinder"/>
@@ -461,4 +457,8 @@ type ModelBinder(?options: ModelBinderOptions) =
                 | :? FormCollection as formCollection -> formCollection |> formCollectionDict
                 | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
                 | _ -> Dictionary data
-            ModelParser.parseModel<'T> options.Culture options.IgnoreCase (RawData.initComplexData dictionary)
+            ModelParser.parseModel<'T> {
+                Culture = options.Culture
+                IgnoreCase = options.IgnoreCase
+                RawData = RawData.initComplexData dictionary
+            }
