@@ -290,7 +290,6 @@ module internal ModelParser =
                 { new IParsableVisitor<_> with
                     member _.Visit<'t when 't :> IParsable<'t>>() =
                         let parser = getOrCacheParser<string | null> ctx
-
                         fun state ->
                             try
                                 let rawValue = parser state
@@ -307,7 +306,6 @@ module internal ModelParser =
                 { new IEnumVisitor<_> with
                     member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
                         let parser = getOrCacheParser<string | null> ctx
-
                         fun state ->
                             try
                                 let rawValue = parser state
