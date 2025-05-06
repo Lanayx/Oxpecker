@@ -11,7 +11,7 @@ open Xunit
 let private toComplexData data =
     data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
 
-let private caseSensitive (rawData: RawData) =
+let private caseSensitive rawData =
     {
         Culture = CultureInfo.InvariantCulture
         IgnoreCase = false
