@@ -232,7 +232,6 @@ module internal ModelParser =
 
     and private createEnumerableParser<'Element> (ctx: TypeGenerationContext) : Parser<'Element seq> =
         let parser = getOrCacheParser<'Element> ctx
-
         fun state ->
             match state.RawData with
             | SimpleData values ->
