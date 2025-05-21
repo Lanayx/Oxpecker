@@ -6,12 +6,12 @@ open ModelContextProtocol.Server
 open Oxpecker
 
 [<McpServerToolType>]
-type UtcTimeTool() =
+type CurrentDateTool() =
 
     [<McpServerTool>]
-    [<Description("Gets the current UTC time.")>]
-    static member GetCurrentTime() : string =
-        DateTime.UtcNow.ToString()
+    [<Description("Gets the current date.")>]
+    static member GetCurrentDate() : string =
+        DateTime.Now.ToLongDateString()
 
 let endpoints = [
     route "/" <| text "Hello World!"
@@ -24,7 +24,7 @@ let main args =
         .AddRouting()
         .AddOxpecker()
         .AddMcpServer()
-            .WithTools<UtcTimeTool>()
+            .WithTools<CurrentDateTool>()
             .WithHttpTransport()
         |> ignore
     let app = builder.Build()
@@ -32,7 +32,7 @@ let main args =
         .UseRouting()
         .UseOxpecker(endpoints)
         |> ignore
-    // Add the MCP endpoint
+    // Add MCP endpoint
     app.MapMcp("mcp") |> ignore
     app.Run()
     0
