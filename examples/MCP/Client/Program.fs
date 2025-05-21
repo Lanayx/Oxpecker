@@ -1,6 +1,5 @@
 ﻿open System
 open System.Net.Http
-open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.SemanticKernel
 open Microsoft.SemanticKernel.Connectors.OpenAI
@@ -41,8 +40,6 @@ module Root =
                 BaseAddress = Uri("http://localhost:11434/v1") // Ollama API base address
             )
 
-            let kernelBuilder = Kernel.CreateBuilder()
-            kernelBuilder.Services.AddLogging() |> ignore
             let kernel =
                 Kernel.CreateBuilder()
                     .AddOpenAIChatCompletion(model, "ollama", httpClient = httpClient, serviceId = model)
