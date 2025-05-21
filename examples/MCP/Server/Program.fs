@@ -2,11 +2,9 @@
 open System.ComponentModel
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
-open Microsoft.Extensions.Logging
 open ModelContextProtocol.Server
 open Oxpecker
 
-[<Sealed>]
 [<McpServerToolType>]
 type UtcTimeTool() =
 
@@ -22,9 +20,6 @@ let endpoints = [
 [<EntryPoint>]
 let main args =
     let builder = WebApplication.CreateBuilder(args)
-    builder.Logging.AddConsole(fun options ->
-        options.LogToStandardErrorThreshold <- LogLevel.Trace
-    ) |> ignore
     builder.Services
         .AddRouting()
         .AddOxpecker()

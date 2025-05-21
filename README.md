@@ -44,6 +44,7 @@ Medium posts:
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/develop/examples/WeatherApp)
 - [SPA application (TODO list) without backend](https://github.com/Lanayx/Oxpecker/tree/develop/examples/TodoList)
+- [MCP server and test client](https://github.com/Lanayx/Oxpecker/tree/develop/examples/MCP)
 
 ## Documentation links:
 

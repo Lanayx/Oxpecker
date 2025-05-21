@@ -3,7 +3,7 @@ open Microsoft.Extensions.Logging
 open ModelContextProtocol.Protocol
 open ModelContextProtocol.Client
 
-module Client =
+module Root =
 
     let execute () =
         task {
@@ -38,5 +38,5 @@ module Client =
 
 [<EntryPoint>]
 let main _ =
-    Client.execute().Wait()
+    Root.execute().Wait()
     0
