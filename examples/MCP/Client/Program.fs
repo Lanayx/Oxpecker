@@ -26,7 +26,7 @@ module Client =
                 )
 
             // Retrieve and display available MCP tools.
-            let! tools =  mcpClient.ListToolsAsync()
+            let! tools = mcpClient.ListToolsAsync()
 
             for tool in tools do
                 Console.WriteLine($"{tool.Name}: {tool.Description}")
