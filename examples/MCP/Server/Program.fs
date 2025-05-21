@@ -15,11 +15,9 @@ type UtcTimeTool() =
     static member GetCurrentTime() : string =
         DateTime.UtcNow.ToString()
 
-
 let endpoints = [
     route "/" <| text "Hello World!"
 ]
-
 
 [<EntryPoint>]
 let main args =
@@ -39,6 +37,7 @@ let main args =
         .UseRouting()
         .UseOxpecker(endpoints)
         |> ignore
-    app.MapMcp() |> ignore
+    // Add the MCP endpoint
+    app.MapMcp("mcp") |> ignore
     app.Run()
-    0 // Exit code
+    0
