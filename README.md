@@ -5,7 +5,7 @@
 
 ![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
 
-**Oxpecker** is a library started as functional wrapper around **ASP.NET Core Endpoint routing** (or F#-friendly "Minimal APIs"), but now providing fullstack capabilities with **Htmx** and **Solid.js** integrations. Repository is a monorepo with all related projects included and documentation located in *README.md* files per project. As of November 2024, Oxpecker is the fastest .NET 8 web framework in several categories [in the TechEmpower benchmark](https://www.techempower.com/benchmarks/#section=test&runid=6ef367d2-de5c-464a-b3fa-2c3cf4ba1f8f&hw=ph&test=db&p=zik0zi-zik0zj-zik0zj-zik0zj-zik0zj-1kv)
+**Oxpecker** is a library started as functional wrapper around **ASP.NET Core Endpoint routing** (or F#-friendly "Minimal APIs"), but now providing fullstack capabilities with **Htmx** and **Solid.js** integrations. Repository is a monorepo with all related projects included and documentation located in *README.md* files per project. Oxpecker one of the fastest .NET web frameworks in several categories [in the TechEmpower benchmark](https://www.techempower.com/benchmarks/#section=data-r23&p=zik0zj-zik0zj-zijocf-zik0zj-zik0zj-18y67)
 
 The server part of the Oxpecker library is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
 
@@ -44,6 +44,7 @@ Medium posts:
 - [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp)
 - [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/main/examples/WeatherApp)
 - [SPA application (TODO list) without backend](https://github.com/Lanayx/Oxpecker/tree/main/examples/TodoList)
+- [MCP server and test client](https://github.com/Lanayx/Oxpecker/tree/main/examples/MCP)
 
 ## Documentation links:
 
