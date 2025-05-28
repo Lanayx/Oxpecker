@@ -50,42 +50,6 @@ module Tags =
         /// Adds or removes attribute without value
         [<Extension; Erase>]
         static member bool(this: #HtmlTag, name: string, value: bool) = this
-    /// Set of html extensions that keep original type
-    [<Extension>]
-    [<Erase>]
-    type SvgHtmlElementExtensions =
-
-        /// Add an attribute to the element
-        [<Extension; Erase>]
-        static member attr(this: #SvgTag, name: string, value: string) = this
-
-        /// Add event handler to the element through the corresponding attribute
-        [<Extension; Erase>]
-        static member on(this: #SvgTag, eventName: string, eventHandler: Event -> unit) = this
-
-        /// Add data attribute to the element
-        [<Extension; Erase>]
-        static member data(this: #SvgTag, name: string, value: string) = this
-
-        /// Referenced native HTML element
-        [<Extension; Erase>]
-        static member ref(this: #SvgTag, el: #Element) = this
-
-        /// Referenced native HTML element (before connecting to DOM)
-        [<Extension; Erase>]
-        static member ref(this: #SvgTag, el: #Element -> unit) = this
-
-        /// Usage `elem.style(createObj ["color", "green"; "background-color", state.myColor ])`
-        [<Extension; Erase>]
-        static member style'(this: #SvgTag, styleObj: obj) = this
-
-        /// Usage `elem.classList(createObj ["active", true; "disabled", state.disabled ])`
-        [<Extension; Erase>]
-        static member classList(this: #SvgTag, classListObj: obj) = this
-
-        /// Adds or removes attribute without value
-        [<Extension; Erase>]
-        static member bool(this: #SvgTag, name: string, value: bool) = this
 
     // global attributes
     type HtmlTag with
@@ -1194,708 +1158,2363 @@ module Tags =
     type wbr() =
         inherit RegularNode()
 
-    type SvgTag with
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type CoreSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ExternalResourceSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ConditionalProcessingSVGAttributes = interface end
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimationElementSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ShapeElementSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ContainerElementSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit ShapeElementSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FilterPrimitiveElementSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type StylableSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type TransformableSVGAttributes = interface end
+
+
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimationTimingSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimationValueSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimationAdditionSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimationAttributeTargetSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type PresentationSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type SingleInputFilterSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type DoubleInputFilterSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FitToViewBoxSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type GradientElementSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type GraphicsElementSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type LightSourceElementSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type NewViewportSVGAttributes =
+        inherit CoreSVGAttributes
+
+
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type TextContentElementSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ZoomAndPanSVGAttributes = interface end
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimateSVGAttributes =
+        inherit AnimationElementSVGAttributes
+        inherit AnimationAttributeTargetSVGAttributes
+        inherit AnimationTimingSVGAttributes
+        inherit AnimationValueSVGAttributes
+        inherit AnimationAdditionSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimateMotionSVGAttributes =
+        inherit AnimationElementSVGAttributes
+        inherit AnimationTimingSVGAttributes
+        inherit AnimationValueSVGAttributes
+        inherit AnimationAdditionSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type AnimateTransformSVGAttributes =
+        inherit AnimationElementSVGAttributes
+        inherit AnimationAttributeTargetSVGAttributes
+        inherit AnimationTimingSVGAttributes
+        inherit AnimationValueSVGAttributes
+        inherit AnimationAdditionSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type CircleSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ClipPathSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type DefsSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type DescSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type EllipseSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeBlendSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit DoubleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeColorMatrixSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeComponentTransferSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeCompositeSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit DoubleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeConvolveMatrixSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeDiffuseLightingSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeDisplacementMapSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit DoubleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeDistantLightSVGAttributes =
+        inherit LightSourceElementSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeDropShadowSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeFloodSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeFuncSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeGaussianBlurSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeImageSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeMergeSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeMergeNodeSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeMorphologySVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeOffsetSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FePointLightSVGAttributes =
+        inherit LightSourceElementSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeSpecularLightingSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeSpotLightSVGAttributes =
+        inherit LightSourceElementSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeTileSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit SingleInputFilterSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FeTurbulanceSVGAttributes =
+        inherit FilterPrimitiveElementSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type FilterSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ForeignObjectSVGAttributes =
+        inherit NewViewportSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type GSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ImageSVGAttributes =
+        inherit NewViewportSVGAttributes
+        inherit GraphicsElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type LineSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type LinearGradientSVGAttributes =
+        inherit GradientElementSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type MarkerSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit FitToViewBoxSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type MaskSVGAttributes =
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type MetadataSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type MPathSVGAttributes =
+        inherit CoreSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type PathSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type PatternSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit FitToViewBoxSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type PolygonSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type PolylineSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type RadialGradientSVGAttributes =
+        inherit GradientElementSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type RectSVGAttributes =
+        inherit GraphicsElementSVGAttributes
+        inherit ShapeElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type SetSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit StylableSVGAttributes
+        inherit AnimationTimingSVGAttributes
+
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type StopSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit StylableSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type SvgSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit NewViewportSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit FitToViewBoxSVGAttributes
+        inherit ZoomAndPanSVGAttributes
+        inherit PresentationSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type SwitchSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type SymbolSVGAttributes =
+        inherit ContainerElementSVGAttributes
+        inherit NewViewportSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit FitToViewBoxSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type TextSVGAttributes =
+        inherit TextContentElementSVGAttributes
+        inherit GraphicsElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+        inherit TransformableSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type TextPathSVGAttributes =
+        inherit TextContentElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type TSpanSVGAttributes =
+        inherit TextContentElementSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit StylableSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type UseSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit StylableSVGAttributes
+        inherit ConditionalProcessingSVGAttributes
+        inherit GraphicsElementSVGAttributes
+        inherit PresentationSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit TransformableSVGAttributes
+    [<AllowNullLiteral>]
+    [<Interface>]
+    type ViewSVGAttributes =
+        inherit CoreSVGAttributes
+        inherit ExternalResourceSVGAttributes
+        inherit FitToViewBoxSVGAttributes
+        inherit ZoomAndPanSVGAttributes
+    open Fable.Core.JsInterop
+    type CoreSVGAttributes with
         [<Erase>]
         member _.id
-            with set (value: string) = ()
-        member _.class'
-            with set (value: string) = ()
-        member _.style
-            with set (value: string) = ()
+            with set(_: string) = ()
+        [<Erase>]
         member _.lang
-            with set (value: string) = ()
+            with set(_: string) = ()
+        [<Erase>]
+        member _.tabIndex
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
         member _.tabindex
-            with set (value: int) = ()
-        member _.``xml:lang``
-            with set (value: string) = ()
-        member _.``xml:space``
-            with set (value: string) = ()
-        member inline this.xmlLang
-            with inline set (value: string) = this.``xml:lang`` <- value
-        member inline this.xmlSpace
-            with inline set (value: string) = this.``xml:space`` <- value
+            with set(_: U2<float, string>) = ()
+    type StylableSVGAttributes with
+        [<Erase>]
+        member _.class'
+            with set(_: string) = ()
+        [<Erase>]
+        member _.style
+            with set(_: string) = ()
+    type TransformableSVGAttributes with
+        [<Erase>]
+        member _.transform
+            with set(_: string) = ()
+    type ConditionalProcessingSVGAttributes with
+        [<Erase>]
+        member _.requiredExtensions
+            with set(_: string) = ()
+        [<Erase>]
+        member _.requiredFeatures
+            with set(_: string) = ()
+        [<Erase>]
+        member _.systemLanguage
+            with set(_: string) = ()
+    type ExternalResourceSVGAttributes with
+        [<Erase>]
+        member _.externalResourcesRequired
+            with set(_: string) = ()
+    type AnimationTimingSVGAttributes with
+        [<Erase>]
+        member _.begin'
+            with set(_: string) = ()
+        [<Erase>]
+        member _.dur
+            with set(_: string) = ()
+        [<Erase>]
+        member _.end'
+            with set(_: string) = ()
+        [<Erase>]
+        member _.min
+            with set(_: string) = ()
+        [<Erase>]
+        member _.max
+            with set(_: string) = ()
+        [<Erase>]
+        member _.restart
+            with set(_: string) = ()
+        [<Erase>]
+        member _.repeatCount
+            with set(_: string) = ()
+        [<Erase>]
+        member _.repeatDur
+            with set(_: string) = ()
+        [<Erase>]
+        member _.fill
+            with set(_: string) = ()
+    type AnimationValueSVGAttributes with
+        [<Erase>]
+        member _.calcMode
+            with set(_: string) = ()
+        [<Erase>]
+        member _.values
+            with set(_: string) = ()
+        [<Erase>]
+        member _.keyTimes
+            with set(_: string) = ()
+        [<Erase>]
+        member _.keySplines
+            with set(_: string) = ()
+        [<Erase>]
+        member _.from
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.to'
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.by
+            with set(_: U2<float, string>) = ()
+    type AnimationAdditionSVGAttributes with
+        [<Erase>]
+        member _.attributeName
+            with set(_: string) = ()
+        [<Erase>]
+        member _.additive
+            with set(_: string) = ()
+        [<Erase>]
+        member _.accumulate
+            with set(_: string) = ()
+    type AnimationAttributeTargetSVGAttributes with
+        [<Erase>]
+        member _.attributeName
+            with set(_: string) = ()
+        [<Erase>]
+        member _.attributeType
+            with set(_: string) = ()
+
+    type ContainerElementSVGAttributes with
+        [<Erase>]
+        member _.``color-rendering``
+            with set(_: string) = ()
+        member this.colorRendering
+            with inline set(value: string) = this.``color-rendering`` <- value
+        [<Erase>]
+        member _.``clip-path``
+            with set(_: string) = ()
+        member this.clipPath
+            with inline set(value: string) = this.``clip-path`` <- value
+        [<Erase>]
+        member _.cursor
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``color-interpolation``
+            with set(_: string) = ()
+        member this.colorInterpolation
+            with inline set(value: string) = this.``color-interpolation`` <- value
+        [<Erase>]
+        member _.``enable-background``
+            with set(_: string) = ()
+        member this.enableBackground
+            with inline set(value: string) = this.``enable-background`` <- value
+        [<Erase>]
+        member _.filter
+            with set(_: string) = ()
+        [<Erase>]
+        member _.mask
+            with set(_: string) = ()
+        [<Erase>]
+        member _.opacity
+            with set(_: string) = ()
+
+    type GraphicsElementSVGAttributes with
+        [<Erase>]
+        member _.``clip-rule``
+            with set(_: string) = ()
+        member this.clipRule
+            with inline set(value: string) = this.``clip-rule`` <- value
+        [<Erase>]
+        member _.mask
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``pointer-events``
+            with set(_: string) = ()
+        member this.pointerEvents
+            with inline set(value: string) = this.``pointer-events`` <- value
+        [<Erase>]
+        member _.cursor
+            with set(_: string) = ()
+        [<Erase>]
+        member _.opacity
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.filter
+            with set(_: string) = ()
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``color-interpolation``
+            with set(_: string) = ()
+        member this.colorInterpolation
+            with inline set(value: string) = this.``color-interpolation`` <- value
+        [<Erase>]
+        member _.``color-rendering``
+            with set(_: string) = ()
+        member this.colorRendering
+            with inline set(value: string) = this.``color-rendering`` <- value
+
+        [<Erase>]
+        member _.stroke
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``stroke-dasharray``
+            with set(_: string) = ()
+        member this.strokeDasharray
+            with inline set(value: string) = this.``stroke-dasharray`` <- value
+        [<Erase>]
+        member _.``stroke-dashoffset``
+            with set(_: U2<float, string>) = ()
+        member this.strokeDashoffset
+            with inline set(value: string) = this.``stroke-dashoffset`` <- !^value
+        [<Erase>]
+        member _.``stroke-linecap``
+            with set(_: string) = ()
+        member this.strokeLinecap
+            with inline set(value: string) = this.``stroke-linecap`` <- value
+        [<Erase>]
+        member _.``stroke-linejoin``
+            with set(_: string) = ()
+        member this.strokeLinejoin
+            with inline set(value: string) = this.``stroke-linejoin`` <- value
+        [<Erase>]
+        member _.``stroke-miterlimit``
+            with set(_: string) = ()
+        member this.strokeMiterlimit
+            with inline set(value: string) = this.``stroke-miterlimit`` <- value
+        [<Erase>]
+        member _.``stroke-opacity``
+            with set(_: string) = ()
+        member this.strokeOpacity
+            with inline set(value: string) = this.``stroke-opacity`` <- value
+        [<Erase>]
+        member _.``stroke-width``
+            with set(_: U2<float, string>) = ()
+        member this.strokeWidth
+            with inline set(value: string) = this.``stroke-width`` <- !^value
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.fill
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``fill-opacity``
+            with set(_: string) = ()
+        member this.fillOpacity
+            with inline set(value: string) = this.``fill-opacity`` <- value
+        [<Erase>]
+        member _.``fill-rule``
+            with set(_: string) = ()
+        member this.fillRule
+            with inline set(value: string) = this.``fill-rule`` <- value
+        [<Erase>]
+        member _.``shape-rendering``
+            with set(_: string) = ()
+        member this.shapeRendering
+            with inline set(value: string) = this.``shape-rendering`` <- value
+        [<Erase>]
+        member _.pathLength
+            with set(_: U2<string, float>) = ()
+
+    type TextContentElementSVGAttributes with
+        [<Erase>]
+        member _.``font-family``
+            with set(_: string) = ()
+        member this.fontFamily
+            with inline set(value: string) = this.``font-family`` <- value
+        [<Erase>]
+        member _.``font-size``
+            with set(_: string) = ()
+        member this.fontSize
+            with inline set(value: string) = this.``font-size`` <- value
+        [<Erase>]
+        member _.``font-size-adjust``
+            with set(_: U2<float, string>) = ()
+        member this.fontSizeAdjust
+            with inline set(value: string) = this.``font-size-adjust`` <- !^value
+        [<Erase>]
+        member _.``font-stretch``
+            with set(_: string) = ()
+        member this.fontStretch
+            with inline set(value: string) = this.``font-stretch`` <- value
+        [<Erase>]
+        member _.``font-style``
+            with set(_: string) = ()
+        member this.fontStyle
+            with inline set(value: string) = this.``font-style`` <- value
+        [<Erase>]
+        member _.``font-variant``
+            with set(_: string) = ()
+        member this.fontVariant
+            with inline set(value: string) = this.``font-variant`` <- value
+        [<Erase>]
+        member _.``font-weight``
+            with set(_: U2<float, string>) = ()
+        member this.fontWeight
+            with inline set(value: string) = this.``font-weight`` <- !^value
+        [<Erase>]
+        member _.kerning
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``letter-spacing``
+            with set(_: U2<float, string>) = ()
+        member this.letterSpacing
+            with inline set(value: string) = this.``letter-spacing`` <- !^value
+        [<Erase>]
+        member _.``word-spacing``
+            with set(_: U2<float, string>) = ()
+        member this.wordSpacing
+            with inline set(value: string) = this.``word-spacing`` <- !^value
+        [<Erase>]
+        member _.``text-decoration``
+            with set(_: string) = ()
+        member this.textDecoration
+            with inline set(value: string) = this.``text-decoration`` <- value
+        [<Erase>]
+        member _.``glyph-orientation-horizontal``
+            with set(_: string) = ()
+        member this.glyphOrientationHorizontal
+            with inline set(value: string) = this.``glyph-orientation-horizontal`` <- value
+        [<Erase>]
+        member _.``glyph-orientation-vertical``
+            with set(_: string) = ()
+        member this.glyphOrientationVertical
+            with inline set(value: string) = this.``glyph-orientation-vertical`` <- value
+        [<Erase>]
+        member _.direction
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``unicode-bidi``
+            with set(_: string) = ()
+        member this.unicodeBidi
+            with inline set(value: string) = this.``unicode-bidi`` <- value
+        [<Erase>]
+        member _.``text-anchor``
+            with set(_: string) = ()
+        member this.textAnchor
+            with inline set(value: string) = this.``text-anchor`` <- value
+        [<Erase>]
+        member _.``dominant-baseline``
+            with set(_: string) = ()
+        member this.dominantBaseline
+            with inline set(value: string) = this.``dominant-baseline`` <- value
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.fill
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``fill-opacity``
+            with set(_: string) = ()
+        member this.fillOpacity
+            with inline set(value: string) = this.``fill-opacity`` <- value
+        [<Erase>]
+        member _.``fill-rule``
+            with set(_: string) = ()
+        member this.fillRule
+            with inline set(value: string) = this.``fill-rule`` <- value
+        [<Erase>]
+        member _.stroke
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``stroke-dasharray``
+            with set(_: string) = ()
+        member this.strokeDasharray
+            with inline set(value: string) = this.``stroke-dasharray`` <- value
+        [<Erase>]
+        member _.``stroke-dashoffset``
+            with set(_: U2<float, string>) = ()
+        member this.strokeDashoffset
+            with inline set(value: string) = this.``stroke-dashoffset`` <- !^value
+        [<Erase>]
+        member _.``stroke-linecap``
+            with set(_: string) = ()
+        member this.strokeLinecap
+            with inline set(value: string) = this.``stroke-linecap`` <- value
+        [<Erase>]
+        member _.``stroke-linejoin``
+            with set(_: string) = ()
+        member this.strokeLinejoin
+            with inline set(value: string) = this.``stroke-linejoin`` <- value
+        [<Erase>]
+        member _.``stroke-miterlimit``
+            with set(_: string) = ()
+        member this.strokeMiterlimit
+            with inline set(value: string) = this.``stroke-miterlimit`` <- value
+        [<Erase>]
+        member _.``stroke-opacity``
+            with set(_: string) = ()
+        member this.strokeOpacity
+            with inline set(value: string) = this.``stroke-opacity`` <- value
+        [<Erase>]
+        member _.``stroke-width``
+            with set(_: U2<float, string>) = ()
+        member this.strokeWidth
+            with inline set(value: string) = this.``stroke-width`` <- !^value
+
+    type AnimateSVGAttributes with
+        [<Erase>]
+        member _.``color-interpolation``
+            with set(_: string) = ()
+        member this.colorInterpolation
+            with inline set(value: string) = this.``color-interpolation`` <- value
+        [<Erase>]
+        member _.``color-rendering``
+            with set(_: string) = ()
+        member this.colorRendering
+            with inline set(value: string) = this.``color-rendering`` <- value
+
+    type SwitchSVGAttributes with
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+
+
+    type PresentationSVGAttributes with
+        [<Erase>]
+        member _.``alignment-baseline``
+            with set(_: string) = ()
+        member this.alignmentBaseline
+            with inline set(value: string) = this.``alignment-baseline`` <- value
+        [<Erase>]
+        member _.``baseline-shift``
+            with set(_: U2<float, string>) = ()
+        member this.baselineShift
+            with inline set(value: string) = this.``baseline-shift`` <- !^value
+        [<Erase>]
+        member _.clip
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``clip-path``
+            with set(_: string) = ()
+        member this.clipPath
+            with inline set(value: string) = this.``clip-path`` <- value
+        [<Erase>]
+        member _.``clip-rule``
+            with set(_: string) = ()
+        member this.clipRule
+            with inline set(value: string) = this.``clip-rule`` <- value
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``color-interpolation``
+            with set(_: string) = ()
+        member this.colorInterpolation
+            with inline set(value: string) = this.``color-interpolation`` <- value
+        [<Erase>]
+        member _.``color-interpolation-filters``
+            with set(_: string) = ()
+        member this.colorInterpolationFilters
+            with inline set(value: string) = this.``color-interpolation-filters`` <- value
+        [<Erase>]
+        member _.``color-profile``
+            with set(_: string) = ()
+        member this.colorProfile
+            with inline set(value: string) = this.``color-profile`` <- value
+        [<Erase>]
+        member _.``color-rendering``
+            with set(_: string) = ()
+        member this.colorRendering
+            with inline set(value: string) = this.``color-rendering`` <- value
+        [<Erase>]
+        member _.cursor
+            with set(_: string) = ()
+        [<Erase>]
+        member _.direction
+            with set(_: string) = ()
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``dominant-baseline``
+            with set(_: string) = ()
+        member this.dominantBaseline
+            with inline set(value: string) = this.``dominant-baseline`` <- value
+        [<Erase>]
+        member _.``enable-background``
+            with set(_: string) = ()
+        member this.enableBackground
+            with inline set(value: string) = this.``enable-background`` <- value
+        [<Erase>]
+        member _.fill
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``fill-opacity``
+            with set(_: string) = ()
+        member this.fillOpacity
+            with inline set(value: string) = this.``fill-opacity`` <- value
+        [<Erase>]
+        member _.``fill-rule``
+            with set(_: string) = ()
+        member this.fillRule
+            with inline set(value: string) = this.``fill-rule`` <- value
+        [<Erase>]
+        member _.filter
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``flood-color``
+            with set(_: string) = ()
+        member this.floodColor
+            with inline set(value: string) = this.``flood-color`` <- value
+        [<Erase>]
+        member _.``flood-opacity``
+            with set(_: string) = ()
+        member this.floodOpacity
+            with inline set(value: string) = this.``flood-opacity`` <- value
+        [<Erase>]
+        member _.``font-family``
+            with set(_: string) = ()
+        member this.fontFamily
+            with inline set(value: string) = this.``font-family`` <- value
+        [<Erase>]
+        member _.``font-size``
+            with set(_: string) = ()
+        member this.fontSize
+            with inline set(value: string) = this.``font-size`` <- value
+        [<Erase>]
+        member _.``font-size-adjust``
+            with set(_: U2<float, string>) = ()
+        member this.fontSizeAdjust
+            with inline set(value: string) = this.``font-size-adjust`` <- !^value
+        [<Erase>]
+        member _.``font-stretch``
+            with set(_: string) = ()
+        member this.fontStretch
+            with inline set(value: string) = this.``font-stretch`` <- value
+        [<Erase>]
+        member _.``font-style``
+            with set(_: string) = ()
+        member this.fontStyle
+            with inline set(value: string) = this.``font-style`` <- value
+        [<Erase>]
+        member _.``font-variant``
+            with set(_: string) = ()
+        member this.fontVariant
+            with inline set(value: string) = this.``font-variant`` <- value
+        [<Erase>]
+        member _.``font-weight``
+            with set(_: U2<float, string>) = ()
+        member this.fontWeight
+            with inline set(value: string) = this.``font-weight`` <- !^value
+        [<Erase>]
+        member _.``glyph-orientation-horizontal``
+            with set(_: string) = ()
+        member this.glyphOrientationHorizontal
+            with inline set(value: string) = this.``glyph-orientation-horizontal`` <- value
+        [<Erase>]
+        member _.``glyph-orientation-vertical``
+            with set(_: string) = ()
+        member this.glyphOrientationVertical
+            with inline set(value: string) = this.``glyph-orientation-vertical`` <- value
+        [<Erase>]
+        member _.``image-rendering``
+            with set(_: string) = ()
+        member this.imageRendering
+            with inline set(value: string) = this.``image-rendering`` <- value
+        [<Erase>]
+        member _.kerning
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``letter-spacing``
+            with set(_: U2<float, string>) = ()
+        member this.letterSpacing
+            with inline set(value: string) = this.``letter-spacing`` <- !^value
+        [<Erase>]
+        member _.``lighting-color``
+            with set(_: string) = ()
+        member this.lightingColor
+            with inline set(value: string) = this.``lighting-color`` <- value
+        [<Erase>]
+        member _.``marker-end``
+            with set(_: string) = ()
+        member this.markerEnd
+            with inline set(value: string) = this.``marker-end`` <- value
+        [<Erase>]
+        member _.``marker-mid``
+            with set(_: string) = ()
+        member this.markerMid
+            with inline set(value: string) = this.``marker-mid`` <- value
+        [<Erase>]
+        member _.``marker-start``
+            with set(_: string) = ()
+        member this.markerStart
+            with inline set(value: string) = this.``marker-start`` <- value
+        [<Erase>]
+        member _.mask
+            with set(_: string) = ()
+        [<Erase>]
+        member _.opacity
+            with set(_: string) = ()
+        [<Erase>]
+        member _.overflow
+            with set(_: string) = ()
+        [<Erase>]
+        member _.pathLength
+            with set(_: U2<string, float>) = ()
+        [<Erase>]
+        member _.``pointer-events``
+            with set(_: string) = ()
+        member this.pointerEvents
+            with inline set(value: string) = this.``pointer-events`` <- value
+        [<Erase>]
+        member _.``shape-rendering``
+            with set(_: string) = ()
+        member this.shapeRendering
+            with inline set(value: string) = this.``shape-rendering`` <- value
+        [<Erase>]
+        member _.``stop-color``
+            with set(_: string) = ()
+        member this.stopColor
+            with inline set(value: string) = this.``stop-color`` <- value
+        [<Erase>]
+        member _.``stop-opacity``
+            with set(_: string) = ()
+        member this.stopOpacity
+            with inline set(value: string) = this.``stop-opacity`` <- value
+        [<Erase>]
+        member _.stroke
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``stroke-dasharray``
+            with set(_: string) = ()
+        member this.strokeDasharray
+            with inline set(value: string) = this.``stroke-dasharray`` <- value
+        [<Erase>]
+        member _.``stroke-dashoffset``
+            with set(_: U2<float, string>) = ()
+        member this.strokeDashoffset
+            with inline set(value: string) = this.``stroke-dashoffset`` <- !^value
+        [<Erase>]
+        member _.``stroke-linecap``
+            with set(_: string) = ()
+        member this.strokeLinecap
+            with inline set(value: string) = this.``stroke-linecap`` <- value
+        [<Erase>]
+        member _.``stroke-linejoin``
+            with set(_: string) = ()
+        member this.strokeLinejoin
+            with inline set(value: string) = this.``stroke-linejoin`` <- value
+        [<Erase>]
+        member _.``stroke-miterlimit``
+            with set(_: string) = ()
+        member this.strokeMiterlimit
+            with inline set(value: string) = this.``stroke-miterlimit`` <- value
+        [<Erase>]
+        member _.``stroke-opacity``
+            with set(_: string) = ()
+        member this.strokeOpacity
+            with inline set(value: string) = this.``stroke-opacity`` <- value
+        [<Erase>]
+        member _.``stroke-width``
+            with set(_: U2<float, string>) = ()
+        member this.strokeWidth
+            with inline set(value: string) = this.``stroke-width`` <- !^value
+        [<Erase>]
+        member _.``text-anchor``
+            with set(_: string) = ()
+        member this.textAnchor
+            with inline set(value: string) = this.``text-anchor`` <- value
+        [<Erase>]
+        member _.``text-decoration``
+            with set(_: string) = ()
+        member this.textDecoration
+            with inline set(value: string) = this.``text-decoration`` <- value
+        [<Erase>]
+        member _.``text-rendering``
+            with set(_: string) = ()
+        member this.textRendering
+            with inline set(value: string) = this.``text-rendering`` <- value
+        [<Erase>]
+        member _.``unicode-bidi``
+            with set(_: string) = ()
+        member this.unicodeBidi
+            with inline set(value: string) = this.``unicode-bidi`` <- value
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``word-spacing``
+            with set(_: U2<float, string>) = ()
+        member this.wordSpacing
+            with inline set(value: string) = this.``word-spacing`` <- !^value
+        [<Erase>]
+        member _.``writing-mode``
+            with set(_: string) = ()
+        member this.writingMode
+            with inline set(value: string) = this.``writing-mode`` <- value
+
+
+    type FilterPrimitiveElementSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.result
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``color-interpolation-filters``
+            with set(_: string) = ()
+        member this.colorInterpolationFilters
+            with inline set(value: string) = this.``color-interpolation-filters`` <- value
+
+    type SingleInputFilterSVGAttributes with
+        [<Erase>]
+        member _.in'
+            with set(_: string) = ()
+    type DoubleInputFilterSVGAttributes with
+        [<Erase>]
+        member _.in'
+            with set(_: string) = ()
+        [<Erase>]
+        member _.in2
+            with set(_: string) = ()
+    type FitToViewBoxSVGAttributes with
+        [<Erase>]
+        member _.viewBox
+            with set(_: string) = ()
+        [<Erase>]
+        member _.preserveAspectRatio
+            with set(_: string) = ()
+    type GradientElementSVGAttributes with
+        [<Erase>]
+        member _.gradientUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.gradientTransform
+            with set(_: string) = ()
+        [<Erase>]
+        member _.spreadMethod
+            with set(_: string) = ()
+        [<Erase>]
+        member _.href
+            with set(_: string) = ()
+    type NewViewportSVGAttributes with
+        [<Erase>]
+        member _.viewBox
+            with set(_: string) = ()
+        [<Erase>]
+        member _.overflow
+            with set(_: string) = ()
+        [<Erase>]
+        member _.clip
+            with set(_: string) = ()
+    type ZoomAndPanSVGAttributes with
+        [<Erase>]
+        member _.zoomAndPan
+            with set(_: string) = ()
+    type AnimateMotionSVGAttributes with
+        [<Erase>]
+        member _.path
+            with set(_: string) = ()
+        [<Erase>]
+        member _.keyPoints
+            with set(_: string) = ()
+        [<Erase>]
+        member _.rotate
+            with set(_: string) = ()
+        [<Erase>]
+        member _.origin
+            with set(_: string) = ()
+    type AnimateTransformSVGAttributes with
+        [<Erase>]
+        member _.type'
+            with set(_: string) = ()
+    type CircleSVGAttributes with
+        [<Erase>]
+        member _.cx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.cy
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.r
+            with set(_: U2<float, string>) = ()
+    type ClipPathSVGAttributes with
+        [<Erase>]
+        member _.clipPathUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``clip-path``
+            with set(_: string) = ()
+        member this.clipPath
+            with inline set(value: string) = this.``clip-path`` <- value
+
+    type EllipseSVGAttributes with
+        [<Erase>]
+        member _.cx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.cy
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.rx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.ry
+            with set(_: U2<float, string>) = ()
+    type FeBlendSVGAttributes with
+        [<Erase>]
+        member _.mode
+            with set(_: string) = ()
+    type FeColorMatrixSVGAttributes with
+        [<Erase>]
+        member _.type'
+            with set(_: string) = ()
+        [<Erase>]
+        member _.values
+            with set(_: string) = ()
+    type FeCompositeSVGAttributes with
+        [<Erase>]
+        member _.operator
+            with set(_: string) = ()
+        [<Erase>]
+        member _.k1
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.k2
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.k3
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.k4
+            with set(_: U2<float, string>) = ()
+    type FeConvolveMatrixSVGAttributes with
+        [<Erase>]
+        member _.order
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.kernelMatrix
+            with set(_: string) = ()
+        [<Erase>]
+        member _.divisor
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.bias
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.targetX
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.targetY
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.edgeMode
+            with set(_: string) = ()
+        [<Erase>]
+        member _.kernelUnitLength
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.preserveAlpha
+            with set(_: string) = ()
+    type FeDiffuseLightingSVGAttributes with
+        [<Erase>]
+        member _.``lighting-color``
+            with set(_: string) = ()
+        member this.lightingColor
+            with inline set(value: string) = this.``lighting-color`` <- value
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.surfaceScale
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.diffuseConstant
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.kernelUnitLength
+            with set(_: U2<float, string>) = ()
+    type FeDisplacementMapSVGAttributes with
+        [<Erase>]
+        member _.scale
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.xChannelSelector
+            with set(_: string) = ()
+        [<Erase>]
+        member _.yChannelSelector
+            with set(_: string) = ()
+    type FeDistantLightSVGAttributes with
+        [<Erase>]
+        member _.azimuth
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.elevation
+            with set(_: U2<float, string>) = ()
+    type FeDropShadowSVGAttributes with
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``flood-color``
+            with set(_: string) = ()
+        member this.floodColor
+            with inline set(value: string) = this.``flood-color`` <- value
+        [<Erase>]
+        member _.``flood-opacity``
+            with set(_: string) = ()
+        member this.floodOpacity
+            with inline set(value: string) = this.``flood-opacity`` <- value
+        [<Erase>]
+        member _.dx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.dy
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.stdDeviation
+            with set(_: U2<float, string>) = ()
+    type FeFloodSVGAttributes with
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``flood-color``
+            with set(_: string) = ()
+        member this.floodColor
+            with inline set(value: string) = this.``flood-color`` <- value
+        [<Erase>]
+        member _.``flood-opacity``
+            with set(_: string) = ()
+        member this.floodOpacity
+            with inline set(value: string) = this.``flood-opacity`` <- value
+
+    type FeFuncSVGAttributes with
+        [<Erase>]
+        member _.type'
+            with set(_: string) = ()
+        [<Erase>]
+        member _.tableValues
+            with set(_: string) = ()
+        [<Erase>]
+        member _.slope
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.intercept
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.amplitude
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.exponent
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.offset
+            with set(_: U2<float, string>) = ()
+    type FeGaussianBlurSVGAttributes with
+        [<Erase>]
+        member _.stdDeviation
+            with set(_: U2<float, string>) = ()
+    type FeImageSVGAttributes with
+        [<Erase>]
+        member _.preserveAspectRatio
+            with set(_: string) = ()
+        [<Erase>]
+        member _.href
+            with set(_: string) = ()
+    type FeMorphologySVGAttributes with
+        [<Erase>]
+        member _.operator
+            with set(_: string) = ()
+        [<Erase>]
+        member _.radius
+            with set(_: U2<float, string>) = ()
+    type FeOffsetSVGAttributes with
+        [<Erase>]
+        member _.dx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.dy
+            with set(_: U2<float, string>) = ()
+    type FePointLightSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.z
+            with set(_: U2<float, string>) = ()
+    type FeSpecularLightingSVGAttributes with
+        [<Erase>]
+        member _.``lighting-color``
+            with set(_: string) = ()
+        member this.lightingColor
+            with inline set(value: string) = this.``lighting-color`` <- value
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.surfaceScale
+            with set(_: string) = ()
+        [<Erase>]
+        member _.specularConstant
+            with set(_: string) = ()
+        [<Erase>]
+        member _.specularExponent
+            with set(_: string) = ()
+        [<Erase>]
+        member _.kernelUnitLength
+            with set(_: U2<float, string>) = ()
+    type FeSpotLightSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.z
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.pointsAtX
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.pointsAtY
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.pointsAtZ
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.specularExponent
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.limitingConeAngle
+            with set(_: U2<float, string>) = ()
+    type FeTurbulanceSVGAttributes with
+        [<Erase>]
+        member _.baseFrequency
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.numOctaves
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.seed
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.stitchTiles
+            with set(_: string) = ()
+        [<Erase>]
+        member _.type'
+            with set(_: string) = ()
+    type FilterSVGAttributes with
+        [<Erase>]
+        member _.filterUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.primitiveUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.filterRes
+            with set(_: U2<float, string>) = ()
+    type ForeignObjectSVGAttributes with
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+    type GSVGAttributes with
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+
+    type ImageSVGAttributes with
+        [<Erase>]
+        member _.``image-rendering``
+            with set(_: string) = ()
+        member this.imageRendering
+            with inline set(value: string) = this.``image-rendering`` <- value
+        [<Erase>]
+        member _.``color-profile``
+            with set(_: string) = ()
+        member this.colorProfile
+            with inline set(value: string) = this.``color-profile`` <- value
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.preserveAspectRatio
+            with set(_: string) = ()
+        [<Erase>]
+        member _.href
+            with set(_: string) = ()
+    type LineSVGAttributes with
+        [<Erase>]
+        member _.``marker-end``
+            with set(_: string) = ()
+        member this.markerEnd
+            with inline set(value: string) = this.``marker-end`` <- value
+        [<Erase>]
+        member _.``marker-mid``
+            with set(_: string) = ()
+        member this.markerMid
+            with inline set(value: string) = this.``marker-mid`` <- value
+        [<Erase>]
+        member _.``marker-start``
+            with set(_: string) = ()
+        member this.markerStart
+            with inline set(value: string) = this.``marker-start`` <- value
+        [<Erase>]
+        member _.x1
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y1
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.x2
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y2
+            with set(_: U2<float, string>) = ()
+    type LinearGradientSVGAttributes with
+        [<Erase>]
+        member _.x1
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.x2
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y1
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y2
+            with set(_: U2<float, string>) = ()
+    type MarkerSVGAttributes with
+        [<Erase>]
+        member _.clip
+            with set(_: string) = ()
+        [<Erase>]
+        member _.overflow
+            with set(_: string) = ()
+        [<Erase>]
+        member _.markerUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.refX
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.refY
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.markerWidth
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.markerHeight
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.orient
+            with set(_: string) = ()
+    type MaskSVGAttributes with
+        [<Erase>]
+        member _.filter
+            with set(_: string) = ()
+        [<Erase>]
+        member _.opacity
+            with set(_: string) = ()
+        [<Erase>]
+        member _.maskUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.maskContentUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+    type PathSVGAttributes with
+        [<Erase>]
+        member _.``marker-end``
+            with set(_: string) = ()
+        member this.markerEnd
+            with inline set(value: string) = this.``marker-end`` <- value
+        [<Erase>]
+        member _.``marker-mid``
+            with set(_: string) = ()
+        member this.markerMid
+            with inline set(value: string) = this.``marker-mid`` <- value
+        [<Erase>]
+        member _.``marker-start``
+            with set(_: string) = ()
+        member this.markerStart
+            with inline set(value: string) = this.``marker-start`` <- value
+        [<Erase>]
+        member _.d
+            with set(_: string) = ()
+        [<Erase>]
+        member _.pathLength
+            with set(_: U2<float, string>) = ()
+    type PatternSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.patternUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.patternContentUnits
+            with set(_: string) = ()
+        [<Erase>]
+        member _.patternTransform
+            with set(_: string) = ()
+        [<Erase>]
+        member _.href
+            with set(_: string) = ()
+        [<Erase>]
+        member _.clip
+            with set(_: string) = ()
+        [<Erase>]
+        member _.overflow
+            with set(_: string) = ()
+
+    type PolygonSVGAttributes with
+        [<Erase>]
+        member _.``marker-end``
+            with set(_: string) = ()
+        member this.markerEnd
+            with inline set(value: string) = this.``marker-end`` <- value
+        [<Erase>]
+        member _.``marker-mid``
+            with set(_: string) = ()
+        member this.markerMid
+            with inline set(value: string) = this.``marker-mid`` <- value
+        [<Erase>]
+        member _.``marker-start``
+            with set(_: string) = ()
+        member this.markerStart
+            with inline set(value: string) = this.``marker-start`` <- value
+        [<Erase>]
+        member _.points
+            with set(_: string) = ()
+    type PolylineSVGAttributes with
+        [<Erase>]
+        member _.``marker-end``
+            with set(_: string) = ()
+        member this.markerEnd
+            with inline set(value: string) = this.``marker-end`` <- value
+        [<Erase>]
+        member _.``marker-mid``
+            with set(_: string) = ()
+        member this.markerMid
+            with inline set(value: string) = this.``marker-mid`` <- value
+        [<Erase>]
+        member _.``marker-start``
+            with set(_: string) = ()
+        member this.markerStart
+            with inline set(value: string) = this.``marker-start`` <- value
+        [<Erase>]
+        member _.points
+            with set(_: string) = ()
+    type RadialGradientSVGAttributes with
+        [<Erase>]
+        member _.cx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.cy
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.r
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.fx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.fy
+            with set(_: U2<float, string>) = ()
+
+    type RectSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.rx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.ry
+            with set(_: U2<float, string>) = ()
+    type StopSVGAttributes with
+        [<Erase>]
+        member _.color
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``stop-color``
+            with set(_: string) = ()
+        member this.stopColor
+            with inline set(value: string) = this.``stop-color`` <- value
+        [<Erase>]
+        member _.``stop-opacity``
+            with set(_: string) = ()
+        member this.stopOpacity
+            with inline set(value: string) = this.``stop-opacity`` <- value
+        [<Erase>]
+        member _.offset
+            with set(_: U2<float, string>) = ()
+
+    type SvgSVGAttributes with
+        [<Erase>]
+        member _.version
+            with set(_: string) = ()
+        [<Erase>]
+        member _.baseProfile
+            with set(_: string) = ()
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.contentScriptType
+            with set(_: string) = ()
+        [<Erase>]
+        member _.contentStyleType
+            with set(_: string) = ()
+        [<Erase>]
+        member _.xmlns
+            with set(_: string) = ()
+
+
+    type SymbolSVGAttributes with
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.preserveAspectRatio
+            with set(_: string) = ()
+        [<Erase>]
+        member _.refX
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.refY
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.viewBox
+            with set(_: string) = ()
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+
+    type TextSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.dx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.dy
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.rotate
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.textLength
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.lengthAdjust
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``writing-mode``
+            with set(_: string) = ()
+        member this.writingMode
+            with inline set(value: string) = this.``writing-mode`` <- value
+        [<Erase>]
+        member _.``text-rendering``
+            with set(_: string) = ()
+        member this.textRendering
+            with inline set(value: string) = this.``text-rendering`` <- value
+
+    type TextPathSVGAttributes with
+        [<Erase>]
+        member _.startOffset
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.method
+            with set(_: string) = ()
+        [<Erase>]
+        member _.spacing
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``alignment-baseline``
+            with set(_: string) = ()
+        member this.alignmentBaseline
+            with inline set(value: string) = this.``alignment-baseline`` <- value
+        [<Erase>]
+        member _.``baseline-shift``
+            with set(_: U2<float, string>) = ()
+        member this.baselineShift
+            with inline set(value: string) = this.``baseline-shift`` <- !^value
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+        [<Erase>]
+        member _.href
+            with set(_: string) = ()
+
+    type TSpanSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.dx
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.dy
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.rotate
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.textLength
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.lengthAdjust
+            with set(_: string) = ()
+        [<Erase>]
+        member _.``alignment-baseline``
+            with set(_: string) = ()
+        member this.alignmentBaseline
+            with inline set(value: string) = this.``alignment-baseline`` <- value
+        [<Erase>]
+        member _.``baseline-shift``
+            with set(_: U2<float, string>) = ()
+        member this.baselineShift
+            with inline set(value: string) = this.``baseline-shift`` <- !^value
+        [<Erase>]
+        member _.display
+            with set(_: string) = ()
+        [<Erase>]
+        member _.visibility
+            with set(_: string) = ()
+
+    type UseSVGAttributes with
+        [<Erase>]
+        member _.x
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.y
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.width
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.height
+            with set(_: U2<float, string>) = ()
+        [<Erase>]
+        member _.href
+            with set(_: string) = ()
+
+    type ViewSVGAttributes with
+        [<Erase>]
+        member _.viewTarget
+            with set(_: string) = ()
 
     [<Erase>]
     module Svg =
         [<Erase>]
-        type a() =
-            inherit SvgNode()
-            member _.download
-                with set (value: string) = ()
-            member _.href
-                with set (value: string) = ()
-            member _.hreflang
-                with set (value: string) = ()
-            member _.ping
-                with set (value: string) = ()
-            member _.referrerpolicy
-                with set (value: string) = ()
-            member _.rel
-                with set (value: string) = ()
-            member _.target
-                with set (value: string) = ()
-            member _.type'
-                with set (value: string) = ()
-
-        [<Erase>]
         type animate() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface AnimateSVGAttributes
         [<Erase>]
         type animateMotion() =
-            inherit SvgNode()
-            member _.keyPoints
-                with set (value: string) = ()
-            member _.path
-                with set (value: string) = ()
-            member _.rotate
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface AnimateMotionSVGAttributes
         [<Erase>]
         type animateTransform() =
-            inherit SvgNode()
-            member _.by
-                with set (value: string) = ()
-            member _.from
-                with set (value: string) = ()
-            member _.to'
-                with set (value: string) = ()
-            member _.type'
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface AnimateTransformSVGAttributes
         [<Erase>]
         type circle() =
-            inherit SvgNode()
-            member _.cx
-                with set (value: string) = ()
-            member _.cy
-                with set (value: string) = ()
-            member _.r
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface CircleSVGAttributes
         [<Erase>]
         type clipPath() =
-            inherit SvgNode()
-            member _.clipPathUnits
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface ClipPathSVGAttributes
         [<Erase>]
         type defs() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface DefsSVGAttributes
         [<Erase>]
         type desc() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface DescSVGAttributes
         [<Erase>]
         type ellipse() =
-            inherit SvgNode()
-            member _.cx
-                with set (value: string) = ()
-            member _.cy
-                with set (value: string) = ()
-            member _.rx
-                with set (value: string) = ()
-            member _.ry
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface EllipseSVGAttributes
         [<Erase>]
         type feBlend() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.in2
-                with set (value: string) = ()
-            member _.mode
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeBlendSVGAttributes
+        [<Erase>]
         type feColorMatrix() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.type'
-                with set (value: string) = ()
-            member _.values
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeColorMatrixSVGAttributes
         [<Erase>]
         type feComponentTransfer() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeComponentTransferSVGAttributes
         [<Erase>]
         type feComposite() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.in2
-                with set (value: string) = ()
-            member _.operator
-                with set (value: string) = ()
-            member _.k1
-                with set (value: string) = ()
-            member _.k2
-                with set (value: string) = ()
-            member _.k3
-                with set (value: string) = ()
-            member _.k4
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeCompositeSVGAttributes
         [<Erase>]
         type feConvolveMatrix() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.order
-                with set (value: string) = ()
-            member _.kernelMatrix
-                with set (value: string) = ()
-            member _.divisor
-                with set (value: string) = ()
-            member _.bias
-                with set (value: string) = ()
-            member _.targetX
-                with set (value: string) = ()
-            member _.targetY
-                with set (value: string) = ()
-            member _.edgeMode
-                with set (value: string) = ()
-            member _.kernelUnitLength
-                with set (value: string) = ()
-            member _.preserveAlpha
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeConvolveMatrixSVGAttributes
         [<Erase>]
         type feDiffuseLighting() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.surfaceScale
-                with set (value: string) = ()
-            member _.diffuseConstant
-                with set (value: string) = ()
-            member _.kernelUnitLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeDiffuseLightingSVGAttributes
         [<Erase>]
         type feDisplacementMap() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.in2
-                with set (value: string) = ()
-            member _.scale
-                with set (value: string) = ()
-            member _.xChannelSelector
-                with set (value: string) = ()
-            member _.yChannelSelector
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeDisplacementMapSVGAttributes
         [<Erase>]
         type feDistantLight() =
-            inherit SvgNode()
-            member _.azimuth
-                with set (value: string) = ()
-            member _.elevation
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeDistantLightSVGAttributes
         [<Erase>]
         type feDropShadow() =
-            inherit SvgNode()
-            member _.dx
-                with set (value: string) = ()
-            member _.dy
-                with set (value: string) = ()
-            member _.stdDeviation
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeDropShadowSVGAttributes
         [<Erase>]
         type feFlood() =
-            inherit SvgNode()
-            member _.``flood-color``
-                with set (value: string) = ()
-            member _.``flood-opacity``
-                with set (value: string) = ()
-            member inline this.floodColor
-                with inline set (value: string) = this.``flood-color`` <- value
-            member inline this.floodOpacity
-                with inline set (value: string) = this.``flood-opacity`` <- value
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeFloodSVGAttributes
         [<Erase>]
         type feFuncA() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeFuncSVGAttributes
         [<Erase>]
         type feFuncB() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeFuncSVGAttributes
         [<Erase>]
         type feFuncG() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeFuncSVGAttributes
         [<Erase>]
         type feFuncR() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeFuncSVGAttributes
         [<Erase>]
         type feGaussianBlur() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.stdDeviation
-                with set (value: string) = ()
-            member _.edgeMode
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeGaussianBlurSVGAttributes
         [<Erase>]
         type feImage() =
-            inherit SvgNode()
-            member _.crossorigin
-                with set (value: string) = ()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.``xlink:href``
-                with set (value: string) = ()
-            member inline this.xlinkHref
-                with inline set (value: string) = this.``xlink:href`` <- value
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeImageSVGAttributes
         [<Erase>]
         type feMerge() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeMergeSVGAttributes
         [<Erase>]
         type feMergeNode() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeMergeNodeSVGAttributes
         [<Erase>]
         type feMorphology() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.operator
-                with set (value: string) = ()
-            member _.radius
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeMorphologySVGAttributes
         [<Erase>]
         type feOffset() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.dx
-                with set (value: string) = ()
-            member _.dy
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeOffsetSVGAttributes
         [<Erase>]
         type fePointLight() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.z
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FePointLightSVGAttributes
         [<Erase>]
         type feSpecularLighting() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-            member _.surfaceScale
-                with set (value: string) = ()
-            member _.specularConstant
-                with set (value: string) = ()
-            member _.specularExponent
-                with set (value: string) = ()
-            member _.kernelUnitLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeSpecularLightingSVGAttributes
         [<Erase>]
         type feSpotLight() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.z
-                with set (value: string) = ()
-            member _.pointsAtX
-                with set (value: string) = ()
-            member _.pointsAtY
-                with set (value: string) = ()
-            member _.pointsAtZ
-                with set (value: string) = ()
-            member _.specularExponent
-                with set (value: string) = ()
-            member _.limitingConeAngle
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeSpotLightSVGAttributes
         [<Erase>]
         type feTile() =
-            inherit SvgNode()
-            member _.in'
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeTileSVGAttributes
         [<Erase>]
         type feTurbulence() =
-            inherit SvgNode()
-            member _.baseFrequency
-                with set (value: string) = ()
-            member _.numOctaves
-                with set (value: string) = ()
-            member _.seed
-                with set (value: string) = ()
-            member _.stitchTiles
-                with set (value: string) = ()
-            member _.type'
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface FeTurbulanceSVGAttributes
         [<Erase>]
         type filter() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.height
-                with set (value: string) = ()
-            member _.filterUnits
-                with set (value: string) = ()
-            member _.primitiveUnits
-                with set (value: string) = ()
-            member _.``xlink:href``
-                with set (value: string) = ()
-            member inline this.xlinkHref
-                with inline set (value: string) = this.``xlink:href`` <- value
+            interface HtmlTag
+            interface HtmlContainer
+            interface FilterSVGAttributes
         [<Erase>]
         type foreignObject() =
-            inherit SvgNode()
-            member _.height
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface ForeignObjectSVGAttributes
         [<Erase>]
         type g() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface GSVGAttributes
         [<Erase>]
         type image() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.height
-                with set (value: string) = ()
-            member _.href
-                with set (value: string) = ()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.crossorigin
-                with set (value: string) = ()
-            member _.decoding
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface ImageSVGAttributes
         [<Erase>]
         type line() =
-            inherit SvgNode()
-            member _.x1
-                with set (value: string) = ()
-            member _.x2
-                with set (value: string) = ()
-            member _.y1
-                with set (value: string) = ()
-            member _.y2
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface LineSVGAttributes
         [<Erase>]
         type linearGradient() =
-            inherit SvgNode()
-            member _.gradientUnits
-                with set (value: string) = ()
-            member _.gradientTransform
-                with set (value: string) = ()
-            member _.href
-                with set (value: string) = ()
-            member _.spreadMethod
-                with set (value: string) = ()
-            member _.x1
-                with set (value: string) = ()
-            member _.x2
-                with set (value: string) = ()
-            member _.y1
-                with set (value: string) = ()
-            member _.y2
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface LinearGradientSVGAttributes
         [<Erase>]
         type marker() =
-            inherit SvgNode()
-            member _.markerHeight
-                with set (value: string) = ()
-            member _.markerUnits
-                with set (value: string) = ()
-            member _.markerWidth
-                with set (value: string) = ()
-            member _.orient
-                with set (value: string) = ()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.refX
-                with set (value: string) = ()
-            member _.refY
-                with set (value: string) = ()
-            member _.viewBox
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface MarkerSVGAttributes
         [<Erase>]
         type mask() =
-            inherit SvgNode()
-            member _.height
-                with set (value: string) = ()
-            member _.maskContentUnits
-                with set (value: string) = ()
-            member _.maskUnits
-                with set (value: string) = ()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface MaskSVGAttributes
         [<Erase>]
         type metadata() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface MetadataSVGAttributes
         [<Erase>]
         type mpath() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface MPathSVGAttributes
         [<Erase>]
         type path() =
-            inherit SvgNode()
-            member _.d
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface PathSVGAttributes
         [<Erase>]
         type pattern() =
-            inherit SvgNode()
-            member _.height
-                with set (value: string) = ()
-            member _.href
-                with set (value: string) = ()
-            member _.patternContentUnits
-                with set (value: string) = ()
-            member _.patternTransform
-                with set (value: string) = ()
-            member _.patternUnits
-                with set (value: string) = ()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.viewBox
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface PatternSVGAttributes
         [<Erase>]
         type polygon() =
-            inherit SvgNode()
-            member _.points
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface PolygonSVGAttributes
         [<Erase>]
         type polyline() =
-            inherit SvgNode()
-            member _.points
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface PolylineSVGAttributes
         [<Erase>]
         type radialGradient() =
-            inherit SvgNode()
-            member _.cx
-                with set (value: string) = ()
-            member _.cy
-                with set (value: string) = ()
-            member _.fr
-                with set (value: string) = ()
-            member _.fx
-                with set (value: string) = ()
-            member _.fy
-                with set (value: string) = ()
-            member _.gradientUnits
-                with set (value: string) = ()
-            member _.gradientTransform
-                with set (value: string) = ()
-            member _.href
-                with set (value: string) = ()
-            member _.r
-                with set (value: string) = ()
-            member _.spreadMethod
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface RadialGradientSVGAttributes
         [<Erase>]
         type rect() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.height
-                with set (value: string) = ()
-            member _.rx
-                with set (value: string) = ()
-            member _.ry
-                with set (value: string) = ()
-            member _.pathLength
-                with set (value: string) = ()
-
-        [<Erase>]
-        type script() =
-            inherit SvgNode()
-            member _.crossorigin
-                with set (value: string) = ()
-            member _.href
-                with set (value: string) = ()
-            member _.type'
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface RectSVGAttributes
         [<Erase>]
         type set() =
-            inherit SvgNode()
-            member _.to'
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface SetSVGAttributes
         [<Erase>]
         type stop() =
-            inherit SvgNode()
-            member _.offset
-                with set (value: string) = ()
-            member _.``stop-color``
-                with set (value: string) = ()
-            member _.``stop-opacity``
-                with set (value: string) = ()
-            member inline this.stopColor
-                with inline set (value: string) = this.``stop-color`` <- value
-            member inline this.stopOpacity
-                with inline set (value: string) = this.``stop-opacity`` <- value
-        [<Erase>]
-        type style() =
-            inherit SvgNode()
-            member _.type'
-                with set (value: string) = ()
-            member _.media
-                with set (value: string) = ()
-            member _.title
-                with set (value: string) = ()
-
+            interface HtmlTag
+            interface HtmlContainer
+            interface StopSVGAttributes
         [<Erase>]
         type svg() =
-            inherit SvgNode()
-            member _.baseProfile
-                with set (value: string) = ()
-            member _.height
-                with set (value: string) = ()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.viewBox
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface SvgSVGAttributes
         [<Erase>]
         type switch() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface SwitchSVGAttributes
         [<Erase>]
         type symbol() =
-            inherit SvgNode()
-            member _.height
-                with set (value: string) = ()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.refX
-                with set (value: string) = ()
-            member _.refY
-                with set (value: string) = ()
-            member _.viewBox
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface SymbolSVGAttributes
         [<Erase>]
         type text() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.dx
-                with set (value: string) = ()
-            member _.dy
-                with set (value: string) = ()
-            member _.rotate
-                with set (value: string) = ()
-            member _.lengthAdjust
-                with set (value: string) = ()
-            member _.textLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface TextSVGAttributes
         [<Erase>]
         type textPath() =
-            inherit SvgNode()
-            member _.href
-                with set (value: string) = ()
-            member _.lengthAdjust
-                with set (value: string) = ()
-            member _.method
-                with set (value: string) = ()
-            member _.path
-                with set (value: string) = ()
-            member _.side
-                with set (value: string) = ()
-            member _.spacing
-                with set (value: string) = ()
-            member _.startOffset
-                with set (value: string) = ()
-            member _.textLength
-                with set (value: string) = ()
-        [<Erase>]
-        type title() =
-            inherit SvgNode()
+            interface HtmlTag
+            interface HtmlContainer
+            interface TextPathSVGAttributes
         [<Erase>]
         type tspan() =
-            inherit SvgNode()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.dx
-                with set (value: string) = ()
-            member _.dy
-                with set (value: string) = ()
-            member _.rotate
-                with set (value: string) = ()
-            member _.lengthAdjust
-                with set (value: string) = ()
-            member _.textLength
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface TSpanSVGAttributes
         [<Erase>]
         type use'() =
-            inherit SvgNode()
-            member _.href
-                with set (value: string) = ()
-            member _.x
-                with set (value: string) = ()
-            member _.y
-                with set (value: string) = ()
-            member _.width
-                with set (value: string) = ()
-            member _.height
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface UseSVGAttributes
         [<Erase>]
         type view() =
-            inherit SvgNode()
-            member _.preserveAspectRatio
-                with set (value: string) = ()
-            member _.viewBox
-                with set (value: string) = ()
+            interface HtmlTag
+            interface HtmlContainer
+            interface ViewSVGAttributes
