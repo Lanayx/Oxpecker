@@ -39,7 +39,7 @@
         <Compile Include="IdeTweaks.fs" />
         <Compile Include="Builder.fs" />
         <Compile Include="Tags.fs" />
-        <Compile Include="SVG.fs" />
+        <Compile Include="Svg.fs" />
         <Compile Include="SolidBindings.fs" />
         <Compile Include="SolidRouterBindings.fs" />
         <Compile Include="SolidMetaBindings.fs" />

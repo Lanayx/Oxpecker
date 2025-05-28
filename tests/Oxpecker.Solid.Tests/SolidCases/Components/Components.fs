@@ -16,7 +16,3 @@ let Test () =
     div() {
         Component(getText)
     }
-
-[<SolidComponent>]
-let SvgTest () =
-    Svg.circle(fillOpacity = "fillOpacity", ``clip-rule`` = "clipRule")

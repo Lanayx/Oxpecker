@@ -48,6 +48,10 @@ let ``Branches`` () =
     runGeneralCase "Branches"
 
 [<Fact>]
+let ``Svg`` () =
+    runGeneralCase "Svg"
+
+[<Fact>]
 let ``Let bindings`` () =
     let dir = $"{__SOURCE_DIRECTORY__}/Cases/LetBindings"
     let output =
