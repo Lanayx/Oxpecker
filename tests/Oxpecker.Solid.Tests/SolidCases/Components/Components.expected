@@ -16,3 +16,8 @@ export function Test() {
     </div>;
 }
 
+export function SvgTest() {
+    return <circle fill-opacity="fillOpacity"
+        clip-rule="clipRule"></circle>;
+}
+
