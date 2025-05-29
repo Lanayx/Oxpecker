@@ -9,17 +9,12 @@ module Svg =
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type ExternalResourceSVGAttributes = interface end
-
-    [<AllowNullLiteral>]
-    [<Interface>]
     type ConditionalProcessingSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
     type AnimationElementSVGAttributes =
         inherit CoreSVGAttributes
-        inherit ExternalResourceSVGAttributes
         inherit ConditionalProcessingSVGAttributes
 
     [<AllowNullLiteral>]
@@ -82,7 +77,6 @@ module Svg =
     [<Interface>]
     type GradientElementSVGAttributes =
         inherit CoreSVGAttributes
-        inherit ExternalResourceSVGAttributes
         inherit StylableSVGAttributes
 
     [<AllowNullLiteral>]
@@ -145,11 +139,6 @@ module Svg =
             with set (_: string) = ()
         [<Erase>]
         member _.systemLanguage
-            with set (_: string) = ()
-
-    type ExternalResourceSVGAttributes with
-        [<Erase>]
-        member _.externalResourcesRequired
             with set (_: string) = ()
 
     type AnimationTimingSVGAttributes with
@@ -725,7 +714,6 @@ module Svg =
         interface HtmlContainer
         interface CoreSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -741,7 +729,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
 
@@ -759,7 +746,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1084,7 +1070,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
         member _.preserveAspectRatio
@@ -1241,7 +1226,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
         member _.filterUnits
@@ -1271,7 +1255,6 @@ module Svg =
         interface HtmlContainer
         interface NewViewportSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1299,7 +1282,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1350,7 +1332,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1398,7 +1379,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         [<Erase>]
@@ -1431,7 +1411,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
         member _.filter
@@ -1477,7 +1456,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1502,7 +1480,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         [<Erase>]
@@ -1543,7 +1520,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1566,7 +1542,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1610,7 +1585,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1666,7 +1640,6 @@ module Svg =
         interface ContainerElementSVGAttributes
         interface NewViewportSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         interface ZoomAndPanSVGAttributes
@@ -1705,7 +1678,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1721,7 +1693,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface NewViewportSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         [<Erase>]
@@ -1756,7 +1727,6 @@ module Svg =
         interface TextContentElementSVGAttributes
         interface GraphicsElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
@@ -1793,7 +1763,6 @@ module Svg =
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
         member _.startOffset
@@ -1826,7 +1795,6 @@ module Svg =
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
         member _.x
@@ -1871,7 +1839,6 @@ module Svg =
         interface ConditionalProcessingSVGAttributes
         interface GraphicsElementSVGAttributes
         interface PresentationSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.x
@@ -1894,7 +1861,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
-        interface ExternalResourceSVGAttributes
         interface FitToViewBoxSVGAttributes
         interface ZoomAndPanSVGAttributes
         [<Erase>]
