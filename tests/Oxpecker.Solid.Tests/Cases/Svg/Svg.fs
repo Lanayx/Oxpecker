@@ -6,4 +6,4 @@ open Oxpecker.Solid.Svg
 
 [<SolidComponent>]
 let SvgTest () =
-    circle(fillOpacity = "fillOpacity", ``clip-rule`` = "clipRule")
+    circle(``fill-opacity`` = "fillOpacity", ``clip-rule`` = "clipRule")
