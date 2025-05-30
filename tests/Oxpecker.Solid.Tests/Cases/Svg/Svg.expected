@@ -14,8 +14,8 @@ export function SvgTest() {
             </linearGradient>
         </defs>
         <circle id="circle"
-            fill-opacity="fillOpacity"
-            clip-rule="clipRule"></circle>
+            fill-opacity="50%"
+            clip-rule="nonzero"></circle>
         Sorry but this browser does not support inline SVG.
     </svg>;
 }
