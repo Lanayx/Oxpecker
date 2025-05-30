@@ -1061,7 +1061,7 @@ module Svg =
 
     [<Erase>]
     type feMergeNode() =
-        interface HtmlContainer
+        interface HtmlElement
         interface CoreSVGAttributes
         interface SingleInputFilterSVGAttributes
 
@@ -1402,7 +1402,7 @@ module Svg =
 
     [<Erase>]
     type mpath() =
-        interface HtmlContainer
+        interface HtmlElement
         interface CoreSVGAttributes
 
     [<Erase>]
@@ -1565,7 +1565,7 @@ module Svg =
 
     [<Erase>]
     type stop() =
-        interface HtmlContainer
+        interface HtmlElement
         interface CoreSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
