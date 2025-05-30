@@ -11,10 +11,9 @@ module Tags =
     /// Fragment (or template) node, only renders children, not itself
     [<Erase>]
     type Fragment() =
-        inherit FragmentNode()
+        interface FragmentNode
 
     /// Set of html extensions that keep original type
-    [<Extension>]
     [<Erase>]
     type HtmlElementExtensions =
 
@@ -119,147 +118,147 @@ module Tags =
 
     [<Erase>]
     type head() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type body() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type title() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type div() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type article() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type section() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type header() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type footer() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type main() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h1() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h2() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h3() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h4() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h5() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h6() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type ul() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type ol() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type li() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type p() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type span() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type small() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type strong() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type em() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type caption() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type nav() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type search() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type i() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type b() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type u() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type s() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type noscript() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type code() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type pre() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type blockquote() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type cite() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type q() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type address() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type del() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type ins() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type abbr() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type dfn() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type sub() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type sup() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type template() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type br() =
-        inherit VoidNode()
+        interface VoidNode
     [<Erase>]
     type hr() =
-        inherit VoidNode()
+        interface VoidNode
 
     [<Erase>]
     type a() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.href
             with set (_: string) = ()
@@ -287,7 +286,7 @@ module Tags =
 
     [<Erase>]
     type base'() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.href
             with set (_: string) = ()
@@ -297,7 +296,7 @@ module Tags =
 
     [<Erase>]
     type img() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -343,7 +342,7 @@ module Tags =
 
     [<Erase>]
     type form() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.action
             with set (_: string) = ()
@@ -374,7 +373,7 @@ module Tags =
 
     [<Erase>]
     type script() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -405,7 +404,7 @@ module Tags =
 
     [<Erase>]
     type link() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.rel
             with set (_: string) = ()
@@ -451,14 +450,14 @@ module Tags =
 
     [<Erase>]
     type html() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.xmlns
             with set (_: string) = ()
 
     [<Erase>]
     type meta() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -474,7 +473,7 @@ module Tags =
 
     [<Erase>]
     type input() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.type'
             with set (_: string) = ()
@@ -577,7 +576,7 @@ module Tags =
 
     [<Erase>]
     type output() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.for'
             with set (_: string) = ()
@@ -590,7 +589,7 @@ module Tags =
 
     [<Erase>]
     type textarea() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -637,7 +636,7 @@ module Tags =
 
     [<Erase>]
     type button() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.type'
             with set (_: string) = ()
@@ -680,7 +679,7 @@ module Tags =
 
     [<Erase>]
     type select() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -708,7 +707,7 @@ module Tags =
 
     [<Erase>]
     type option() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.value
             with set (_: string) = ()
@@ -724,7 +723,7 @@ module Tags =
 
     [<Erase>]
     type optgroup() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.label
             with set (_: string) = ()
@@ -734,14 +733,14 @@ module Tags =
 
     [<Erase>]
     type label() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.for'
             with set (_: string) = ()
 
     [<Erase>]
     type style() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.type'
             with set (_: string) = ()
@@ -751,7 +750,7 @@ module Tags =
 
     [<Erase>]
     type iframe() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -782,7 +781,7 @@ module Tags =
 
     [<Erase>]
     type video() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -828,7 +827,7 @@ module Tags =
 
     [<Erase>]
     type audio() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -859,7 +858,7 @@ module Tags =
 
     [<Erase>]
     type source() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -878,7 +877,7 @@ module Tags =
 
     [<Erase>]
     type canvas() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.width
             with set (_: int) = ()
@@ -888,7 +887,7 @@ module Tags =
 
     [<Erase>]
     type object'() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.data
             with set (_: string) = ()
@@ -904,7 +903,7 @@ module Tags =
 
     [<Erase>]
     type param() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -914,21 +913,21 @@ module Tags =
 
     [<Erase>]
     type data() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.value
             with set (_: string) = ()
 
     [<Erase>]
     type time() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.datetime
             with set (_: string) = ()
 
     [<Erase>]
     type progress() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.value
             with set (_: string) = ()
@@ -938,7 +937,7 @@ module Tags =
 
     [<Erase>]
     type meter() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.form
             with set (_: string) = ()
@@ -963,33 +962,33 @@ module Tags =
 
     [<Erase>]
     type details() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.open'
             with set (_: bool) = ()
 
     [<Erase>]
     type summary() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type dialog() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.open'
             with set (_: bool) = ()
 
     [<Erase>]
     type menu() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type datalist() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type fieldset() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.disabled
             with set (_: bool) = ()
@@ -1003,25 +1002,25 @@ module Tags =
 
     [<Erase>]
     type legend() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type table() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type tbody() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type thead() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type tfoot() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type tr() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type th() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.abbr
             with set (_: string) = ()
@@ -1039,7 +1038,7 @@ module Tags =
             with set (_: string) = ()
     [<Erase>]
     type td() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.colspan
             with set (_: int) = ()
@@ -1052,13 +1051,13 @@ module Tags =
 
     [<Erase>]
     type map() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.name
             with set (_: string) = ()
     [<Erase>]
     type area() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.shape
             with set (_: string) = ()
@@ -1089,37 +1088,37 @@ module Tags =
 
     [<Erase>]
     type aside() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type bdi() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type bdo() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type col() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.span
             with set (_: int) = ()
     [<Erase>]
     type colgroup() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.span
             with set (_: int) = ()
     [<Erase>]
     type dd() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type dl() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type dt() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type embed() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.src
             with set (_: string) = ()
@@ -1134,25 +1133,25 @@ module Tags =
             with set (_: int) = ()
     [<Erase>]
     type figcaption() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type figure() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type kbd() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type mark() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type picture() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type samp() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type var() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type wbr() =
-        inherit RegularNode()
+        interface RegularNode

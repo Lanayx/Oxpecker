@@ -8,7 +8,7 @@ module Bindings =
 
     [<Import("MetaProvider", "@solidjs/meta")>]
     type MetaProvider() =
-        inherit FragmentNode()
+        interface FragmentNode
 
     [<Import("Title", "@solidjs/meta")>]
     type Title() =
