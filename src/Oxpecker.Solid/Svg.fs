@@ -1,12 +1,7 @@
 namespace Oxpecker.Solid
 
 open Fable.Core
-open JetBrains.Annotations
 module Svg =
-
-    [<AllowNullLiteral>]
-    [<Interface>]
-    type CoreSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
@@ -15,28 +10,20 @@ module Svg =
     [<AllowNullLiteral>]
     [<Interface>]
     type AnimationElementSVGAttributes =
-        inherit CoreSVGAttributes
         inherit ConditionalProcessingSVGAttributes
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type ShapeElementSVGAttributes =
-        inherit CoreSVGAttributes
+    type ShapeElementSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
     type ContainerElementSVGAttributes =
-        inherit CoreSVGAttributes
         inherit ShapeElementSVGAttributes
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type FilterPrimitiveElementSVGAttributes =
-        inherit CoreSVGAttributes
-
-    [<AllowNullLiteral>]
-    [<Interface>]
-    type StylableSVGAttributes = interface end
+    type FilterPrimitiveElementSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
@@ -76,53 +63,27 @@ module Svg =
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type GradientElementSVGAttributes =
-        inherit CoreSVGAttributes
-        inherit StylableSVGAttributes
+    type GradientElementSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type GraphicsElementSVGAttributes =
-        inherit CoreSVGAttributes
+    type GraphicsElementSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type LightSourceElementSVGAttributes =
-        inherit CoreSVGAttributes
+    type LightSourceElementSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type NewViewportSVGAttributes =
-        inherit CoreSVGAttributes
+    type NewViewportSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
-    type TextContentElementSVGAttributes =
-        inherit CoreSVGAttributes
+    type TextContentElementSVGAttributes = interface end
 
     [<AllowNullLiteral>]
     [<Interface>]
     type ZoomAndPanSVGAttributes = interface end
-
-    type CoreSVGAttributes with
-        [<Erase>]
-        member _.id
-            with set (_: string) = ()
-        [<Erase>]
-        member _.lang
-            with set (_: string) = ()
-        [<Erase>]
-        member _.tabindex
-            with set (_: string) = ()
-
-    type StylableSVGAttributes with
-        [<Erase>]
-        member _.class'
-            with set (_: string) = ()
-        [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
-        [<Erase>]
-        member _.style
-            with set (_: string) = ()
 
     type TransformableSVGAttributes with
         [<Erase>]
@@ -646,7 +607,6 @@ module Svg =
         interface AnimationTimingSVGAttributes
         interface AnimationValueSVGAttributes
         interface AnimationAdditionSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.``color-interpolation``
             with set (_: string) = ()
@@ -695,7 +655,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.cx
@@ -711,9 +670,7 @@ module Svg =
     type clipPath() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.clipPathUnits
@@ -728,15 +685,12 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
 
     [<Erase>]
     type desc() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
-        interface StylableSVGAttributes
 
     [<Erase>]
     type ellipse() =
@@ -745,7 +699,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.cx
@@ -766,7 +719,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface DoubleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.mode
             with set (_: string) = ()
@@ -777,7 +729,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.type'
             with set (_: string) = ()
@@ -791,7 +742,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
 
     [<Erase>]
     type feComposite() =
@@ -799,7 +749,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface DoubleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.operator
             with set (_: string) = ()
@@ -822,7 +771,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.order
             with set (_: string) = ()
@@ -857,7 +805,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.``lighting-color``
             with set (_: string) = ()
@@ -880,7 +827,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface DoubleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.scale
             with set (_: string) = ()
@@ -907,9 +853,7 @@ module Svg =
     type feDropShadow() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         interface FilterPrimitiveElementSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.color
             with set (_: string) = ()
@@ -934,7 +878,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.color
             with set (_: string) = ()
@@ -949,7 +892,6 @@ module Svg =
     type feFuncA() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         [<Erase>]
         member _.type'
             with set (_: string) = ()
@@ -976,7 +918,6 @@ module Svg =
     type feFuncB() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         [<Erase>]
         member _.type'
             with set (_: string) = ()
@@ -1003,7 +944,6 @@ module Svg =
     type feFuncG() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         [<Erase>]
         member _.type'
             with set (_: string) = ()
@@ -1030,7 +970,6 @@ module Svg =
     type feFuncR() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         [<Erase>]
         member _.type'
             with set (_: string) = ()
@@ -1059,7 +998,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.stdDeviation
             with set (_: string) = ()
@@ -1069,7 +1007,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.preserveAspectRatio
             with set (_: string) = ()
@@ -1082,12 +1019,10 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
-        interface StylableSVGAttributes
 
     [<Erase>]
     type feMergeNode() =
         interface HtmlTag
-        interface CoreSVGAttributes
         interface SingleInputFilterSVGAttributes
 
     [<Erase>]
@@ -1096,7 +1031,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.operator
             with set (_: string) = ()
@@ -1110,7 +1044,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.dx
             with set (_: string) = ()
@@ -1139,7 +1072,6 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.``lighting-color``
             with set (_: string) = ()
@@ -1195,14 +1127,12 @@ module Svg =
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        interface StylableSVGAttributes
 
     [<Erase>]
     type feTurbulence() =
         interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.baseFrequency
             with set (_: string) = ()
@@ -1223,8 +1153,6 @@ module Svg =
     type filter() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.filterUnits
             with set (_: string) = ()
@@ -1253,7 +1181,6 @@ module Svg =
         interface HtmlContainer
         interface NewViewportSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.visibility
@@ -1280,7 +1207,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.visibility
@@ -1296,7 +1222,6 @@ module Svg =
         interface NewViewportSVGAttributes
         interface GraphicsElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.``image-rendering``
@@ -1330,7 +1255,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.``marker-end``
@@ -1377,7 +1301,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
-        interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         [<Erase>]
         member _.clip
@@ -1409,7 +1332,6 @@ module Svg =
         interface HtmlTag
         interface HtmlContainer
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.filter
             with set (_: string) = ()
@@ -1439,12 +1361,10 @@ module Svg =
     type metadata() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
 
     [<Erase>]
     type mpath() =
         interface HtmlTag
-        interface CoreSVGAttributes
 
     [<Erase>]
     type path() =
@@ -1453,7 +1373,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.``marker-end``
@@ -1477,7 +1396,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         [<Erase>]
         member _.x
@@ -1517,7 +1435,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.``marker-end``
@@ -1539,7 +1456,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.``marker-end``
@@ -1582,7 +1498,6 @@ module Svg =
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.x
@@ -1607,15 +1522,11 @@ module Svg =
     type set() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
-        interface StylableSVGAttributes
         interface AnimationTimingSVGAttributes
 
     [<Erase>]
     type stop() =
         interface HtmlTag
-        interface CoreSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.color
             with set (_: string) = ()
@@ -1636,7 +1547,6 @@ module Svg =
         interface ContainerElementSVGAttributes
         interface NewViewportSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         interface ZoomAndPanSVGAttributes
         interface PresentationSVGAttributes
@@ -1674,7 +1584,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.display
@@ -1689,7 +1598,6 @@ module Svg =
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface NewViewportSVGAttributes
-        interface StylableSVGAttributes
         interface FitToViewBoxSVGAttributes
         [<Erase>]
         member _.width
@@ -1723,7 +1631,6 @@ module Svg =
         interface TextContentElementSVGAttributes
         interface GraphicsElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         interface TransformableSVGAttributes
         [<Erase>]
         member _.x
@@ -1759,7 +1666,6 @@ module Svg =
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.startOffset
             with set (_: string) = ()
@@ -1791,7 +1697,6 @@ module Svg =
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
-        interface StylableSVGAttributes
         [<Erase>]
         member _.x
             with set (_: string) = ()
@@ -1830,8 +1735,6 @@ module Svg =
     type use'() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
-        interface StylableSVGAttributes
         interface ConditionalProcessingSVGAttributes
         interface GraphicsElementSVGAttributes
         interface PresentationSVGAttributes
@@ -1856,7 +1759,6 @@ module Svg =
     type view() =
         interface HtmlTag
         interface HtmlContainer
-        interface CoreSVGAttributes
         interface FitToViewBoxSVGAttributes
         interface ZoomAndPanSVGAttributes
         [<Erase>]
