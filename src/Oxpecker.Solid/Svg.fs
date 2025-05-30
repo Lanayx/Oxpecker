@@ -639,6 +639,7 @@ module Svg =
 
     [<Erase>]
     type animate() =
+        interface HtmlTag
         interface HtmlContainer
         interface AnimationElementSVGAttributes
         interface AnimationAttributeTargetSVGAttributes
@@ -655,6 +656,7 @@ module Svg =
 
     [<Erase>]
     type animateMotion() =
+        interface HtmlTag
         interface HtmlContainer
         interface AnimationElementSVGAttributes
         interface AnimationTimingSVGAttributes
@@ -675,6 +677,7 @@ module Svg =
 
     [<Erase>]
     type animateTransform() =
+        interface HtmlTag
         interface HtmlContainer
         interface AnimationElementSVGAttributes
         interface AnimationAttributeTargetSVGAttributes
@@ -687,6 +690,7 @@ module Svg =
 
     [<Erase>]
     type circle() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -705,6 +709,7 @@ module Svg =
 
     [<Erase>]
     type clipPath() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -719,6 +724,7 @@ module Svg =
 
     [<Erase>]
     type defs() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -727,12 +733,14 @@ module Svg =
 
     [<Erase>]
     type desc() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface StylableSVGAttributes
 
     [<Erase>]
     type ellipse() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -754,6 +762,7 @@ module Svg =
 
     [<Erase>]
     type feBlend() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface DoubleInputFilterSVGAttributes
@@ -764,6 +773,7 @@ module Svg =
 
     [<Erase>]
     type feColorMatrix() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -777,6 +787,7 @@ module Svg =
 
     [<Erase>]
     type feComponentTransfer() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -784,6 +795,7 @@ module Svg =
 
     [<Erase>]
     type feComposite() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface DoubleInputFilterSVGAttributes
@@ -806,6 +818,7 @@ module Svg =
 
     [<Erase>]
     type feConvolveMatrix() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -840,6 +853,7 @@ module Svg =
 
     [<Erase>]
     type feDiffuseLighting() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -862,6 +876,7 @@ module Svg =
 
     [<Erase>]
     type feDisplacementMap() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface DoubleInputFilterSVGAttributes
@@ -878,6 +893,7 @@ module Svg =
 
     [<Erase>]
     type feDistantLight() =
+        interface HtmlTag
         interface HtmlContainer
         interface LightSourceElementSVGAttributes
         [<Erase>]
@@ -889,6 +905,7 @@ module Svg =
 
     [<Erase>]
     type feDropShadow() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface FilterPrimitiveElementSVGAttributes
@@ -914,6 +931,7 @@ module Svg =
 
     [<Erase>]
     type feFlood() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface StylableSVGAttributes
@@ -929,6 +947,7 @@ module Svg =
 
     [<Erase>]
     type feFuncA() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         [<Erase>]
@@ -955,6 +974,7 @@ module Svg =
 
     [<Erase>]
     type feFuncB() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         [<Erase>]
@@ -981,6 +1001,7 @@ module Svg =
 
     [<Erase>]
     type feFuncG() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         [<Erase>]
@@ -1007,6 +1028,7 @@ module Svg =
 
     [<Erase>]
     type feFuncR() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         [<Erase>]
@@ -1033,6 +1055,7 @@ module Svg =
 
     [<Erase>]
     type feGaussianBlur() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -1043,6 +1066,7 @@ module Svg =
 
     [<Erase>]
     type feImage() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface StylableSVGAttributes
@@ -1055,18 +1079,21 @@ module Svg =
 
     [<Erase>]
     type feMerge() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface StylableSVGAttributes
 
     [<Erase>]
     type feMergeNode() =
-        interface HtmlElement
+        interface HtmlTag
+        interface HtmlContainer
         interface CoreSVGAttributes
         interface SingleInputFilterSVGAttributes
 
     [<Erase>]
     type feMorphology() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -1080,6 +1107,7 @@ module Svg =
 
     [<Erase>]
     type feOffset() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -1093,6 +1121,7 @@ module Svg =
 
     [<Erase>]
     type fePointLight() =
+        interface HtmlTag
         interface HtmlContainer
         interface LightSourceElementSVGAttributes
         [<Erase>]
@@ -1107,6 +1136,7 @@ module Svg =
 
     [<Erase>]
     type feSpecularLighting() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -1132,6 +1162,7 @@ module Svg =
 
     [<Erase>]
     type feSpotLight() =
+        interface HtmlTag
         interface HtmlContainer
         interface LightSourceElementSVGAttributes
         [<Erase>]
@@ -1161,6 +1192,7 @@ module Svg =
 
     [<Erase>]
     type feTile() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
@@ -1168,6 +1200,7 @@ module Svg =
 
     [<Erase>]
     type feTurbulence() =
+        interface HtmlTag
         interface HtmlContainer
         interface FilterPrimitiveElementSVGAttributes
         interface StylableSVGAttributes
@@ -1189,6 +1222,7 @@ module Svg =
 
     [<Erase>]
     type filter() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface StylableSVGAttributes
@@ -1216,6 +1250,7 @@ module Svg =
 
     [<Erase>]
     type foreignObject() =
+        interface HtmlTag
         interface HtmlContainer
         interface NewViewportSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -1242,6 +1277,7 @@ module Svg =
 
     [<Erase>]
     type g() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -1256,6 +1292,7 @@ module Svg =
 
     [<Erase>]
     type image() =
+        interface HtmlTag
         interface HtmlContainer
         interface NewViewportSVGAttributes
         interface GraphicsElementSVGAttributes
@@ -1289,6 +1326,7 @@ module Svg =
 
     [<Erase>]
     type line() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -1319,6 +1357,7 @@ module Svg =
 
     [<Erase>]
     type linearGradient() =
+        interface HtmlTag
         interface HtmlContainer
         interface GradientElementSVGAttributes
         [<Erase>]
@@ -1336,6 +1375,7 @@ module Svg =
 
     [<Erase>]
     type marker() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface StylableSVGAttributes
@@ -1367,6 +1407,7 @@ module Svg =
 
     [<Erase>]
     type mask() =
+        interface HtmlTag
         interface HtmlContainer
         interface ConditionalProcessingSVGAttributes
         interface StylableSVGAttributes
@@ -1397,16 +1438,19 @@ module Svg =
 
     [<Erase>]
     type metadata() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
 
     [<Erase>]
     type mpath() =
-        interface HtmlElement
+        interface HtmlTag
+        interface HtmlContainer
         interface CoreSVGAttributes
 
     [<Erase>]
     type path() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -1431,6 +1475,7 @@ module Svg =
 
     [<Erase>]
     type pattern() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -1469,6 +1514,7 @@ module Svg =
 
     [<Erase>]
     type polygon() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -1490,6 +1536,7 @@ module Svg =
 
     [<Erase>]
     type polyline() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -1511,6 +1558,7 @@ module Svg =
 
     [<Erase>]
     type radialGradient() =
+        interface HtmlTag
         interface HtmlContainer
         interface GradientElementSVGAttributes
         [<Erase>]
@@ -1531,6 +1579,7 @@ module Svg =
 
     [<Erase>]
     type rect() =
+        interface HtmlTag
         interface HtmlContainer
         interface GraphicsElementSVGAttributes
         interface ShapeElementSVGAttributes
@@ -1558,6 +1607,7 @@ module Svg =
 
     [<Erase>]
     type set() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface StylableSVGAttributes
@@ -1565,7 +1615,8 @@ module Svg =
 
     [<Erase>]
     type stop() =
-        interface HtmlElement
+        interface HtmlTag
+        interface HtmlContainer
         interface CoreSVGAttributes
         interface StylableSVGAttributes
         [<Erase>]
@@ -1583,6 +1634,7 @@ module Svg =
 
     [<Erase>]
     type svg() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface NewViewportSVGAttributes
@@ -1621,6 +1673,7 @@ module Svg =
 
     [<Erase>]
     type switch() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -1635,6 +1688,7 @@ module Svg =
 
     [<Erase>]
     type symbol() =
+        interface HtmlTag
         interface HtmlContainer
         interface ContainerElementSVGAttributes
         interface NewViewportSVGAttributes
@@ -1667,6 +1721,7 @@ module Svg =
 
     [<Erase>]
     type text() =
+        interface HtmlTag
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface GraphicsElementSVGAttributes
@@ -1703,6 +1758,7 @@ module Svg =
 
     [<Erase>]
     type textPath() =
+        interface HtmlTag
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -1734,6 +1790,7 @@ module Svg =
 
     [<Erase>]
     type tspan() =
+        interface HtmlTag
         interface HtmlContainer
         interface TextContentElementSVGAttributes
         interface ConditionalProcessingSVGAttributes
@@ -1774,6 +1831,7 @@ module Svg =
 
     [<Erase>]
     type use'() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface StylableSVGAttributes
@@ -1799,6 +1857,7 @@ module Svg =
 
     [<Erase>]
     type view() =
+        interface HtmlTag
         interface HtmlContainer
         interface CoreSVGAttributes
         interface FitToViewBoxSVGAttributes
