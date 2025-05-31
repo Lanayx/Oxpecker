@@ -58,14 +58,14 @@ These elements are used to iterate over a list of items (you can read about the 
 
 ### Custom HTML tags / Web Components
 
-Custom elements can be useful for integration with Web Component based libraries. You can create one by inheriting from `RegularNode` (or `VoidNode`):
+Custom elements can be useful for integration with Web Component based libraries. You can create one by adding `RegularNode` (or `VoidNode`) marker interface:
 
 ```fsharp
 namespace Oxpecker.Solid.MyTags
 
 [<CompiledName("my-tag")>]
 type MyTag () =
-    inherit RegularNode()
+    interface RegularNode
     member this.myAttr
         with set (value: string) = ()
 ```
@@ -198,6 +198,11 @@ _You still need to add a separate reference to @solidjs/meta in your package.jso
 
 Similar to the original Oxpecker.ViewEngine additional Aria attributes reside in a separate module, so you need to write `open Oxpecker.Solid.Aria` to access them.
 
+### SVG
+
+Oxpecker supports SVG elements, so you can use them in your components as well. Just make sure to add `open Oxpecker.Solid.Svg` to make it work.
+
+_Note: remember, that you [can't use the same SVG node twice](https://github.com/solidjs/solid/discussions/1134?sort=new#discussioncomment-3226872)_
 
 ### Lazy
 For components lazy loading you'll need to use `lazy'` function together with another `importComponent` function.

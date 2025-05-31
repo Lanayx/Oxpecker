@@ -3,73 +3,101 @@
 
 # Oxpecker
 
-![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
+![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/main/images/oxpecker.png)
 
-**Oxpecker** is a library started as functional wrapper around **ASP.NET Core Endpoint routing** (or F#-friendly "Minimal APIs"), but now providing fullstack capabilities with **Htmx** and **Solid.js** integrations. Repository is a monorepo with all related projects included and documentation located in *README.md* files per project. Oxpecker one of the fastest .NET web frameworks in several categories [in the TechEmpower benchmark](https://www.techempower.com/benchmarks/#section=data-r23&p=zik0zj-zik0zj-zijocf-zik0zj-zik0zj-18y67)
+**Welcome to Oxpecker!** An F# library designed to supercharge your web development with ASP.NET Core, Htmx, and Solid.js. Oxpecker began as a functional wrapper for ASP.NET Core Endpoint routing (think F#-friendly "Minimal APIs") and has evolved into a comprehensive fullstack solution. Our monorepo includes all related projects, with documentation conveniently located in `README.md` files for each project.
 
-The server part of the Oxpecker library is a revised version of [Giraffe](https://github.com/giraffe-fsharp/Giraffe), it mostly sticks to Giraffe's successful API (hence the name). Improvements involve changing some core types, performance of template handlers, simplifying handlers and dropping a lot of outdated functionality.
+🚀 **Performance Alert!** Oxpecker is recognized as one of the fastest .NET web frameworks in several categories [in the TechEmpower benchmark](https://www.techempower.com/benchmarks/#section=data-r23&p=zik0zj-zik0zj-zijocf-zik0zj-zik0zj-18y67).
 
-Medium posts:
-* [Oxpecker Introduction](https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918)
-* [7 reasons to try Oxpecker.ViewEngine](https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c)
-* [Oxpecker vs Blazor](https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99)
-* [Oxpecker.Solid introduction](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
+The server-side core of Oxpecker is a refined version of the acclaimed [Giraffe](https://github.com/giraffe-fsharp/Giraffe), largely maintaining Giraffe's successful API (hence the name!). Key enhancements include optimized core types, better performance, simplified handler logic, and the removal of outdated functionalities.
 
-## Features:
+## Why Choose Oxpecker?
 
-- Native [ASP.NET Core Endpoint routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) integration
-- Fast ViewEngine with convenient DSL for HTML
-- OpenApi integration
-- Htmx integration
-- Strongly typed route parameters
-- Endpoint handlers and endpoint middlewares, flexible composition
-- JSON binding and serialization
-- Form binding
-- Model validation
-- URL parameters binding
-- Response caching
-- Streaming
-- Authorization
-- eTag support
-- IResult support
-- Many useful **HttpContext** extensions
+*   **Blazing Fast:** Benefit from top-tier performance, as validated by TechEmpower benchmarks.
+*   **Functional & F#-Friendly:** Enjoy an idiomatic F# experience on top of ASP.NET Core.
+*   **Fullstack Power:** Seamlessly integrate backend and frontend with Htmx and Solid.js.
+*   **Modern ASP.NET Core:** Leverages native Endpoint routing for robust and flexible web applications.
+*   **Rich Feature Set:** From view engines to Htmx integration, Oxpecker has you covered.
 
-## Get started:
-- [Empty template](https://github.com/Lanayx/Oxpecker/blob/main/examples/Empty)
-- [Empty Solid template](https://github.com/Lanayx/Oxpecker/blob/main/examples/EmptySolid)
+## Dive Deeper - Features:
 
-## Examples:
-- [Dump of different features all in one place](https://github.com/Lanayx/Oxpecker/blob/main/examples/Basic)
-- [Fullstack CRUD example with functional DI on backend](https://github.com/Lanayx/Oxpecker/blob/main/examples/CRUD)
-- [HTMX sample application](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp)
-- [Oxpecker version of the traditional ASP.NET WeatherApp](https://github.com/Lanayx/Oxpecker/tree/main/examples/WeatherApp)
-- [SPA application (TODO list) without backend](https://github.com/Lanayx/Oxpecker/tree/main/examples/TodoList)
-- [MCP server and test client](https://github.com/Lanayx/Oxpecker/tree/main/examples/MCP)
+*   Native [ASP.NET Core Endpoint routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) integration
+*   Fast ViewEngine with a convenient DSL for HTML
+*   OpenApi integration
+*   Htmx integration
+*   Strongly typed route parameters
+*   Endpoint handlers and endpoint middlewares, offering flexible composition
+*   Effortless JSON binding and serialization
+*   Simplified Form binding
+*   Built-in Model validation
+*   Easy URL parameters binding
+*   Response caching capabilities
+*   Streaming support
+*   Authorization mechanisms
+*   eTag support
+*   Comprehensive IResult support
+*   A wealth of useful **HttpContext** extensions
 
-## Documentation links:
+## Get Started Quickly:
 
-* [Oxpecker](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
-* [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
-* [Oxpecker.Htmx Readme](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
-* [Oxpecker.OpenApi Readme](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
-* [Oxpecker.Solid Readme](https://lanayx.github.io/Oxpecker/src/Oxpecker.Solid/)
-* [Migration from Giraffe](https://lanayx.github.io/Oxpecker/MigrateFromGiraffe)
+Ready to build something amazing?
+*   [Empty template](https://github.com/Lanayx/Oxpecker/blob/main/examples/Empty) - Your basic starting point for server apps.
+*   [Empty Solid template](https://github.com/Lanayx/Oxpecker/blob/main/examples/EmptySolid) - For frontend Solid.js based applications.
 
-## develop vs main branch:
+## Explore Our Examples:
 
-**develop** is a development branch, projects are linked with each other using project references. Use this branch to send PRs.
+See Oxpecker in action:
+*   [Fullstack CRUD](https://github.com/Lanayx/Oxpecker/blob/main/examples/CRUD) - Example with functional DI on the backend.
+*   [HTMX Contact App](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp) - A sample Htmx application.
+*   [ASP.NET WeatherApp (Oxpecker style)](https://github.com/Lanayx/Oxpecker/tree/main/examples/WeatherApp)
+*   [Frontend SPA (TodoList)](https://github.com/Lanayx/Oxpecker/tree/main/examples/TodoList) - SPA application without a backend.
+*   [MCP Server & Client](https://github.com/Lanayx/Oxpecker/tree/main/examples/MCP) - Model Context Protocol example.
+*   [Feature Showcase](https://github.com/Lanayx/Oxpecker/blob/main/examples/Basic) - A dump of different server features all in one place.
 
-**main** is a production branch, projects and examples are linked with each other using nuget (or npm) packages. Packages are published from this branch.
+## Learn More - Articles & Insights:
 
-## Packages
+Medium posts from the creator:
+*   [Oxpecker Introduction](https://medium.com/@lanayx/the-oxpecker-ef9df3dfb918)
+*   [7 reasons to try Oxpecker.ViewEngine](https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c)
+*   [Oxpecker vs Blazor](https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99)
+*   [Oxpecker.Solid introduction](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
 
-* [Oxpecker Nuget package](https://www.nuget.org/packages/Oxpecker)
-* [Oxpecker.ViewEngine Nuget package](https://www.nuget.org/packages/Oxpecker.ViewEngine)
-* [Oxpecker.Htmx Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx)
-* [Oxpecker.OpenApi Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi)
-* [Oxpecker.Solid Nuget package](https://www.nuget.org/packages/Oxpecker.Solid)
-* [Oxpecker.Solid.FablePlugin Nuget package](https://www.nuget.org/packages/Oxpecker.Solid.FablePlugin)
+## Comprehensive Documentation:
 
-## Support
-You can promote the development of the project using [Github sponsors](https://github.com/sponsors/Lanayx) option
+*   [Oxpecker Core](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
+*   [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
+*   [Oxpecker.Htmx](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
+*   [Oxpecker.OpenApi](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
+*   [Oxpecker.Solid](https://lanayx.github.io/Oxpecker/src/Oxpecker.Solid/)
+*   [Migrating from Giraffe](https://lanayx.github.io/Oxpecker/MigrateFromGiraffe)
 
+## Contributing & Development Lifecycle:
+
+*   **`develop` branch:** This is our active development branch. Projects are linked using project references. Please send your Pull Requests here!
+*   **`main` branch:** This is our production branch. Projects and examples use NuGet (or npm) packages. Releases are published from this branch.
+
+We welcome contributions! Check out the `develop` branch to get started.
+
+## Official Packages:
+
+Find Oxpecker on NuGet:
+*   [Oxpecker](https://www.nuget.org/packages/Oxpecker)
+*   [Oxpecker.ViewEngine](https://www.nuget.org/packages/Oxpecker.ViewEngine)
+*   [Oxpecker.Htmx](https://www.nuget.org/packages/Oxpecker.Htmx)
+*   [Oxpecker.OpenApi](https://www.nuget.org/packages/Oxpecker.OpenApi)
+*   [Oxpecker.Solid](https://www.nuget.org/packages/Oxpecker.Solid)
+*   [Oxpecker.Solid.FablePlugin](https://www.nuget.org/packages/Oxpecker.Solid.FablePlugin)
+
+## ❤️ Support Oxpecker's Growth!
+
+Oxpecker is a passion project, and your support can make a huge difference! If you find Oxpecker valuable, or if you'd like to see it continue to evolve and improve, please consider becoming a sponsor.
+
+Your contributions help us:
+*   Dedicate more time to development and new features.
+*   Improve documentation and examples.
+*   Provide faster community support.
+*   Keep the project healthy and actively maintained.
+
+👉 **[Become a Sponsor on GitHub](https://github.com/sponsors/Lanayx)**
+
+Every bit of support is greatly appreciated and helps us build a better future for F# web development with Oxpecker!

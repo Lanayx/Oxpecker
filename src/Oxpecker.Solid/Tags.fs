@@ -1,6 +1,5 @@
 namespace Oxpecker.Solid
 
-open System
 open System.Runtime.CompilerServices
 open Browser.Types
 open JetBrains.Annotations
@@ -12,10 +11,9 @@ module Tags =
     /// Fragment (or template) node, only renders children, not itself
     [<Erase>]
     type Fragment() =
-        inherit FragmentNode()
+        interface FragmentNode
 
     /// Set of html extensions that keep original type
-    [<Extension>]
     [<Erase>]
     type HtmlElementExtensions =
 
@@ -55,1105 +53,1105 @@ module Tags =
     type HtmlTag with
         [<Erase>]
         member this.id
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.class'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
         [<Erase>]
         member this.style
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.lang
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.dir
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.tabindex
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.title
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.accesskey
-            with set (value: char) = ()
+            with set (_: char) = ()
         [<Erase>]
         member this.contenteditable
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.draggable
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.enterkeyhint
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.hidden
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.inert
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.inputmode
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.popover
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.spellcheck
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.translate
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.autocapitalize
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.is
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.part
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.slot
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type head() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type body() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type title() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type div() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type article() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type section() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type header() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type footer() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type main() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h1() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h2() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h3() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h4() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h5() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type h6() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type ul() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type ol() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type li() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type p() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type span() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type small() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type strong() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type em() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type caption() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type nav() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type search() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type i() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type b() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type u() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type s() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type noscript() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type code() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type pre() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type blockquote() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type cite() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type q() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type address() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type del() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type ins() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type abbr() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type dfn() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type sub() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type sup() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type template() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type br() =
-        inherit VoidNode()
+        interface VoidNode
     [<Erase>]
     type hr() =
-        inherit VoidNode()
+        interface VoidNode
 
     [<Erase>]
     type a() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.href
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.hreflang
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.rel
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.target
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.download
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.ping
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.referrerpolicy
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type base'() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.href
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.target
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type img() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.alt
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.srcset
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.referrerpolicy
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.crossorigin
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.sizes
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.usemap
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.ismap
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.decoding
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.loading
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.fetchpriority
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.elementtiming
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type form() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.action
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.method
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.enctype
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.target
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.acceptCharset
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.autocomplete
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.novalidate
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.rel
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type script() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.async
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.defer
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.integrity
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.crossorigin
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.nomodule
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.nonce
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.referrerpolicy
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type link() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.rel
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.href
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.media
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.as'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.sizes
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.crossorigin
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.integrity
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.referrerpolicy
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.hreflang
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.imagesizes
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.imagesrcset
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.title
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type html() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.xmlns
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type meta() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.content
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.charset
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.httpEquiv
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type input() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.placeholder
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.required
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autofocus
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autocomplete
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.min
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.max
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.step
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.pattern
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.readonly
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.multiple
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.accept
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.list
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.maxlength
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.minlength
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.size
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.alt
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.checked'
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.dirname
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formaction
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formenctype
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formmethod
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formnovalidate
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.formtarget
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.inputmode
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.capture
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type output() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.for'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type textarea() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.placeholder
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.required
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autofocus
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autocomplete
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.readonly
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.rows
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.cols
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.wrap
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.maxlength
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.minlength
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.dirname
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
 
 
     [<Erase>]
     type button() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autofocus
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formaction
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formenctype
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formmethod
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.formnovalidate
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.formtarget
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.popovertarget
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.popovertargetaction
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type select() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.required
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autofocus
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.autocomplete
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.multiple
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.size
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type option() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.selected
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.label
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type optgroup() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.label
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
 
     [<Erase>]
     type label() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.for'
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type style() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.media
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type iframe() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.sandbox
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.allow
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.loading
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.referrerpolicy
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.srcdoc
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type video() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.poster
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.autoplay
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.controls
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.playsinline
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.controlsList
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.crossorigin
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.loop
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.muted
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.preload
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.disableremoteplayback
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.disablepictureinpicture
-            with set (value: bool) = ()
+            with set (_: bool) = ()
 
     [<Erase>]
     type audio() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.autoplay
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.controls
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.controlsList
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.crossorigin
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.preload
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.loop
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.muted
-            with set (value: bool) = ()
+            with set (_: bool) = ()
         [<Erase>]
         member this.disableremoteplayback
-            with set (value: bool) = ()
+            with set (_: bool) = ()
 
     [<Erase>]
     type source() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.media
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.sizes
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.srcset
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type canvas() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
 
     [<Erase>]
     type object'() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.data
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
 
     [<Erase>]
     type param() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type data() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type time() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.datetime
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type progress() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.max
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type meter() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.value
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.min
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.max
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.low
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.high
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.optimum
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type details() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.open'
-            with set (value: bool) = ()
+            with set (_: bool) = ()
 
     [<Erase>]
     type summary() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type dialog() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.open'
-            with set (value: bool) = ()
+            with set (_: bool) = ()
 
     [<Erase>]
     type menu() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type datalist() =
-        inherit RegularNode()
+        interface RegularNode
 
     [<Erase>]
     type fieldset() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.disabled
-            with set (value: bool) = ()
+            with set (_: bool) = ()
 
         [<Erase>]
         member this.form
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type legend() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type table() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type tbody() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type thead() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type tfoot() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type tr() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type th() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.abbr
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.colspan
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.rowspan
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.headers
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.scope
-            with set (value: string) = ()
+            with set (_: string) = ()
     [<Erase>]
     type td() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.colspan
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.rowspan
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.headers
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type map() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.name
-            with set (value: string) = ()
+            with set (_: string) = ()
     [<Erase>]
     type area() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.shape
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.coords
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.href
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.alt
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.download
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.target
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.rel
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.referrerpolicy
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.ping
-            with set (value: string) = ()
+            with set (_: string) = ()
 
     [<Erase>]
     type aside() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type bdi() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type bdo() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type col() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.span
-            with set (value: int) = ()
+            with set (_: int) = ()
     [<Erase>]
     type colgroup() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.span
-            with set (value: int) = ()
+            with set (_: int) = ()
     [<Erase>]
     type dd() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type dl() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type dt() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type embed() =
-        inherit VoidNode()
+        interface VoidNode
         [<Erase>]
         member this.src
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.type'
-            with set (value: string) = ()
+            with set (_: string) = ()
         [<Erase>]
         member this.width
-            with set (value: int) = ()
+            with set (_: int) = ()
         [<Erase>]
         member this.height
-            with set (value: int) = ()
+            with set (_: int) = ()
     [<Erase>]
     type figcaption() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type figure() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type kbd() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type mark() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type picture() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type samp() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type var() =
-        inherit RegularNode()
+        interface RegularNode
     [<Erase>]
     type wbr() =
-        inherit RegularNode()
+        interface RegularNode

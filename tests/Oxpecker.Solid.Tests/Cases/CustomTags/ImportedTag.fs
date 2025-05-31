@@ -5,4 +5,4 @@ open Oxpecker.Solid
 
 [<Import("ImportedName","ImportedModule")>]
 type ImportedTag() =
-    inherit RegularNode()
+    interface RegularNode

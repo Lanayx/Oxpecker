@@ -4,6 +4,6 @@ open Oxpecker.Solid
 
 [<CompiledName("my-tag")>]
 type MyTag () =
-    inherit RegularNode()
+    interface RegularNode
     member this.myAttr
         with set (value: string) = ()

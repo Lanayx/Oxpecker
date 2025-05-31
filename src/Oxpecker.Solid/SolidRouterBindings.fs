@@ -172,7 +172,7 @@ module Bindings =
 
     [<Import("A", "@solidjs/router")>]
     type A() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.href
             with set (value: string) = ()
@@ -197,7 +197,7 @@ module Bindings =
 
     [<Import("Navigate", "@solidjs/router")>]
     type Navigate() =
-        inherit RegularNode()
+        interface RegularNode
         [<Erase>]
         member this.href
             with set (value: string) = ()

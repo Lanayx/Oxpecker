@@ -15,19 +15,13 @@ module Builder =
         inherit HtmlElement
     type HtmlContainer =
         inherit HtmlElement
-
-    [<Erase>]
-    type RegularNode() =
-        interface HtmlTag
-        interface HtmlContainer
-
-    [<Erase>]
-    type FragmentNode() =
-        interface HtmlContainer
-
-    [<Erase>]
-    type VoidNode() =
-        interface HtmlTag
+    type RegularNode =
+        inherit HtmlTag
+        inherit HtmlContainer
+    type FragmentNode =
+        inherit HtmlContainer
+    type VoidNode =
+        inherit HtmlTag
 
     type HtmlContainerFun = HtmlContainer -> unit
 
