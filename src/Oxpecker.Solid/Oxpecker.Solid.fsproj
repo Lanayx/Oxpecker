@@ -19,8 +19,8 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.8.0</Version>
-        <PackageVersion>0.8.0</PackageVersion>
+        <Version>0.8.1</Version>
+        <PackageVersion>0.8.1</PackageVersion>
         <PackageReleaseNotes>SVG support. Several base classes were changed to interfaces.</PackageReleaseNotes>
     </PropertyGroup>
 
