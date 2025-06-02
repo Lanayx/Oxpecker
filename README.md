@@ -64,7 +64,7 @@ Medium posts from the creator:
 
 ## Comprehensive Documentation:
 
-*   [Oxpecker Core](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
+*   [Oxpecker](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
 *   [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
 *   [Oxpecker.Htmx](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
 *   [Oxpecker.OpenApi](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
