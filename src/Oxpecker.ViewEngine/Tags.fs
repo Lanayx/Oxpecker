@@ -45,6 +45,9 @@ module Tags =
             with set (value: string | null) = this.attr("id", value) |> ignore
         member this.class'
             with set (value: string | null) = this.attr("class", value) |> ignore
+        /// Alias for class' attribute
+        member this.cls
+            with set (value: string | null) = this.attr("class", value) |> ignore
         [<LanguageInjection(InjectedLanguage.CSS, Prefix = ".x{", Suffix = ";}")>]
         member this.style
             with set (value: string | null) = this.attr("style", value) |> ignore
