@@ -3,7 +3,7 @@ module Oxpecker.Tests.ModelValidation
 open Oxpecker
 open System.ComponentModel.DataAnnotations
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 
 type Model = {
     Name: string | null

@@ -1,18 +1,15 @@
-namespace FsUnitTyped
+namespace FsUnit.Light
 
 [<AutoOpen>]
 module CustomTopLevelOperators =
 
     open System.Diagnostics
-    open FsUnit.Xunit
+    open FsUnit.Light.Xunit
     open Xunit
 
     [<DebuggerStepThrough>]
     let shouldFailWithMessage<'exn when 'exn :> exn> message (f: unit -> unit) =
-        f |> should (throwWithMessage message) typeof<'exn>
-
-    [<DebuggerStepThrough>]
-    let shouldEqualSeq (expected: #seq<'a>) (actual: #seq<'a>) = actual |> should equalSeq expected
+        Assert.Throws<'exn> f |> _.Message |> shouldEqual message
 
     [<DebuggerStepThrough>]
     let shouldEquivalent<'a> (expected: 'a) (actual: 'a) = Assert.Equivalent(expected, actual)

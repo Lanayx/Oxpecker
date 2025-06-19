@@ -1,7 +1,7 @@
 module Oxpecker.Tests.Helpers
 
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 open Oxpecker.Helpers
 
 [<Fact>]

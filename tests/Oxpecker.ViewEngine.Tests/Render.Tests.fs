@@ -6,7 +6,7 @@ open System.Text
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 
 [<Fact>]
 let ``Basic test`` () =

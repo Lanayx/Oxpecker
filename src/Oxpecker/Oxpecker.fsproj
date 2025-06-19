@@ -36,7 +36,6 @@
         <Compile Include="Serializers.fs" />
         <Compile Include="ModelBinder.fs" />
         <Compile Include="HttpContextExtensions.fs" />
-        <Compile Include="DateTimeExtensions.fs" />
         <Compile Include="Core.fs" />
         <Compile Include="Handlers.fs" />
         <Compile Include="ModelValidation.fs" />

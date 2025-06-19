@@ -6,7 +6,7 @@ open Microsoft.AspNetCore.ResponseCaching
 open Microsoft.Net.Http.Headers
 open Oxpecker
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 
 #nowarn "3391"
 
