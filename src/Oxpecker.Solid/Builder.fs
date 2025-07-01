@@ -48,6 +48,9 @@ module Builder =
         [<Erase>]
         member inline _.Yield(text: int) : HtmlContainerFun = fun cont -> ignore text
 
+        [<Erase>]
+        member inline _.Yield(element: JSX.Element) : HtmlContainerFun = fun cont -> ignore element
+
     [<Erase>]
     type HtmlContainerExtensions =
         [<Extension; Erase>]
