@@ -11,8 +11,8 @@ let html (ctx: HttpContext) =
 
     let requestId =
         match Activity.Current with
-        | Null -> ctx.TraceIdentifier
-        | NonNull activity -> activity.Id |> string
+        | null -> ctx.TraceIdentifier
+        | activity -> activity.Id |> string
     let showRequestId = requestId |> String.IsNullOrWhiteSpace |> not
 
     Fragment(){

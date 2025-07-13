@@ -17,7 +17,7 @@ Ported from the React tutorial: https://devblogs.microsoft.com/visualstudio/crea
 
 ### Run this example
 
-0. Install [.NET 8 SDK](https://dotnet.microsoft.com/en-us/download) (or newer) and [Node.js](https://nodejs.org/en)
+0. Install [.NET SDK](https://dotnet.microsoft.com/en-us/download) and [Node.js](https://nodejs.org/en)
 
 
 1. Install dependencies
