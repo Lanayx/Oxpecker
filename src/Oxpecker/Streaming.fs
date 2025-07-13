@@ -46,8 +46,8 @@ module internal RangeHelper =
         else
             let range = request.GetTypedHeaders().Range
             match range with
-            | Null -> None
-            | NonNull r -> Some r.Ranges
+            | null -> None
+            | r -> Some r.Ranges
 
     /// <summary>
     /// Validates if the provided set of ranges can be satisfied with the given contentLength.
@@ -105,20 +105,20 @@ module internal RangeHelper =
         let ifRange = request.GetTypedHeaders().IfRange
 
         match ifRange with
-        | Null -> true
-        | NonNull ifRange ->
+        | null -> true
+        | ifRange ->
             match ifRange.EntityTag with
-            | NonNull entityTag ->
-                match eTag with
-                | None -> false
-                | Some x -> entityTag.Compare(x, true)
-            | Null ->
+            | null ->
                 if ifRange.LastModified.HasValue then
                     match lastModified with
                     | None -> false
                     | Some x -> x <= ifRange.LastModified.Value
                 else
                     true
+            | entityTag ->
+                match eTag with
+                | None -> false
+                | Some x -> entityTag.Compare(x, true)
 
 // ---------------------------
 // HttpContext extensions
