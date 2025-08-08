@@ -78,6 +78,11 @@ Medium posts from the creator:
 
 We welcome contributions! Check out the `develop` branch to get started.
 
+## Oxpecker community space
+
+If you have developed a library that extends Oxpecker functionality, but it can't go into the main repo, you can submit it as a separate repository under Oxpecker-Community GitHub organization:
+https://github.com/Oxpecker-Community
+
 ## Official Packages:
 
 Find Oxpecker on NuGet:
