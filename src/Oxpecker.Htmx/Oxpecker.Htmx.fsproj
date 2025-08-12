@@ -20,9 +20,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.0.0</Version>
-        <PackageVersion>1.0.0</PackageVersion>
-        <PackageReleaseNotes>Major release</PackageReleaseNotes>
+        <Version>1.0.1</Version>
+        <PackageVersion>1.0.1</PackageVersion>
+        <PackageReleaseNotes>Documentation update</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
