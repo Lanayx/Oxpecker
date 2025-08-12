@@ -7,7 +7,7 @@ open Microsoft.AspNetCore.WebUtilities
 open Microsoft.Extensions.DependencyInjection
 open Oxpecker.ViewEngine
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 open Oxpecker
 
 

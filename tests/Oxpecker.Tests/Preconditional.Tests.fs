@@ -10,7 +10,11 @@ open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Xunit
 open Oxpecker
-open FsUnitTyped
+open FsUnit.Light
+
+
+type DateTimeOffset with
+    member this.ToHtmlString() = this.ToString("r")
 
 #nowarn "3391"
 

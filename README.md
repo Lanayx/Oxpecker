@@ -64,7 +64,7 @@ Medium posts from the creator:
 
 ## Comprehensive Documentation:
 
-*   [Oxpecker Core](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
+*   [Oxpecker](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
 *   [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
 *   [Oxpecker.Htmx](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
 *   [Oxpecker.OpenApi](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
@@ -77,6 +77,11 @@ Medium posts from the creator:
 *   **`main` branch:** This is our production branch. Projects and examples use NuGet (or npm) packages. Releases are published from this branch.
 
 We welcome contributions! Check out the `develop` branch to get started.
+
+## Oxpecker community space
+
+If you have developed a library that extends Oxpecker functionality, but it can't go into the main repo, you can submit it as a separate repository under Oxpecker-Community GitHub organization:
+https://github.com/Oxpecker-Community
 
 ## Official Packages:
 

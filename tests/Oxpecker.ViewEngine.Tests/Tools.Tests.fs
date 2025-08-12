@@ -3,10 +3,9 @@
 open System
 open System.Net
 open System.Text
-open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Tools
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 
 [<Fact>]
 let ``Custom queue works well`` () =
@@ -45,7 +44,7 @@ let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the sam
           <tr><td>12</td><td>フレームワークのベンチマーク</td></tr>
           </table></body></html>"""
 
-    let encodedFortunes = WebUtility.HtmlEncode unencodedFortunes
+    let encodedFortunes = WebUtility.HtmlEncode unencodedFortunes |> nonNull
     let sb = StringBuilder()
     CustomWebUtility.htmlEncode unencodedFortunes sb
 

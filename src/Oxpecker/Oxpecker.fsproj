@@ -20,9 +20,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.3.0</Version>
-        <PackageVersion>1.3.0</PackageVersion>
-        <PackageReleaseNotes>Model binder: perf improvements and CaseInsensitiveMatching option</PackageReleaseNotes>
+        <Version>1.4.0</Version>
+        <PackageVersion>1.4.0</PackageVersion>
+        <PackageReleaseNotes>Removed non-relevant datetime extensions</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -37,7 +37,6 @@
         <Compile Include="Serializers.fs" />
         <Compile Include="ModelBinder.fs" />
         <Compile Include="HttpContextExtensions.fs" />
-        <Compile Include="DateTimeExtensions.fs" />
         <Compile Include="Core.fs" />
         <Compile Include="Handlers.fs" />
         <Compile Include="ModelValidation.fs" />

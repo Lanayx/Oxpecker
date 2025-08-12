@@ -5,7 +5,7 @@ open System.Collections.Generic
 open Microsoft.Extensions.Primitives
 open Oxpecker
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 
 let private toComplexData data =
     data |> List.map KeyValuePair.Create |> Dictionary |> RawData.initComplexData
@@ -593,7 +593,7 @@ let ``defaultParseModel<ResizeArray<BookType>> parses a collection of enum value
             BookType.Unknown
         ]
     let result = defaultParseModel<ResizeArray<BookType>> data
-    result |> shouldEqualSeq expected
+    result |> shouldEqual expected
 
 [<Fact>]
 let ``defaultParseModel<BookType list> parses a list of enum values`` () =
@@ -622,7 +622,7 @@ let ``defaultParseModel<BookType seq> parses a sequence of enum values`` () =
             BookType.Unknown
         }
     let result = defaultParseModel<BookType seq> data
-    result |> shouldEqualSeq expected
+    result |> shouldEqual expected
 
 type Baz = {
     Name: string option

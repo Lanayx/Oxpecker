@@ -26,8 +26,76 @@ let renderForm q =
     }
 ```
 
-## Documentation:
+## Documentation
 
-Please refer to the official site for the HTMX documentation: https://htmx.org/.
+Please refer to the [official HTMX site for the documentation](https://htmx.org).
 
 You can check [ContactApp sample](https://github.com/Lanayx/Oxpecker/tree/main/examples/ContactApp) in the repository to get a better understanding of how the code will look like in your application.
+
+## API
+
+### Client side
+
+After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
+- hxGet
+- hxPost
+- hxPushUrl
+- hxSelect
+- hxSelectOob
+- hxSwap
+- hxSwapOob
+- hxTarget
+- hxTrigger
+- hxVals
+- hxBoost
+- hxConfirm
+- hxDelete
+- hxDisable
+- hxDisabledElt
+- hxDisinherit
+- hxEncoding
+- hxExt
+- hxHeaders
+- hxHistory
+- hxHistoryElt
+- hxInclude
+- hxIndicator
+- hxParams
+- hxPatch
+- hxPreserve
+- hxPrompt
+- hxPut
+- hxReplaceUrl
+- hxRequest
+- hxSync
+- hxValidate
+
+and event handler method:
+
+- hxOn
+
+### Server side
+
+After opening `Oxpecker.Htmx` namespace you'll get access to the header name constants:
+
+- HxRequestHeader.Boosted
+- HxRequestHeader.CurrentUrl
+- HxRequestHeader.HistoryRestoreRequest
+- HxRequestHeader.Prompt
+- HxRequestHeader.Request
+- HxRequestHeader.Target
+- HxRequestHeader.TriggerName
+- HxRequestHeader.Trigger
+
+and
+
+- HxResponseHeader.Location
+- HxResponseHeader.PushUrl
+- HxResponseHeader.Redirect
+- HxResponseHeader.Refresh
+- HxResponseHeader.ReplaceUrl
+- HxResponseHeader.Reswap
+- HxResponseHeader.Retarget
+- HxResponseHeader.Trigger
+- HxResponseHeader.TriggerAfterSettle
+- HxResponseHeader.TriggerAfterSwap

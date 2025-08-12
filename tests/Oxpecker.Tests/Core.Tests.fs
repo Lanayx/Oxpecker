@@ -6,7 +6,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Features
 open Oxpecker
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 
 type StartedHttpResponse() =
     inherit HttpResponseFeature()

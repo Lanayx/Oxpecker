@@ -10,7 +10,7 @@ open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Xunit
 open Oxpecker
-open FsUnitTyped
+open FsUnit.Light
 
 #nowarn "3391"
 

@@ -10,7 +10,7 @@ open Microsoft.AspNetCore.Http.Metadata
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 open Oxpecker
 open Microsoft.AspNetCore.Routing
 

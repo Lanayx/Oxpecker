@@ -9,6 +9,9 @@ open Microsoft.AspNetCore.Http.Headers
 open Microsoft.Extensions.Primitives
 open Microsoft.Net.Http.Headers
 
+let inline private cutOffMs (dt: DateTimeOffset) =
+    DateTimeOffset(dt.Year, dt.Month, dt.Day, dt.Hour, dt.Minute, dt.Second, 0, dt.Offset)
+
 [<Struct>]
 type Precondition =
     | NoConditionsSpecified
@@ -60,9 +63,9 @@ type HttpContext with
             match lastModified with
             | None -> AllConditionsMet
             | Some lastModified ->
-                let lastModified = lastModified.CutOffMs()
+                let lastModified = cutOffMs lastModified
                 match
-                    requestHeaders.IfUnmodifiedSince.Value > DateTimeOffset.UtcNow.CutOffMs()
+                    requestHeaders.IfUnmodifiedSince.Value > (cutOffMs DateTimeOffset.UtcNow)
                     || requestHeaders.IfUnmodifiedSince.Value >= lastModified
                 with
                 | true -> AllConditionsMet
@@ -91,9 +94,9 @@ type HttpContext with
             match lastModified with
             | None -> AllConditionsMet
             | Some lastModified ->
-                let lastModified = lastModified.CutOffMs()
+                let lastModified = cutOffMs lastModified
                 match
-                    requestHeaders.IfModifiedSince.Value <= DateTimeOffset.UtcNow.CutOffMs()
+                    requestHeaders.IfModifiedSince.Value <= (cutOffMs DateTimeOffset.UtcNow)
                     && requestHeaders.IfModifiedSince.Value < lastModified
                 with
                 | true -> AllConditionsMet
@@ -157,7 +160,7 @@ type PreconditionExtensions() =
         if eTag.IsSome then
             responseHeaders.ETag <- eTag.Value
         if lastModified.IsSome then
-            responseHeaders.LastModified <- Nullable(lastModified.Value.CutOffMs())
+            responseHeaders.LastModified <- cutOffMs lastModified.Value
 
         // Validate headers in correct precedence
         // RFC: https://tools.ietf.org/html/rfc7232#section-6
