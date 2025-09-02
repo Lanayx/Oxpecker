@@ -4,6 +4,7 @@ render_with_liquid: false
 # Oxpecker.OpenApi
 
 `Oxpecker.OpenApi` extends `Oxpecker` framework with functionality to automatically generate OpenApi spec from code.
+It works on top of `Microsoft.AspNetCore.OpenApi` package.
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.OpenApi) `dotnet add package Oxpecker.OpenApi`
 
@@ -43,9 +44,11 @@ _Note: you MUST specify HTTP method (GET, POST etc.), because routes with ANY me
 
 ## Configuration
 
-### ASP.NET Core 8
+### Option 1 (for ASP.NET Core 8+)
 
-Since `Oxpecker.OpenApi` works on top of `Microsoft.AspNetCore.OpenApi` and `Swashbuckle.AspNetCore` packages, you need to do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi):
+* Install `Microsoft.AspNetCore.OpenApi` package
+* Install `Swashbuckle.AspNetCore` package
+* Do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/tutorials/getting-started-with-swashbuckle?view=aspnetcore-8.0):
 
 ```fsharp
 
@@ -76,9 +79,10 @@ let main args =
     0
 ```
 
-### ASP.NET Core 9
+### Option 2 (for ASP.NET Core 9+)
 
-Since `Oxpecker.OpenApi` works on top of `Microsoft.AspNetCore.OpenApi` packages, you need to do [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/openapi):
+* Install `Microsoft.AspNetCore.OpenApi` package
+* Follow [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview):
 
 ```fsharp
 
