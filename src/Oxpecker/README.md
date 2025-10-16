@@ -90,7 +90,7 @@ an `EndpointHandler` is a function which takes `HttpContext` and returns a `Task
 ```fsharp
 type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
 ```
-`EndpointMiddleware` is similar to `EndpointHandler`, but accepts the _next_ `EndpointHandler` as first parameter.
+`EndpointMiddleware` is similar to `EndpointHandler`, but it accepts the _next_ `EndpointHandler` as first parameter.
 
 Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuit the execution by returning the `Task` itself.
 
