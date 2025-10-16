@@ -5,7 +5,7 @@
 
 ![Oxpecker](https://github.com/Lanayx/Oxpecker/raw/develop/images/oxpecker.png)
 
-**Welcome to Oxpecker!** An F# library designed to supercharge your web development with ASP.NET Core, Htmx, and Solid.js. Oxpecker began as a functional wrapper for ASP.NET Core Endpoint routing (think F#-friendly "Minimal APIs") and has evolved into a comprehensive fullstack solution. Our monorepo includes all related projects, with documentation conveniently located in `README.md` files for each project.
+**Welcome to Oxpecker!** An F# library designed to supercharge your web development with ASP.NET Core, HTMX, and Solid.js. Oxpecker began as a functional wrapper for ASP.NET Core Endpoint routing (think F#-friendly "Minimal APIs") and has evolved into a comprehensive fullstack solution. Our monorepo includes all related projects, with documentation conveniently located in `README.md` files for each project.
 
 🚀 **Performance Alert!** Oxpecker is recognized as one of the fastest .NET web frameworks in several categories [in the TechEmpower benchmark](https://www.techempower.com/benchmarks/#section=data-r23&p=zik0zj-zik0zj-zijocf-zik0zj-zik0zj-18y67).
 
@@ -15,16 +15,16 @@ The server-side core of Oxpecker is a refined version of the acclaimed [Giraffe]
 
 *   **Blazing Fast:** Benefit from top-tier performance, as validated by TechEmpower benchmarks.
 *   **Functional & F#-Friendly:** Enjoy an idiomatic F# experience on top of ASP.NET Core.
-*   **Fullstack Power:** Seamlessly integrate backend and frontend with Htmx and Solid.js.
+*   **Fullstack Power:** Seamlessly integrate backend and frontend with HTMX and Solid.js.
 *   **Modern ASP.NET Core:** Leverages native Endpoint routing for robust and flexible web applications.
-*   **Rich Feature Set:** From view engines to Htmx integration, Oxpecker has you covered.
+*   **Rich Feature Set:** From view engines to HTMX integration, Oxpecker has you covered.
 
 ## Dive Deeper - Features:
 
 *   Native [ASP.NET Core Endpoint routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) integration
 *   Fast ViewEngine with a convenient DSL for HTML
-*   OpenApi integration
-*   Htmx integration
+*   OpenAPI integration
+*   HTMX integration
 *   Strongly typed route parameters
 *   Endpoint handlers and endpoint middlewares, offering flexible composition
 *   Effortless JSON binding and serialization
@@ -48,7 +48,7 @@ Ready to build something amazing?
 
 See Oxpecker in action:
 *   [Fullstack CRUD](https://github.com/Lanayx/Oxpecker/blob/develop/examples/CRUD) - Example with functional DI on the backend.
-*   [HTMX Contact App](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp) - A sample Htmx application.
+*   [HTMX Contact App](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp) - A sample HTMX application.
 *   [ASP.NET WeatherApp (Oxpecker style)](https://github.com/Lanayx/Oxpecker/tree/develop/examples/WeatherApp)
 *   [Frontend SPA (TodoList)](https://github.com/Lanayx/Oxpecker/tree/develop/examples/TodoList) - SPA application without a backend.
 *   [MCP Server & Client](https://github.com/Lanayx/Oxpecker/tree/develop/examples/MCP) - Model Context Protocol example.
