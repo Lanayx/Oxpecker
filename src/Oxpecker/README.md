@@ -79,7 +79,7 @@ The main building block in Oxpecker is an `EndpointHandler`:
 type EndpointHandler = HttpContext -> Task
 ```
 
-an `EndpointHandler` is a function which takes `HttpContext`, and returns a `Task` when finished.
+an `EndpointHandler` is a function which takes `HttpContext` and returns a `Task` when finished.
 
 `EndpointHandler` function has full control of the incoming `HttpRequest` and the resulting `HttpResponse`. It closely follows [RequestDelegate](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.requestdelegate) signature, but in F# style.
 
