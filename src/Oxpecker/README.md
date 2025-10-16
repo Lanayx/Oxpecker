@@ -69,7 +69,7 @@ An in depth functional reference to all of Oxpecker's features.
 
 Oxpecker is built on top of the ASP.NET Core [Endpoint Routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) and provides some convenient DSL for F# users.
 
-When using Oxpecker, make sure you are familiar with ASP.NET Core and it's concepts, since Oxpecker reuses a lot of built-in functionality.
+When using Oxpecker, make sure you are familiar with ASP.NET Core and its concepts, since Oxpecker reuses a lot of built-in functionality.
 
 #### EndpointHandler
 
@@ -1244,7 +1244,7 @@ let someHandler (data: byte array) : EndpointHandler =
 
 Both functions will also set the `Content-Length` HTTP header to the length of the `byte array`.
 
-The `bytes` http handler (and it's `HttpContext` extension method equivalent) is useful when you want to create your own response writing function for a specific media type which is not provided by Oxpecker yet.
+The `bytes` http handler (and its `HttpContext` extension method equivalent) is useful when you want to create your own response writing function for a specific media type which is not provided by Oxpecker yet.
 
 For example Oxpecker doesn't have any functionality for serializing and writing a YAML response back to a client. However, you can reference another third party library which can serialize an object into a YAML string and then create your own `yaml` http handler like this:
 

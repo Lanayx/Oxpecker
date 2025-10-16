@@ -89,7 +89,7 @@ let children = result.Children // br and span
 
 ### Attributes
 
-Regular and Void nodes can have attributes. Some general attributes are defined inside `HtmlElement` while each tag can have it's specific attributes. This will prevent you from assigning attributes to the element that it doesn't support. You can programmatically access `Attributes` property of any `HtmlTag`.
+Regular and Void nodes can have attributes. Some general attributes are defined inside `HtmlElement` while each tag can have its specific attributes. This will prevent you from assigning attributes to the element that it doesn't support. You can programmatically access `Attributes` property of any `HtmlTag`.
 
 ```fsharp
 let result = div(class'="myClass") {
