@@ -105,7 +105,7 @@ So, when should you define one or another? The answer lies in the responsibility
 
 The Oxpecker pipeline is a (sort of) functional equivalent of the (object oriented) [ASP.NET Core pipeline](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware). The ASP.NET Core pipeline is defined by middlewares, and `EndpointMiddleware` is similar to regular middleware and `EndpointHandler` is similar to _terminal_ middleware.
 
-If the Oxpecker pipeline didn't process an incoming `HttpRequest` (because no route was matched) then other ASP.NET Core middleware can still process the request (e.g. static file middleware or another web framework plugged in after Oxpecker).
+If the Oxpecker pipeline didn't process an incoming `HttpRequest` (because no route was matched) then other ASP.NET Core middleware can still process the request (e.g., static file middleware or another web framework plugged in after Oxpecker).
 
 This architecture allows F# developers to build rich web applications through a functional composition of `EndpointMiddleware` and `EndpointHandler` functions while at the same time benefiting from the wider ASP.NET Core eco system by making use of already existing ASP.NET Core middleware.
 
@@ -593,7 +593,7 @@ Oxpecker exposes a set of functions which can filter a request based on the requ
 
 There is an additional `GET_HEAD` handler which can filter an HTTP `GET` and `HEAD` request at the same time.
 
-Filtering requests based on their HTTP verb can be useful when implementing a route which should behave differently based on the verb (e.g. `GET` vs. `POST`):
+Filtering requests based on their HTTP verb can be useful when implementing a route which should behave differently based on the verb (e.g., `GET` vs. `POST`):
 
 ```fsharp
 let submitFooHandler : EndpointHandler =
@@ -1159,7 +1159,7 @@ let webApp = [
 ```
 ### Conditional Requests
 
-Conditional HTTP headers (e.g. `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.
+Conditional HTTP headers (e.g., `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.
 
 Oxpecker offers the `validatePreconditions` endpoint handler which can be used to run HTTP pre-validation checks against a given `ETag` and/or `Last-Modified` value of an incoming HTTP request:
 
