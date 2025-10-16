@@ -23,7 +23,7 @@ The server-side core of Oxpecker is a refined version of the acclaimed [Giraffe]
 
 *   Native [ASP.NET Core Endpoint routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) integration
 *   Fast ViewEngine with a convenient DSL for HTML
-*   OpenApi integration
+*   OpenAPI integration
 *   HTMX integration
 *   Strongly typed route parameters
 *   Endpoint handlers and endpoint middlewares, offering flexible composition
