@@ -3,10 +3,13 @@ namespace Oxpecker.OpenApi
 open System
 open System.Reflection
 open System.Runtime.CompilerServices
+open System.Threading
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Metadata
-open Microsoft.OpenApi.Models
+open Microsoft.AspNetCore.OpenApi
+open Microsoft.OpenApi
 
 [<AutoOpen>]
 module Configuration =
@@ -42,7 +45,7 @@ module Configuration =
         (
             ?requestBody: RequestBody,
             ?responseBodies: ResponseBody seq,
-            ?configureOperation: OpenApiOperation -> OpenApiOperation
+            ?configureOperation: OpenApiOperation -> OpenApiOperationTransformerContext -> CancellationToken -> Task
         ) =
 
         member this.Build(builder: IEndpointConventionBuilder) =
@@ -54,5 +57,5 @@ module Configuration =
                 for produces in responseInfos do
                     builder.WithMetadata(produces.ToAttribute()) |> ignore)
             match configureOperation with
-            | Some configure -> builder.WithOpenApi(configure)
-            | None -> builder.WithOpenApi()
+            | Some configure -> builder.AddOpenApiOperationTransformer(configure)
+            | None -> builder
