@@ -1007,7 +1007,7 @@ Oxpecker diverges from the Giraffe's approach to model validation and embraces t
 While you might still need to do complex validation inside your domain, the built-in DTO model validation is still useful for the API boundary.
 
 You have 3 ways to validate your model:
-- Directly using `validateModel` function
+- Directly using `validateModel*` function
 - Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
 - Using `bindAndValidate*` handlers (similar to `bind*`)
 
@@ -1026,6 +1026,43 @@ type Car = {
     Wheels: int
     Built: DateTime
 }
+
+let addCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match! ctx.BindAndValidateJson<Car>() with
+            | ModelValidationResult.Valid car ->
+                return! ctx.Write <| Ok car
+            | ModelValidationResult.Invalid (invalidCar, errors) ->
+                return! ctx.Write <| BadRequest errors.All
+        }
+```
+
+If your DTO validation requires accessing dynamic data from your services, it is possible implements the `IValidatableObject`
+([link](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.ivalidatableobject)) interface and access the service
+provider from the `ValidationContext` object:
+
+```fsharp
+open System.ComponentModel.DataAnnotations
+
+[<CLIMutable>]
+type Car = {
+    [<Required>]
+    Name: string
+    [<Required>]
+    Make: string
+    [<Range(1, 10)>]
+    Wheels: int
+    Built: DateTime
+} with
+    interface IValidatableObject with
+        member this.Validate(ctx: ValidationContext) =
+            let utcNow = ctx.GetService<TimeProvider>().GetUtcNow()
+
+            seq {
+                if this.Built > utcNow then
+                    yield ValidationResult("Invalid date", [ nameof this.Built ])
+            }
 
 let addCar : EndpointHandler =
     fun (ctx: HttpContext) ->
