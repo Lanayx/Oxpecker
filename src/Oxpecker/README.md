@@ -1007,7 +1007,7 @@ Oxpecker diverges from the Giraffe's approach to model validation and embraces t
 While you might still need to do complex validation inside your domain, the built-in DTO model validation is still useful for the API boundary.
 
 You have 3 ways to validate your model:
-- Directly using `validateModel*` function
+- Directly using `validateModel*` functions
 - Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
 - Using `bindAndValidate*` handlers (similar to `bind*`)
 
@@ -1038,7 +1038,7 @@ let addCar : EndpointHandler =
         }
 ```
 
-If your DTO validation requires accessing dynamic data from your services, it is possible implements the `IValidatableObject`
+If your DTO validation logic requires accessing dynamic data from your services, it is possible to implement the `IValidatableObject`
 ([link](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.ivalidatableobject)) interface and access the service
 provider from the `ValidationContext` object:
 

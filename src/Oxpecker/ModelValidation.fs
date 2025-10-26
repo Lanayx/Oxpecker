@@ -71,7 +71,6 @@ module ModelValidation =
 
     /// <summary>
     /// Manually validate an object of type 'T`.
-    /// <remarks>Prefer using `validateModelWith` if your model implements `IValidatableObject` interface and require to access the service provider from <see cref="System.ComponentModel.DataAnnotations.ValidationContext"/></remarks>
     /// </summary>
     let validateModel (model: 'T) =
         let validationResults = ResizeArray()
