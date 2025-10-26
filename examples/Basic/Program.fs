@@ -1,4 +1,6 @@
 ﻿open System
+open System.ComponentModel.DataAnnotations
+open System.Text.Json.Serialization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
@@ -37,7 +39,7 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 
 type MyModel = { Name: string; Age: int }
 [<CLIMutable>]
-type MyModelWithOption = { Name: string option; Age: Nullable<int> }
+type MyModelWithOption = { Name: string option; [<JsonRequired>]Age: Nullable<int> }
 
 let handler4 (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) -> task { return! ctx.WriteJsonChunked { a with Name = a.Name + "!" } }
