@@ -1,5 +1,7 @@
 module Oxpecker.Tests.ModelValidation
 
+open System
+open Microsoft.Extensions.DependencyInjection
 open Oxpecker
 open System.ComponentModel.DataAnnotations
 open Xunit
@@ -68,3 +70,50 @@ let ``Empty model returns default values`` () =
     let model = ModelState.Empty
     model.Value(_.Name) |> shouldEqual null
     model.BoolValue(_.Active) |> shouldEqual false
+
+
+type FooService(value: int) =
+    member val Value = value
+
+type ValidatableModel = {
+    Count: int
+} with
+    interface IValidatableObject with
+        member this.Validate(ctx: ValidationContext) =
+            let foo = ctx.GetRequiredService<FooService>().Value
+
+            seq {
+                if this.Count > foo then
+                    yield ValidationResult($"Count is above {foo}", [ nameof this.Count ])
+            }
+
+[<Fact>]
+let ``Unresolved services from ValidationContext throws exception`` () =
+    let model = { Count = 100 }
+
+    let svc = ServiceCollection()
+    let sp = svc.BuildServiceProvider()
+    let validationContext = ValidationContext(model, sp, null)
+    (fun () -> validateModelWith validationContext model |> ignore)
+    |> shouldFail<InvalidOperationException>
+
+[<Fact>]
+let ``Services must be resolved from ValidationContext`` () =
+    let model = { Count = 999 }
+
+    let value = 200
+    let svc = ServiceCollection()
+    svc.AddSingleton<FooService>(FooService(value)) |> ignore
+    let sp = svc.BuildServiceProvider()
+    let validationContext = ValidationContext(model, sp, null)
+
+    let result = validateModelWith validationContext model
+    result.IsValid |> shouldEqual false
+    match result with
+    | ModelValidationResult.Invalid(x, errors) ->
+        x |> shouldEqual model
+        errors.All |> shouldHaveLength 1
+        errors.ErrorMessagesFor(nameof x.Count)
+        |> Seq.head
+        |> shouldEqual $"Count is above {value}"
+    | _ -> failwith "Expected invalid model"

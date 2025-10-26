@@ -3,7 +3,7 @@ render_with_liquid: false
 ---
 # Oxpecker
 
-Oxpecker is an F# framework based on ASP.NET Core Endpoint routing (similar to Minimal APIs, so they are competitors) with easy to comprehend API, mostly inherited from Giraffe framework.
+Oxpecker is an F# framework based on ASP.NET Core Endpoint Routing (similar to Minimal APIs, so they are competitors) with easy to comprehend API, mostly inherited from Giraffe framework.
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker) `dotnet add package Oxpecker`
 
@@ -69,7 +69,7 @@ An in depth functional reference to all of Oxpecker's features.
 
 Oxpecker is built on top of the ASP.NET Core [Endpoint Routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) and provides some convenient DSL for F# users.
 
-When using Oxpecker, make sure you are familiar with ASP.NET Core and it's concepts, since Oxpecker reuses a lot of built-in functionality.
+When using Oxpecker, make sure you are familiar with ASP.NET Core and its concepts, since Oxpecker reuses a lot of built-in functionality.
 
 #### EndpointHandler
 
@@ -79,7 +79,7 @@ The main building block in Oxpecker is an `EndpointHandler`:
 type EndpointHandler = HttpContext -> Task
 ```
 
-an `EndpointHandler` is a function which takes `HttpContext`, and returns a `Task` when finished.
+an `EndpointHandler` is a function which takes `HttpContext` and returns a `Task` when finished.
 
 `EndpointHandler` function has full control of the incoming `HttpRequest` and the resulting `HttpResponse`. It closely follows [RequestDelegate](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.requestdelegate) signature, but in F# style.
 
@@ -90,9 +90,9 @@ an `EndpointHandler` is a function which takes `HttpContext`, and returns a `Tas
 ```fsharp
 type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
 ```
-`EndpointMiddleware` is similar to `EndpointHandler`, but accepts the _next_ `EndpointHandler` as first parameter.
+`EndpointMiddleware` is similar to `EndpointHandler`, but it accepts the _next_ `EndpointHandler` as first parameter.
 
-Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuit the execution by returning the `Task` itself.
+Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuiting the execution by returning the `Task` itself.
 
 ##### EndpointHandler vs EndpointMiddleware
 
@@ -105,7 +105,7 @@ So, when should you define one or another? The answer lies in the responsibility
 
 The Oxpecker pipeline is a (sort of) functional equivalent of the (object oriented) [ASP.NET Core pipeline](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware). The ASP.NET Core pipeline is defined by middlewares, and `EndpointMiddleware` is similar to regular middleware and `EndpointHandler` is similar to _terminal_ middleware.
 
-If the Oxpecker pipeline didn't process an incoming `HttpRequest` (because no route was matched) then other ASP.NET Core middleware can still process the request (e.g. static file middleware or another web framework plugged in after Oxpecker).
+If the Oxpecker pipeline didn't process an incoming `HttpRequest` (because no route was matched) then other ASP.NET Core middleware can still process the request (e.g., static file middleware or another web framework plugged in after Oxpecker).
 
 This architecture allows F# developers to build rich web applications through a functional composition of `EndpointMiddleware` and `EndpointHandler` functions while at the same time benefiting from the wider ASP.NET Core eco system by making use of already existing ASP.NET Core middleware.
 
@@ -593,7 +593,7 @@ Oxpecker exposes a set of functions which can filter a request based on the requ
 
 There is an additional `GET_HEAD` handler which can filter an HTTP `GET` and `HEAD` request at the same time.
 
-Filtering requests based on their HTTP verb can be useful when implementing a route which should behave differently based on the verb (e.g. `GET` vs. `POST`):
+Filtering requests based on their HTTP verb can be useful when implementing a route which should behave differently based on the verb (e.g., `GET` vs. `POST`):
 
 ```fsharp
 let submitFooHandler : EndpointHandler =
@@ -1007,7 +1007,7 @@ Oxpecker diverges from the Giraffe's approach to model validation and embraces t
 While you might still need to do complex validation inside your domain, the built-in DTO model validation is still useful for the API boundary.
 
 You have 3 ways to validate your model:
-- Directly using `validateModel` function
+- Directly using `validateModel*` functions
 - Using `ctx.BindAndValidate*` extension methods (similar to `ctx.Bind*`)
 - Using `bindAndValidate*` handlers (similar to `bind*`)
 
@@ -1026,6 +1026,43 @@ type Car = {
     Wheels: int
     Built: DateTime
 }
+
+let addCar : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match! ctx.BindAndValidateJson<Car>() with
+            | ModelValidationResult.Valid car ->
+                return! ctx.Write <| Ok car
+            | ModelValidationResult.Invalid (invalidCar, errors) ->
+                return! ctx.Write <| BadRequest errors.All
+        }
+```
+
+If your DTO validation logic requires accessing dynamic data from your services, it is possible to implement the `IValidatableObject`
+([link](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.ivalidatableobject)) interface and access the service
+provider from the `ValidationContext` object:
+
+```fsharp
+open System.ComponentModel.DataAnnotations
+
+[<CLIMutable>]
+type Car = {
+    [<Required>]
+    Name: string
+    [<Required>]
+    Make: string
+    [<Range(1, 10)>]
+    Wheels: int
+    Built: DateTime
+} with
+    interface IValidatableObject with
+        member this.Validate(ctx: ValidationContext) =
+            let utcNow = ctx.GetService<TimeProvider>().GetUtcNow()
+
+            seq {
+                if this.Built > utcNow then
+                    yield ValidationResult("Invalid date", [ nameof this.Built ])
+            }
 
 let addCar : EndpointHandler =
     fun (ctx: HttpContext) ->
@@ -1159,7 +1196,7 @@ let webApp = [
 ```
 ### Conditional Requests
 
-Conditional HTTP headers (e.g. `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.
+Conditional HTTP headers (e.g., `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.
 
 Oxpecker offers the `validatePreconditions` endpoint handler which can be used to run HTTP pre-validation checks against a given `ETag` and/or `Last-Modified` value of an incoming HTTP request:
 
@@ -1244,7 +1281,7 @@ let someHandler (data: byte array) : EndpointHandler =
 
 Both functions will also set the `Content-Length` HTTP header to the length of the `byte array`.
 
-The `bytes` http handler (and it's `HttpContext` extension method equivalent) is useful when you want to create your own response writing function for a specific media type which is not provided by Oxpecker yet.
+The `bytes` http handler (and its `HttpContext` extension method equivalent) is useful when you want to create your own response writing function for a specific media type which is not provided by Oxpecker yet.
 
 For example Oxpecker doesn't have any functionality for serializing and writing a YAML response back to a client. However, you can reference another third party library which can serialize an object into a YAML string and then create your own `yaml` http handler like this:
 

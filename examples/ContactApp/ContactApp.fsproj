@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="1.4.0" />
+        <PackageReference Include="Oxpecker" Version="1.5.0" />
         <PackageReference Include="Oxpecker.ViewEngine" Version="1.1.0" />
         <PackageReference Include="Oxpecker.Htmx" Version="1.0.1" />
     </ItemGroup>

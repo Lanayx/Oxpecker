@@ -20,9 +20,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.4.0</Version>
-        <PackageVersion>1.4.0</PackageVersion>
-        <PackageReleaseNotes>Removed non-relevant datetime extensions</PackageReleaseNotes>
+        <Version>1.5.0</Version>
+        <PackageVersion>1.5.0</PackageVersion>
+        <PackageReleaseNotes>ValidationContext is available in IValidatableObject.Validate method.</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
