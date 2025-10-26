@@ -78,6 +78,17 @@ module ModelValidation =
         | true -> ModelValidationResult.Valid model
         | false -> ModelValidationResult.Invalid(model, ValidationErrors(validationResults))
 
+    /// <summary>
+    /// Manually validate an object of type 'T` with a provided <see cref="System.ComponentModel.DataAnnotations.ValidationContext"/>.
+    /// <param name="ctx">The validation context object.</param>
+    /// <param name="model">The model object to validate.</param>
+    /// </summary>
+    let validateModelWith (ctx: ValidationContext) (model: 'T) =
+        let validationResults = ResizeArray()
+        match Validator.TryValidateObject(model, ctx, validationResults, true) with
+        | true -> ModelValidationResult.Valid model
+        | false -> ModelValidationResult.Invalid(model, ValidationErrors(validationResults))
+
     type HttpContextExtensions =
 
         /// <summary>
@@ -89,7 +100,8 @@ module ModelValidation =
         static member BindAndValidateJson<'T when 'T: not null>(ctx: HttpContext) =
             task {
                 let! result = ctx.BindJson<'T>()
-                return validateModel result
+                let validationContext = ValidationContext(result, ctx.RequestServices, ctx.Items)
+                return validateModelWith validationContext result
             }
 
         /// <summary>
@@ -102,7 +114,8 @@ module ModelValidation =
         static member BindAndValidateForm<'T when 'T: not null>(ctx: HttpContext) =
             task {
                 let! result = ctx.BindForm<'T>()
-                return validateModel result
+                let validationContext = ValidationContext(result, ctx.RequestServices, ctx.Items)
+                return validateModelWith validationContext result
             }
 
         /// <summary>
@@ -114,7 +127,8 @@ module ModelValidation =
         [<Extension>]
         static member BindAndValidateQuery<'T when 'T: not null>(ctx: HttpContext) =
             let result = ctx.BindQuery<'T>()
-            validateModel result
+            let validationContext = ValidationContext(result, ctx.RequestServices, ctx.Items)
+            validateModelWith validationContext result
 
     [<AutoOpen>]
     module RequestHandlers =
@@ -131,7 +145,8 @@ module ModelValidation =
             fun (ctx: HttpContext) ->
                 task {
                     let! model = ctx.BindJson<'T>()
-                    return! f (validateModel model) ctx
+                    let validationContext = ValidationContext(model, ctx.RequestServices, ctx.Items)
+                    return! f (validateModelWith validationContext model) ctx
                 }
 
         /// <summary>
@@ -147,7 +162,8 @@ module ModelValidation =
             fun (ctx: HttpContext) ->
                 task {
                     let! model = ctx.BindForm<'T>()
-                    return! f (validateModel model) ctx
+                    let validationContext = ValidationContext(model, ctx.RequestServices, ctx.Items)
+                    return! f (validateModelWith validationContext model) ctx
                 }
 
         /// <summary>
@@ -162,4 +178,5 @@ module ModelValidation =
             : EndpointHandler =
             fun (ctx: HttpContext) ->
                 let model = ctx.BindQuery<'T>()
-                f (validateModel model) ctx
+                let validationContext = ValidationContext(model, ctx.RequestServices, ctx.Items)
+                f (validateModelWith validationContext model) ctx
