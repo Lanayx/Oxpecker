@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
@@ -48,6 +48,7 @@
         <Compile Include="Preconditional.fs" />
         <Compile Include="Streaming.fs" />
         <Compile Include="Auth.fs" />
+        <Compile Include="Csrf.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="Middleware.fs" />
     </ItemGroup>
