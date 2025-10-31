@@ -5,6 +5,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Builder
@@ -13,7 +14,7 @@ open Oxpecker
 
 [<AutoOpen>]
 module RoutingTypes =
-    [<Struct>]
+
     type HttpVerb =
         | GET
         | POST
@@ -256,13 +257,29 @@ type EndpointRouteBuilderExtensions() =
             verb: HttpVerbs,
             routeTemplate: RouteTemplate,
             requestDelegate: RequestDelegate,
-            configure: ConfigureEndpoint
+            configure: ConfigureEndpoint,
+            addAntiforgery: bool
         ) =
         match verb with
-        | Any -> builder.Map(routeTemplate, requestDelegate) |> configure
+        | Any ->
+            builder.Map(routeTemplate, requestDelegate)
+            |>
+                if addAntiforgery then
+                    _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+                else
+                    configure
         | Verbs verbs ->
             builder.MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
-            |> configure
+            |>
+                if addAntiforgery then
+                    let canHaveForm = verbs |> Seq.exists (
+                        fun verb -> verb = HttpVerb.POST || verb = HttpVerb.PUT || verb = HttpVerb.PATCH)
+                    if canHaveForm then
+                        _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+                    else
+                        configure
+                else
+                    configure
         |> ignore
 
     [<Extension>]
@@ -271,38 +288,41 @@ type EndpointRouteBuilderExtensions() =
             builder: IEndpointRouteBuilder,
             parentTemplate: RouteTemplate,
             endpoints: Endpoint seq,
-            parentConfigure: ConfigureEndpoint
+            parentConfigure: ConfigureEndpoint,
+            addAntiforgery: bool
         ) =
         let groupBuilder = builder.MapGroup(parentTemplate)
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
+                groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure, addAntiforgery)
             | NestedEndpoint(template, endpoints, configure) ->
-                groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
-            | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint(endpoints, parentConfigure)
+                groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure, addAntiforgery)
+            | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint(endpoints, parentConfigure, addAntiforgery)
 
     [<Extension>]
     static member private MapMultiEndpoint
-        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, parentConfigure: ConfigureEndpoint)
+        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, parentConfigure: ConfigureEndpoint,
+            addAntiforgery: bool)
         =
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                builder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
+                builder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure, addAntiforgery)
             | NestedEndpoint(template, endpoints, configure) ->
-                builder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
-            | MultiEndpoint endpoints -> builder.MapMultiEndpoint(endpoints, parentConfigure)
+                builder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure, addAntiforgery)
+            | MultiEndpoint endpoints -> builder.MapMultiEndpoint(endpoints, parentConfigure, addAntiforgery)
 
     [<Extension>]
-    static member MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint) =
+    static member internal MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint, addAntiforgery: bool) =
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
-            builder.MapSingleEndpoint(verb, template, handler, configure)
-        | NestedEndpoint(template, endpoints, configure) -> builder.MapNestedEndpoint(template, endpoints, configure)
-        | MultiEndpoint endpoints -> builder.MapOxpeckerEndpoints endpoints
+            builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
+        | NestedEndpoint(template, endpoints, configure) ->
+            builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
+        | MultiEndpoint endpoints -> builder.MapOxpeckerEndpoints(endpoints, addAntiforgery)
 
     [<Extension>]
-    static member MapOxpeckerEndpoints(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
+    static member internal MapOxpeckerEndpoints(builder: IEndpointRouteBuilder, endpoints: Endpoint seq, addAntiforgery: bool) =
         for endpoint in endpoints do
-            builder.MapOxpeckerEndpoint(endpoint)
+            builder.MapOxpeckerEndpoint(endpoint, addAntiforgery)

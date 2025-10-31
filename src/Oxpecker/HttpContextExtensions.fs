@@ -4,8 +4,10 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 open System.Text
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
@@ -366,6 +368,19 @@ type HttpContextExtensions() =
     [<Extension>]
     static member BindForm<'T>(ctx: HttpContext) =
         let binder = ctx.GetModelBinder()
+        // CSRF check
+        let feature = ctx.Features.Get<IAntiforgeryValidationFeature>()
+        match feature with
+        | null -> ()
+        | f ->
+            match f.IsValid with
+            | true -> ()
+            | false ->
+                match f.Error with
+                | null -> ()
+                | err ->
+                    ctx.Response.StatusCode <- StatusCodes.Status403Forbidden
+                    ExceptionDispatchInfo.Throw err
         task {
             try
                 let! form = ctx.Request.ReadFormAsync()
