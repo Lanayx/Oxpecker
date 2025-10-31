@@ -263,23 +263,22 @@ type EndpointRouteBuilderExtensions() =
         match verb with
         | Any ->
             builder.Map(routeTemplate, requestDelegate)
-            |>
-                if addAntiforgery then
-                    _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
-                else
-                    configure
+            |> if addAntiforgery then
+                   _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+               else
+                   configure
         | Verbs verbs ->
             builder.MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
-            |>
-                if addAntiforgery then
-                    let canHaveForm = verbs |> Seq.exists (
-                        fun verb -> verb = HttpVerb.POST || verb = HttpVerb.PUT || verb = HttpVerb.PATCH)
-                    if canHaveForm then
-                        _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
-                    else
-                        configure
-                else
-                    configure
+            |> if addAntiforgery then
+                   let canHaveForm =
+                       verbs
+                       |> Seq.exists(fun verb -> verb = HttpVerb.POST || verb = HttpVerb.PUT || verb = HttpVerb.PATCH)
+                   if canHaveForm then
+                       _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+                   else
+                       configure
+               else
+                   configure
         |> ignore
 
     [<Extension>]
@@ -302,9 +301,12 @@ type EndpointRouteBuilderExtensions() =
 
     [<Extension>]
     static member private MapMultiEndpoint
-        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, parentConfigure: ConfigureEndpoint,
-            addAntiforgery: bool)
-        =
+        (
+            builder: IEndpointRouteBuilder,
+            endpoints: Endpoint seq,
+            parentConfigure: ConfigureEndpoint,
+            addAntiforgery: bool
+        ) =
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
@@ -314,7 +316,9 @@ type EndpointRouteBuilderExtensions() =
             | MultiEndpoint endpoints -> builder.MapMultiEndpoint(endpoints, parentConfigure, addAntiforgery)
 
     [<Extension>]
-    static member internal MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint, addAntiforgery: bool) =
+    static member internal MapOxpeckerEndpoint
+        (builder: IEndpointRouteBuilder, endpoint: Endpoint, addAntiforgery: bool)
+        =
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
             builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
@@ -323,6 +327,8 @@ type EndpointRouteBuilderExtensions() =
         | MultiEndpoint endpoints -> builder.MapOxpeckerEndpoints(endpoints, addAntiforgery)
 
     [<Extension>]
-    static member internal MapOxpeckerEndpoints(builder: IEndpointRouteBuilder, endpoints: Endpoint seq, addAntiforgery: bool) =
+    static member internal MapOxpeckerEndpoints
+        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, addAntiforgery: bool)
+        =
         for endpoint in endpoints do
             builder.MapOxpeckerEndpoint(endpoint, addAntiforgery)
