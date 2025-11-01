@@ -400,9 +400,7 @@ type HttpContextExtensions() =
             | false ->
                 match f.Error with
                 | null -> ()
-                | err ->
-                    ctx.Response.StatusCode <- StatusCodes.Status403Forbidden
-                    ExceptionDispatchInfo.Throw err
+                | err -> ExceptionDispatchInfo.Throw err
         task {
             try
                 let! form = ctx.Request.ReadFormAsync()
