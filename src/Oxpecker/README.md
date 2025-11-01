@@ -49,7 +49,9 @@ An in depth functional reference to all of Oxpecker's features.
     - [File Upload](#file-upload)
     - [WebSockets](#websockets)
     - [Grpc](#grpc)
-    - [Authentication and Authorization](#authentication-and-authorization)
+    - [Security](#security)
+      - [Authentication and Authorization](#authentication-and-authorization)
+      - [CSRF protection](#csrf-protection)
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
       - [Writing Bytes](#writing-bytes)
@@ -1174,17 +1176,19 @@ let main args =
     0
 ```
 
-### Authentication and Authorization
+### Security
 
-Oxpecker's security model is the same as [Minimal API security model](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security), please make sure you are very familiar with it.
-The main difference is that in Oxpecker you can conveniently call `configureEndpoint _.RequireAuthorization` on both a single endpoint and a group of endpoints.
+Oxpecker's security model is built on top of the ASP.NET Core security model and is very similar to the Minimal API's one, so make sure you are familiar with it.
+
+#### Authentication and Authorization
+
+Oxpecker's auth works just like in [Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security).
+To protect endpoints, call `configureEndpoint _.RequireAuthorization` on a single endpoint or a group of endpoints.
 ```fsharp
 let webApp = [
     // single endpoint
     route "/" (text "Hello World")
-        |> configureEndpoint
-            _.DisableAntiforgery()
-             .RequireAuthorization()
+        |> configureEndpoint _.RequireAuthorization()
     // endpoint group
     GET [
         route "/index" <| text "index"
@@ -1194,6 +1198,10 @@ let webApp = [
         )
 ]
 ```
+#### CSRF protection
+
+[TODO](https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery#antiforgery-with-minimal-apis)
+
 ### Conditional Requests
 
 Conditional HTTP headers (e.g., `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.

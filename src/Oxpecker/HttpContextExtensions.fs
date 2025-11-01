@@ -395,12 +395,10 @@ type HttpContextExtensions() =
         match feature with
         | null -> ()
         | f ->
-            match f.IsValid with
-            | true -> ()
-            | false ->
-                match f.Error with
-                | null -> ()
-                | err -> ExceptionDispatchInfo.Throw err
+            match f.IsValid, f.Error with
+            | true, _
+            | false, Null -> ()
+            | false, NonNull err -> ExceptionDispatchInfo.Throw err
         task {
             try
                 let! form = ctx.Request.ReadFormAsync()
