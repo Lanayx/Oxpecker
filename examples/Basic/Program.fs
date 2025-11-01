@@ -1,4 +1,6 @@
 ﻿open System
+open System.ComponentModel.DataAnnotations
+open System.Text.Json.Serialization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
@@ -34,8 +36,11 @@ let handler2 (name: string) (age: int) : EndpointHandler =
 let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
     _.WriteText($"Hello %s{a} %s{b} %s{c} %i{d}")
 
-[<CLIMutable>]
+
 type MyModel = { Name: string; Age: int }
+[<CLIMutable>]
+type MyModelWithOption = { Name: string option; [<JsonRequired>]Age: Nullable<int> }
+
 let handler4 (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) -> task { return! ctx.WriteJsonChunked { a with Name = a.Name + "!" } }
 
@@ -170,7 +175,7 @@ let endpoints = [
         |> addOpenApi(
             OpenApiConfig(
                 requestBody =
-                    RequestBody(typeof<MyModel>, [| "multipart/form-data"; "application/x-www-form-urlencoded" |]),
+                    RequestBody(typeof<MyModelWithOption>, [| "multipart/form-data"; "application/x-www-form-urlencoded" |]),
                 responseBodies = [ ResponseBody(typeof<MyModel>) ]
             )
         )
@@ -241,7 +246,9 @@ let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder.UseRouting().Use(errorHandler).UseOxpecker(endpoints).Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
-    services.AddRouting().AddOxpecker().AddOpenApi() |> ignore
+    services.AddRouting().AddOxpecker().AddOpenApi(fun o ->
+        o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
+    ) |> ignore
 
 
 [<EntryPoint>]
