@@ -21,17 +21,8 @@ module WebApp =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
-                .Configure(
-                    _.UseRouting()
-                        .UseAntiforgery()
-                        .UseOxpecker(endpoints)
-                        .Run(notFoundHandler)
-                )
-                .ConfigureServices(fun services ->
-                    services
-                        .AddRouting()
-                        .AddAntiforgery()
-                        .AddOxpecker() |> ignore)
+                .Configure(_.UseRouting().UseAntiforgery().UseOxpecker(endpoints).Run(notFoundHandler))
+                .ConfigureServices(fun services -> services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
         new TestServer(builder)
 
 
@@ -48,7 +39,8 @@ let ``Request fails when antiforgery token is missing`` () =
         let server = WebApp.webApp endpoints
         let client = server.CreateClient()
 
-        do! client.PostAsync("/action", null)
+        do!
+            client.PostAsync("/action", null)
             |> shouldFailTask<AntiforgeryValidationException>
     }
 
@@ -59,14 +51,14 @@ let ``Request succeeds when antiforgery token is present`` () =
             GET [
                 route "/action" (fun ctx ->
                     let tokens = ctx.GetAntiforgeryTokens()
-                    ctx.WriteJson tokens
-                )
+                    ctx.WriteJson tokens)
             ]
             POST [
-                route "/action" (fun ctx -> task {
-                    let! msg = ctx.BindForm<{| Message: string |}>()
-                    return! ctx.WriteText msg.Message
-                })
+                route "/action" (fun ctx ->
+                    task {
+                        let! msg = ctx.BindForm<{| Message: string |}>()
+                        return! ctx.WriteText msg.Message
+                    })
             ]
         ]
         let server = WebApp.webApp endpoints
@@ -76,10 +68,13 @@ let ``Request succeeds when antiforgery token is present`` () =
         let cookies = response.Headers.GetValues(HeaderNames.SetCookie)
         client.DefaultRequestHeaders.Add(HeaderNames.Cookie, cookies)
         let tokens = nonNull tokens
-        use formContent = new FormUrlEncodedContent([
-            KeyValuePair("Message", "Hi")
-            KeyValuePair(tokens.FormFieldName, tokens.RequestToken)
-        ])
+        use formContent =
+            new FormUrlEncodedContent(
+                [
+                    KeyValuePair("Message", "Hi")
+                    KeyValuePair(tokens.FormFieldName, tokens.RequestToken)
+                ]
+            )
         let! result = client.PostAsync("/action", formContent)
         let! text = result.Content.ReadAsStringAsync()
         text |> shouldEqual "Hi"
