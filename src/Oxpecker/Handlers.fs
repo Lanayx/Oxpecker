@@ -200,12 +200,13 @@ module DefaultHandlers =
             try
                 return! next.Invoke(ctx)
             with ex ->
-                let logger = ctx.GetLogger("Oxpecker.DefaultHandlers")
+                let logger = ctx.GetLogger("Oxpecker.DefaultHandlers.ErrorHandler")
                 match ex with
                 | :? ModelBindException
                 | :? RouteParseException as ex ->
                     logger.LogWarning(ex, "Invalid request {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
                     ctx.SetStatusCode StatusCodes.Status400BadRequest
+                    return! ctx.WriteText "Invalid request"
                 | :? AntiforgeryValidationException as ex ->
                     logger.LogWarning(
                         ex,
@@ -214,15 +215,16 @@ module DefaultHandlers =
                         ctx.Request.Path
                     )
                     ctx.SetStatusCode StatusCodes.Status403Forbidden
+                    return! ctx.WriteText "Forbidden"
                 | ex ->
                     logger.LogError(ex, "Unhandled exception {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
                     ctx.SetStatusCode StatusCodes.Status500InternalServerError
-                return! ctx.WriteText(ex.Message)
+                    return! ctx.WriteText "Internal server error"
         }
         :> Task
 
     let notFoundHandler (ctx: HttpContext) =
-        let logger = ctx.GetLogger("Oxpecker.DefaultHandlers")
+        let logger = ctx.GetLogger("Oxpecker.DefaultHandlers.NotFoundHandler")
         logger.LogWarning("Page not found {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
         ctx.SetStatusCode 404
         ctx.WriteText("Page not found")

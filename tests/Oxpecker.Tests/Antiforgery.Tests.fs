@@ -1,6 +1,7 @@
 module Oxpecker.Tests.Antiforgery
 
 open System.Collections.Generic
+open System.Net
 open System.Net.Http
 open System.Net.Http.Json
 open Microsoft.AspNetCore.Antiforgery
@@ -15,13 +16,25 @@ open FsUnit.Light
 
 module WebApp =
 
-    let notFoundHandler = setStatusCode 404 >=> text "Not found"
-
     let webApp (endpoints: Endpoint seq) =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
-                .Configure(_.UseRouting().UseAntiforgery().UseOxpecker(endpoints).Run(notFoundHandler))
+                .Configure(_.UseRouting().UseAntiforgery().UseOxpecker(endpoints).Run(DefaultHandlers.notFoundHandler))
+                .ConfigureServices(fun services -> services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
+        new TestServer(builder)
+
+    let webAppWithDefaultErrorHandler (endpoints: Endpoint seq) =
+        let builder =
+            WebHostBuilder()
+                .UseKestrel()
+                .Configure(
+                    _.UseRouting()
+                        .UseAntiforgery()
+                        .Use(DefaultHandlers.errorHandler)
+                        .UseOxpecker(endpoints)
+                        .Run(DefaultHandlers.notFoundHandler)
+                )
                 .ConfigureServices(fun services -> services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
         new TestServer(builder)
 
@@ -42,6 +55,23 @@ let ``Request fails when antiforgery token is missing`` () =
         do!
             client.PostAsync("/action", null)
             |> shouldFailTask<AntiforgeryValidationException>
+    }
+
+[<Fact>]
+let ``Server returns 403 with default error handler and antiforgery token is missing`` () =
+    task {
+        let endpoints = [
+            POST [
+                route "/action" (fun ctx ->
+                    let _ = ctx.BindForm<unit>()
+                    ctx.WriteText "Hello World")
+            ]
+        ]
+        let server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.CreateClient()
+
+        let! result = client.PostAsync("/action", null)
+        result.StatusCode |> shouldEqual HttpStatusCode.Forbidden
     }
 
 [<Fact>]

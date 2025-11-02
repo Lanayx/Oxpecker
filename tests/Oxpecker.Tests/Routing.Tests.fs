@@ -2,27 +2,23 @@
 
 open System
 open System.Net
-open System.Threading.Tasks
+open System.Net.Http.Json
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
-open Microsoft.AspNetCore.Http.Metadata
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Xunit
 open FsUnit.Light
 open Oxpecker
-open Microsoft.AspNetCore.Routing
 
 module WebApp =
-
-    let notFoundHandler = setStatusCode 404 >=> text "Not found"
 
     let webApp (endpoints: Endpoint seq) =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints).Run(notFoundHandler))
+                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints).Run(DefaultHandlers.notFoundHandler))
                 .ConfigureServices(fun services -> services.AddRouting() |> ignore)
         new TestServer(builder)
 
@@ -30,8 +26,21 @@ module WebApp =
         let builder =
             WebHostBuilder()
                 .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoint).Run(notFoundHandler))
+                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoint).Run(DefaultHandlers.notFoundHandler))
                 .ConfigureServices(fun services -> services.AddRouting() |> ignore)
+        new TestServer(builder)
+
+    let webAppWithDefaultErrorHandler (endpoints: Endpoint seq) =
+        let builder =
+            WebHostBuilder()
+                .UseKestrel()
+                .Configure(
+                    _.UseRouting()
+                        .Use(DefaultHandlers.errorHandler)
+                        .UseOxpecker(endpoints)
+                        .Run(DefaultHandlers.notFoundHandler)
+                )
+                .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
         new TestServer(builder)
 
 // ---------------------------------
@@ -70,8 +79,6 @@ let ``route: GET "/foo" returns "bar"`` () =
 // routex Tests
 // ---------------------------------
 
-
-
 [<Fact>]
 let ``routex: GET "/foo///" returns "bar"`` () =
     task {
@@ -108,7 +115,7 @@ let ``routex: GET "/foo2" returns "bar"`` () =
 [<Fact>]
 let ``routef generates route correctly`` () =
     task {
-        let endpoint = routef "/foo/{%s}/{%i}/{%O:guid}" (fun x y z -> text "Hello")
+        let endpoint = routef "/foo/{%s}/{%i}/{%O:guid}" (fun _ _ _ -> text "Hello")
 
         match endpoint with
         | SimpleEndpoint(_, route, _, _) -> route |> shouldEqual "/foo/{x}/{y}/{z:guid}"
@@ -260,9 +267,34 @@ let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.NotFound
-        resultString |> shouldEqual "Not found"
+        resultString |> shouldEqual "Page not found"
     }
 
+[<Fact>]
+let ``Error in route binding leads to 400 error when default error handler is used`` () =
+    task {
+        let endpoints = [ GET [ routef "/invalid/{%i}" (fun i -> text $"%i{i}") ] ]
+        let server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.CreateClient()
+
+        let! result = client.GetAsync("/invalid/zz")
+        result.StatusCode |> shouldEqual HttpStatusCode.BadRequest
+    }
+
+[<Fact>]
+let ``Error in model binding leads to 400 error when default error handler is used`` () =
+    task {
+        let endpoints = [
+            POST [
+                routef "/invalid" <| bindForm(fun (_: {| Count: int |}) -> text "bind succeded")
+            ]
+        ]
+        let server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.CreateClient()
+
+        let! result = client.PostAsJsonAsync("/invalid", {| Count = "zz" |})
+        result.StatusCode |> shouldEqual HttpStatusCode.BadRequest
+    }
 
 [<Fact>]
 let ``routef: GET "/foo/bar/baz/qux" returns "bar/baz/qux"`` () =
