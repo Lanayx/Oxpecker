@@ -19,6 +19,9 @@ An in depth functional reference to all of Oxpecker's features.
 
 - [Fundamentals](#fundamentals)
     - [Core concepts](#core-concepts)
+      - [EndpointHandler](#endpointhandler)
+      - [EndpointMiddleware](#endpointmiddleware)
+      - [EndpointHandler vs EndpointMiddleware](#endpointhandler-vs-endpointmiddleware)
     - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
     - [Creating new EndpointHandler and EndpointMiddleware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
     - [Composition](#composition)
@@ -26,6 +29,9 @@ An in depth functional reference to all of Oxpecker's features.
 - [Basics](#basics)
     - [Plugging Oxpecker into ASP.NET Core](#plugging-oxpecker-into-aspnet-core)
     - [Dependency Management](#dependency-management)
+      - [Registering Services](#registering-services)
+      - [Retrieving Services](#retrieving-services)
+      - [Functional DI](#functional-di)
     - [Multiple Environments and Configuration](#multiple-environments-and-configuration)
     - [Logging](#logging)
     - [Error and NotFound handling](#error-handling)
@@ -96,7 +102,7 @@ type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
 
 Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuiting the execution by returning the `Task` itself.
 
-##### EndpointHandler vs EndpointMiddleware
+#### EndpointHandler vs EndpointMiddleware
 
 So, when should you define one or another? The answer lies in the responsibility of your handler:
  - If you want to **conditionally** _return response_  or _proceed_ further in pipeline use `EndpointMiddleware`. Good example is [Preconditional endpoint middleware](#conditional-requests)
@@ -1200,7 +1206,37 @@ let webApp = [
 ```
 #### CSRF protection
 
-[TODO](https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery#antiforgery-with-minimal-apis)
+Default Oxpecker implementation is similar to the [Minimal API's](https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery#antiforgery-with-minimal-apis) one.
+
+First, you need to add AntiForgery middleware to your pipeline and register dependencies:
+```fsharp
+let configureApp (appBuilder: WebApplication) =
+    appBuilder
+        .UseRouting()
+        .UseAntiforgery() // should be added between UseRouting and UseOxpecker
+        .UseOxpecker(endpoints) |> ignore
+
+let configureServices (services: IServiceCollection) =
+    services
+        .AddRouting()
+        .AddAntiforgery()
+        .AddOxpecker()
+    |> ignore
+```
+Once it's done, all your POST, PUT and PATCH endpoints will be validated against CSRF token, but an actual antiforgery exception (in case of failed validation) will only happen when doing [form binding](#binding-forms).
+
+_If you don't like the default behavior, instead of adding built-in ASP.NET Core AntiForgery middleware, you can write custom [EndpointMiddleware](#endpointmiddleware), that will call `antiforgery.ValidateRequestAsync`, and place it in the desired stage of the pipeline._
+
+To place Antiforgery token in the form, you should use `GetAntiforgeryInput` extension method:
+```fsharp
+let myForm (ctx: HttpContext) =
+    form() {
+        ctx.GetAntiforgeryInput()
+        input(type'="text", name="Message", value="Hello")
+        button(type'="submit") { "Submit" }
+    }
+```
+If you don't use `Oxpecker.ViewEngine` or prefer header to the form field, you can leverage `GetAntiforgeryTokens` extension method instead.
 
 ### Conditional Requests
 
