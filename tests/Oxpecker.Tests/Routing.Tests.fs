@@ -115,7 +115,7 @@ let ``routex: GET "/foo2" returns "bar"`` () =
 [<Fact>]
 let ``routef generates route correctly`` () =
     task {
-        let endpoint = routef "/foo/{%s}/{%i}/{%O:guid}" (fun _ _ _ -> text "Hello")
+        let endpoint = routef "/foo/{%s}/{%i}/{%O:guid}" (fun x y z -> text $"Hello {x}{y}{z}")
 
         match endpoint with
         | SimpleEndpoint(_, route, _, _) -> route |> shouldEqual "/foo/{x}/{y}/{z:guid}"
