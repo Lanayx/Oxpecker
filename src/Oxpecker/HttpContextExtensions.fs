@@ -4,8 +4,10 @@ open System
 open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
+open System.Runtime.ExceptionServices
 open System.Text
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
@@ -164,6 +166,7 @@ type HttpContextExtensions() =
     /// <summary>
     /// Gets an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/> from the request's service container.
     /// </summary>
+    /// <param name="ctx">The current http context object.</param>
     /// <returns>Returns an instance of <see cref="Microsoft.AspNetCore.Hosting.IWebHostEnvironment"/>.</returns>
     [<Extension>]
     static member GetWebHostEnvironment(ctx: HttpContext) = ctx.GetService<IWebHostEnvironment>()
@@ -171,6 +174,7 @@ type HttpContextExtensions() =
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/> from the request's service container.
     /// </summary>
+    /// <param name="ctx">The current http context object.</param>
     /// <returns>Returns an instance of <see cref="Oxpecker.Serializers.IJsonSerializer"/>.</returns>
     [<Extension>]
     static member GetJsonSerializer(ctx: HttpContext) : IJsonSerializer = ctx.GetService<IJsonSerializer>()
@@ -178,9 +182,29 @@ type HttpContextExtensions() =
     /// <summary>
     /// Gets an instance of <see cref="Oxpecker.IModelBinder"/> from the request's service container.
     /// </summary>
+    /// <param name="ctx">The current http context object.</param>
     /// <returns>Returns an instance of <see cref="Oxpecker.IModelBinder"/>.</returns>
     [<Extension>]
     static member GetModelBinder(ctx: HttpContext) : IModelBinder = ctx.GetService<IModelBinder>()
+
+    /// <summary>
+    /// Gets an instance of <see cref="Microsoft.AspNetCore.Antiforgery.AntiforgeryTokenSet"/> from the request's service container.'
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <returns>Returns an instance of <see cref="Microsoft.AspNetCore.Antiforgery.AntiforgeryTokenSet"/>.</returns>
+    [<Extension>]
+    static member GetAntiforgeryTokens(ctx: HttpContext) =
+        ctx.GetService<IAntiforgery>().GetAndStoreTokens(ctx)
+
+    /// <summary>
+    /// Gets an HTML input object of <see cref=" Oxpecker.ViewEngine.Tags.input"/> type, already filled with the Antiforgery data
+    /// </summary>
+    /// <param name="ctx">The current http context object.</param>
+    /// <returns>Returns an instance of <see cref=" Oxpecker.ViewEngine.Tags.input"/>.</returns>
+    [<Extension>]
+    static member GetAntiforgeryInput(ctx: HttpContext) =
+        let tokens = ctx.GetAntiforgeryTokens()
+        input(type' = "hidden", name = tokens.FormFieldName, value = tokens.RequestToken)
 
     /// <summary>
     /// Sets the HTTP status code of the response.
@@ -366,6 +390,15 @@ type HttpContextExtensions() =
     [<Extension>]
     static member BindForm<'T>(ctx: HttpContext) =
         let binder = ctx.GetModelBinder()
+        // CSRF check
+        let feature = ctx.Features.Get<IAntiforgeryValidationFeature>()
+        match feature with
+        | null -> ()
+        | f ->
+            match f.IsValid, f.Error with
+            | true, _
+            | false, Null -> ()
+            | false, NonNull err -> ExceptionDispatchInfo.Throw err
         task {
             try
                 let! form = ctx.Request.ReadFormAsync()
