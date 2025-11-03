@@ -251,21 +251,18 @@ routef "/{%s}" (bindQuery << handler)
 routef "/{%s}/{%s}" (bindForm <<+ handler)
 routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
-#### Multi-route handler
+#### Multi-route filter
 
-Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
+Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `addFilter` (similar to [OpenApi](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters)), for example:
 
 ```fsharp
 
-let MY_HEADER = applyBefore (setHttpHeader "my" "header")
-
 let webApp = [
-    MY_HEADER <| subRoute "/auth" [
+    subRoute "/auth" [
         route "/open" handler1
         route "/closed" handler2
-    ]
+    ] |> addFilter (setHttpHeader "myHeader" "myValue")
 ]
-
 ```
 
 ### Continue vs. Return
@@ -394,7 +391,7 @@ let main _ =
 ```
 ### Dependency Management
 
-ASP.NET Core has built in [dependency management](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) which works out of the box with Oxpecker.
+ASP.NET Core has built-in [dependency management](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) which works out of the box with Oxpecker.
 
 #### Registering Services
 
