@@ -117,7 +117,7 @@ module RoutingInternal =
                 SimpleEndpoint(verb, template, filter >=> handler, configure)
             | NestedEndpoint(template, endpoints, configure) ->
                 NestedEndpoint(template, Seq.map (fun e -> AddFilter.Compose(filter, e)) endpoints, configure)
-            | MultiEndpoint (endpoints, configure) ->
+            | MultiEndpoint(endpoints, configure) ->
                 MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filter, e)) endpoints, configure)
 
         static member Compose(filterMiddleware: EndpointMiddleware, endpoint: Endpoint) =
@@ -125,12 +125,8 @@ module RoutingInternal =
             | SimpleEndpoint(verb, template, handler, configure) ->
                 SimpleEndpoint(verb, template, filterMiddleware >=> handler, configure)
             | NestedEndpoint(template, endpoints, configure) ->
-                NestedEndpoint(
-                    template,
-                    Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints,
-                    configure
-                )
-            | MultiEndpoint (endpoints, configure) ->
+                NestedEndpoint(template, Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
+            | MultiEndpoint(endpoints, configure) ->
                 MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
 
     let invokeHandler<'T>
@@ -190,24 +186,21 @@ module Routers =
 
     let rec applyHttpVerbsToEndpoint (verbs: HttpVerbs) (endpoint: Endpoint) : Endpoint =
         match endpoint with
-        | SimpleEndpoint(_, template, handler, configure) ->
-            SimpleEndpoint(verbs, template, handler, configure)
+        | SimpleEndpoint(_, template, handler, configure) -> SimpleEndpoint(verbs, template, handler, configure)
         | NestedEndpoint(handler, endpoints, configure) ->
             NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
-        | MultiEndpoint (endpoints, configure) ->
+        | MultiEndpoint(endpoints, configure) ->
             MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
 
     let rec applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
-        |> Seq.map (
-                function
-                | SimpleEndpoint(_, routeTemplate, requestDelegate, configure) ->
-                    SimpleEndpoint(verbs, routeTemplate, requestDelegate, configure)
-                | NestedEndpoint(template, endpoints, configure) ->
-                    NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
-                | MultiEndpoint (endpoints, configure) ->
-                    MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
-            )
+        |> Seq.map (function
+            | SimpleEndpoint(_, routeTemplate, requestDelegate, configure) ->
+                SimpleEndpoint(verbs, routeTemplate, requestDelegate, configure)
+            | NestedEndpoint(template, endpoints, configure) ->
+                NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
+            | MultiEndpoint(endpoints, configure) ->
+                MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure))
         |> (fun endpoints -> MultiEndpoint(endpoints, id))
 
     let GET_HEAD: Endpoint seq -> Endpoint =
@@ -239,7 +232,7 @@ module Routers =
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) -> SimpleEndpoint(verb, template, handler, configure >> f)
         | NestedEndpoint(template, endpoints, configure) -> NestedEndpoint(template, endpoints, configure >> f)
-        | MultiEndpoint (endpoints, configure) -> MultiEndpoint(endpoints, configure >> f)
+        | MultiEndpoint(endpoints, configure) -> MultiEndpoint(endpoints, configure >> f)
 
     let inline addFilter (filter: 'T) (endpoint: Endpoint) =
         compose_opImpl Unchecked.defaultof<AddFilter> filter endpoint
@@ -248,8 +241,7 @@ module Routers =
         configureEndpoint _.WithMetadata(metadata)
 
     [<Obsolete "Will be removed in next major version. Use addFilter instead.">]
-    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
-        addFilter beforeHandler endpoint
+    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) = addFilter beforeHandler endpoint
 
     [<Obsolete "Will be removed in next major version.">]
     let rec applyAfter (afterHandler: EndpointHandler) (endpoint: Endpoint) =
@@ -258,35 +250,29 @@ module Routers =
             SimpleEndpoint(verb, template, handler >=> afterHandler, configure)
         | NestedEndpoint(template, endpoints, configure) ->
             NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, configure)
-        | MultiEndpoint (endpoints, configure) ->
-            MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints, configure)
+        | MultiEndpoint(endpoints, configure) -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints, configure)
 
 type EndpointRouteBuilderExtensions() =
 
-    static member private GetConfigureEndpoint(
-            configure: ConfigureEndpoint,
-            addAntiforgery: bool
-        ) =
-            if addAntiforgery then
+    static member private GetConfigureEndpoint(configure: ConfigureEndpoint, addAntiforgery: bool) =
+        if addAntiforgery then
+            _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+        else
+            configure
+
+    static member private GetConfigureEndpoint
+        (verbs: HttpVerb seq, configure: ConfigureEndpoint, addAntiforgery: bool)
+        =
+        if addAntiforgery then
+            let canHaveForm =
+                verbs
+                |> Seq.exists(fun verb -> verb = HttpVerb.POST || verb = HttpVerb.PUT || verb = HttpVerb.PATCH)
+            if canHaveForm then
                 _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
             else
                 configure
-
-    static member private GetConfigureEndpoint(
-            verbs: HttpVerb seq,
-            configure: ConfigureEndpoint,
-            addAntiforgery: bool
-        ) =
-            if addAntiforgery then
-                let canHaveForm =
-                    verbs
-                    |> Seq.exists(fun verb -> verb = HttpVerb.POST || verb = HttpVerb.PUT || verb = HttpVerb.PATCH)
-                if canHaveForm then
-                    _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
-                else
-                    configure
-            else
-                configure
+        else
+            configure
 
     [<Extension>]
     static member private IsAntiforgeryEnabled(builder: IEndpointRouteBuilder) =
@@ -323,7 +309,8 @@ type EndpointRouteBuilderExtensions() =
             addAntiforgery: bool
         ) =
         let groupBuilder = builder.MapGroup(parentTemplate)
-        let groupConfigure = EndpointRouteBuilderExtensions.GetConfigureEndpoint(parentConfigure, addAntiforgery)
+        let groupConfigure =
+            EndpointRouteBuilderExtensions.GetConfigureEndpoint(parentConfigure, addAntiforgery)
         groupBuilder |> groupConfigure |> ignore
         for endpoint in endpoints do
             match endpoint with
@@ -331,8 +318,7 @@ type EndpointRouteBuilderExtensions() =
                 groupBuilder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
             | NestedEndpoint(template, endpoints, configure) ->
                 groupBuilder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
-            | MultiEndpoint (endpoints, configure) ->
-                groupBuilder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
+            | MultiEndpoint(endpoints, configure) -> groupBuilder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
 
     [<Extension>]
     static member private MapMultiEndpoint
@@ -345,22 +331,17 @@ type EndpointRouteBuilderExtensions() =
         builder.MapNestedEndpoint("", endpoints, parentConfigure, addAntiforgery)
 
     [<Extension>]
-    static member MapOxpeckerEndpoint
-        (builder: IEndpointRouteBuilder, endpoint: Endpoint)
-        =
+    static member MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint) =
         let addAntiforgery = builder.IsAntiforgeryEnabled()
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
             builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
         | NestedEndpoint(template, endpoints, configure) ->
             builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
-        | MultiEndpoint (endpoints, configure) ->
-            builder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
+        | MultiEndpoint(endpoints, configure) -> builder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
 
     [<Extension>]
-    static member MapOxpeckerEndpoints
-        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq)
-        =
+    static member MapOxpeckerEndpoints(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
         let addAntiforgery = builder.IsAntiforgeryEnabled()
         for endpoint in endpoints do
             match endpoint with
@@ -368,5 +349,4 @@ type EndpointRouteBuilderExtensions() =
                 builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
             | NestedEndpoint(template, endpoints, configure) ->
                 builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
-            | MultiEndpoint (endpoints, configure) ->
-                builder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
+            | MultiEndpoint(endpoints, configure) -> builder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
