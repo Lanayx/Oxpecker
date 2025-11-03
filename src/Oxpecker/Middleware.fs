@@ -2,7 +2,6 @@
 module Oxpecker.Middleware
 
 open System.Runtime.CompilerServices
-open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.Extensions.DependencyInjection
@@ -19,7 +18,7 @@ type ApplicationBuilderExtensions() =
         builder.UseEndpoints(_.MapOxpeckerEndpoints(endpoints))
 
     /// <summary>
-    /// Uses ASP.NET Core's Endpoint Routing middleware to register single Oxpecker endpoint.
+    /// Uses ASP.NET Core's Endpoint Routing middleware to register a single Oxpecker endpoint.
     /// </summary>
     [<Extension>]
     static member UseOxpecker(builder: IApplicationBuilder, endpoint: Endpoint) =
