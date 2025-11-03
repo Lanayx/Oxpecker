@@ -162,8 +162,8 @@ module RoutingInternal =
             :?> FSharpFunc<HttpContext, Task>
             <| ctx
 
-    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) =
-        let handlerType = routeHandler.GetType()
+    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) =
+        let handlerType = handler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
         let parameters = handlerMethod.GetParameters()
         let template, mappings =
@@ -174,7 +174,7 @@ module RoutingInternal =
             else failwith <| "Unsupported routef handler: " + path.Value
 
         let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler mappings ctxInParameterList
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod handler mappings ctxInParameterList
 
         template, mappings, requestDelegate
 
@@ -186,7 +186,11 @@ module Routers =
 
     let rec applyHttpVerbsToEndpoint (verbs: HttpVerbs) (endpoint: Endpoint) : Endpoint =
         match endpoint with
-        | SimpleEndpoint(_, template, handler, configure) -> SimpleEndpoint(verbs, template, handler, configure)
+        | SimpleEndpoint(oldVerbs, routeTemplate, handler, configure) ->
+            if oldVerbs = HttpVerbs.Any || oldVerbs = verbs then
+                SimpleEndpoint(verbs, routeTemplate, handler, configure)
+            else
+                failwithf $"Http verbs intersect at '%s{routeTemplate}'"
         | NestedEndpoint(handler, endpoints, configure) ->
             NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
         | MultiEndpoint(endpoints, configure) ->
@@ -195,8 +199,11 @@ module Routers =
     let rec applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
         |> Seq.map (function
-            | SimpleEndpoint(_, routeTemplate, requestDelegate, configure) ->
-                SimpleEndpoint(verbs, routeTemplate, requestDelegate, configure)
+            | SimpleEndpoint(oldVerbs, routeTemplate, handler, configure) ->
+                if oldVerbs = HttpVerbs.Any || oldVerbs = verbs then
+                    SimpleEndpoint(verbs, routeTemplate, handler, configure)
+                else
+                    failwithf $"Http verbs intersect at '%s{routeTemplate}'"
             | NestedEndpoint(template, endpoints, configure) ->
                 NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
             | MultiEndpoint(endpoints, configure) ->
@@ -219,8 +226,8 @@ module Routers =
     let route (path: string) (handler: EndpointHandler) : Endpoint =
         SimpleEndpoint(HttpVerbs.Any, path, handler, id)
 
-    let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) : Endpoint =
-        let template, _, requestDelegate = routefInner path routeHandler
+    let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) : Endpoint =
+        let template, _, requestDelegate = routefInner path handler
 
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
