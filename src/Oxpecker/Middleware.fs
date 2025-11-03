@@ -16,22 +16,14 @@ type ApplicationBuilderExtensions() =
     /// </summary>
     [<Extension>]
     static member UseOxpecker(builder: IApplicationBuilder, endpoints: Endpoint seq) =
-        let addAntiforgery =
-            match builder.ApplicationServices.GetService(typeof<IAntiforgery>) with
-            | null -> false
-            | _ -> true
-        builder.UseEndpoints(_.MapOxpeckerEndpoints(endpoints, addAntiforgery))
+        builder.UseEndpoints(_.MapOxpeckerEndpoints(endpoints))
 
     /// <summary>
     /// Uses ASP.NET Core's Endpoint Routing middleware to register single Oxpecker endpoint.
     /// </summary>
     [<Extension>]
     static member UseOxpecker(builder: IApplicationBuilder, endpoint: Endpoint) =
-        let addAntiforgery =
-            match builder.ApplicationServices.GetService(typeof<IAntiforgery>) with
-            | null -> false
-            | _ -> true
-        builder.UseEndpoints(_.MapOxpeckerEndpoint(endpoint, addAntiforgery))
+        builder.UseEndpoints(_.MapOxpeckerEndpoint(endpoint))
 
 type ServiceCollectionExtensions() =
     /// <summary>

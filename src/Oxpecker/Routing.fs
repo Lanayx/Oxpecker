@@ -110,28 +110,28 @@ module RouteTemplateBuilder =
         (newRoute, mappings.ToArray())
 
 module RoutingInternal =
-    type ApplyBefore =
-        static member Compose(beforeHandler: EndpointHandler, endpoint: Endpoint) =
+    type AddFilter =
+        static member Compose(filter: EndpointHandler, endpoint: Endpoint) =
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                SimpleEndpoint(verb, template, beforeHandler >=> handler, configure)
+                SimpleEndpoint(verb, template, filter >=> handler, configure)
             | NestedEndpoint(template, endpoints, configure) ->
-                NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeHandler, e)) endpoints, configure)
+                NestedEndpoint(template, Seq.map (fun e -> AddFilter.Compose(filter, e)) endpoints, configure)
             | MultiEndpoint endpoints ->
-                MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeHandler, e)) endpoints)
+                MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filter, e)) endpoints)
 
-        static member Compose(beforeMiddleware: EndpointMiddleware, endpoint: Endpoint) =
+        static member Compose(filterMiddleware: EndpointMiddleware, endpoint: Endpoint) =
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                SimpleEndpoint(verb, template, beforeMiddleware >=> handler, configure)
+                SimpleEndpoint(verb, template, filterMiddleware >=> handler, configure)
             | NestedEndpoint(template, endpoints, configure) ->
                 NestedEndpoint(
                     template,
-                    Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware, e)) endpoints,
+                    Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints,
                     configure
                 )
             | MultiEndpoint endpoints ->
-                MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware, e)) endpoints)
+                MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints)
 
     let invokeHandler<'T>
         (ctx: HttpContext)
@@ -228,9 +228,23 @@ module Routers =
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
 
-    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
-        compose_opImpl Unchecked.defaultof<ApplyBefore> beforeHandler endpoint
+    let rec configureEndpoint (f: ConfigureEndpoint) (endpoint: Endpoint) =
+        match endpoint with
+        | SimpleEndpoint(verb, template, handler, configure) -> SimpleEndpoint(verb, template, handler, configure >> f)
+        | NestedEndpoint(template, endpoints, configure) -> NestedEndpoint(template, endpoints, configure >> f)
+        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (configureEndpoint f) endpoints)
 
+    let inline addFilter (filter: 'T) (endpoint: Endpoint) =
+        compose_opImpl Unchecked.defaultof<AddFilter> filter endpoint
+
+    let addMetadata (metadata: obj) =
+        configureEndpoint _.WithMetadata(metadata)
+
+    [<Obsolete "Will be removed in next major version. Use addFilter instead.">]
+    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
+        addFilter beforeHandler endpoint
+
+    [<Obsolete "Will be removed in next major version.">]
     let rec applyAfter (afterHandler: EndpointHandler) (endpoint: Endpoint) =
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
@@ -238,15 +252,6 @@ module Routers =
         | NestedEndpoint(template, endpoints, configure) ->
             NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, configure)
         | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints)
-
-    let rec configureEndpoint (f: ConfigureEndpoint) (endpoint: Endpoint) =
-        match endpoint with
-        | SimpleEndpoint(verb, template, handler, configure) -> SimpleEndpoint(verb, template, handler, configure >> f)
-        | NestedEndpoint(template, endpoints, configure) -> NestedEndpoint(template, endpoints, configure >> f)
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (configureEndpoint f) endpoints)
-
-    let addMetadata (metadata: obj) =
-        configureEndpoint _.WithMetadata(metadata)
 
 type EndpointRouteBuilderExtensions() =
 
@@ -313,22 +318,38 @@ type EndpointRouteBuilderExtensions() =
                 builder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure, addAntiforgery)
             | NestedEndpoint(template, endpoints, configure) ->
                 builder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure, addAntiforgery)
-            | MultiEndpoint endpoints -> builder.MapMultiEndpoint(endpoints, parentConfigure, addAntiforgery)
+            | MultiEndpoint endpoints ->
+                builder.MapMultiEndpoint(endpoints, parentConfigure, addAntiforgery)
 
     [<Extension>]
-    static member internal MapOxpeckerEndpoint
-        (builder: IEndpointRouteBuilder, endpoint: Endpoint, addAntiforgery: bool)
+    static member MapOxpeckerEndpoint
+        (builder: IEndpointRouteBuilder, endpoint: Endpoint)
         =
+        let addAntiforgery =
+            match builder.ServiceProvider.GetService(typeof<IAntiforgery>) with
+            | null -> false
+            | _ -> true
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
             builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
         | NestedEndpoint(template, endpoints, configure) ->
             builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
-        | MultiEndpoint endpoints -> builder.MapOxpeckerEndpoints(endpoints, addAntiforgery)
+        | MultiEndpoint endpoints ->
+            builder.MapMultiEndpoint(endpoints, id, addAntiforgery)
 
     [<Extension>]
-    static member internal MapOxpeckerEndpoints
-        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, addAntiforgery: bool)
+    static member MapOxpeckerEndpoints
+        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq)
         =
+        let addAntiforgery =
+            match builder.ServiceProvider.GetService(typeof<IAntiforgery>) with
+            | null -> false
+            | _ -> true
         for endpoint in endpoints do
-            builder.MapOxpeckerEndpoint(endpoint, addAntiforgery)
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, configure) ->
+                builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
+            | NestedEndpoint(template, endpoints, configure) ->
+                builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
+            | MultiEndpoint endpoints ->
+                builder.MapMultiEndpoint(endpoints, id, addAntiforgery)
