@@ -18,11 +18,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
-      <PackageReference Include="Falco.Markup" Version="1.1.1" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.15.5" />
+      <PackageReference Include="Falco.Markup" Version="1.4.0" />
       <PackageReference Include="Giraffe.ViewEngine" Version="2.0.0-alpha-1" />
       <PackageReference Include="Giraffe" Version="7.0.2" />
-      <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.3" />
+      <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.10" />
       <PackageReference Include="SpanJson" Version="4.2.1" />
     </ItemGroup>
 
