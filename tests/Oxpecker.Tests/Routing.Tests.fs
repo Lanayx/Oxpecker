@@ -79,11 +79,7 @@ let ``route: GET "/foo" returns "bar"`` () =
 [<Fact>]
 let ``Mixed GET and POST routes are not allowed`` () =
     task {
-        let endpoint = GET [
-            POST [
-                route "/abc" <| text "Hello World"
-            ]
-        ]
+        let endpoint = GET [ POST [ route "/abc" <| text "Hello World" ] ]
         (fun () -> WebApp.webAppOneRoute endpoint |> ignore)
         |> shouldFailWithMessage "Http verbs intersect at '/abc'"
     }
@@ -558,7 +554,10 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
 let ``routeGroup: Route group inside HTTP group`` () =
     task {
         let values = ResizeArray<string>()
-        let filter: EndpointHandler = fun ctx -> values.Add "111"; Task.CompletedTask
+        let filter: EndpointHandler =
+            fun ctx ->
+                values.Add "111"
+                Task.CompletedTask
         let endpoints = [
             GET [
                 routeGroup [
@@ -589,7 +588,10 @@ let ``routeGroup: Route group inside HTTP group`` () =
 let ``routeGroup: HTTP group inside route group `` () =
     task {
         let values = ResizeArray<string>()
-        let filter: EndpointHandler = fun ctx -> values.Add "111"; Task.CompletedTask
+        let filter: EndpointHandler =
+            fun ctx ->
+                values.Add "111"
+                Task.CompletedTask
         let endpoints =
             routeGroup [
                 GET [
