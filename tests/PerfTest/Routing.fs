@@ -95,10 +95,11 @@ type Routing() =
     //
     // | Method            | Mean      | Error     | StdDev    | Median    | Gen0   | Allocated |
     // |------------------ |----------:|----------:|----------:|----------:|-------:|----------:|
-    // | GetOxpeckerRoute  |  6.646 us | 0.1293 us | 0.3450 us |  6.575 us | 0.8545 |    7.8 KB |
-    // | GetOxpeckerRoutef |  7.357 us | 0.1451 us | 0.3029 us |  7.310 us | 0.9766 |   8.08 KB |
-    // | GetGiraffeRoute   |  7.596 us | 0.1467 us | 0.3542 us |  7.477 us | 1.0986 |   9.19 KB |
-    // | GetGiraffeRoutef  | 11.959 us | 0.2369 us | 0.5394 us | 11.927 us | 1.4648 |  12.63 KB |
+    // | GetOxpeckerRoute  |  6.543 us | 0.1226 us | 0.2272 us |  6.513 us | 0.8545 |    7.8 KB |
+    // | GetOxpeckerRoutef |  7.152 us | 0.1341 us | 0.2452 us |  7.111 us | 0.9766 |   8.04 KB |
+    // | GetGiraffeRoute   |  7.554 us | 0.1646 us | 0.4669 us |  7.338 us | 1.0986 |   9.19 KB |
+    // | GetGiraffeRoutef  | 13.376 us | 0.2673 us | 0.5579 us | 13.230 us | 1.4648 |  12.64 KB |
+
 
     let oxpeckerServer = OxpeckerRouting.webApp()
     let giraffeServer = GiraffeRouting.webApp()

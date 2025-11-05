@@ -77,8 +77,7 @@ module RouteTemplateBuilder =
                 | _ -> s
             | _ -> s
         with :? FormatException as ex ->
-            raise
-            <| RouteParseException($"Url segment value '%s{s}' has invalid format", ex)
+            raise <| RouteParseException($"Url segment value '%s{s}' has invalid format", ex)
 
     let placeholderPattern = Regex("\{(\*{0,2})%([sibcdfuO])(:[^}]+)?\}")
     // This function should convert to route template and mappings
@@ -129,30 +128,54 @@ module RoutingInternal =
             | MultiEndpoint(endpoints, configure) ->
                 MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
 
-    let invokeHandler<'T>
+    let private getArgByIndex
+        (routeData: RouteData)
+        (mappings: (string * char * Option<_>) array)
+        (index: int) =
+            let placeholderName, formatChar, modifier = mappings[index]
+            let routeValue = routeData.Values[placeholderName] |> string
+            RouteTemplateBuilder.parse formatChar modifier routeValue
+
+    let private invokeHandler<'T>
         (ctx: HttpContext)
-        (methodInfo: MethodInfo)
+        (invoker: MethodInvoker)
         (handler: 'T)
         (mappings: (string * char * Option<_>) array)
         (ctxInParameterList: bool)
         =
         let routeData = ctx.GetRouteData()
         if ctxInParameterList then
-            methodInfo.Invoke(
-                handler,
-                [|
-                    for placeholderName, formatChar, modifier in mappings do
-                        let routeValue = routeData.Values[placeholderName] |> string
-                        RouteTemplateBuilder.parse formatChar modifier routeValue
-                    ctx
-                |]
-            )
+            match mappings.Length with
+            | 0 ->
+                invoker.Invoke(handler, ctx)
+            | 1 ->
+                let arg = getArgByIndex routeData mappings 0
+                invoker.Invoke(handler, arg, ctx)
+            | 2 ->
+                let arg1 = getArgByIndex routeData mappings 0
+                let arg2 = getArgByIndex routeData mappings 1
+                invoker.Invoke(handler, arg1, arg2, ctx)
+            | 3 ->
+                let arg1 = getArgByIndex routeData mappings 0
+                let arg2 = getArgByIndex routeData mappings 1
+                let arg3 = getArgByIndex routeData mappings 2
+                invoker.Invoke(handler, arg1, arg2, arg3, ctx)
+            | _ ->
+                invoker.Invoke(
+                    handler,
+                    Span [|
+                        for placeholderName, formatChar, modifier in mappings do
+                            let routeValue = routeData.Values[placeholderName] |> string
+                            RouteTemplateBuilder.parse formatChar modifier routeValue
+                        ctx
+                    |]
+                )
             |> nonNull
             :?> Task
         else
-            methodInfo.Invoke(
+            invoker.Invoke(
                 handler,
-                [|
+                Span [|
                     for placeholderName, formatChar, modifier in mappings do
                         let routeValue = routeData.Values[placeholderName] |> string
                         RouteTemplateBuilder.parse formatChar modifier routeValue
@@ -172,9 +195,9 @@ module RoutingInternal =
             if parameters.Length = mappings.Length + 1 then true
             elif parameters.Length = mappings.Length then false
             else failwith <| "Unsupported routef handler: " + path.Value
-
+        let invoker = MethodInvoker.Create(handlerMethod)
         let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod handler mappings ctxInParameterList
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx invoker handler mappings ctxInParameterList
 
         template, mappings, requestDelegate
 

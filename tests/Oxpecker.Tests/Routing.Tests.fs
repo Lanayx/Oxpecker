@@ -204,7 +204,7 @@ let ``routef: GET "/foo/a%2Fb%2Bc.d%2Ce/bar" returns "a/b+c.d,e"`` () =
             GET [
                 route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
-                routef "/foo/{%s}/bar" text
+                routef "/foo/{%s}/bar" (fun name ctx -> ctx.WriteText(name))
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
             ]
         ]
