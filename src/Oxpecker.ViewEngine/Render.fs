@@ -10,7 +10,7 @@ let inline private copyStringBuilderToBytes (sb: StringBuilder) =
     let chArray = ArrayPool<char>.Shared.Rent(sb.Length)
     sb.CopyTo(0, chArray, 0, sb.Length)
     let bytes = Encoding.UTF8.GetBytes(chArray, 0, sb.Length)
-    ArrayPool<char>.Shared.Return(chArray)
+    ArrayPool<char>.Shared.Return(chArray, true)
     bytes
 
 /// Render HtmlElement to normal UTF16 string
