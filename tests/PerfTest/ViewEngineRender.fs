@@ -13,7 +13,7 @@ module OxpeckerViewRender =
                 p() { raw "<h2>Raw HTML</h2>" }
                 ul() {
                     for _ in 1..10 do
-                        li() { span() { "Test" } }
+                        li() { span() { "Hellö 𝓦orld!" } }
                 }
             }
         }
@@ -31,7 +31,7 @@ module FalcoViewRender =
                 p [] [ Text.raw "<h2>Raw HTML</h2>" ]
                 ul [] [
                     for _ in 1..10 do
-                        li [] [ Elem.span [] [ Text.enc "Test" ] ]
+                        li [] [ Elem.span [] [ Text.enc "Hellö 𝓦orld!" ] ]
                 ]
             ]
         ]
@@ -47,7 +47,7 @@ module GiraffeViewRender =
                 p [] [ rawText "<h2>Raw HTML</h2>" ]
                 ul [] [
                     for _ in 1..10 do
-                        li [] [ span [] [ str "Test" ] ]
+                        li [] [ span [] [ str "Hellö 𝓦orld!" ] ]
                 ]
             ]
         ]
@@ -55,18 +55,18 @@ module GiraffeViewRender =
 [<MemoryDiagnoser>]
 type ViewEngineRender() =
 
-    // BenchmarkDotNet v0.14.0, Windows 10
-    // AMD Ryzen 7 2700X, 1 CPU, 16 logical and 8 physical cores
-    // .NET SDK 8.0.401
-    //   [Host]     : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2 DEBUG
-    //   DefaultJob : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
+    // BenchmarkDotNet v0.15.5, Windows 11 (10.0.26200.6899)
+    // AMD Ryzen 5 5600H with Radeon Graphics 3.30GHz, 1 CPU, 12 logical and 6 physical cores
+    // .NET SDK 10.0.100-rc.2.25502.107
+    //   [Host]     : .NET 10.0.0 (10.0.0-rc.2.25502.107, 10.0.25.50307), X64 RyuJIT x86-64-v3 DEBUG
+    //   DefaultJob : .NET 10.0.0 (10.0.0-rc.2.25502.107, 10.0.25.50307), X64 RyuJIT x86-64-v3
     //
     //
-    // | Method             | Mean       | Error   | StdDev  | Gen0   | Gen1   | Allocated |
-    // |------------------- |-----------:|--------:|--------:|-------:|-------:|----------:|
-    // | RenderOxpeckerView |   729.8 ns | 2.66 ns | 2.36 ns | 0.2213 |      - |     928 B |
-    // | RenderGiraffeView  | 1,098.6 ns | 5.94 ns | 5.55 ns | 2.6302 | 0.0019 |   11000 B |
-    // | RenderFalcoView    | 1,324.7 ns | 4.38 ns | 3.66 ns | 0.5798 |      - |    2432 B |
+    // | Method             | Mean       | Error    | StdDev   | Median     | Gen0   | Gen1   | Allocated |
+    // |------------------- |-----------:|---------:|---------:|-----------:|-------:|-------:|----------:|
+    // | RenderOxpeckerView |   917.4 ns |  9.49 ns |  7.92 ns |   918.2 ns | 0.1612 |      - |   1.32 KB |
+    // | RenderGiraffeView  |   918.9 ns | 20.12 ns | 59.33 ns |   891.8 ns | 1.3647 | 0.0753 |  11.15 KB |
+    // | RenderFalcoView    | 1,274.0 ns | 22.94 ns | 22.53 ns | 1,279.5 ns | 0.4730 | 0.0019 |   3.87 KB |
 
 
 

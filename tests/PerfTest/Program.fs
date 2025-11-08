@@ -3,7 +3,7 @@ open PerfTest
 
 [<EntryPoint>]
 let main args =
-    let summary = BenchmarkRunner.Run<Routing>()
+    let summary = BenchmarkRunner.Run<ViewEngineRender>()
     //Form().OxpeckerPost().Wait()
 
     0
