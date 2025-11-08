@@ -3,6 +3,7 @@
 open System
 open System.Net
 open System.Net.Http.Json
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
@@ -75,6 +76,14 @@ let ``route: GET "/foo" returns "bar"`` () =
         resultString |> shouldEqual "bar"
     }
 
+[<Fact>]
+let ``Mixed GET and POST routes are not allowed`` () =
+    task {
+        let endpoint = GET [ POST [ route "/abc" <| text "Hello World" ] ]
+        (fun () -> WebApp.webAppOneRoute endpoint |> ignore)
+        |> shouldFailWithMessage "Http verbs intersect at '/abc'"
+    }
+
 // ---------------------------------
 // routex Tests
 // ---------------------------------
@@ -115,7 +124,8 @@ let ``routex: GET "/foo2" returns "bar"`` () =
 [<Fact>]
 let ``routef generates route correctly`` () =
     task {
-        let endpoint = routef "/foo/{%s}/{%i}/{%O:guid}" (fun x y z -> text $"Hello {x}{y}{z}")
+        let endpoint =
+            routef "/foo/{%s}/{%i}/{%O:guid}" (fun x y z -> text $"Hello {x}{y}{z}")
 
         match endpoint with
         | SimpleEndpoint(_, route, _, _) -> route |> shouldEqual "/foo/{x}/{y}/{z:guid}"
@@ -194,7 +204,7 @@ let ``routef: GET "/foo/a%2Fb%2Bc.d%2Ce/bar" returns "a/b+c.d,e"`` () =
             GET [
                 route "/" <| text "Hello World"
                 route "/foo" <| text "bar"
-                routef "/foo/{%s}/bar" text
+                routef "/foo/{%s}/bar" (fun name ctx -> ctx.WriteText(name))
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
             ]
         ]
@@ -534,4 +544,76 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
 
         innerMetadata.Count |> shouldBeGreaterThan getMetadata.Count
         getMetadata.Count |> shouldBeGreaterThan rootMetadata.Count
+    }
+
+// ---------------------------------
+// routeGroup Tests
+// ---------------------------------
+
+[<Fact>]
+let ``routeGroup: Route group inside HTTP group`` () =
+    task {
+        let values = ResizeArray<string>()
+        let filter: EndpointHandler =
+            fun ctx ->
+                values.Add "111"
+                Task.CompletedTask
+        let endpoints = [
+            GET [
+                routeGroup [
+                    route "/api" (fun ctx ->
+                        ctx.GetEndpoint()
+                        |> Unchecked.nonNull
+                        |> _.Metadata
+                        |> _.GetRequiredMetadata<string>()
+                        |> values.Add
+                        ctx.WriteText "api root")
+                ]
+                |> addMetadata "222"
+                |> addFilter filter
+            ]
+        ]
+        let server = WebApp.webApp endpoints
+        let client = server.CreateClient()
+
+        let! result = client.GetAsync("/api")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        resultString |> shouldEqual "api root"
+        values.ToArray() |> shouldEqual [| "111"; "222" |]
+    }
+
+[<Fact>]
+let ``routeGroup: HTTP group inside route group `` () =
+    task {
+        let values = ResizeArray<string>()
+        let filter: EndpointHandler =
+            fun ctx ->
+                values.Add "111"
+                Task.CompletedTask
+        let endpoints =
+            routeGroup [
+                GET [
+                    route "/api" (fun ctx ->
+                        ctx.GetEndpoint()
+                        |> Unchecked.nonNull
+                        |> _.Metadata
+                        |> _.GetRequiredMetadata<string>()
+                        |> values.Add
+                        ctx.WriteText "api root")
+                ]
+            ]
+            |> addMetadata "222"
+            |> addFilter filter
+
+        let server = WebApp.webAppOneRoute endpoints
+        let client = server.CreateClient()
+
+        let! result = client.GetAsync("/api")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        resultString |> shouldEqual "api root"
+        values.ToArray() |> shouldEqual [| "111"; "222" |]
     }

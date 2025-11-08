@@ -137,15 +137,15 @@ let streamingHtml2: EndpointHandler =
             }
         htmlChunked values ctx
 
-let CLOSED = applyBefore closedHandler
+let CLOSED = addFilter closedHandler
 let MY_HEADER endpoint =
-    applyBefore (setHeaderMw "my" "header") endpoint
-let NO_RESPONSE_CACHE = applyBefore noResponseCaching
+    addFilter (setHeaderMw "my" "header") endpoint
+let NO_RESPONSE_CACHE = addFilter noResponseCaching
 let RESPONSE_CACHE =
     let cacheDirective =
         CacheControlHeaderValue(MaxAge = TimeSpan.FromSeconds(10.0), Public = true)
         |> Some
-    applyBefore <| responseCaching cacheDirective None None
+    addFilter <| responseCaching cacheDirective None None
 
 let GET_HEAD_OPTIONS: Endpoint seq -> Endpoint =
     applyHttpVerbsToEndpoints(Verbs [ HttpVerb.GET; HttpVerb.HEAD; HttpVerb.OPTIONS ])
