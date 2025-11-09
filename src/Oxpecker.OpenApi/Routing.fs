@@ -41,7 +41,8 @@ module Routing =
                                     Required = true,
                                     Style = ParameterStyle.Simple,
                                     Schema = getSchema format modifier
-                                ) :> IOpenApiParameter)
+                                )
+                                :> IOpenApiParameter)
                         )
                     Task.CompletedTask)
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, configureEndpoint)

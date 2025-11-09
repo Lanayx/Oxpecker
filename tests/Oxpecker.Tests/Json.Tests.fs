@@ -72,6 +72,20 @@ let ``Test default deserializer with nullables`` () =
         streamWriter.Write("""{"name":"Oxpecker"}""")
         streamWriter.Flush()
         httpContext.Request.Body.Seek(0L, SeekOrigin.Begin) |> ignore
-        let! value = serializer.Deserialize<{| Name: string | null; Age: Nullable<int>; Title: string | null |}>(httpContext)
-        value |> shouldEqual {| Name = "Oxpecker"; Age = Nullable(); Title = null |}
+        let! value =
+            serializer.Deserialize<
+                {|
+                    Name: string | null
+                    Age: Nullable<int>
+                    Title: string | null
+                |}
+             >(
+                httpContext
+            )
+        value
+        |> shouldEqual {|
+            Name = "Oxpecker"
+            Age = Nullable()
+            Title = null
+        |}
     }

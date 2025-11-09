@@ -39,7 +39,11 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 
 type MyModel = { Name: string; Age: int }
 [<CLIMutable>]
-type MyModelWithOption = { Name: string option; [<JsonRequired>]Age: Nullable<int> }
+type MyModelWithOption = {
+    Name: string option
+    [<JsonRequired>]
+    Age: Nullable<int>
+}
 
 let handler4 (a: MyModel) : EndpointHandler =
     fun (ctx: HttpContext) -> task { return! ctx.WriteJsonChunked { a with Name = a.Name + "!" } }
@@ -175,7 +179,10 @@ let endpoints = [
         |> addOpenApi(
             OpenApiConfig(
                 requestBody =
-                    RequestBody(typeof<MyModelWithOption>, [| "multipart/form-data"; "application/x-www-form-urlencoded" |]),
+                    RequestBody(
+                        typeof<MyModelWithOption>,
+                        [| "multipart/form-data"; "application/x-www-form-urlencoded" |]
+                    ),
                 responseBodies = [ ResponseBody(typeof<MyModel>) ]
             )
         )
@@ -246,9 +253,11 @@ let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder.UseRouting().Use(errorHandler).UseOxpecker(endpoints).Run(notFoundHandler)
 
 let configureServices (services: IServiceCollection) =
-    services.AddRouting().AddOxpecker().AddOpenApi(fun o ->
-        o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
-    ) |> ignore
+    services
+        .AddRouting()
+        .AddOxpecker()
+        .AddOpenApi(fun o -> o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore)
+    |> ignore
 
 
 [<EntryPoint>]

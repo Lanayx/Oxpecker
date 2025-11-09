@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 open PerfTest.Csharp
 
 module OxpeckerBinder =
@@ -24,12 +25,19 @@ module OxpeckerBinder =
     let endpoints = [ POST [ route "/bindModel" bindModel ] ]
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
-                .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
+                            .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 module GiraffeBinder =
     open Giraffe
@@ -44,26 +52,37 @@ module GiraffeBinder =
     let endpoints = choose [ POST >=> route "/bindModel" >=> bindModel ]
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseGiraffe(endpoints))
-                .ConfigureServices(fun services -> services.AddGiraffe() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseGiraffe(endpoints))
+                            .ConfigureServices(fun services -> services.AddGiraffe() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 module MinimalApiBinder =
 
-    open PerfTest.Csharp
-
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app ->
-                    app.UseRouting().UseEndpoints(fun x -> ModelBindingTest.MapEndpoints(x))
-                    |> ignore)
-                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app ->
+                                app.UseEndpoints(fun x -> ModelBindingTest.MapEndpoints(x)) |> ignore)
+                            .ConfigureServices(fun services -> services.AddRouting() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 [<MemoryDiagnoser>]
 type Form() =
@@ -82,12 +101,12 @@ type Form() =
     // | MinimalApiPost |  28.49 us | 0.534 us | 0.473 us | 1.4648 |   13.8 KB |
 
 
-    let oxpeckerServer = OxpeckerBinder.webApp()
-    let giraffeServer = GiraffeBinder.webApp()
-    let minimalApiServer = MinimalApiBinder.webApp()
-    let oxpeckerClient = oxpeckerServer.CreateClient()
-    let giraffeClient = giraffeServer.CreateClient()
-    let minimalApiClient = minimalApiServer.CreateClient()
+    let oxpeckerServer = OxpeckerBinder.webApp().GetAwaiter().GetResult()
+    let giraffeServer = GiraffeBinder.webApp().GetAwaiter().GetResult()
+    let minimalApiServer = MinimalApiBinder.webApp().GetAwaiter().GetResult()
+    let oxpeckerClient = oxpeckerServer.GetTestClient()
+    let giraffeClient = giraffeServer.GetTestClient()
+    let minimalApiClient = minimalApiServer.GetTestClient()
 
     let requestBody =
         "Id=4e213598-5b45-4cd7-a87c-429d7b6b2f03&FirstName=Susan&MiddleName=Elisabeth&LastName=Doe&BirthDate=1986-12-29&StatusCode=200&Nicknames=Susi&Nicknames=Eli&Nicknames=Liz&Children[0].Name=Hamed&Children[0].Age=32&Children[1].Name=Ali&Children[1].Age=22&Children[2].Name=Gholi&Children[2].Age=44"

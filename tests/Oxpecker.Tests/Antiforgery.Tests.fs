@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 open Microsoft.Net.Http.Headers
 open Oxpecker
 open Xunit
@@ -17,26 +18,47 @@ open FsUnit.Light
 module WebApp =
 
     let webApp (endpoints: Endpoint seq) =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(_.UseRouting().UseAntiforgery().UseOxpecker(endpoints).Run(DefaultHandlers.notFoundHandler))
-                .ConfigureServices(fun services -> services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(
+                                _.UseRouting()
+                                    .UseAntiforgery()
+                                    .UseOxpecker(endpoints)
+                                    .Run(DefaultHandlers.notFoundHandler)
+                            )
+                            .ConfigureServices(fun services ->
+                                services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
     let webAppWithDefaultErrorHandler (endpoints: Endpoint seq) =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(
-                    _.UseRouting()
-                        .UseAntiforgery()
-                        .Use(DefaultHandlers.errorHandler)
-                        .UseOxpecker(endpoints)
-                        .Run(DefaultHandlers.notFoundHandler)
-                )
-                .ConfigureServices(fun services -> services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(
+                                _.UseRouting()
+                                    .UseAntiforgery()
+                                    .Use(DefaultHandlers.errorHandler)
+                                    .UseOxpecker(endpoints)
+                                    .Run(DefaultHandlers.notFoundHandler)
+                            )
+                            .ConfigureServices(fun services ->
+                                services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 
 [<Fact>]
@@ -49,8 +71,8 @@ let ``Request fails when antiforgery token is missing`` () =
                     ctx.WriteText "Hello World")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         do!
             client.PostAsync("/action", null)
@@ -67,8 +89,8 @@ let ``Server returns 403 with default error handler and antiforgery token is mis
                     ctx.WriteText "Hello World")
             ]
         ]
-        let server = WebApp.webAppWithDefaultErrorHandler endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.GetTestClient()
 
         let! result = client.PostAsync("/action", null)
         result.StatusCode |> shouldEqual HttpStatusCode.Forbidden
@@ -91,8 +113,8 @@ let ``Request succeeds when antiforgery token is present`` () =
                     })
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
         let! response = client.GetAsync("/action")
         let! tokens = response.Content.ReadFromJsonAsync<AntiforgeryTokenSet>()
         let cookies = response.Headers.GetValues(HeaderNames.SetCookie)

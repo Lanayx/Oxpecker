@@ -5,6 +5,7 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 
 module OxpeckerRouting =
     open Oxpecker
@@ -33,12 +34,19 @@ module OxpeckerRouting =
     ]
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
-                .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
+                            .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 module GiraffeRouting =
     open Giraffe
@@ -76,12 +84,19 @@ module GiraffeRouting =
         ]
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseGiraffe(endpoints))
-                .ConfigureServices(fun services -> services.AddGiraffe() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(_.UseGiraffe(endpoints))
+                            .ConfigureServices(fun services -> services.AddGiraffe() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 [<MemoryDiagnoser>]
 type Routing() =
@@ -101,10 +116,10 @@ type Routing() =
     // | GetGiraffeRoutef  | 13.376 us | 0.2673 us | 0.5579 us | 13.230 us | 1.4648 |  12.64 KB |
 
 
-    let oxpeckerServer = OxpeckerRouting.webApp()
-    let giraffeServer = GiraffeRouting.webApp()
-    let oxpeckerClient = oxpeckerServer.CreateClient()
-    let giraffeClient = giraffeServer.CreateClient()
+    let oxpeckerServer = OxpeckerRouting.webApp().GetAwaiter().GetResult()
+    let giraffeServer = GiraffeRouting.webApp().GetAwaiter().GetResult()
+    let oxpeckerClient = oxpeckerServer.GetTestClient()
+    let giraffeClient = giraffeServer.GetTestClient()
 
 
     [<Benchmark>]

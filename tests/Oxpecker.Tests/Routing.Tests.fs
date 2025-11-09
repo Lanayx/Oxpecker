@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 open Xunit
 open FsUnit.Light
 open Oxpecker
@@ -16,33 +17,56 @@ open Oxpecker
 module WebApp =
 
     let webApp (endpoints: Endpoint seq) =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints).Run(DefaultHandlers.notFoundHandler))
-                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app ->
+                                app.UseRouting().UseOxpecker(endpoints).Run(DefaultHandlers.notFoundHandler))
+                            .ConfigureServices(fun services -> services.AddRouting() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
     let webAppOneRoute (endpoint: Endpoint) =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoint).Run(DefaultHandlers.notFoundHandler))
-                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app ->
+                                app.UseRouting().UseOxpecker(endpoint).Run(DefaultHandlers.notFoundHandler))
+                            .ConfigureServices(fun services -> services.AddRouting() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
     let webAppWithDefaultErrorHandler (endpoints: Endpoint seq) =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(
-                    _.UseRouting()
-                        .Use(DefaultHandlers.errorHandler)
-                        .UseOxpecker(endpoints)
-                        .Run(DefaultHandlers.notFoundHandler)
-                )
-                .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(
+                                _.UseRouting()
+                                    .Use(DefaultHandlers.errorHandler)
+                                    .UseOxpecker(endpoints)
+                                    .Run(DefaultHandlers.notFoundHandler)
+                            )
+                            .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 // ---------------------------------
 // route Tests
@@ -52,8 +76,8 @@ module WebApp =
 let ``route: GET "/" returns "Hello World"`` () =
     task {
         let endpoint = GET [ route "/" <| text "Hello World"; route "/foo" <| text "bar" ]
-        let server = WebApp.webAppOneRoute endpoint
-        let client = server.CreateClient()
+        use! server = WebApp.webAppOneRoute endpoint
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -66,8 +90,8 @@ let ``route: GET "/" returns "Hello World"`` () =
 let ``route: GET "/foo" returns "bar"`` () =
     task {
         let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo" <| text "bar" ] ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -80,8 +104,9 @@ let ``route: GET "/foo" returns "bar"`` () =
 let ``Mixed GET and POST routes are not allowed`` () =
     task {
         let endpoint = GET [ POST [ route "/abc" <| text "Hello World" ] ]
-        (fun () -> WebApp.webAppOneRoute endpoint |> ignore)
-        |> shouldFailWithMessage "Http verbs intersect at '/abc'"
+        do!
+            task { return! WebApp.webAppOneRoute endpoint }
+            |> shouldFailTaskWithMessage "Http verbs intersect at '/abc'"
     }
 
 // ---------------------------------
@@ -92,8 +117,8 @@ let ``Mixed GET and POST routes are not allowed`` () =
 let ``routex: GET "/foo///" returns "bar"`` () =
     task {
         let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo/{**path}" <| text "bar" ] ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo///")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -106,8 +131,8 @@ let ``routex: GET "/foo///" returns "bar"`` () =
 let ``routex: GET "/foo2" returns "bar"`` () =
     task {
         let endpoints = [ GET [ route "/" <| text "Hello World"; route "/foo2/{*path}" <| text "bar" ] ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo2")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -145,8 +170,8 @@ let ``routef: GET "/foo/blah blah/bar" returns "blah blah"`` () =
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/blah blah/bar")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -166,8 +191,8 @@ let ``routef: GET "/foo/johndoe/59" returns "Name: johndoe, Age: 59"`` () =
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/johndoe/59")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -187,8 +212,8 @@ let ``routef: GET "/foo/b%2Fc/bar" returns "b%2Fc"`` () =
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/b%2Fc/bar")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -208,8 +233,8 @@ let ``routef: GET "/foo/a%2Fb%2Bc.d%2Ce/bar" returns "a/b+c.d,e"`` () =
                 routef "/foo/{%s}/{%i}" (fun name age -> text $"Name: %s{name}, Age: %i{age}")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/a%2Fb%2Bc.d%2Ce/bar")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -232,8 +257,8 @@ let ``routef: GET "/foo/%O/bar/%O" returns "Guid1: ..., Guid2: ..."`` () =
                     text $"Guid1: %O{guid1}, Guid2: %O{guid2}")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/4ec87f064d1e41b49342ab1aead1f99d/bar/2a6c9185-95d9-4d8c-80a6-575f99c2a716")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -255,8 +280,8 @@ let ``routef: GET "/foo/%u/bar/%u" returns "Id1: ..., Id2: ..."`` () =
                 routef "/foo/{%u}/bar/{%u}" (fun (id1: uint64) (id2: uint64) -> text $"Id1: %u{id1}, Id2: %u{id2}")
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/12635000945053400782/bar/16547050693006839099")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -270,8 +295,8 @@ let ``routef: GET "/foo/%u/bar/%u" returns "Id1: ..., Id2: ..."`` () =
 let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
     task {
         let endpoints = [ GET [ routef "/foo/{%s}/{%s}" (fun s1 s2 -> text $"%s{s1},%s{s2}") ] ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/foo/bar/baz/qux")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -284,8 +309,8 @@ let ``routef: GET "/foo/bar/baz/qux" returns 404 "Not found"`` () =
 let ``Error in route binding leads to 400 error when default error handler is used`` () =
     task {
         let endpoints = [ GET [ routef "/invalid/{%i}" (fun i -> text $"%i{i}") ] ]
-        let server = WebApp.webAppWithDefaultErrorHandler endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/invalid/zz")
         result.StatusCode |> shouldEqual HttpStatusCode.BadRequest
@@ -299,8 +324,8 @@ let ``Error in model binding leads to 400 error when default error handler is us
                 routef "/invalid" <| bindForm(fun (_: {| Count: int |}) -> text "bind succeded")
             ]
         ]
-        let server = WebApp.webAppWithDefaultErrorHandler endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.GetTestClient()
 
         let! result = client.PostAsJsonAsync("/invalid", {| Count = "zz" |})
         result.StatusCode |> shouldEqual HttpStatusCode.BadRequest
@@ -310,8 +335,8 @@ let ``Error in model binding leads to 400 error when default error handler is us
 let ``routef: GET "/foo/bar/baz/qux" returns "bar/baz/qux"`` () =
     task {
         let endpoints = [ GET [ routef "/foo/{**%s}" text; routef "/moo/{*%s}" text ] ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result1 = client.GetAsync("/foo/bar/baz/qux")
         let! result1String = result1.Content.ReadAsStringAsync()
@@ -344,8 +369,8 @@ let ``subRoute: Route with empty route`` () =
                 route "/api/test" <| text "test"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -369,8 +394,8 @@ let ``subRoute: Normal nested route after subRoute`` () =
                 route "/api/test" <| text "test"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api/users")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -394,8 +419,8 @@ let ``subRoute: Route after subRoute has same beginning of path`` () =
                 route "/api/test" <| text "test"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api/test")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -424,8 +449,8 @@ let ``subRoute: Nested sub routes`` () =
                 route "/api/test" <| text "test"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api/v2/users")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -449,8 +474,8 @@ let ``subRoute: Multiple nested sub routes`` () =
                 route "/api/test" <| text "test"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api/v2/admin2")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -481,8 +506,8 @@ let ``subRoute: Route after nested sub routes has same beginning of path`` () =
                 route "/api/v2/else" <| text "else"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        let! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api/v2/else")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -502,8 +527,8 @@ let ``subRoute: routef inside subRoute`` () =
                 route "/api/test" <| text "test"
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api/foo/bar/yadayada")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -535,8 +560,8 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
             ]
             |> configureEndpoint _.DisableAntiforgery()
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! _ = client.GetAsync("/api/inner")
         let! _ = client.GetAsync("/")
@@ -573,8 +598,8 @@ let ``routeGroup: Route group inside HTTP group`` () =
                 |> addFilter filter
             ]
         ]
-        let server = WebApp.webApp endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api")
         let! resultString = result.Content.ReadAsStringAsync()
@@ -607,8 +632,8 @@ let ``routeGroup: HTTP group inside route group `` () =
             |> addMetadata "222"
             |> addFilter filter
 
-        let server = WebApp.webAppOneRoute endpoints
-        let client = server.CreateClient()
+        use! server = WebApp.webAppOneRoute endpoints
+        let client = server.GetTestClient()
 
         let! result = client.GetAsync("/api")
         let! resultString = result.Content.ReadAsStringAsync()

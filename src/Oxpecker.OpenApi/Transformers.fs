@@ -16,9 +16,11 @@ module private FSharpTypeChecks =
         if t.IsGenericType then
             let gtd = t.GetGenericTypeDefinition()
             if gtd = typedefof<option<_>> || gtd = typedefof<ValueOption<_>> then
-                Some (t.GetGenericArguments()[0])
-            else None
-        else None
+                Some(t.GetGenericArguments()[0])
+            else
+                None
+        else
+            None
 
 module private SchemaCopy =
 
@@ -74,7 +76,7 @@ module private SchemaCopy =
             match src.OneOf with
             | null -> null
             | a -> ResizeArray(a)
-        dst.Not   <- src.Not
+        dst.Not <- src.Not
 
         // Array/object facets
         dst.Items <- src.Items
@@ -122,7 +124,11 @@ module private SchemaCopy =
             match src.UnrecognizedKeywords with
             | null -> null
             | e -> Dictionary(e)
-        dst.Metadata <- if src :? IMetadataContainer then (src :?> IMetadataContainer).Metadata else null
+        dst.Metadata <-
+            if src :? IMetadataContainer then
+                (src :?> IMetadataContainer).Metadata
+            else
+                null
         dst.DependentRequired <-
             match src.DependentRequired with
             | null -> null
@@ -132,7 +138,7 @@ module private SchemaCopy =
     let unionWithNull (t: Nullable<JsonSchemaType>) : Nullable<JsonSchemaType> =
         if t.HasValue then
             let combined =
-                LanguagePrimitives.EnumOfValue( (int t.Value) ||| (int JsonSchemaType.Null) )
+                LanguagePrimitives.EnumOfValue((int t.Value) ||| (int JsonSchemaType.Null))
             Nullable<JsonSchemaType>(combined)
         else
             // Leave as null; writer will omit 'type'. (Optional: add x-nullable via Extensions if you need 3.0 on typeless schemas.)
@@ -144,7 +150,9 @@ module private SchemaCopy =
 ///    Works with the vNext `Microsoft.OpenApi.OpenApiSchema` model you pasted.
 type FSharpOptionSchemaTransformer() =
     interface IOpenApiSchemaTransformer with
-        member _.TransformAsync(schema: OpenApiSchema, ctx: OpenApiSchemaTransformerContext, ct: CancellationToken) : Task =
+        member _.TransformAsync
+            (schema: OpenApiSchema, ctx: OpenApiSchemaTransformerContext, ct: CancellationToken)
+            : Task =
             task {
                 match ctx.JsonTypeInfo.Type with
                 | FSharpTypeChecks.FSharpOptionKind innerT ->
@@ -155,7 +163,8 @@ type FSharpOptionSchemaTransformer() =
                     // … and mark nullable (OAS 3.0 => "nullable: true"; OAS 3.1 => type union with "null")
                     schema.Type <- SchemaCopy.unionWithNull schema.Type
                 | _ -> ()
-            } :> Task
+            }
+            :> Task
 
 /// 2) On object schemas, ensure option-backed properties are **NOT in `required`**.
 ///    We use CLR metadata only — no dependency on child schema concrete types.

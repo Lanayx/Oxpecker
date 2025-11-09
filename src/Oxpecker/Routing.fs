@@ -77,7 +77,8 @@ module RouteTemplateBuilder =
                 | _ -> s
             | _ -> s
         with :? FormatException as ex ->
-            raise <| RouteParseException($"Url segment value '%s{s}' has invalid format", ex)
+            raise
+            <| RouteParseException($"Url segment value '%s{s}' has invalid format", ex)
 
     let placeholderPattern = Regex("\{(\*{0,2})%([sibcdfuO])(:[^}]+)?\}")
     // This function should convert to route template and mappings
@@ -128,13 +129,10 @@ module RoutingInternal =
             | MultiEndpoint(endpoints, configure) ->
                 MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
 
-    let private getArgByIndex
-        (routeData: RouteData)
-        (mappings: (string * char * Option<_>) array)
-        (index: int) =
-            let placeholderName, formatChar, modifier = mappings[index]
-            let routeValue = routeData.Values[placeholderName] |> string
-            RouteTemplateBuilder.parse formatChar modifier routeValue
+    let private getArgByIndex (routeData: RouteData) (mappings: (string * char * Option<_>) array) (index: int) =
+        let placeholderName, formatChar, modifier = mappings[index]
+        let routeValue = routeData.Values[placeholderName] |> string
+        RouteTemplateBuilder.parse formatChar modifier routeValue
 
     let private invokeHandler<'T>
         (ctx: HttpContext)
@@ -146,8 +144,7 @@ module RoutingInternal =
         let routeData = ctx.GetRouteData()
         if ctxInParameterList then
             match mappings.Length with
-            | 0 ->
-                invoker.Invoke(handler, ctx)
+            | 0 -> invoker.Invoke(handler, ctx)
             | 1 ->
                 let arg = getArgByIndex routeData mappings 0
                 invoker.Invoke(handler, arg, ctx)
