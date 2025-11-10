@@ -12,8 +12,8 @@ let main args =
     builder.Services.AddRouting().AddOxpecker() |> ignore
     let app = builder.Build()
     app.UseRouting()
-        .Use(DefaultHandlers.errorHandler)
+        .Use(Default.exceptionMiddleware)
         .UseOxpecker(endpoints)
-        .Run(DefaultHandlers.notFoundHandler)
+        .Run(Default.notFoundHandler)
     app.Run()
     0 // Exit code

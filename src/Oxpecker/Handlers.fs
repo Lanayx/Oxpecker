@@ -194,13 +194,13 @@ module ResponseHandlers =
             Task.CompletedTask
 
 [<RequireQualifiedAccess>]
-module DefaultHandlers =
-    let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
+module Default =
+    let exceptionMiddleware (ctx: HttpContext) (next: RequestDelegate) =
         task {
             try
                 return! next.Invoke(ctx)
             with ex ->
-                let logger = ctx.GetLogger("Oxpecker.DefaultHandlers.ErrorHandler")
+                let logger = ctx.GetLogger("Oxpecker.Default.ExceptionMiddleware")
                 match ex with
                 | :? ModelBindException
                 | :? RouteParseException as ex ->
@@ -224,7 +224,7 @@ module DefaultHandlers =
         :> Task
 
     let notFoundHandler (ctx: HttpContext) =
-        let logger = ctx.GetLogger("Oxpecker.DefaultHandlers.NotFoundHandler")
+        let logger = ctx.GetLogger("Oxpecker.Default.NotFoundHandler")
         logger.LogWarning("Page not found {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
         ctx.SetStatusCode 404
         ctx.WriteText("Page not found")

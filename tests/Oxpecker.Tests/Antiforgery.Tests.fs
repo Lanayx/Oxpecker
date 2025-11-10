@@ -28,7 +28,7 @@ module WebApp =
                                 _.UseRouting()
                                     .UseAntiforgery()
                                     .UseOxpecker(endpoints)
-                                    .Run(DefaultHandlers.notFoundHandler)
+                                    .Run(Default.notFoundHandler)
                             )
                             .ConfigureServices(fun services ->
                                 services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
@@ -48,9 +48,9 @@ module WebApp =
                             .Configure(
                                 _.UseRouting()
                                     .UseAntiforgery()
-                                    .Use(DefaultHandlers.errorHandler)
+                                    .Use(Default.exceptionMiddleware)
                                     .UseOxpecker(endpoints)
-                                    .Run(DefaultHandlers.notFoundHandler)
+                                    .Run(Default.notFoundHandler)
                             )
                             .ConfigureServices(fun services ->
                                 services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)
