@@ -6,6 +6,7 @@ open Microsoft.SemanticKernel.Connectors.OpenAI
 open ModelContextProtocol.Protocol
 open ModelContextProtocol.Client
 
+#nowarn 57
 module Root =
 
     type LoggingHandler(innerHandler: HttpMessageHandler) =
