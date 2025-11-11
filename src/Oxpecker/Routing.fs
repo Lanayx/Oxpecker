@@ -272,14 +272,12 @@ module Routers =
 
     [<Obsolete "Will be removed in next major version.">]
     let rec applyAfter (afterHandler: EndpointHandler) (endpoint: Endpoint) =
-        #nowarn 44
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
             SimpleEndpoint(verb, template, handler >=> afterHandler, configure)
         | NestedEndpoint(template, endpoints, configure) ->
             NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, configure)
         | MultiEndpoint(endpoints, configure) -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints, configure)
-        #warnon 44
 
 type EndpointRouteBuilderExtensions() =
 
