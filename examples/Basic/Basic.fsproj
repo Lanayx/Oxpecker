@@ -8,7 +8,7 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0-rc.2.25502.107" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     </ItemGroup>
 
     <ItemGroup>

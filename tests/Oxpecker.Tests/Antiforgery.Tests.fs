@@ -25,10 +25,7 @@ module WebApp =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(
-                                _.UseRouting()
-                                    .UseAntiforgery()
-                                    .UseOxpecker(endpoints)
-                                    .Run(Default.notFoundHandler)
+                                _.UseRouting().UseAntiforgery().UseOxpecker(endpoints).Run(Default.notFoundHandler)
                             )
                             .ConfigureServices(fun services ->
                                 services.AddRouting().AddAntiforgery().AddOxpecker() |> ignore)

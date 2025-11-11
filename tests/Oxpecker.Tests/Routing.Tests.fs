@@ -23,8 +23,7 @@ module WebApp =
                     .ConfigureWebHost(fun webHostBuilder ->
                         webHostBuilder
                             .UseTestServer()
-                            .Configure(fun app ->
-                                app.UseRouting().UseOxpecker(endpoints).Run(Default.notFoundHandler))
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints).Run(Default.notFoundHandler))
                             .ConfigureServices(fun services -> services.AddRouting() |> ignore)
                         |> ignore)
                     .Build()
@@ -39,8 +38,7 @@ module WebApp =
                     .ConfigureWebHost(fun webHostBuilder ->
                         webHostBuilder
                             .UseTestServer()
-                            .Configure(fun app ->
-                                app.UseRouting().UseOxpecker(endpoint).Run(Default.notFoundHandler))
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoint).Run(Default.notFoundHandler))
                             .ConfigureServices(fun services -> services.AddRouting() |> ignore)
                         |> ignore)
                     .Build()
