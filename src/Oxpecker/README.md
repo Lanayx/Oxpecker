@@ -253,7 +253,7 @@ routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
 #### Multi-route filter
 
-Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `addFilter` (similar to [OpenApi](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters)), for example:
+Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `addFilter` (similar to [MinimalApis](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters)), for example:
 
 ```fsharp
 
