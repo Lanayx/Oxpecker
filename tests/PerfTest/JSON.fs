@@ -73,7 +73,7 @@ module STJ =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
-                            .ConfigureServices(fun services -> services.AddRouting() |> ignore)
+                            .ConfigureServices(fun services -> services.AddOxpecker().AddRouting() |> ignore)
                         |> ignore)
                     .Build()
             do! host.StartAsync()
@@ -104,7 +104,7 @@ module SpanJson =
                         ctx.Response.Headers.ContentLength <- buffer.Count
                         if ctx.Request.Method <> HttpMethods.Head then
                             do! ctx.Response.Body.WriteAsync(buffer)
-                        ArrayPool<byte>.Shared.Return(buffer.Array |> Unchecked.nonNull, true)
+                        ArrayPool<byte>.Shared.Return(buffer.Array |> Unchecked.nonNull)
                     }
 
             member this.Deserialize(ctx) = failwith "Not implemented"
