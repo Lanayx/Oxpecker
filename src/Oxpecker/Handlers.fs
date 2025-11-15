@@ -1,6 +1,7 @@
 ﻿// built-in endpoint handlers
 namespace Oxpecker
 
+open System
 open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Antiforgery
@@ -115,6 +116,7 @@ module ResponseHandlers =
     /// <param name="html">The HTML string to be sent back to the client.</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+    [<Obsolete "Will be removed in next major version. Use htmlView instead.">]
     let htmlString (html: string) : EndpointHandler =
         fun (ctx: HttpContext) -> ctx.WriteHtmlString html
 

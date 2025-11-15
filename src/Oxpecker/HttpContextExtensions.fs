@@ -265,6 +265,7 @@ type HttpContextExtensions() =
     /// <param name="html">The string html value to be send back to the client.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
+    [<Obsolete "Will be removed in next major version. Use WriteHtmlView instead.">]
     static member WriteHtmlString(ctx: HttpContext, html: string) =
         ctx.SetContentType "text/html; charset=utf-8"
         ctx.WriteBytes(Encoding.UTF8.GetBytes html)
