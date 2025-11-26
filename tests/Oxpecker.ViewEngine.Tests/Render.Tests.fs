@@ -12,7 +12,7 @@ open FsUnit.Light
 let ``Basic test`` () =
     let result =
         html() {
-            div(id = "1")
+            div(id = "1") { 1 }
             div(id = "2") {
                 let x = 2
                 div(id = "3", class' = "test")
@@ -24,13 +24,13 @@ let ``Basic test`` () =
     result
     |> Render.toString
     |> shouldEqual
-        """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
+        """<html><div id="1">1</div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
 
 [<Fact>]
 let ``Basic test to bytes`` () =
     let result =
         html() {
-            div(id = "1")
+            div(id = "1") { 1 }
             div(id = "2") {
                 let x = 2
                 div(id = "3", class' = "test")
@@ -43,7 +43,7 @@ let ``Basic test to bytes`` () =
     |> Render.toBytes
     |> Encoding.UTF8.GetString
     |> shouldEqual
-        """<html><div id="1"></div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
+        """<html><div id="1">1</div><div id="2"><div id="3" class="test"></div><br><br><div id="4"></div></div></html>"""
 
 
 [<Fact>]

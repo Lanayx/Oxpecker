@@ -100,6 +100,12 @@ module Builder =
         interface HtmlElement with
             member this.Render sb = this.Render sb
 
+    /// Integer node that will NOT be HTML-escaped
+    type IntNode(value: int) =
+        member this.Render(sb: StringBuilder) = value |> sb.Append |> ignore
+        interface HtmlElement with
+            member this.Render sb = this.Render sb
+
     /// Create text node that will NOT be HTML-escaped
     let inline raw text = RawTextNode text
 
@@ -131,6 +137,8 @@ module Builder =
                     builder.AddChild(element)
 
         member inline _.Yield(text: string | null) : HtmlContainerFun = _.AddChild(RegularTextNode text)
+
+        member inline _.Yield(value: int) : HtmlContainerFun = _.AddChild(IntNode value)
 
     type HtmlContainerExtensions =
         [<Extension>]

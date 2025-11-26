@@ -1,5 +1,4 @@
 ﻿open System
-open System.ComponentModel.DataAnnotations
 open System.Text.Json.Serialization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
