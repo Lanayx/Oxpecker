@@ -13,6 +13,7 @@ Usages example:
 ```fsharp
 open Oxpecker
 open Oxpecker.OpenApi
+open System.Threading.Tasks
 
 let endpoints = [
     // addOpenApi supports passing detailed configuration
@@ -21,7 +22,7 @@ let endpoints = [
             |> addOpenApi (OpenApiConfig(
                 requestBody = RequestBody(typeof<Product>),
                 responseBodies = [| ResponseBody(typeof<string>) |],
-                configureOperation = (fun o -> o.OperationId <- "PostProduct"; o)
+                configureOperation = (fun o _ _ -> o.OperationId <- "PostProduct"; Task.CompletedTask)
             ))
     ]
     // addOpenApiSimple is a shortcut for simple cases
