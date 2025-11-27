@@ -58,26 +58,25 @@ module CustomWebUtility =
                 elif '\'' = ch then sb.Append "&#39;"
                 elif '&' = ch then sb.Append "&amp;"
                 else sb.Append ch
-            else
-                if Char.IsBetween(ch, '\u00A0', '\u00FF') then
-                    // The seemingly arbitrary 160 comes from RFC
-                    sb.Append("&#").Append(int ch).Append(';')
-                elif Char.IsSurrogate(ch) then
-                    // i is now at the next code unit after 'ch'
-                    if i < input.Length then
-                        match Rune.TryCreate(ch, input[i]) with
-                        | true, rune ->
-                            i <- i + 1
-                            sb.Append("&#").Append(rune.Value).Append(';')
-                        | _ ->
-                            // Don't encode BMP characters (like U+FFFD) since they wouldn't have
-                            // been encoded if explicitly present in the string anyway.
-                            sb.Append(UnicodeReplacementChar)
-                    else
-                        // Invalid surrogate pair
+            else if Char.IsBetween(ch, '\u00A0', '\u00FF') then
+                // The seemingly arbitrary 160 comes from RFC
+                sb.Append("&#").Append(int ch).Append(';')
+            elif Char.IsSurrogate(ch) then
+                // i is now at the next code unit after 'ch'
+                if i < input.Length then
+                    match Rune.TryCreate(ch, input[i]) with
+                    | true, rune ->
+                        i <- i + 1
+                        sb.Append("&#").Append(rune.Value).Append(';')
+                    | _ ->
+                        // Don't encode BMP characters (like U+FFFD) since they wouldn't have
+                        // been encoded if explicitly present in the string anyway.
                         sb.Append(UnicodeReplacementChar)
                 else
-                    sb.Append(ch)
+                    // Invalid surrogate pair
+                    sb.Append(UnicodeReplacementChar)
+            else
+                sb.Append(ch)
             |> ignore
 
     let private htmlAsciiNonEncodingChars =
