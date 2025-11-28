@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
         <Nullable>enable</Nullable>
         <PackageId>Oxpecker.ViewEngine</PackageId>
@@ -20,12 +20,12 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>1.1.0</Version>
-        <PackageVersion>1.1.0</PackageVersion>
-        <PackageReleaseNotes>Added .bool method for HTML boolean attributes</PackageReleaseNotes>
+        <Version>2.0.0</Version>
+        <PackageVersion>2.0.0</PackageVersion>
+        <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="9.0.3" />
+        <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

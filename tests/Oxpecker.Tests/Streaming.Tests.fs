@@ -8,6 +8,7 @@ open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 open Xunit
 open Oxpecker
 open FsUnit.Light
@@ -61,14 +62,20 @@ module WebApp =
     ]
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
-                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
+                            .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
-let server = WebApp.webApp()
 
 // ---------------------------------
 // Tests
@@ -77,7 +84,8 @@ let server = WebApp.webApp()
 [<Fact>]
 let ``HTTP GET entire file with range processing disabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
 
@@ -93,7 +101,8 @@ let ``HTTP GET entire file with range processing disabled`` () =
 [<Fact>]
 let ``HTTP GET entire file with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
 
         let! response = client.GetAsync(Urls.rangeProcessingEnabled)
 
@@ -109,7 +118,8 @@ let ``HTTP GET entire file with range processing enabled`` () =
 [<Fact>]
 let ``HTTP HEAD entire file with range processing disabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, Urls.rangeProcessingDisabled))
 
@@ -124,7 +134,8 @@ let ``HTTP HEAD entire file with range processing disabled`` () =
 [<Fact>]
 let ``HTTP HEAD entire file with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, Urls.rangeProcessingEnabled))
 
@@ -139,7 +150,8 @@ let ``HTTP HEAD entire file with range processing enabled`` () =
 [<Fact>]
 let ``HTTP GET part of file with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=0-9")
 
         let! response = client.GetAsync(Urls.rangeProcessingEnabled)
@@ -157,7 +169,8 @@ let ``HTTP GET part of file with range processing enabled`` () =
 [<Fact>]
 let ``HTTP GET middle part of file with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=12-26")
 
         let! response = client.GetAsync(Urls.rangeProcessingEnabled)
@@ -175,7 +188,8 @@ let ``HTTP GET middle part of file with range processing enabled`` () =
 [<Fact>]
 let ``HTTP GET with range without end and range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=20-")
 
         let! response = client.GetAsync(Urls.rangeProcessingEnabled)
@@ -193,7 +207,8 @@ let ``HTTP GET with range without end and range processing enabled`` () =
 [<Fact>]
 let ``HTTP GET middle part of file with range processing disabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=12-26")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -210,7 +225,8 @@ let ``HTTP GET middle part of file with range processing disabled`` () =
 [<Fact>]
 let ``HTTP HEAD middle part of file with range processing disabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=12-26")
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, Urls.rangeProcessingDisabled))
@@ -226,7 +242,8 @@ let ``HTTP HEAD middle part of file with range processing disabled`` () =
 [<Fact>]
 let ``HTTP GET with invalid range and with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=63-70")
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, Urls.rangeProcessingEnabled))
@@ -243,7 +260,8 @@ let ``HTTP GET with invalid range and with range processing enabled`` () =
 [<Fact>]
 let ``HTTP HEAD with invalid range and with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=63-70")
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, Urls.rangeProcessingEnabled))
@@ -260,7 +278,8 @@ let ``HTTP HEAD with invalid range and with range processing enabled`` () =
 [<Fact>]
 let ``HTTP GET with invalid range and with range processing disabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=63-70")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -277,7 +296,8 @@ let ``HTTP GET with invalid range and with range processing disabled`` () =
 [<Fact>]
 let ``HTTP GET with multiple ranges and with range processing enabled`` () =
     task {
-        let client = server.CreateClient()
+        use! server = WebApp.webApp()
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("Range", "bytes=5-10, 20-25, 40-")
 
         let! response = client.GetAsync(Urls.rangeProcessingEnabled)

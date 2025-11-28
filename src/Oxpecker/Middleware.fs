@@ -15,14 +15,14 @@ type ApplicationBuilderExtensions() =
     /// </summary>
     [<Extension>]
     static member UseOxpecker(builder: IApplicationBuilder, endpoints: Endpoint seq) =
-        builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoints endpoints)
+        builder.UseEndpoints(_.MapOxpeckerEndpoints(endpoints))
 
     /// <summary>
-    /// Uses ASP.NET Core's Endpoint Routing middleware to register single Oxpecker endpoint.
+    /// Uses ASP.NET Core's Endpoint Routing middleware to register a single Oxpecker endpoint.
     /// </summary>
     [<Extension>]
     static member UseOxpecker(builder: IApplicationBuilder, endpoint: Endpoint) =
-        builder.UseEndpoints(fun builder -> builder.MapOxpeckerEndpoint endpoint)
+        builder.UseEndpoints(_.MapOxpeckerEndpoint(endpoint))
 
 type ServiceCollectionExtensions() =
     /// <summary>

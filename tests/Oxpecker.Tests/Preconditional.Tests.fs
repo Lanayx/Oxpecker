@@ -8,6 +8,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
+open Microsoft.Extensions.Hosting
 open Xunit
 open Oxpecker
 open FsUnit.Light
@@ -65,13 +66,19 @@ module WebApp =
     ]
 
     let webApp args =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints args) |> ignore)
-                .ConfigureServices(fun services -> services.AddRouting() |> ignore)
-
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints args) |> ignore)
+                            .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 // ---------------------------------
 // Tests
@@ -80,8 +87,8 @@ module WebApp =
 [<Fact>]
 let ``HTTP GET with If-Match and no ETag`` () =
     task {
-        let server = WebApp.webApp (None, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -94,8 +101,8 @@ let ``HTTP GET with If-Match and no ETag`` () =
 [<Fact>]
 let ``HTTP GET with If-Match and not matching ETag`` () =
     task {
-        let server = WebApp.webApp (createETag "000" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "000" |> Some, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -108,8 +115,8 @@ let ``HTTP GET with If-Match and not matching ETag`` () =
 [<Fact>]
 let ``HTTP GET with If-Match and matching ETag`` () =
     task {
-        let server = WebApp.webApp (createETag "222" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "222" |> Some, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -123,8 +130,8 @@ let ``HTTP GET with If-Match and matching ETag`` () =
 [<Fact>]
 let ``HTTP GET with If-Unmodified-Since and no lastModified`` () =
     task {
-        let server = WebApp.webApp (None, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Unmodified-Since", DateTimeOffset.UtcNow.ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -138,8 +145,8 @@ let ``HTTP GET with If-Unmodified-Since and no lastModified`` () =
 [<Fact>]
 let ``HTTP GET with If-Unmodified-Since in the future`` () =
     task {
-        let server = WebApp.webApp (None, Some DateTimeOffset.UtcNow)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some DateTimeOffset.UtcNow)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Unmodified-Since", DateTimeOffset.UtcNow.AddDays(1.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -153,8 +160,8 @@ let ``HTTP GET with If-Unmodified-Since in the future`` () =
 [<Fact>]
 let ``HTTP GET with If-Unmodified-Since not in the future but greater than lastModified`` () =
     task {
-        let server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-11.0)))
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-11.0)))
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Unmodified-Since", DateTimeOffset.UtcNow.AddDays(-10.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -168,8 +175,8 @@ let ``HTTP GET with If-Unmodified-Since not in the future but greater than lastM
 [<Fact>]
 let ``HTTP GET with If-Unmodified-Since and less than lastModified`` () =
     task {
-        let server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-9.0)))
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-9.0)))
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Unmodified-Since", DateTimeOffset.UtcNow.AddDays(-10.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -183,8 +190,8 @@ let ``HTTP GET with If-Unmodified-Since and less than lastModified`` () =
 let ``HTTP GET with If-Unmodified-Since not in the future and equal to lastModified`` () =
     task {
         let lastModified = DateTimeOffset(DateTimeOffset.UtcNow.AddDays(-5.0).Date)
-        let server = WebApp.webApp (None, Some lastModified)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some lastModified)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Unmodified-Since", lastModified.ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -212,8 +219,8 @@ let ``ValidatePreconditions with If-Unmodified-Since is equal to lastModified`` 
 [<Fact>]
 let ``HTTP GET with If-None-Match without ETag`` () =
     task {
-        let server = WebApp.webApp (None, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-None-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -227,8 +234,8 @@ let ``HTTP GET with If-None-Match without ETag`` () =
 [<Fact>]
 let ``HTTP GET with If-None-Match with non-matching ETag`` () =
     task {
-        let server = WebApp.webApp (createETag "444" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "444" |> Some, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-None-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -242,8 +249,8 @@ let ``HTTP GET with If-None-Match with non-matching ETag`` () =
 [<Fact>]
 let ``HTTP GET with If-None-Match with matching ETag`` () =
     task {
-        let server = WebApp.webApp (createETag "333" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "333" |> Some, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-None-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -256,8 +263,8 @@ let ``HTTP GET with If-None-Match with matching ETag`` () =
 [<Fact>]
 let ``HTTP HEAD with If-None-Match with matching ETag`` () =
     task {
-        let server = WebApp.webApp (createETag "222" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "222" |> Some, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-None-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Head, Urls.rangeProcessingDisabled))
@@ -271,8 +278,8 @@ let ``HTTP HEAD with If-None-Match with matching ETag`` () =
 [<Fact>]
 let ``HTTP POST with If-None-Match with matching ETag`` () =
     task {
-        let server = WebApp.webApp (createETag "111" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "111" |> Some, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-None-Match", "\"111\", \"222\", \"333\"")
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Post, Urls.rangeProcessingDisabled))
@@ -285,8 +292,8 @@ let ``HTTP POST with If-None-Match with matching ETag`` () =
 [<Fact>]
 let ``HTTP GET with If-Modified-Since witout lastModified`` () =
     task {
-        let server = WebApp.webApp (None, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, None)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Modified-Since", DateTimeOffset.UtcNow.AddDays(-4.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -300,8 +307,8 @@ let ``HTTP GET with If-Modified-Since witout lastModified`` () =
 [<Fact>]
 let ``HTTP GET with If-Modified-Since in the future and with lastModified`` () =
     task {
-        let server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(5.0)))
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(5.0)))
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Modified-Since", DateTimeOffset.UtcNow.AddDays(10.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -314,8 +321,8 @@ let ``HTTP GET with If-Modified-Since in the future and with lastModified`` () =
 [<Fact>]
 let ``HTTP GET with If-Modified-Since not in the future and with greater lastModified`` () =
     task {
-        let server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-5.0)))
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-5.0)))
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Modified-Since", DateTimeOffset.UtcNow.AddDays(-10.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -330,8 +337,8 @@ let ``HTTP GET with If-Modified-Since not in the future and with greater lastMod
 let ``HTTP GET with If-Modified-Since not in the future and with equal lastModified`` () =
     task {
         let lastModified = DateTimeOffset(DateTimeOffset.UtcNow.AddDays(-7.0).Date)
-        let server = WebApp.webApp (None, Some lastModified)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some lastModified)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Modified-Since", lastModified.ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -344,8 +351,8 @@ let ``HTTP GET with If-Modified-Since not in the future and with equal lastModif
 [<Fact>]
 let ``HTTP GET with If-Modified-Since not in the future and with smaller lastModified`` () =
     task {
-        let server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-11.0)))
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-11.0)))
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Modified-Since", DateTimeOffset.UtcNow.AddDays(-10.0).ToHtmlString())
 
         let! response = client.GetAsync(Urls.rangeProcessingDisabled)
@@ -358,8 +365,8 @@ let ``HTTP GET with If-Modified-Since not in the future and with smaller lastMod
 [<Fact>]
 let ``HTTP POST with If-Modified-Since not in the future and with smaller lastModified`` () =
     task {
-        let server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-11.0)))
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some(DateTimeOffset.UtcNow.AddDays(-11.0)))
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Modified-Since", DateTimeOffset.UtcNow.AddDays(-10.0).ToHtmlString())
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Post, Urls.rangeProcessingDisabled))
@@ -373,8 +380,8 @@ let ``HTTP POST with If-Modified-Since not in the future and with smaller lastMo
 [<Fact>]
 let ``Endpoint with eTag has ETag HTTP header set`` () =
     task {
-        let server = WebApp.webApp (createETag "abc" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "abc" |> Some, None)
+        let client = server.GetTestClient()
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Post, Urls.rangeProcessingDisabled))
 
@@ -388,8 +395,8 @@ let ``Endpoint with eTag has ETag HTTP header set`` () =
 [<Fact>]
 let ``Endpoint with weak eTag has ETag HTTP header set`` () =
     task {
-        let server = WebApp.webApp (createWeakETag "abc" |> Some, None)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createWeakETag "abc" |> Some, None)
+        let client = server.GetTestClient()
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Post, Urls.rangeProcessingDisabled))
 
@@ -404,8 +411,8 @@ let ``Endpoint with weak eTag has ETag HTTP header set`` () =
 let ``Endpoint with lastModified has Last-Modified HTTP header set`` () =
     task {
         let lastModified = DateTimeOffset(DateTimeOffset.UtcNow.AddDays(-7.0).Date)
-        let server = WebApp.webApp (None, Some lastModified)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (None, Some lastModified)
+        let client = server.GetTestClient()
 
         let! response = client.SendAsync(new HttpRequestMessage(HttpMethod.Post, Urls.rangeProcessingDisabled))
 
@@ -421,8 +428,8 @@ let ``HTTP GET with matching If-Match ignores non-matching If-Unmodified-Since``
     task {
         let lastModified = DateTimeOffset.UtcNow.AddDays(-9.0)
         let ifUnmodifiedSince = lastModified.AddDays(-1.0).ToHtmlString()
-        let server = WebApp.webApp (createETag "abc" |> Some, Some lastModified)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "abc" |> Some, Some lastModified)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-Match", "\"abc\"")
         client.DefaultRequestHeaders.Add("If-Unmodified-Since", ifUnmodifiedSince)
 
@@ -440,8 +447,8 @@ let ``HTTP GET with non-matching If-None-Match ignores not matching If-Modified-
         let ifNoneMatch = "\"123\""
         let lastModified = DateTimeOffset.UtcNow.AddDays(-5.0)
         let ifModifiedSince = lastModified.AddDays(1.0).ToHtmlString()
-        let server = WebApp.webApp (createETag "abc" |> Some, Some lastModified)
-        let client = server.CreateClient()
+        use! server = WebApp.webApp (createETag "abc" |> Some, Some lastModified)
+        let client = server.GetTestClient()
         client.DefaultRequestHeaders.Add("If-None-Match", ifNoneMatch)
         client.DefaultRequestHeaders.Add("If-Modified-Since", ifModifiedSince)
 

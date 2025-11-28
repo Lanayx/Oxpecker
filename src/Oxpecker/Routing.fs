@@ -5,6 +5,7 @@ open System.Reflection
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Routing
 open Microsoft.AspNetCore.Builder
@@ -13,7 +14,7 @@ open Oxpecker
 
 [<AutoOpen>]
 module RoutingTypes =
-    [<Struct>]
+
     type HttpVerb =
         | GET
         | POST
@@ -46,7 +47,7 @@ module RoutingTypes =
     type Endpoint =
         | SimpleEndpoint of HttpVerbs * RouteTemplate * EndpointHandler * ConfigureEndpoint
         | NestedEndpoint of RouteTemplate * Endpoint seq * ConfigureEndpoint
-        | MultiEndpoint of Endpoint seq
+        | MultiEndpoint of Endpoint seq * ConfigureEndpoint
 
 module RouteTemplateBuilder =
 
@@ -109,53 +110,69 @@ module RouteTemplateBuilder =
         (newRoute, mappings.ToArray())
 
 module RoutingInternal =
-    type ApplyBefore =
-        static member Compose(beforeHandler: EndpointHandler, endpoint: Endpoint) =
+    type AddFilter =
+        static member Compose(filter: EndpointHandler, endpoint: Endpoint) =
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                SimpleEndpoint(verb, template, beforeHandler >=> handler, configure)
+                SimpleEndpoint(verb, template, filter >=> handler, configure)
             | NestedEndpoint(template, endpoints, configure) ->
-                NestedEndpoint(template, Seq.map (fun e -> ApplyBefore.Compose(beforeHandler, e)) endpoints, configure)
-            | MultiEndpoint endpoints ->
-                MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeHandler, e)) endpoints)
+                NestedEndpoint(template, Seq.map (fun e -> AddFilter.Compose(filter, e)) endpoints, configure)
+            | MultiEndpoint(endpoints, configure) ->
+                MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filter, e)) endpoints, configure)
 
-        static member Compose(beforeMiddleware: EndpointMiddleware, endpoint: Endpoint) =
+        static member Compose(filterMiddleware: EndpointMiddleware, endpoint: Endpoint) =
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                SimpleEndpoint(verb, template, beforeMiddleware >=> handler, configure)
+                SimpleEndpoint(verb, template, filterMiddleware >=> handler, configure)
             | NestedEndpoint(template, endpoints, configure) ->
-                NestedEndpoint(
-                    template,
-                    Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware, e)) endpoints,
-                    configure
-                )
-            | MultiEndpoint endpoints ->
-                MultiEndpoint(Seq.map (fun e -> ApplyBefore.Compose(beforeMiddleware, e)) endpoints)
+                NestedEndpoint(template, Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
+            | MultiEndpoint(endpoints, configure) ->
+                MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
 
-    let invokeHandler<'T>
+    let private getArgByIndex (routeData: RouteData) (mappings: (string * char * Option<_>) array) (index: int) =
+        let placeholderName, formatChar, modifier = mappings[index]
+        let routeValue = routeData.Values[placeholderName] |> string
+        RouteTemplateBuilder.parse formatChar modifier routeValue
+
+    let private invokeHandler<'T>
         (ctx: HttpContext)
-        (methodInfo: MethodInfo)
+        (invoker: MethodInvoker)
         (handler: 'T)
         (mappings: (string * char * Option<_>) array)
         (ctxInParameterList: bool)
         =
         let routeData = ctx.GetRouteData()
         if ctxInParameterList then
-            methodInfo.Invoke(
-                handler,
-                [|
-                    for placeholderName, formatChar, modifier in mappings do
-                        let routeValue = routeData.Values[placeholderName] |> string
-                        RouteTemplateBuilder.parse formatChar modifier routeValue
-                    ctx
-                |]
-            )
+            match mappings.Length with
+            | 0 -> invoker.Invoke(handler, ctx)
+            | 1 ->
+                let arg = getArgByIndex routeData mappings 0
+                invoker.Invoke(handler, arg, ctx)
+            | 2 ->
+                let arg1 = getArgByIndex routeData mappings 0
+                let arg2 = getArgByIndex routeData mappings 1
+                invoker.Invoke(handler, arg1, arg2, ctx)
+            | 3 ->
+                let arg1 = getArgByIndex routeData mappings 0
+                let arg2 = getArgByIndex routeData mappings 1
+                let arg3 = getArgByIndex routeData mappings 2
+                invoker.Invoke(handler, arg1, arg2, arg3, ctx)
+            | _ ->
+                invoker.Invoke(
+                    handler,
+                    Span [|
+                        for placeholderName, formatChar, modifier in mappings do
+                            let routeValue = routeData.Values[placeholderName] |> string
+                            RouteTemplateBuilder.parse formatChar modifier routeValue
+                        ctx
+                    |]
+                )
             |> nonNull
             :?> Task
         else
-            methodInfo.Invoke(
+            invoker.Invoke(
                 handler,
-                [|
+                Span [|
                     for placeholderName, formatChar, modifier in mappings do
                         let routeValue = routeData.Values[placeholderName] |> string
                         RouteTemplateBuilder.parse formatChar modifier routeValue
@@ -165,8 +182,8 @@ module RoutingInternal =
             :?> FSharpFunc<HttpContext, Task>
             <| ctx
 
-    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) =
-        let handlerType = routeHandler.GetType()
+    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) =
+        let handlerType = handler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
         let parameters = handlerMethod.GetParameters()
         let template, mappings =
@@ -175,9 +192,9 @@ module RoutingInternal =
             if parameters.Length = mappings.Length + 1 then true
             elif parameters.Length = mappings.Length then false
             else failwith <| "Unsupported routef handler: " + path.Value
-
+        let invoker = MethodInvoker.Create(handlerMethod)
         let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx handlerMethod routeHandler mappings ctxInParameterList
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx invoker handler mappings ctxInParameterList
 
         template, mappings, requestDelegate
 
@@ -189,20 +206,29 @@ module Routers =
 
     let rec applyHttpVerbsToEndpoint (verbs: HttpVerbs) (endpoint: Endpoint) : Endpoint =
         match endpoint with
-        | SimpleEndpoint(_, template, handler, configure) -> SimpleEndpoint(verbs, template, handler, configure)
+        | SimpleEndpoint(oldVerbs, routeTemplate, handler, configure) ->
+            if oldVerbs = HttpVerbs.Any || oldVerbs = verbs then
+                SimpleEndpoint(verbs, routeTemplate, handler, configure)
+            else
+                failwithf $"Http verbs intersect at '%s{routeTemplate}'"
         | NestedEndpoint(handler, endpoints, configure) ->
             NestedEndpoint(handler, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
-        | MultiEndpoint endpoints -> endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs) |> MultiEndpoint
+        | MultiEndpoint(endpoints, configure) ->
+            MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
 
     let rec applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
         |> Seq.map (function
-            | SimpleEndpoint(_, routeTemplate, requestDelegate, configure) ->
-                SimpleEndpoint(verbs, routeTemplate, requestDelegate, configure)
+            | SimpleEndpoint(oldVerbs, routeTemplate, handler, configure) ->
+                if oldVerbs = HttpVerbs.Any || oldVerbs = verbs then
+                    SimpleEndpoint(verbs, routeTemplate, handler, configure)
+                else
+                    failwithf $"Http verbs intersect at '%s{routeTemplate}'"
             | NestedEndpoint(template, endpoints, configure) ->
                 NestedEndpoint(template, endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure)
-            | MultiEndpoint endpoints -> MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs)))
-        |> MultiEndpoint
+            | MultiEndpoint(endpoints, configure) ->
+                MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure))
+        |> (fun endpoints -> MultiEndpoint(endpoints, id))
 
     let GET_HEAD: Endpoint seq -> Endpoint =
         applyHttpVerbsToEndpoints(Verbs [ GET; HEAD ])
@@ -220,34 +246,66 @@ module Routers =
     let route (path: string) (handler: EndpointHandler) : Endpoint =
         SimpleEndpoint(HttpVerbs.Any, path, handler, id)
 
-    let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) : Endpoint =
-        let template, _, requestDelegate = routefInner path routeHandler
+    let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) : Endpoint =
+        let template, _, requestDelegate = routefInner path handler
 
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
 
-    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) =
-        compose_opImpl Unchecked.defaultof<ApplyBefore> beforeHandler endpoint
+    let routeGroup (endpoints: Endpoint seq) : Endpoint = MultiEndpoint(endpoints, id)
 
+    let rec configureEndpoint (f: ConfigureEndpoint) (endpoint: Endpoint) =
+        match endpoint with
+        | SimpleEndpoint(verb, template, handler, configure) -> SimpleEndpoint(verb, template, handler, configure >> f)
+        | NestedEndpoint(template, endpoints, configure) -> NestedEndpoint(template, endpoints, configure >> f)
+        | MultiEndpoint(endpoints, configure) -> MultiEndpoint(endpoints, configure >> f)
+
+    let inline addFilter (filter: 'T) (endpoint: Endpoint) =
+        compose_opImpl Unchecked.defaultof<AddFilter> filter endpoint
+
+    let addMetadata (metadata: obj) =
+        configureEndpoint _.WithMetadata(metadata)
+
+    [<Obsolete "Will be removed in next major version. Use addFilter instead.">]
+    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) = addFilter beforeHandler endpoint
+
+    [<Obsolete "Will be removed in next major version.">]
     let rec applyAfter (afterHandler: EndpointHandler) (endpoint: Endpoint) =
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
             SimpleEndpoint(verb, template, handler >=> afterHandler, configure)
         | NestedEndpoint(template, endpoints, configure) ->
             NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, configure)
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints)
-
-    let rec configureEndpoint (f: ConfigureEndpoint) (endpoint: Endpoint) =
-        match endpoint with
-        | SimpleEndpoint(verb, template, handler, configure) -> SimpleEndpoint(verb, template, handler, configure >> f)
-        | NestedEndpoint(template, endpoints, configure) -> NestedEndpoint(template, endpoints, configure >> f)
-        | MultiEndpoint endpoints -> MultiEndpoint(Seq.map (configureEndpoint f) endpoints)
-
-    let addMetadata (metadata: obj) =
-        configureEndpoint _.WithMetadata(metadata)
+        | MultiEndpoint(endpoints, configure) -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints, configure)
 
 type EndpointRouteBuilderExtensions() =
+
+    static member private GetConfigureEndpoint(configure: ConfigureEndpoint, addAntiforgery: bool) =
+        if addAntiforgery then
+            _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+        else
+            configure
+
+    static member private GetConfigureEndpoint
+        (verbs: HttpVerb seq, configure: ConfigureEndpoint, addAntiforgery: bool)
+        =
+        if addAntiforgery then
+            let canHaveForm =
+                verbs
+                |> Seq.exists(fun verb -> verb = HttpVerb.POST || verb = HttpVerb.PUT || verb = HttpVerb.PATCH)
+            if canHaveForm then
+                _.WithMetadata(RequireAntiforgeryTokenAttribute()) >> configure
+            else
+                configure
+        else
+            configure
+
+    [<Extension>]
+    static member private IsAntiforgeryEnabled(builder: IEndpointRouteBuilder) =
+        match builder.ServiceProvider.GetService(typeof<IAntiforgery>) with
+        | null -> false
+        | _ -> true
 
     [<Extension>]
     static member private MapSingleEndpoint
@@ -256,13 +314,16 @@ type EndpointRouteBuilderExtensions() =
             verb: HttpVerbs,
             routeTemplate: RouteTemplate,
             requestDelegate: RequestDelegate,
-            configure: ConfigureEndpoint
+            configure: ConfigureEndpoint,
+            addAntiforgery: bool
         ) =
         match verb with
-        | Any -> builder.Map(routeTemplate, requestDelegate) |> configure
+        | Any ->
+            builder.Map(routeTemplate, requestDelegate)
+            |> EndpointRouteBuilderExtensions.GetConfigureEndpoint(configure, addAntiforgery)
         | Verbs verbs ->
             builder.MapMethods(routeTemplate, verbs |> Seq.map string, requestDelegate)
-            |> configure
+            |> EndpointRouteBuilderExtensions.GetConfigureEndpoint(verbs, configure, addAntiforgery)
         |> ignore
 
     [<Extension>]
@@ -271,38 +332,48 @@ type EndpointRouteBuilderExtensions() =
             builder: IEndpointRouteBuilder,
             parentTemplate: RouteTemplate,
             endpoints: Endpoint seq,
-            parentConfigure: ConfigureEndpoint
+            parentConfigure: ConfigureEndpoint,
+            addAntiforgery: bool
         ) =
         let groupBuilder = builder.MapGroup(parentTemplate)
+        let groupConfigure =
+            EndpointRouteBuilderExtensions.GetConfigureEndpoint(parentConfigure, addAntiforgery)
+        groupBuilder |> groupConfigure |> ignore
         for endpoint in endpoints do
             match endpoint with
             | SimpleEndpoint(verb, template, handler, configure) ->
-                groupBuilder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
+                groupBuilder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
             | NestedEndpoint(template, endpoints, configure) ->
-                groupBuilder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
-            | MultiEndpoint endpoints -> groupBuilder.MapMultiEndpoint(endpoints, parentConfigure)
+                groupBuilder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
+            | MultiEndpoint(endpoints, configure) -> groupBuilder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
 
     [<Extension>]
     static member private MapMultiEndpoint
-        (builder: IEndpointRouteBuilder, endpoints: Endpoint seq, parentConfigure: ConfigureEndpoint)
-        =
-        for endpoint in endpoints do
-            match endpoint with
-            | SimpleEndpoint(verb, template, handler, configure) ->
-                builder.MapSingleEndpoint(verb, template, handler, parentConfigure >> configure)
-            | NestedEndpoint(template, endpoints, configure) ->
-                builder.MapNestedEndpoint(template, endpoints, parentConfigure >> configure)
-            | MultiEndpoint endpoints -> builder.MapMultiEndpoint(endpoints, parentConfigure)
+        (
+            builder: IEndpointRouteBuilder,
+            endpoints: Endpoint seq,
+            parentConfigure: ConfigureEndpoint,
+            addAntiforgery: bool
+        ) =
+        builder.MapNestedEndpoint("", endpoints, parentConfigure, addAntiforgery)
 
     [<Extension>]
     static member MapOxpeckerEndpoint(builder: IEndpointRouteBuilder, endpoint: Endpoint) =
+        let addAntiforgery = builder.IsAntiforgeryEnabled()
         match endpoint with
         | SimpleEndpoint(verb, template, handler, configure) ->
-            builder.MapSingleEndpoint(verb, template, handler, configure)
-        | NestedEndpoint(template, endpoints, configure) -> builder.MapNestedEndpoint(template, endpoints, configure)
-        | MultiEndpoint endpoints -> builder.MapOxpeckerEndpoints endpoints
+            builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
+        | NestedEndpoint(template, endpoints, configure) ->
+            builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
+        | MultiEndpoint(endpoints, configure) -> builder.MapMultiEndpoint(endpoints, configure, addAntiforgery)
 
     [<Extension>]
     static member MapOxpeckerEndpoints(builder: IEndpointRouteBuilder, endpoints: Endpoint seq) =
+        let addAntiforgery = builder.IsAntiforgeryEnabled()
         for endpoint in endpoints do
-            builder.MapOxpeckerEndpoint(endpoint)
+            match endpoint with
+            | SimpleEndpoint(verb, template, handler, configure) ->
+                builder.MapSingleEndpoint(verb, template, handler, configure, addAntiforgery)
+            | NestedEndpoint(template, endpoints, configure) ->
+                builder.MapNestedEndpoint(template, endpoints, configure, addAntiforgery)
+            | MultiEndpoint(endpoints, configure) -> builder.MapMultiEndpoint(endpoints, configure, addAntiforgery)

@@ -1,16 +1,18 @@
 ﻿module Oxpecker.ViewEngine.Render
 
 open System
-open System.Buffers
 open System.IO
 open System.Text
 open Oxpecker.ViewEngine.Tools
 
-let inline private copyStringBuilderToBytes (sb: StringBuilder) =
-    let chArray = ArrayPool<char>.Shared.Rent(sb.Length)
-    sb.CopyTo(0, chArray, 0, sb.Length)
-    let bytes = Encoding.UTF8.GetBytes(chArray, 0, sb.Length)
-    ArrayPool<char>.Shared.Return(chArray)
+let private copyStringBuilderToBytes (sb: StringBuilder) : byte[] =
+    let mutable total = 0
+    for chunk in sb.GetChunks() do
+        total <- total + Encoding.UTF8.GetByteCount(chunk.Span)
+    let bytes = GC.AllocateUninitializedArray<byte>(total)
+    let mutable written = 0
+    for chunk in sb.GetChunks() do
+        written <- written + Encoding.UTF8.GetBytes(chunk.Span, bytes.AsSpan(written))
     bytes
 
 /// Render HtmlElement to normal UTF16 string

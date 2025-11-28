@@ -9,7 +9,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open System
-open Microsoft.IO
+open Microsoft.Extensions.Hosting
 
 module Common =
     type User = {
@@ -66,12 +66,19 @@ module STJ =
     ]
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
-                .ConfigureServices(fun services -> services.AddRouting().AddOxpecker() |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
+                            .ConfigureServices(fun services -> services.AddOxpecker().AddRouting() |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 module SpanJson =
     open Oxpecker
@@ -103,14 +110,24 @@ module SpanJson =
             member this.Deserialize(ctx) = failwith "Not implemented"
 
     let webApp () =
-        let builder =
-            WebHostBuilder()
-                .UseKestrel()
-                .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
-                .ConfigureServices(fun services ->
-                    services.AddRouting().AddOxpecker().AddSingleton<IJsonSerializer>(SpanJsonSerializer())
-                    |> ignore)
-        new TestServer(builder)
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app -> app.UseRouting().UseOxpecker(endpoints) |> ignore)
+                            .ConfigureServices(fun services ->
+                                services
+                                    .AddRouting()
+                                    .AddOxpecker()
+                                    .AddSingleton<IJsonSerializer>(SpanJsonSerializer())
+                                |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
 
 [<MemoryDiagnoser>]
 type JSON() =
@@ -129,10 +146,10 @@ type JSON() =
     // | STJChunked      | 14.34 us | 0.285 us | 0.614 us | 1.0986 |   9.13 KB |
     // | SpanJsonChunked | 10.69 us | 0.214 us | 0.407 us | 0.9766 |   8.65 KB |
 
-    let stjServer = STJ.webApp()
-    let spanJsonServer = SpanJson.webApp()
-    let stjClient = stjServer.CreateClient()
-    let spanJsonClient = spanJsonServer.CreateClient()
+    let stjServer = STJ.webApp().GetAwaiter().GetResult()
+    let spanJsonServer = SpanJson.webApp().GetAwaiter().GetResult()
+    let stjClient = stjServer.GetTestClient()
+    let spanJsonClient = spanJsonServer.GetTestClient()
 
 
     [<Benchmark>]

@@ -6,7 +6,7 @@ open ModelContextProtocol.Server
 open Oxpecker
 
 [<McpServerToolType>]
-type CurrentDateTool() =
+type MyTools() =
 
     [<McpServerTool>]
     [<Description("Gets the current date.")>]
@@ -24,7 +24,7 @@ let main args =
         .AddRouting()
         .AddOxpecker()
         .AddMcpServer()
-            .WithTools<CurrentDateTool>()
+            .WithTools<MyTools>()
             .WithHttpTransport()
         |> ignore
     let app = builder.Build()

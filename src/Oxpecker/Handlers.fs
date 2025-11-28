@@ -1,10 +1,13 @@
 ﻿// built-in endpoint handlers
 namespace Oxpecker
 
+open System
 open System.Collections.Generic
 open System.Threading.Tasks
+open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Http
 open Oxpecker.ViewEngine
+open Microsoft.Extensions.Logging
 
 [<AutoOpen>]
 module RequestHandlers =
@@ -113,6 +116,7 @@ module ResponseHandlers =
     /// <param name="html">The HTML string to be sent back to the client.</param>
     /// <param name="ctx">HttpContext</param>
     /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
+    [<Obsolete "Will be removed in next major version. Use htmlView instead.">]
     let htmlString (html: string) : EndpointHandler =
         fun (ctx: HttpContext) -> ctx.WriteHtmlString html
 
@@ -190,3 +194,39 @@ module ResponseHandlers =
         fun (ctx: HttpContext) ->
             ctx.SetHttpHeader(key, value)
             Task.CompletedTask
+
+[<RequireQualifiedAccess>]
+module Default =
+    let exceptionMiddleware (ctx: HttpContext) (next: RequestDelegate) =
+        task {
+            try
+                return! next.Invoke(ctx)
+            with ex ->
+                let logger = ctx.GetLogger("Oxpecker.Default.ExceptionMiddleware")
+                match ex with
+                | :? ModelBindException
+                | :? RouteParseException as ex ->
+                    logger.LogWarning(ex, "Invalid request {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                    ctx.SetStatusCode StatusCodes.Status400BadRequest
+                    return! ctx.WriteText "Invalid request"
+                | :? AntiforgeryValidationException as ex ->
+                    logger.LogWarning(
+                        ex,
+                        "CSRF token validation failed {Method} {Path}",
+                        ctx.Request.Method,
+                        ctx.Request.Path
+                    )
+                    ctx.SetStatusCode StatusCodes.Status403Forbidden
+                    return! ctx.WriteText "Forbidden"
+                | ex ->
+                    logger.LogError(ex, "Unhandled exception {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                    ctx.SetStatusCode StatusCodes.Status500InternalServerError
+                    return! ctx.WriteText "Internal server error"
+        }
+        :> Task
+
+    let notFoundHandler (ctx: HttpContext) =
+        let logger = ctx.GetLogger("Oxpecker.Default.NotFoundHandler")
+        logger.LogWarning("Page not found {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+        ctx.SetStatusCode 404
+        ctx.WriteText("Page not found")

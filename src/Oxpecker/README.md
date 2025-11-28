@@ -19,6 +19,9 @@ An in depth functional reference to all of Oxpecker's features.
 
 - [Fundamentals](#fundamentals)
     - [Core concepts](#core-concepts)
+      - [EndpointHandler](#endpointhandler)
+      - [EndpointMiddleware](#endpointmiddleware)
+      - [EndpointHandler vs EndpointMiddleware](#endpointhandler-vs-endpointmiddleware)
     - [Oxpecker pipeline vs. ASP.NET Core pipeline](#oxpecker-pipeline-vs-aspnet-core-pipeline)
     - [Creating new EndpointHandler and EndpointMiddleware](#ways-of-creating-a-new-endpointhandler-and-endpointmiddleware)
     - [Composition](#composition)
@@ -26,6 +29,9 @@ An in depth functional reference to all of Oxpecker's features.
 - [Basics](#basics)
     - [Plugging Oxpecker into ASP.NET Core](#plugging-oxpecker-into-aspnet-core)
     - [Dependency Management](#dependency-management)
+      - [Registering Services](#registering-services)
+      - [Retrieving Services](#retrieving-services)
+      - [Functional DI](#functional-di)
     - [Multiple Environments and Configuration](#multiple-environments-and-configuration)
     - [Logging](#logging)
     - [Error and NotFound handling](#error-handling)
@@ -49,7 +55,9 @@ An in depth functional reference to all of Oxpecker's features.
     - [File Upload](#file-upload)
     - [WebSockets](#websockets)
     - [Grpc](#grpc)
-    - [Authentication and Authorization](#authentication-and-authorization)
+    - [Security](#security)
+      - [Authentication and Authorization](#authentication-and-authorization)
+      - [CSRF protection](#csrf-protection)
     - [Conditional Requests](#conditional-requests)
     - [Response Writing](#response-writing)
       - [Writing Bytes](#writing-bytes)
@@ -94,7 +102,7 @@ type EndpointMiddleware = EndpointHandler -> HttpContext -> Task
 
 Each `EndpointMiddleware` can process an incoming `HttpRequest` before passing it further down the Oxpecker pipeline by invoking the next `EndpointMiddleware` or short circuiting the execution by returning the `Task` itself.
 
-##### EndpointHandler vs EndpointMiddleware
+#### EndpointHandler vs EndpointMiddleware
 
 So, when should you define one or another? The answer lies in the responsibility of your handler:
  - If you want to **conditionally** _return response_  or _proceed_ further in pipeline use `EndpointMiddleware`. Good example is [Preconditional endpoint middleware](#conditional-requests)
@@ -243,21 +251,18 @@ routef "/{%s}" (bindQuery << handler)
 routef "/{%s}/{%s}" (bindForm <<+ handler)
 routef "/{%s}/{%s}/{%s}" (bindJson <<++ handler)
 ```
-#### Multi-route handler
+#### Multi-route filter
 
-Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `applyBefore` and `applyAfter` functions. For example:
+Sometimes you want to use some generic handler or middleware not only with one route, but with the whole collection of routes. It is possible using `addFilter` (similar to [MinimalApis](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/min-api-filters)), for example:
 
 ```fsharp
 
-let MY_HEADER = applyBefore (setHttpHeader "my" "header")
-
 let webApp = [
-    MY_HEADER <| subRoute "/auth" [
+    subRoute "/auth" [
         route "/open" handler1
         route "/closed" handler2
-    ]
+    ] |> addFilter (setHttpHeader "myHeader" "myValue")
 ]
-
 ```
 
 ### Continue vs. Return
@@ -386,7 +391,7 @@ let main _ =
 ```
 ### Dependency Management
 
-ASP.NET Core has built in [dependency management](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) which works out of the box with Oxpecker.
+ASP.NET Core has built-in [dependency management](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/dependency-injection) which works out of the box with Oxpecker.
 
 #### Registering Services
 
@@ -1174,17 +1179,19 @@ let main args =
     0
 ```
 
-### Authentication and Authorization
+### Security
 
-Oxpecker's security model is the same as [Minimal API security model](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security), please make sure you are very familiar with it.
-The main difference is that in Oxpecker you can conveniently call `configureEndpoint _.RequireAuthorization` on both a single endpoint and a group of endpoints.
+Oxpecker's security model is built on top of the ASP.NET Core security model and is very similar to the Minimal API's one, so make sure you are familiar with it.
+
+#### Authentication and Authorization
+
+Oxpecker's auth works just like in [Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/security).
+To protect endpoints, call `configureEndpoint _.RequireAuthorization` on a single endpoint or a group of endpoints.
 ```fsharp
 let webApp = [
     // single endpoint
     route "/" (text "Hello World")
-        |> configureEndpoint
-            _.DisableAntiforgery()
-             .RequireAuthorization()
+        |> configureEndpoint _.RequireAuthorization()
     // endpoint group
     GET [
         route "/index" <| text "index"
@@ -1194,6 +1201,40 @@ let webApp = [
         )
 ]
 ```
+#### CSRF protection
+
+Default Oxpecker implementation is similar to the [Minimal API's](https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery#antiforgery-with-minimal-apis) one.
+
+First, you need to add AntiForgery middleware to your pipeline and register dependencies:
+```fsharp
+let configureApp (appBuilder: WebApplication) =
+    appBuilder
+        .UseRouting()
+        .UseAntiforgery() // should be added between UseRouting and UseOxpecker
+        .UseOxpecker(endpoints) |> ignore
+
+let configureServices (services: IServiceCollection) =
+    services
+        .AddRouting()
+        .AddAntiforgery()
+        .AddOxpecker()
+    |> ignore
+```
+Once it's done, all your POST, PUT and PATCH endpoints will be validated against CSRF token, but an actual antiforgery exception (in case of failed validation) will only happen when doing [form binding](#binding-forms).
+
+_If you don't like the default behavior, instead of adding built-in ASP.NET Core AntiForgery middleware, you can write custom [EndpointMiddleware](#endpointmiddleware), that will call `antiforgery.ValidateRequestAsync`, and place it in the desired stage of the pipeline._
+
+To place Antiforgery token in the form, you should use `GetAntiforgeryInput` extension method:
+```fsharp
+let myForm (ctx: HttpContext) =
+    form() {
+        ctx.GetAntiforgeryInput()
+        input(type'="text", name="Message", value="Hello")
+        button(type'="submit") { "Submit" }
+    }
+```
+If you don't use `Oxpecker.ViewEngine` or prefer header to the form field, you can leverage `GetAntiforgeryTokens` extension method instead.
+
 ### Conditional Requests
 
 Conditional HTTP headers (e.g., `If-Match`, `If-Modified-Since`, etc.) are a common pattern to improve performance (web caching), to combat the [lost update problem](https://www.w3.org/1999/04/Editing/) or to perform [optimistic concurrency control](https://en.wikipedia.org/wiki/Optimistic_concurrency_control) when a client requests a resource from a web server.

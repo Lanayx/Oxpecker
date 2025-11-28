@@ -31,7 +31,14 @@ let getWeatherData (ctx: HttpContext) =
                         Summary = summaries[Random.Shared.Next(summaries.Length)]
                     }
             |]
-        return! ctx.WriteHtmlView(weather.data forecasts)
+        return! ctx.WriteHtmlView(weather.data ctx forecasts)
+    } :> Task
+
+let refreshWeatherData (ctx: HttpContext) =
+    task {
+        // Simulate some bind to trigger CSRF validation
+        let! _ = ctx.BindForm<{| test: string |}>()
+        return! getWeatherData ctx
     } :> Task
 
 let endpoints = [
@@ -39,8 +46,12 @@ let endpoints = [
         route "/" <| htmlView' home.html
         route "/counter" <| htmlView' counter.html
         route "/weather" <| htmlView' weather.html
-        route "/weatherData" <| getWeatherData
+        route "/weatherData" getWeatherData
         route "/error" <| htmlView' error.html
+    ]
+    POST [
+        // simulate refreshing the page
+        route "/weatherData" refreshWeatherData
     ]
 ]
 
@@ -51,8 +62,8 @@ let configureApp (appBuilder: WebApplication) =
         appBuilder.UseExceptionHandler("/error", true) |> ignore
     appBuilder
         .UseStaticFiles()
-        .UseAntiforgery()
         .UseRouting()
+        .UseAntiforgery()
         .UseOxpecker(endpoints) |> ignore
 
 let configureServices (services: IServiceCollection) =

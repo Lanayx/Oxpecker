@@ -13,6 +13,7 @@ Usages example:
 ```fsharp
 open Oxpecker
 open Oxpecker.OpenApi
+open System.Threading.Tasks
 
 let endpoints = [
     // addOpenApi supports passing detailed configuration
@@ -21,7 +22,7 @@ let endpoints = [
             |> addOpenApi (OpenApiConfig(
                 requestBody = RequestBody(typeof<Product>),
                 responseBodies = [| ResponseBody(typeof<string>) |],
-                configureOperation = (fun o -> o.OperationId <- "PostProduct"; o)
+                configureOperation = (fun o _ _ -> o.OperationId <- "PostProduct"; Task.CompletedTask)
             ))
     ]
     // addOpenApiSimple is a shortcut for simple cases
@@ -44,7 +45,42 @@ _Note: you MUST specify HTTP method (GET, POST etc.), because routes with ANY me
 
 ## Configuration
 
-### Option 1 (for ASP.NET Core 8+)
+### Option 1 (for ASP.NET Core 9+)
+
+* Install `Microsoft.AspNetCore.OpenApi` package
+* Follow [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview):
+
+```fsharp
+
+let configureApp (appBuilder: IApplicationBuilder) =
+    appBuilder
+        .UseRouting()
+        .Use(errorHandler)
+        .UseOxpecker(endpoints)
+        .Run(notFoundHandler)
+
+let configureServices (services: IServiceCollection) =
+    services
+        .AddRouting()
+        .AddOxpecker()
+        .AddOpenApi(
+            // support for Option<_> and ValueOption<_> (ASP.NET Core 10+)
+            fun o -> o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
+        ) // OpenAPI dependencies
+    |> ignore
+
+[<EntryPoint>]
+let main args =
+    let builder = WebApplication.CreateBuilder(args)
+    configureServices builder.Services
+    let app = builder.Build()
+    configureApp app
+    app.MapOpenApi() |> ignore // for json OpenAPI endpoint
+    app.Run()
+    0
+```
+
+### Option 2 (for ASP.NET Core 8+)
 
 * Install `Microsoft.AspNetCore.OpenApi` package
 * Install `Swashbuckle.AspNetCore` package
@@ -78,38 +114,8 @@ let main args =
     app.Run()
     0
 ```
+_Note: `Option<_>` and `ValueOption<_>` are **not** supported by Swashbuckle ([issue](https://github.com/domaindrivendev/Swashbuckle.AspNetCore/issues/471))._
 
-### Option 2 (for ASP.NET Core 9+)
-
-* Install `Microsoft.AspNetCore.OpenApi` package
-* Follow [standard steps](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/overview):
-
-```fsharp
-
-let configureApp (appBuilder: IApplicationBuilder) =
-    appBuilder
-        .UseRouting()
-        .Use(errorHandler)
-        .UseOxpecker(endpoints)
-        .Run(notFoundHandler)
-
-let configureServices (services: IServiceCollection) =
-    services
-        .AddRouting()
-        .AddOxpecker()
-        .AddOpenApi() // OpenAPI dependencies
-    |> ignore
-
-[<EntryPoint>]
-let main args =
-    let builder = WebApplication.CreateBuilder(args)
-    configureServices builder.Services
-    let app = builder.Build()
-    configureApp app
-    app.MapOpenApi() |> ignore // for json OpenAPI endpoint
-    app.Run()
-    0
-```
 
 ## APIs
 
@@ -124,7 +130,7 @@ This method is used to add OpenApi metadata to the endpoint. It accepts `OpenApi
 ```fsharp
 type OpenApiConfig (?requestBody : RequestBody,
                     ?responseBodies : ResponseBody seq,
-                    ?configureOperation : OpenApiOperation -> OpenApiOperation) =
+                    ?configureOperation : OpenApiOperation -> OpenApiOperationTransformerContext -> CancellationToken -> Task) =
     // ...
 ```
 Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code.
