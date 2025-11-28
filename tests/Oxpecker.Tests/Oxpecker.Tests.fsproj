@@ -34,7 +34,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
         <PackageReference Include="xunit.v3" Version="3.2.0" />
-        <PackageReference Include="Oxpecker" Version="1.5.0" />
+        <PackageReference Include="Oxpecker" Version="2.0.0" />
     </ItemGroup>
 
 </Project>

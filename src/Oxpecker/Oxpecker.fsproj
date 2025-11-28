@@ -28,7 +28,7 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
         <PackageReference Include="TypeShape" Version="10.0.0" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="1.1.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="2.0.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
