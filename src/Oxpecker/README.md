@@ -500,44 +500,17 @@ let someHandler : EndpointHandler =
 
 ### Error Handling
 
-Oxpecker doesn't have a built in error handling or not found handling mechanisms, since it can be easily implemented using following functions that should be registered before and after the Oxpecker middleware:
+Oxpecker provides the default middleware for exceptions handling and the defaut handler for unmatched routes. You can use them as follows:
 
 ```fsharp
-// error handling middleware
-let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
-    task {
-        try
-            return! next.Invoke(ctx)
-        with
-        | :? ModelBindException
-        | :? RouteParseException as ex ->
-            let logger = ctx.GetLogger()
-            logger.LogWarning(ex, "Unhandled 400 error")
-            ctx.SetStatusCode StatusCodes.Status400BadRequest
-            return! ctx.WriteHtmlView(errorView 400 (string ex))
-        | ex ->
-            let logger = ctx.GetLogger()
-            logger.LogError(ex, "Unhandled 500 error")
-            ctx.SetStatusCode StatusCodes.Status500InternalServerError
-            return! ctx.WriteHtmlView(errorView 500 (string ex))
-    } :> Task
-
-// not found terminal middleware
-let notFoundHandler (ctx: HttpContext) =
-    let logger = ctx.GetLogger()
-    logger.LogWarning("Unhandled 404 error")
-    ctx.SetStatusCode 404
-    ctx.WriteHtmlView(errorView 404 "Page not found!")
-
-///...
-
 let configureApp (appBuilder: IApplicationBuilder) =
     appBuilder
         .UseRouting()
-        .Use(errorHandler) // Add error handling middleware BEFORE Oxpecker
+        .Use(Default.exceptionMiddleware) // Add exception handling middleware BEFORE Oxpecker
         .UseOxpecker(endpoints)
-        .Run(notFoundHandler) // Add not found middleware AFTER Oxpecker
+        .Run(Default.notFoundHandler) // Add not found middleware AFTER Oxpecker
 ```
+You can use those default implementations as is or as examples for your own custom error handling logic.
 
 ## Web Request Processing
 

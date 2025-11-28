@@ -30,7 +30,7 @@ let mainView (model: Person) =
                 for i in 1..10 do
                     br()
                     li().attr("onclick", $"alert('Test {i}')") {
-                        span(id= $"span{i}", class'="test") { $"Test {i}" }
+                        span(id= $"span{i}", class'="test") { i }
                     }
             }
         }
@@ -136,6 +136,7 @@ div().on("click", "alert('Hello')"){
 div(){
     "<script></script>" // This will be escaped
     raw "<script></script>" // This will NOT be escaped
+    123 // Numbers are NOT escaped
 }
 ```
 
