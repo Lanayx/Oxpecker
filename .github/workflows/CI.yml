@@ -52,16 +52,16 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore nuget dependencies
-        run: dotnet restore Oxpecker.sln
+        run: dotnet restore Oxpecker.slnx
 
       - name: Compile the main solution
-        run: dotnet build Oxpecker.sln --no-restore
+        run: dotnet build Oxpecker.slnx --no-restore
 
       - name: Test the main solution
-        run: dotnet test Oxpecker.sln --no-restore --no-build
+        run: dotnet test Oxpecker.slnx --no-restore --no-build
 
       - name: Restore Solid nuget dependencies
-        run: dotnet restore Oxpecker.Solid.sln
+        run: dotnet restore Oxpecker.Solid.slnx
 
       - name: Compile Solid solution
-        run: dotnet build Oxpecker.Solid.sln --no-restore
+        run: dotnet build Oxpecker.Solid.slnx --no-restore
