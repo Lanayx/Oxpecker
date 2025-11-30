@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/EmptySolid/EmptySolid.fsproj" />
+    <Project Path="examples/TodoList/TodoList.fsproj" />
+  </Folder>
+  <Folder Name="/examples/CRUD/">
+    <Project Path="examples/CRUD/Frontend/Frontend.fsproj" />
+    <Project Path="examples/CRUD/Shared/Shared.fsproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Oxpecker.Solid.FablePlugin/Oxpecker.Solid.FablePlugin.fsproj" />
+    <Project Path="src/Oxpecker.Solid/Oxpecker.Solid.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Oxpecker.Solid.Tests/Oxpecker.Solid.Tests.fsproj" />
+  </Folder>
+</Solution>
