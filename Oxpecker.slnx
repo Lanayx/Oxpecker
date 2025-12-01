@@ -1,0 +1,28 @@
+<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/Basic/Basic.fsproj" />
+    <Project Path="examples/ContactApp/ContactApp.fsproj" />
+    <Project Path="examples/Empty/Empty.fsproj" />
+    <Project Path="examples/WeatherApp/WeatherApp.fsproj" />
+  </Folder>
+  <Folder Name="/examples/CRUD/">
+    <Project Path="examples/CRUD/Backend/Backend.fsproj" />
+    <Project Path="examples/CRUD/Shared/Shared.fsproj" />
+  </Folder>
+  <Folder Name="/examples/MCP/">
+    <Project Path="examples/MCP/Client/Client.fsproj" />
+    <Project Path="examples/MCP/Server/Server.fsproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Oxpecker.Htmx/Oxpecker.Htmx.fsproj" />
+    <Project Path="src/Oxpecker.OpenApi/Oxpecker.OpenApi.fsproj" />
+    <Project Path="src/Oxpecker.ViewEngine/Oxpecker.ViewEngine.fsproj" />
+    <Project Path="src/Oxpecker/Oxpecker.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Oxpecker.Tests/Oxpecker.Tests.fsproj" />
+    <Project Path="tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj" />
+    <Project Path="tests/PerfTest.Csharp/PerfTest.Csharp.csproj" />
+    <Project Path="tests/PerfTest/PerfTest.fsproj" />
+  </Folder>
+</Solution>
