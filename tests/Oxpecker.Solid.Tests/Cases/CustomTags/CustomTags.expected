@@ -1,6 +1,7 @@
+
 import { ImportedName } from "ImportedModule";
-import { minValue, day } from "./fable_modules/fable-library-js.4.24.0/Date.js";
-import { int32ToString } from "./fable_modules/fable-library-js.4.24.0/Util.js";
+import { minValue, day } from "./fable_modules/fable-library-js.5.0.0-alpha.19/Date.js";
+import { int32ToString } from "./fable_modules/fable-library-js.5.0.0-alpha.19/Util.js";
 
 export function Test2() {
     return <ImportedName x="y"

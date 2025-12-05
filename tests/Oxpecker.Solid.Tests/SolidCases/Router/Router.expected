@@ -1,3 +1,4 @@
+
 import { Route, Router, useNavigate, A } from "@solidjs/router";
 import { lazy, createEffect } from "solid-js";
 import { App1 } from "./App1.jsx";
