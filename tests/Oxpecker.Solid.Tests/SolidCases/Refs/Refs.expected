@@ -13,7 +13,7 @@ export function Test() {
         }}>
         <canvas width={256}
             height={256}
-            ref={htmlCanvas}></canvas>
+            ref={htmlCanvas} />
     </div>;
 }
 

@@ -7,7 +7,7 @@ export function Component() {
             MyComponent
         </Title>
         <Meta content="https://example.com/image.jpg"
-            property="og:image"></Meta>
+            property="og:image" />
     </h1>;
 }
 
