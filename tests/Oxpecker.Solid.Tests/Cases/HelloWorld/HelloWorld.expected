@@ -1,7 +1,8 @@
+
 import { some } from "./fable_modules/fable-library-js.5.0.0-alpha.19/Option.js";
 
 export function Test() {
     console.log(some("Hello, World!"));
-    return <body></body>;
+    return <body />;
 }
 

@@ -7,7 +7,7 @@ export function Test2() {
     return <ImportedName x="y"
         a="b">
         <ImportedName x="y"
-            a="b"></ImportedName>
+            a="b" />
         Hello
     </ImportedName>;
 }
@@ -16,7 +16,7 @@ export function Test1() {
     let copyOfStruct_1;
     return <my-tag myAttr="foo">
         {"Hello " + ((copyOfStruct_1 = day(minValue()), int32ToString(copyOfStruct_1)))}
-        <my-tag></my-tag>
+        <my-tag />
     </my-tag>;
 }
 

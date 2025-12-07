@@ -9,14 +9,14 @@ export function SvgTest() {
                 x2="100%"
                 y2="0%">
                 <stop offset="0%"
-                    style="stop-color:rgb(255,255,0);stop-opacity:1"></stop>
+                    style="stop-color:rgb(255,255,0);stop-opacity:1" />
                 <stop offset="100%"
-                    style="stop-color:rgb(255,0,0);stop-opacity:1"></stop>
+                    style="stop-color:rgb(255,0,0);stop-opacity:1" />
             </linearGradient>
         </defs>
         <circle id="circle"
             fill-opacity="50%"
-            clip-rule="nonzero"></circle>
+            clip-rule="nonzero" />
         Sorry but this browser does not support inline SVG.
     </svg>;
 }

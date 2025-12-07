@@ -34,7 +34,7 @@ export function Test() {
             }}
             on:load={(_arg_5) => {
                 console.log(some("loaded"));
-            }}></h3>
+            }} />
     </div>;
 }
 
