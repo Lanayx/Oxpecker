@@ -32,6 +32,8 @@ type Model = {
     Children: Child[]
 }
 
+type ModelWithDictionary = { Items: Dictionary<string, Child> }
+
 [<Struct>]
 type Model2 = { SearchTerms: string[] }
 
@@ -96,6 +98,45 @@ let ``parseModel<Model2> handles multi-element string array`` () =
     }
     let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<Dictionary<string, string>> parses simple dictionary`` () =
+    let modelData =
+        [
+            "[a]", StringValues "1"
+            "[b]", StringValues "2"
+        ]
+        |> toComplexData
+    let expected =
+        dict [
+            "a", "1"
+            "b", "2"
+        ]
+        |> Dictionary
+
+    let result = defaultParseModel<Dictionary<string, string>> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<ModelWithDictionary> parses nested dictionary values`` () =
+    let modelData =
+        [
+            "Items[child1].Name", StringValues "Alice"
+            "Items[child1].Age", StringValues "5"
+            "Items[child2].Name", StringValues "Bob"
+            "Items[child2].Age", StringValues "7"
+        ]
+        |> toComplexData
+
+    let expected =
+        dict [
+            "child1", { Name = "Alice"; Age = 5 }
+            "child2", { Name = "Bob"; Age = 7 }
+        ]
+        |> Dictionary
+
+    let result = defaultParseModel<ModelWithDictionary> modelData
+    result.Items |> shouldEqual expected
 
 [<Fact>]
 let ``defaultParseModel<Model> parses complete model data correctly`` () =
