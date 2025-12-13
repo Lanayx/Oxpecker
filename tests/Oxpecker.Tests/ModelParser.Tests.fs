@@ -34,6 +34,12 @@ type Model = {
 
 type ModelWithDictionary = { Items: Dictionary<string, Child> }
 
+type ModelWithIntDictionary = { Items: Dictionary<int, Child> }
+
+type ModelWithStringMap = { Items: Map<string, Child> }
+
+type ModelWithIntMap = { Items: Map<int, Child> }
+
 [<Struct>]
 type Model2 = { SearchTerms: string[] }
 
@@ -102,19 +108,19 @@ let ``parseModel<Model2> handles multi-element string array`` () =
 [<Fact>]
 let ``defaultParseModel<Dictionary<string, string>> parses simple dictionary`` () =
     let modelData =
-        [
-            "[a]", StringValues "1"
-            "[b]", StringValues "2"
-        ]
-        |> toComplexData
-    let expected =
-        dict [
-            "a", "1"
-            "b", "2"
-        ]
-        |> Dictionary
+        [ "[a]", StringValues "1"; "[b]", StringValues "2" ] |> toComplexData
+    let expected = dict [ "a", "1"; "b", "2" ] |> Dictionary
 
     let result = defaultParseModel<Dictionary<string, string>> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<Dictionary<int, string>> parses simple int-key dictionary`` () =
+    let modelData =
+        [ "[1]", StringValues "a"; "[2]", StringValues "b" ] |> toComplexData
+    let expected = dict [ 1, "a"; 2, "b" ] |> Dictionary
+
+    let result = defaultParseModel<Dictionary<int, string>> modelData
     result |> shouldEqual expected
 
 [<Fact>]
@@ -129,13 +135,83 @@ let ``defaultParseModel<ModelWithDictionary> parses nested dictionary values`` (
         |> toComplexData
 
     let expected =
-        dict [
-            "child1", { Name = "Alice"; Age = 5 }
-            "child2", { Name = "Bob"; Age = 7 }
-        ]
+        dict [ "child1", { Name = "Alice"; Age = 5 }; "child2", { Name = "Bob"; Age = 7 } ]
         |> Dictionary
 
     let result = defaultParseModel<ModelWithDictionary> modelData
+    result.Items |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<ModelWithIntDictionary> parses nested int-key dictionary values`` () =
+    let modelData =
+        [
+            "Items[0].Name", StringValues "Alice"
+            "Items[0].Age", StringValues "5"
+            "Items[2].Name", StringValues "Bob"
+            "Items[2].Age", StringValues "7"
+        ]
+        |> toComplexData
+
+    let expected =
+        dict [ 0, { Name = "Alice"; Age = 5 }; 2, { Name = "Bob"; Age = 7 } ]
+        |> Dictionary
+
+    let result = defaultParseModel<ModelWithIntDictionary> modelData
+    result.Items |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<Map<string, string>> parses simple string-key map`` () =
+    let modelData =
+        [ "[a]", StringValues "1"; "[b]", StringValues "2" ] |> toComplexData
+
+    let expected = [ "a", "1"; "b", "2" ] |> Map.ofList
+
+    let result = defaultParseModel<Map<string, string>> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<Map<int, string>> parses simple int-key map`` () =
+    let modelData =
+        [ "[1]", StringValues "a"; "[2]", StringValues "b" ] |> toComplexData
+
+    let expected = [ 1, "a"; 2, "b" ] |> Map.ofList
+
+    let result = defaultParseModel<Map<int, string>> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<ModelWithStringMap> parses nested map values`` () =
+    let modelData =
+        [
+            "Items[child1].Name", StringValues "Alice"
+            "Items[child1].Age", StringValues "5"
+            "Items[child2].Name", StringValues "Bob"
+            "Items[child2].Age", StringValues "7"
+        ]
+        |> toComplexData
+
+    let expected =
+        [ "child1", { Name = "Alice"; Age = 5 }; "child2", { Name = "Bob"; Age = 7 } ]
+        |> Map.ofList
+
+    let result = defaultParseModel<ModelWithStringMap> modelData
+    result.Items |> shouldEqual expected
+
+[<Fact>]
+let ``defaultParseModel<ModelWithIntMap> parses nested int-key map values`` () =
+    let modelData =
+        [
+            "Items[0].Name", StringValues "Alice"
+            "Items[0].Age", StringValues "5"
+            "Items[2].Name", StringValues "Bob"
+            "Items[2].Age", StringValues "7"
+        ]
+        |> toComplexData
+
+    let expected =
+        [ 0, { Name = "Alice"; Age = 5 }; 2, { Name = "Bob"; Age = 7 } ] |> Map.ofList
+
+    let result = defaultParseModel<ModelWithIntMap> modelData
     result.Items |> shouldEqual expected
 
 [<Fact>]

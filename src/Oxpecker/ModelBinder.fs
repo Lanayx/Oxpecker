@@ -265,14 +265,12 @@ module internal ModelParser =
                     parser rawData
             res
 
-        | state -> notParsed state
-
     and private createDictionaryParser<'Key, 'Value when 'Key: equality and 'Key: not null>
         (ctx: TypeGenerationContext)
         (options: ModelBinderOptions)
         : Parser<Dictionary<'Key, 'Value>> =
         let valueParser = getOrCacheParser<'Value> ctx options
-        let keyConverter : string -> 'Key option =
+        let keyConverter: string -> 'Key option =
             if typeof<'Key> = typeof<string> then
                 fun s -> Some(unbox<'Key> s)
             elif typeof<'Key> = typeof<int> then
@@ -283,12 +281,22 @@ module internal ModelParser =
             else
                 fun _ -> None
 
-        let comparer : IEqualityComparer<'Key> =
+        let comparer: IEqualityComparer<'Key> =
             if typeof<'Key> = typeof<string> then
-                let cmp = if options.CaseInsensitiveMatching then StringComparer.OrdinalIgnoreCase else StringComparer.Ordinal
-                unbox (cmp :> IEqualityComparer<string>)
+                let cmp =
+                    if options.CaseInsensitiveMatching then
+                        StringComparer.OrdinalIgnoreCase
+                    else
+                        StringComparer.Ordinal
+                unbox(cmp :> IEqualityComparer<string>)
             else
                 EqualityComparer<'Key>.Default
+
+        let stringKeyComparer =
+            if typeof<'Key> = typeof<string> && options.CaseInsensitiveMatching then
+                StringComparer.OrdinalIgnoreCase
+            else
+                StringComparer.Ordinal
 
         fun state ->
             let result = Dictionary<'Key, 'Value>(comparer)
@@ -313,8 +321,9 @@ module internal ModelParser =
             match state with
             | ComplexData { Offset = offset; Data = data } ->
                 // Gather simple and complex segments grouped by dictionary key
-                let simpleValues = Dictionary<string, StringValues>(StringComparer.Ordinal)
-                let complexValues = Dictionary<string, struct (int * PooledDictionary<string, StringValues>)>(StringComparer.Ordinal)
+                let simpleValues = Dictionary<string, StringValues>(stringKeyComparer)
+                let complexValues =
+                    Dictionary<string, struct (int * PooledDictionary<string, StringValues>)>(stringKeyComparer)
 
                 for KeyValue(key, value) in data do
                     let span = key.AsSpan(offset)
@@ -444,66 +453,32 @@ module internal ModelParser =
             shape.Accept
                 { new IDictionaryVisitor<_> with
                     member _.Visit<'Key, 'Value when 'Key: equality>() =
-                        if Type.(<>)(typeof<'Key>, typeof<string>) then
+                        if typeof<'Key> = typeof<string> then
+                            let parser = createDictionaryParser<string, 'Value> ctx options
+                            unbox<Parser<'T>> parser
+                        elif typeof<'Key> = typeof<int> then
+                            let parser = createDictionaryParser<int, 'Value> ctx options
+                            unbox<Parser<'T>> parser
+                        else
                             unsupported typeof<'T>
+                }
 
-                        let valueParser = getOrCacheParser<'Value> ctx options
-                        let comparer =
-                            if options.CaseInsensitiveMatching then
-                                StringComparer.OrdinalIgnoreCase
-                            else
-                                StringComparer.Ordinal
-
-                        fun state ->
-                            let result = Dictionary<string, 'Value>(comparer)
-                            let simpleValues = Dictionary<string, StringValues>(comparer)
-                            let complexValues = Dictionary<string, struct (int * PooledDictionary<string, StringValues>)>(comparer)
-
-                            match state with
-                            | ComplexData { Offset = offset; Data = data } ->
-                                for KeyValue(key, value) in data do
-                                    let span = key.AsSpan(offset)
-
-                                    if span.Length > 0 && span[0] = '[' then
-                                        let closingIndex = span.Slice(1).IndexOf(']')
-
-                                        if closingIndex >= 0 then
-                                            let keyString = span.Slice(1, closingIndex).ToString()
-                                            let closingAbsoluteIndex = offset + 1 + closingIndex
-
-                                            if closingAbsoluteIndex = key.Length - 1 then
-                                                simpleValues[keyString] <- value
-                                            elif closingAbsoluteIndex + 1 < key.Length && key[closingAbsoluteIndex + 1] = '.' then
-                                                let newOffset = closingAbsoluteIndex + 2
-
-                                                let struct (_, subdict) =
-                                                    match complexValues.TryGetValue(keyString) with
-                                                    | true, struct (existingOffset, existingDict) ->
-                                                        struct (existingOffset, existingDict)
-                                                    | false, _ ->
-                                                        let dict = DictionaryPool.get()
-                                                        complexValues[keyString] <- struct (newOffset, dict)
-                                                        struct (newOffset, dict)
-
-                                                subdict[key] <- value
-                                            else
-                                                ()
-
-                                for KeyValue(key, values) in simpleValues do
-                                    let rawData = SimpleData values
-                                    let parsedValue = valueParser rawData
-                                    result[key] <- parsedValue
-
-                                for KeyValue(key, struct (offset, dict)) in complexValues do
-                                    use dict = dict
-                                    let rawData = ComplexData { Offset = offset; Data = dict }
-                                    let parsedValue = valueParser rawData
-                                    result[key] <- parsedValue
-
-                            | state -> notParsed state
-
-                            result :> obj |> unbox<'T>
-                        |> wrap
+        | Shape.FSharpMap shape ->
+            shape.Accept
+                { new IFSharpMapVisitor<_> with
+                    member _.Visit<'Key, 'Value when 'Key: comparison>() =
+                        if typeof<'Key> = typeof<string> then
+                            let dictParser = createDictionaryParser<string, 'Value> ctx options
+                            let mapParser: Parser<Map<string, 'Value>> =
+                                fun state -> dictParser state |> Seq.map (|KeyValue|) |> Map.ofSeq
+                            unbox<Parser<'T>> mapParser
+                        elif typeof<'Key> = typeof<int> then
+                            let dictParser = createDictionaryParser<int, 'Value> ctx options
+                            let mapParser: Parser<Map<int, 'Value>> =
+                                fun state -> dictParser state |> Seq.map (|KeyValue|) |> Map.ofSeq
+                            unbox<Parser<'T>> mapParser
+                        else
+                            unsupported typeof<'T>
                 }
 
         | Shape.FSharpList shape ->
