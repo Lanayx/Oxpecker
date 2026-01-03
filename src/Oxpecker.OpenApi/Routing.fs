@@ -56,8 +56,8 @@ module Routing =
             | reqType, _ when reqType = unitType -> "InvokeUnitReq"
             | _, respType when respType = unitType -> "InvokeUnitResp"
             | _, _ -> "Invoke"
-        configureEndpoint
-            _.WithMetadata(
-                typeof<FakeFunc<'Req, 'Res>>.GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
+        let methodInfo =
+            typeof<FakeFunc<'Req, 'Res>>.GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
                 |> nullArgCheck $"Method {methodName} not found"
-            )
+        configureEndpoint
+            _.WithMetadata(methodInfo)
