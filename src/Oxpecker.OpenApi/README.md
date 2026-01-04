@@ -121,7 +121,11 @@ _Note: `Option<_>` and `ValueOption<_>` are **not** supported by Swashbuckle ([i
 
 To make endpoints discoverable by OpenApi, you need to call one of the following functions: `addOpenApi` or `addOpenApiSimple` on the endpoint.
 
-_Note: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically._
+_Note1: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically when using `routef` function from `Oxpecker.OpenApi` namespace._
+
+_Note2: use `[<CLIMutable>]` attribute on your records to control `required` fields in schema._
+
+
 
 ### addOpenApi
 
