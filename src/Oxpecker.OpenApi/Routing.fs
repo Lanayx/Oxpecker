@@ -50,14 +50,22 @@ module Routing =
     let addOpenApi (config: OpenApiConfig) = configureEndpoint config.Build
 
     let addOpenApiSimple<'Req, 'Res> =
-        let methodName =
-            match typeof<'Req>, typeof<'Res> with
-            | reqType, respType when reqType = unitType && respType = unitType -> "InvokeUnit"
-            | reqType, _ when reqType = unitType -> "InvokeUnitReq"
-            | _, respType when respType = unitType -> "InvokeUnitResp"
-            | _, _ -> "Invoke"
-        let methodInfo =
-            typeof<FakeFunc<'Req, 'Res>>.GetMethod(methodName, BindingFlags.Instance ||| BindingFlags.NonPublic)
-                |> nullArgCheck $"Method {methodName} not found"
-        configureEndpoint
-            _.WithMetadata(methodInfo)
+        let reqType = typeof<'Req>
+        let resType = typeof<'Res>
+        if reqType <> unitType && resType <> unitType then
+            OpenApiConfig(
+                requestBody = RequestBody(typeof<'Req>),
+                responseBodies = [| ResponseBody(typeof<'Res>) |]
+            )
+        elif reqType <> unitType then
+            OpenApiConfig(
+                requestBody = RequestBody(typeof<'Req>)
+            )
+        elif resType <> unitType then
+            OpenApiConfig(
+                responseBodies = [| ResponseBody(typeof<'Res>) |]
+            )
+        else
+            OpenApiConfig()
+        |> addOpenApi
+

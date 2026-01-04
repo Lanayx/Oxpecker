@@ -16,14 +16,11 @@ module Configuration =
 
     // This is a hack to prevent generating Func tag in open API
     [<CompilerGenerated>]
-    type internal FakeFunc<'T, 'U> =
-        member this.Invoke(_: 'T) = Unchecked.defaultof<'U>
-        member this.InvokeUnitReq() = Unchecked.defaultof<'U>
-        member this.InvokeUnitResp(_: 'T) = ()
+    type internal FakeFunc =
         member this.InvokeUnit() = ()
 
     let internal fakeFuncMethod =
-        typeof<FakeFunc<_, _>>.GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
+        typeof<FakeFunc>.GetMethod("InvokeUnit", BindingFlags.Instance ||| BindingFlags.NonPublic)
         |> nullArgCheck $"Method InvokeUnit not found"
     let internal unitType = typeof<unit>
 
