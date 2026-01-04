@@ -21,9 +21,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.0.0</Version>
-        <PackageVersion>2.0.0</PackageVersion>
-        <PackageReleaseNotes>Major release</PackageReleaseNotes>
+        <Version>2.1.0</Version>
+        <PackageVersion>2.1.0</PackageVersion>
+        <PackageReleaseNotes>Fixes for options transformer and addOpenApiSimple</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
