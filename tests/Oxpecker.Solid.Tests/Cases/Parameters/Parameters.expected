@@ -1,17 +1,18 @@
-import { int32ToString } from "./fable_modules/fable-library-js.4.24.0/Util.js";
+
+import { int32ToString } from "./fable_modules/fable-library-js.5.0.0-alpha.19/Util.js";
 
 export function Test(id, hello) {
     const helloWorld = hello + " world";
     return <div id={int32ToString(id)}
         class="testclass"
         aria-labelledby="testlabel">
-        {(id > 0) ? <h3></h3> : <h2 class={int32ToString(id)}>
+        {(id > 0) ? (<h3 />) : (<h2 class={int32ToString(id)}>
             {id}
-        </h2>}
-        {(id > 5) ? <h4 class={helloWorld}></h4> : helloWorld}
-        {(id === 2) ? <h1 id="two">
+        </h2>)}
+        {(id > 5) ? (<h4 class={helloWorld} />) : (helloWorld)}
+        {(id === 2) ? (<h1 id="two">
             {helloWorld}
-        </h1> : ((id > 2) ? <h1 id={int32ToString(id)}></h1> : <h1></h1>)}
+        </h1>) : ((id > 2) ? (<h1 id={int32ToString(id)} />) : (<h1 />))}
     </div>;
 }
 

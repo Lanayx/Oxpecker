@@ -1,15 +1,16 @@
 
+
 export function Test() {
     return <body>
         zero
-        <h1 id="one"></h1>
+        <h1 id="one" />
         <div id="two">
             2
         </div>
         <div>
             3
         </div>
-        <br></br>
+        <br />
         five
     </body>;
 }

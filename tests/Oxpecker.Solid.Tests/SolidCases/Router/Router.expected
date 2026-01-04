@@ -1,3 +1,4 @@
+
 import { Route, Router, useNavigate, A } from "@solidjs/router";
 import { lazy, createEffect } from "solid-js";
 import { App1 } from "./App1.jsx";
@@ -27,13 +28,13 @@ export function App3() {
 
 export function Test1() {
     return <Router root={Root}>
-        <Route></Route>
+        <Route />
         <Route path="/def">
             <Route path="/inner"
-                component={App1}></Route>
+                component={App1} />
         </Route>
         <Route path="/ghi"
-            component={App2}></Route>
+            component={App2} />
     </Router>;
 }
 
