@@ -49,10 +49,7 @@ module private Helpers =
                 match o with
                 | :? string as s -> s |> String.IsNullOrEmpty
                 | _ -> true
-                // let complexMask = JsonSchemaType.Object ||| JsonSchemaType.Array
-                // s.Type.Value &&& complexMask = Unchecked.defaultof<JsonSchemaType>
-            | _ ->
-                true
+            | _ -> true
 
     /// Shallowly "adopt" the public, settable surface from `src` into `dst`.
     /// We intentionally avoid touching internals; only copy what's publicly available.

@@ -53,19 +53,11 @@ module Routing =
         let reqType = typeof<'Req>
         let resType = typeof<'Res>
         if reqType <> unitType && resType <> unitType then
-            OpenApiConfig(
-                requestBody = RequestBody(typeof<'Req>),
-                responseBodies = [| ResponseBody(typeof<'Res>) |]
-            )
+            OpenApiConfig(requestBody = RequestBody(typeof<'Req>), responseBodies = [| ResponseBody(typeof<'Res>) |])
         elif reqType <> unitType then
-            OpenApiConfig(
-                requestBody = RequestBody(typeof<'Req>)
-            )
+            OpenApiConfig(requestBody = RequestBody(typeof<'Req>))
         elif resType <> unitType then
-            OpenApiConfig(
-                responseBodies = [| ResponseBody(typeof<'Res>) |]
-            )
+            OpenApiConfig(responseBodies = [| ResponseBody(typeof<'Res>) |])
         else
             OpenApiConfig()
         |> addOpenApi
-

@@ -21,12 +21,13 @@ module WebApp =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(fun app ->
-                                app.UseRouting().UseEndpoints(fun builder ->
-                                    builder.MapOxpeckerEndpoints(endpoints)
-                                    builder.MapOpenApi() |> ignore
-                                ) |> ignore)
-                            .ConfigureServices(fun services ->
-                                services.AddRouting().AddOpenApi() |> ignore)
+                                app
+                                    .UseRouting()
+                                    .UseEndpoints(fun builder ->
+                                        builder.MapOxpeckerEndpoints(endpoints)
+                                        builder.MapOpenApi() |> ignore)
+                                |> ignore)
+                            .ConfigureServices(fun services -> services.AddRouting().AddOpenApi() |> ignore)
                         |> ignore)
                     .Build()
             do! host.StartAsync()
@@ -39,15 +40,17 @@ type Response1 = { Valid: bool }
 [<Fact>]
 let ``addOpenApi works fine`` () =
     task {
-        let endpoints = [ POST [
-            route "/" <| text "Hello World"
+        let endpoints = [
+            POST [
+                route "/" <| text "Hello World"
                 |> addOpenApi(
                     OpenApiConfig(
                         requestBody = RequestBody(typeof<Request1>),
                         responseBodies = [ ResponseBody(typeof<Response1>) ]
                     )
                 )
-        ] ]
+            ]
+        ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -55,7 +58,8 @@ let ``addOpenApi works fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -134,16 +138,15 @@ let ``addOpenApi works fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 [<Fact>]
 let ``addOpenApiSimple works fine`` () =
     task {
-        let endpoints = [ POST [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<Request1, Response1>
-        ] ]
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request1, Response1> ]
+        ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -151,7 +154,8 @@ let ``addOpenApiSimple works fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -230,17 +234,16 @@ let ``addOpenApiSimple works fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 
 [<Fact>]
 let ``addOpenApiSimple with unit request works fine`` () =
     task {
-        let endpoints = [ POST [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<unit, Response1>
-        ] ]
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, Response1> ]
+        ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -248,7 +251,8 @@ let ``addOpenApiSimple with unit request works fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -301,17 +305,14 @@ let ``addOpenApiSimple with unit request works fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 
 [<Fact>]
 let ``addOpenApiSimple with unit response works fine`` () =
     task {
-        let endpoints = [ POST [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<Request1, unit>
-        ] ]
+        let endpoints = [ POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request1, unit> ] ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -319,7 +320,8 @@ let ``addOpenApiSimple with unit response works fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -380,7 +382,7 @@ let ``addOpenApiSimple with unit response works fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 [<CLIMutable>]
@@ -390,10 +392,7 @@ type Response2 = { Inner: Response2Inner }
 [<Fact>]
 let ``nested objects work fine`` () =
     task {
-        let endpoints = [ GET [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<unit, Response2>
-        ] ]
+        let endpoints = [ GET [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, Response2> ] ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -401,7 +400,8 @@ let ``nested objects work fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -462,17 +462,19 @@ let ``nested objects work fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 
 [<Fact>]
 let ``Path parameter works fine`` () =
     task {
-        let endpoints = [ GET [
-            routef "/product/{%i}" <| fun i -> text $"Hello %i{i}"
+        let endpoints = [
+            GET [
+                routef "/product/{%i}" <| fun i -> text $"Hello %i{i}"
                 |> addOpenApiSimple<unit, string>
-        ] ]
+            ]
+        ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -480,7 +482,8 @@ let ``Path parameter works fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -529,5 +532,5 @@ let ``Path parameter works fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }

@@ -22,14 +22,18 @@ module WebApp =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(fun app ->
-                                app.UseRouting().UseEndpoints(fun builder ->
-                                    builder.MapOxpeckerEndpoints(endpoints)
-                                    builder.MapOpenApi() |> ignore
-                                ) |> ignore)
+                                app
+                                    .UseRouting()
+                                    .UseEndpoints(fun builder ->
+                                        builder.MapOxpeckerEndpoints(endpoints)
+                                        builder.MapOpenApi() |> ignore)
+                                |> ignore)
                             .ConfigureServices(fun services ->
-                                services.AddRouting().AddOpenApi(fun o ->
-                                    o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
-                                ) |> ignore)
+                                services
+                                    .AddRouting()
+                                    .AddOpenApi(fun o ->
+                                        o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore)
+                                |> ignore)
                         |> ignore)
                     .Build()
             do! host.StartAsync()
@@ -43,15 +47,19 @@ module WebApp =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(fun app ->
-                                app.UseRouting().UseEndpoints(fun builder ->
-                                    builder.MapOxpeckerEndpoints(endpoints)
-                                    builder.MapOpenApi() |> ignore
-                                ) |> ignore)
+                                app
+                                    .UseRouting()
+                                    .UseEndpoints(fun builder ->
+                                        builder.MapOxpeckerEndpoints(endpoints)
+                                        builder.MapOpenApi() |> ignore)
+                                |> ignore)
                             .ConfigureServices(fun services ->
-                                services.AddRouting().AddOpenApi(fun o ->
-                                    o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
-                                    o.CreateSchemaReferenceId <- _.Type.FullName
-                                ) |> ignore)
+                                services
+                                    .AddRouting()
+                                    .AddOpenApi(fun o ->
+                                        o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
+                                        o.CreateSchemaReferenceId <- _.Type.FullName)
+                                |> ignore)
                         |> ignore)
                     .Build()
             do! host.StartAsync()
@@ -64,10 +72,9 @@ type Response1 = { Valid: bool option }
 [<Fact>]
 let ``Option and voption on primitive types works fine`` () =
     task {
-        let endpoints = [ POST [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<Request1, Response1>
-        ] ]
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request1, Response1> ]
+        ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -75,7 +82,8 @@ let ``Option and voption on primitive types works fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -158,7 +166,7 @@ let ``Option and voption on primitive types works fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 
@@ -169,10 +177,7 @@ type Response2 = { Inner: Response2Inner option }
 [<Fact>]
 let ``nested objects with options work fine`` () =
     task {
-        let endpoints = [ GET [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<unit, Response2>
-        ] ]
+        let endpoints = [ GET [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, Response2> ] ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
@@ -180,7 +185,8 @@ let ``nested objects with options work fine`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -251,7 +257,7 @@ let ``nested objects with options work fine`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
 
@@ -261,10 +267,9 @@ type Response3 = { banana: bool }
 [<Fact>]
 let ``Issue 87 CreateSchemaReferenceId works well`` () =
     task {
-        let endpoints = [ GET [
-            route "/" <| text "Hello World"
-                |> addOpenApiSimple<Request3, Response3>
-        ] ]
+        let endpoints = [
+            GET [ route "/" <| text "Hello World" |> addOpenApiSimple<Request3, Response3> ]
+        ]
         use! server = WebApp.webAppCreateSchemaReferenceId endpoints
         let client = server.GetTestClient()
 
@@ -272,7 +277,8 @@ let ``Issue 87 CreateSchemaReferenceId works well`` () =
         let! resultString = result.Content.ReadAsStringAsync()
 
         result.StatusCode |> shouldEqual HttpStatusCode.OK
-        let expected = """{
+        let expected =
+            """{
   "openapi": "3.1.1",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
@@ -356,5 +362,5 @@ let ``Issue 87 CreateSchemaReferenceId works well`` () =
     }
   ]
 }"""
-    resultString.ReplaceLineEndings() |> shouldEqual expected
+        resultString.ReplaceLineEndings() |> shouldEqual expected
     }
