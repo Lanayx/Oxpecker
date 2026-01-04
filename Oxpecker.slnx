@@ -20,6 +20,7 @@
     <Project Path="src/Oxpecker/Oxpecker.fsproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Oxpecker.OpenApi.Tests/Oxpecker.OpenApi.Tests.fsproj" />
     <Project Path="tests/Oxpecker.Tests/Oxpecker.Tests.fsproj" />
     <Project Path="tests/Oxpecker.ViewEngine.Tests/Oxpecker.ViewEngine.Tests.fsproj" />
     <Project Path="tests/PerfTest.Csharp/PerfTest.Csharp.csproj" />
