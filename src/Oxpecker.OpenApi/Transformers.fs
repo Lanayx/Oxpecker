@@ -2,7 +2,6 @@ namespace Oxpecker.OpenApi
 
 open System
 open System.Collections.Generic
-open System.Text.Json.Serialization.Metadata
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.OpenApi
@@ -40,8 +39,8 @@ module private Helpers =
             // Leave as null; writer will omit 'type'.
             Nullable()
 
-    let isSimple (s: OpenApiSchema) =
-        match s.Metadata with
+    let isSimple (schema: OpenApiSchema) =
+        match schema.Metadata with
         | null -> true
         | metadata ->
             match metadata.TryGetValue("x-schema-id") with
