@@ -19,10 +19,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.0" />
         <PackageReference Include="xunit.v3" Version="3.2.0" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\Oxpecker.OpenApi\Oxpecker.OpenApi.fsproj" />
+        <PackageReference Include="Oxpecker.OpenApi" Version="2.1.0" />
     </ItemGroup>
 
 </Project>
