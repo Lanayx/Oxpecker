@@ -1,5 +1,6 @@
 ﻿module Oxpecker.OpenApi.Tests.General
 
+open System.ComponentModel
 open System.Net
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
@@ -523,6 +524,91 @@ let ``Path parameter works fine`` () =
             }
           }
         }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<Description("Type description")>]
+type Response3 = { [<Description("Field description")>] Valid: bool }
+
+[<Fact>]
+let ``Additional configuration works fine`` () =
+    task {
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApi(
+                    OpenApiConfig(
+                        responseBodies = [ ResponseBody(typeof<Response3>) ],
+                        configureOperation = fun operation _ _ ->
+                            task {
+                                operation.Description <- "Endpoint description"
+                                return operation
+                            }
+                    )
+                ) ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost/"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "description": "Endpoint description",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response3"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Response3": {
+        "required": [
+          "valid"
+        ],
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean",
+            "description": "Field description"
+          }
+        },
+        "description": "Type description"
       }
     }
   },

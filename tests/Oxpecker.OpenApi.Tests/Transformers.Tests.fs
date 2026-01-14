@@ -1,6 +1,8 @@
 ﻿module Oxpecker.OpenApi.Tests.Transformers
 
 open System
+open System.ComponentModel
+open System.ComponentModel.DataAnnotations
 open System.Net
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
@@ -353,6 +355,114 @@ let ``Issue 87 CreateSchemaReferenceId works well`` () =
       },
       "System.Boolean": {
         "type": "boolean"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<CLIMutable>]
+[<Description("Inner type description")>]
+type Response4Inner = { [<Description("Simple field description")>] Valid: bool voption }
+[<Description("Outer type description")>]
+type Response4 = { [<Description("Nested field description")>] Inner: Response4Inner option }
+
+[<Fact>]
+let ``Additional configuration works fine`` () =
+    task {
+        let endpoints = [
+            GET [ route "/" <| text "Hello World" |> addOpenApi(
+                    OpenApiConfig(
+                        responseBodies = [ ResponseBody(typeof<Response4>) ],
+                        configureOperation = fun operation _ _ ->
+                            task {
+                                operation.Description <- "Endpoint description"
+                                return operation
+                            }
+                    )
+                ) ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost/"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "description": "Endpoint description",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response4"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Response4": {
+        "required": [
+          "inner"
+        ],
+        "type": "object",
+        "properties": {
+          "inner": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Nested field description",
+                "$ref": "#/components/schemas/Response4Inner"
+              }
+            ]
+          }
+        },
+        "description": "Outer type description"
+      },
+      "Response4Inner": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Simple field description"
+          }
+        },
+        "description": "Inner type description"
       }
     }
   },
