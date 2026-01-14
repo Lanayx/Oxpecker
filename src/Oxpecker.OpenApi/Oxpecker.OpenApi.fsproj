@@ -21,9 +21,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.1.0</Version>
-        <PackageVersion>2.1.0</PackageVersion>
-        <PackageReleaseNotes>Fixes for options transformer and addOpenApiSimple</PackageReleaseNotes>
+        <Version>2.1.1</Version>
+        <PackageVersion>2.1.1</PackageVersion>
+        <PackageReleaseNotes>Fixed passing field description through metadata</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Oxpecker" Version="2.0.0" />
