@@ -369,24 +369,34 @@ let ``Issue 87 CreateSchemaReferenceId works well`` () =
 
 [<CLIMutable>]
 [<Description("Inner type description")>]
-type Response4Inner = { [<Description("Simple field description")>] Valid: bool voption }
+type Response4Inner = {
+    [<Description("Simple field description")>]
+    Valid: bool voption
+}
 [<Description("Outer type description")>]
-type Response4 = { [<Description("Nested field description")>] Inner: Response4Inner option }
+type Response4 = {
+    [<Description("Nested field description")>]
+    Inner: Response4Inner option
+}
 
 [<Fact>]
 let ``Additional configuration works fine`` () =
     task {
         let endpoints = [
-            GET [ route "/" <| text "Hello World" |> addOpenApi(
+            GET [
+                route "/" <| text "Hello World"
+                |> addOpenApi(
                     OpenApiConfig(
                         responseBodies = [ ResponseBody(typeof<Response4>) ],
-                        configureOperation = fun operation _ _ ->
-                            task {
-                                operation.Description <- "Endpoint description"
-                                return operation
-                            }
+                        configureOperation =
+                            fun operation _ _ ->
+                                task {
+                                    operation.Description <- "Endpoint description"
+                                    return operation
+                                }
                     )
-                ) ]
+                )
+            ]
         ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()

@@ -537,22 +537,29 @@ let ``Path parameter works fine`` () =
     }
 
 [<Description("Type description")>]
-type Response3 = { [<Description("Field description")>] Valid: bool }
+type Response3 = {
+    [<Description("Field description")>]
+    Valid: bool
+}
 
 [<Fact>]
 let ``Additional configuration works fine`` () =
     task {
         let endpoints = [
-            POST [ route "/" <| text "Hello World" |> addOpenApi(
+            POST [
+                route "/" <| text "Hello World"
+                |> addOpenApi(
                     OpenApiConfig(
                         responseBodies = [ ResponseBody(typeof<Response3>) ],
-                        configureOperation = fun operation _ _ ->
-                            task {
-                                operation.Description <- "Endpoint description"
-                                return operation
-                            }
+                        configureOperation =
+                            fun operation _ _ ->
+                                task {
+                                    operation.Description <- "Endpoint description"
+                                    return operation
+                                }
                     )
-                ) ]
+                )
+            ]
         ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
