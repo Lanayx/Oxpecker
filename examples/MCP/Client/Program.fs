@@ -1,8 +1,12 @@
 ﻿open System
+open System.ClientModel
+open System.ClientModel.Primitives
 open System.Net.Http
+open Microsoft.Extensions.AI
 open Microsoft.Extensions.Logging
-open Microsoft.SemanticKernel
-open Microsoft.SemanticKernel.Connectors.OpenAI
+open OpenAI
+open PipedAgents.MAF
+open PipedAgents.MAF.OpenAI
 open ModelContextProtocol.Protocol
 open ModelContextProtocol.Client
 
@@ -37,19 +41,17 @@ module Root =
                 )
             use loggingHandler = new LoggingHandler(socketHandler)
             // HttpClient with request/response logging
-            use httpClient = new HttpClient(loggingHandler,
-                BaseAddress = Uri("http://localhost:11434/v1") // Ollama API base address
-            )
+            use httpClient = new HttpClient(loggingHandler)
 
-            let kernel =
-                Kernel.CreateBuilder()
-                    .AddOpenAIChatCompletion(model, "ollama", httpClient = httpClient, serviceId = model)
-                    .Build()
+            let client = Client.ForChatCompletionsAPI(model, ApiKeyCredential("ollama"), OpenAIClientOptions(
+                Transport = new HttpClientPipelineTransport(httpClient),
+                Endpoint = Uri("http://localhost:11434/v1")
+            ))
 
             use! mcpClient =
-                McpClientFactory.CreateAsync(
-                    SseClientTransport(
-                        SseClientTransportOptions(
+                McpClient.CreateAsync(
+                    HttpClientTransport(
+                        HttpClientTransportOptions(
                             Name = "GetCurrentDate",
                             Endpoint = Uri("http://localhost:5000/mcp/sse") // MCP server endpoint
                         )
@@ -66,28 +68,26 @@ module Root =
 
             // Retrieve and display available MCP tools.
             let! tools = mcpClient.ListToolsAsync()
-
+            let aiTools = ResizeArray<AITool>()
             for tool in tools do
+                aiTools.Add(tool)
                 Console.WriteLine($"{tool.Name}: {tool.Description}")
 
-            // Add MCP tools as plugins to the Semantic Kernel.
-            kernel.Plugins.AddFromFunctions("CurrentDateTool", tools |> Seq.map _.AsKernelFunction()) |> ignore
+            let agent =
+                client.CreateAgent(
+                    AgentOptions(
+                        Instructions = "You are a helpful assistant",
+                        Tools = aiTools,
+                        Temperature = 0.0f
+                    )
+                )
 
             let userPrompt =
                 "I would like to know what date is it and 5 significant things that happened in the past on this day."
 
-            let promptExecutionSettings =
-                OpenAIPromptExecutionSettings(
-                    Temperature = 0.0,
-                    FunctionChoiceBehavior =
-                        FunctionChoiceBehavior.Auto(
-                            options = FunctionChoiceBehaviorOptions(RetainArgumentTypes = true)
-                        )
-                )
+            let! result =  agent.RunAsync(userPrompt)
 
-            let! _ =  kernel.InvokePromptAsync(userPrompt, KernelArguments(promptExecutionSettings))
-
-            Console.WriteLine("The end")
+            Console.WriteLine(result)
         }
 
 [<EntryPoint>]
