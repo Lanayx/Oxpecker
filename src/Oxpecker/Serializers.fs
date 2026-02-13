@@ -44,10 +44,16 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
     interface IJsonSerializer with
         member this.Serialize(value, ctx, chunked) =
             if chunked then
+                ctx.Response.ContentType <- "application/json; charset=utf-8"
                 if ctx.Request.Method <> HttpMethods.Head then
-                    ctx.Response.WriteAsJsonAsync(value, options)
+                    // Use JsonSerializer.SerializeAsync directly with our configured options instead of
+                    // ctx.Response.WriteAsJsonAsync to ensure consistent behavior between chunked and
+                    // non-chunked serialization. WriteAsJsonAsync delegates to ASP.NET Core's JSON pipeline
+                    // (IOptions<JsonOptions>) which may use different settings than Oxpecker's configured
+                    // JsonSerializerOptions. By using JsonSerializer.SerializeAsync directly, both paths
+                    // honor the same options instance, providing predictable and consistent serialization.
+                    JsonSerializer.SerializeAsync(ctx.Response.Body, value, options)
                 else
-                    ctx.Response.ContentType <- "application/json; charset=utf-8"
                     Task.CompletedTask
             else
                 task {

@@ -89,3 +89,77 @@ let ``Test default deserializer with nullables`` () =
             Title = null
         |}
     }
+
+[<Fact>]
+let ``Test custom JsonSerializerOptions are used in non-chunked serialization`` () =
+    task {
+        // Use PascalCase naming policy (null) instead of default camelCase
+        let customOptions = System.Text.Json.JsonSerializerOptions()
+        customOptions.PropertyNamingPolicy <- null
+        let serializer: IJsonSerializer = SystemTextJsonSerializer(customOptions)
+        let httpContext = DefaultHttpContext()
+        httpContext.Response.Body <- new MemoryStream()
+        let value = {| FirstName = "John"; LastName = "Doe" |}
+        do! serializer.Serialize(value, httpContext, false)
+        let stream = httpContext.Response.Body
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader = new StreamReader(stream)
+        let json = streamReader.ReadToEnd()
+        // Should use PascalCase (FirstName, LastName) not camelCase (firstName, lastName)
+        json |> shouldEqual """{"FirstName":"John","LastName":"Doe"}"""
+    }
+
+[<Fact>]
+let ``Test custom JsonSerializerOptions are used in chunked serialization`` () =
+    task {
+        // Use PascalCase naming policy (null) instead of default camelCase
+        let customOptions = System.Text.Json.JsonSerializerOptions()
+        customOptions.PropertyNamingPolicy <- null
+        let serializer: IJsonSerializer = SystemTextJsonSerializer(customOptions)
+        let httpContext = DefaultHttpContext()
+        httpContext.Response.Body <- new MemoryStream()
+        let value = {| FirstName = "John"; LastName = "Doe" |}
+        do! serializer.Serialize(value, httpContext, true)
+        let stream = httpContext.Response.Body
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader = new StreamReader(stream)
+        let json = streamReader.ReadToEnd()
+        // Should use PascalCase (FirstName, LastName) not camelCase (firstName, lastName)
+        json |> shouldEqual """{"FirstName":"John","LastName":"Doe"}"""
+    }
+
+[<Fact>]
+let ``Test chunked and non-chunked serialization produce consistent output with custom options`` () =
+    task {
+        let customOptions = System.Text.Json.JsonSerializerOptions()
+        customOptions.PropertyNamingPolicy <- null
+        customOptions.WriteIndented <- true
+        let serializer: IJsonSerializer = SystemTextJsonSerializer(customOptions)
+
+        // Test non-chunked
+        let httpContext1 = DefaultHttpContext()
+        httpContext1.Response.Body <- new MemoryStream()
+        let value = {| Status = "Active"; Count = 42 |}
+        do! serializer.Serialize(value, httpContext1, false)
+        let stream1 = httpContext1.Response.Body
+        stream1.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader1 = new StreamReader(stream1)
+        let json1 = streamReader1.ReadToEnd()
+
+        // Test chunked
+        let httpContext2 = DefaultHttpContext()
+        httpContext2.Response.Body <- new MemoryStream()
+        do! serializer.Serialize(value, httpContext2, true)
+        let stream2 = httpContext2.Response.Body
+        stream2.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader2 = new StreamReader(stream2)
+        let json2 = streamReader2.ReadToEnd()
+
+        // Both should produce identical JSON with PascalCase and indentation
+        json1 |> shouldEqual json2
+        // Verify PascalCase (not camelCase)
+        json1.Contains("Status") |> shouldEqual true
+        json1.Contains("Count") |> shouldEqual true
+        json1.Contains("status") |> shouldEqual false
+        json1.Contains("count") |> shouldEqual false
+    }
