@@ -157,9 +157,13 @@ let ``Test chunked and non-chunked serialization produce consistent output with 
 
         // Both should produce identical JSON with PascalCase and indentation
         json1 |> shouldEqual json2
-        // Verify PascalCase (not camelCase)
-        json1.Contains("Status") |> shouldEqual true
-        json1.Contains("Count") |> shouldEqual true
-        json1.Contains("status") |> shouldEqual false
-        json1.Contains("count") |> shouldEqual false
+        // Verify PascalCase (not camelCase) by checking root property names
+        use doc = System.Text.Json.JsonDocument.Parse json1
+        let root = doc.RootElement
+        let propertyNames =
+            root.EnumerateObject()
+            |> Seq.map (fun p -> p.Name)
+            |> Set.ofSeq
+
+        propertyNames |> shouldEqual (set [ "Status"; "Count" ])
     }

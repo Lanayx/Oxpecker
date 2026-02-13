@@ -54,7 +54,11 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
                     // honor the same options instance, providing predictable and consistent serialization.
                     JsonSerializer.SerializeAsync(ctx.Response.Body, value, options)
                 else
-                    Task.CompletedTask
+                    // For HEAD requests, we still want to set the Content-Type header and return an empty body
+                    task {
+                        use stream = recyclableMemoryStreamManager.Value.GetStream()
+                        return! serializeToStreamWithLength value stream ctx options
+                    }
             else
                 task {
                     use stream = recyclableMemoryStreamManager.Value.GetStream()
