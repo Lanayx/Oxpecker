@@ -167,3 +167,42 @@ let ``Test chunked and non-chunked serialization produce consistent output with 
 
         propertyNames |> shouldEqual (set [ "Status"; "Count" ])
     }
+
+[<Fact>]
+let ``Repro: Original bug—chunked serialization ignored custom options with WriteAsJsonAsync`` () =
+    task {
+        // This test demonstrates the bug that existed when using ctx.Response.WriteAsJsonAsync(value, options).
+        // WriteAsJsonAsync ignores the options parameter and uses ASP.NET Core's IOptions<JsonOptions> instead.
+        //
+        // BEFORE THE FIX:
+        // - ctx.Response.WriteAsJsonAsync(value, options) was used for chunked responses
+        // - This method internally delegates to ASP.NET Core's JSON pipeline (IOptions<JsonOptions>)
+        // - Custom JsonSerializerOptions passed to SystemTextJsonSerializer were IGNORED
+        // - Result: chunked responses used default camelCase naming, non-chunked used custom PascalCase
+        //
+        // To reproduce the bug on the original code:
+        // 1. Revert Serializers.fs line 51-54 to use ctx.Response.WriteAsJsonAsync(value, options)
+        // 2. Run this test—it will FAIL because chunked output uses camelCase instead of PascalCase
+        // 3. With the fix (JsonSerializer.SerializeAsync), this test PASSES
+
+        let customOptions = System.Text.Json.JsonSerializerOptions()
+        customOptions.PropertyNamingPolicy <- null  // Force PascalCase
+        let serializer: IJsonSerializer = SystemTextJsonSerializer(customOptions)
+
+        // Manually create a scenario where we verify the fix is in place
+        // by checking that custom options ARE being honored
+        let httpContext = DefaultHttpContext()
+        httpContext.Response.Body <- new MemoryStream()
+        let value = {| FirstName = "Alice"; LastName = "Smith" |}
+
+        do! serializer.Serialize(value, httpContext, true)  // chunked = true
+
+        let stream = httpContext.Response.Body
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader = new StreamReader(stream)
+        let json = streamReader.ReadToEnd()
+
+        // This assertion FAILS if the original bug is present (using WriteAsJsonAsync)
+        // because WriteAsJsonAsync would use camelCase instead of PascalCase
+        json |> shouldEqual """{"FirstName":"Alice","LastName":"Smith"}"""
+    }
