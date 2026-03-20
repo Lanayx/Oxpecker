@@ -355,6 +355,7 @@ module internal rec AST =
                         IsThisArgument = false
                         IsCompilerGenerated = true
                         Range = None
+                        IsInlineIfLambda = false
                     },
                     transform expr,
                     None
@@ -409,7 +410,7 @@ module internal rec AST =
         | _ -> currentList
 
     let listItemType =
-        Type.Tuple(genericArgs = [ Type.String; Type.Any ], isStruct = false)
+        Type.Tuple(genericArg = [ Type.String; Type.Any ], isStruct = false)
     let emptyList =
         Value(kind = NewList(headAndTail = None, typ = listItemType), range = None)
 

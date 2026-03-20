@@ -18,13 +18,13 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.7.0</Version>
-        <PackageVersion>0.7.0</PackageVersion>
-        <PackageReleaseNotes>Plugin refactoring</PackageReleaseNotes>
+        <Version>0.8.0</Version>
+        <PackageVersion>0.8.0</PackageVersion>
+        <PackageReleaseNotes>Updated Fable.AST dependency to 5.0</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fable.AST" Version="4.5.0" />
+        <PackageReference Include="Fable.AST" Version="5.0.0-rc.3" />
     </ItemGroup>
 
     <ItemGroup>
