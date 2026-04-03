@@ -123,7 +123,7 @@ To make endpoints discoverable by OpenApi, you need to call one of the following
 
 _Note1: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically when using `routef` function from `Oxpecker.OpenApi` namespace._
 
-_Note2: use `[<CLIMutable>]` attribute on your records and `[<Required]` or `[<JsonRequired]` on their fields to control `required` fields in schema._
+_Note2: use `[<CLIMutable>]` attribute on your records and `[<Required>]` or `[<JsonRequired>]` on their fields to control `required` fields in schema._
 
 _Note3: use `<Nullable>enable</Nullable>` in your project to disallow `null` value for reference types._
 
