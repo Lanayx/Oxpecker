@@ -565,7 +565,7 @@ type SolidComponentAttribute(flag: int) =
 
     override _.FableMinimumVersion = "4.0"
 
-    override this.Transform(pluginHelper: PluginHelper, file: File, memberDecl: MemberDecl) =
+    override this.Transform(pluginHelper: PluginHelper, _file: File, memberDecl: MemberDecl) =
         match enum<SolidComponentFlag> flag with
         | SolidComponentFlag.Debug ->
             Console.WriteLine("!Start! MemberDecl")
