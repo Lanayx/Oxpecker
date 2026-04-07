@@ -410,7 +410,7 @@ module internal rec AST =
         | _ -> currentList
 
     let listItemType =
-        Type.Tuple(genericArg = [ Type.String; Type.Any ], isStruct = false)
+        Type.Tuple(genericArgs = [ Type.String; Type.Any ], isStruct = false)
     let emptyList =
         Value(kind = NewList(headAndTail = None, typ = listItemType), range = None)
 
