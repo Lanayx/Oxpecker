@@ -8,12 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="coverlet.collector" Version="6.0.4" />
-        <PackageReference Include="Fable.Browser.Dom" Version="2.18.1" />
-        <PackageReference Include="Fable.Core" Version="4.5.0" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.20.0" />
+        <PackageReference Include="Fable.Core" Version="5.0.0-rc.2" />
         <PackageReference Include="Fable.Promise" Version="3.2.0" />
-        <PackageReference Include="Fli" Version="1.111.10" />
-        <PackageReference Include="FsUnit.xUnit" Version="7.0.1" />
+        <PackageReference Include="Fli" Version="1.1000.0" />
+        <PackageReference Include="FsUnit.xUnit" Version="7.1.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
         <PackageReference Include="xunit.v3" Version="1.1.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />

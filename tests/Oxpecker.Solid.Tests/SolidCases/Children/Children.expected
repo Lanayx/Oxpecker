@@ -1,7 +1,7 @@
 
-import { int32ToString } from "./fable_modules/fable-library-js.5.0.0-rc.6/Util.js";
-import { toArray } from "./fable_modules/fable-library-js.5.0.0-rc.6/Seq.js";
-import { rangeDouble } from "./fable_modules/fable-library-js.5.0.0-rc.6/Range.js";
+import { int32ToString } from "./fable_modules/fable-library-js.5.0.0-rc.7/Util.js";
+import { toArray } from "./fable_modules/fable-library-js.5.0.0-rc.7/Seq.js";
+import { rangeDouble } from "./fable_modules/fable-library-js.5.0.0-rc.7/Range.js";
 
 export function Component(hello, children) {
     return <h1>

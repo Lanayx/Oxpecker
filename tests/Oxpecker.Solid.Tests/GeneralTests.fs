@@ -13,7 +13,7 @@ let ``Fable version`` () =
     }
     |> Command.execute
     |> Output.toText
-    |> shouldEqual "5.0.0-rc.6"
+    |> shouldEqual "5.0.0-rc.7"
 
 [<Fact>]
 let ``Hello world`` () =
