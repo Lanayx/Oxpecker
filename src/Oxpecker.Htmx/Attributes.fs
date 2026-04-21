@@ -121,8 +121,7 @@ module ModifierAttributes =
         /// Set an attribute with the :inherited modifier for explicit inheritance in htmx 4
         /// e.g. hxInherited "hx-boost" "true" renders hx-boost:inherited="true"
         [<Extension>]
-        static member hxInherited(this: #HtmlTag, attr: string, value: string) =
-            this.attr(attr + ":inherited", value)
+        static member hxInherited(this: #HtmlTag, attr: string, value: string) = this.attr(attr + ":inherited", value)
         /// Set an attribute with the :inherited:append modifier to append to an inherited value
         /// e.g. hxInheritedAppend "hx-include" ".extra" renders hx-include:inherited:append=".extra"
         [<Extension>]
@@ -131,10 +130,8 @@ module ModifierAttributes =
         /// Set an attribute with the :merge modifier to merge with parent values
         /// e.g. hxMerge "hx-disable" "find button" renders hx-disable:merge="find button"
         [<Extension>]
-        static member hxMerge(this: #HtmlTag, attr: string, value: string) =
-            this.attr(attr + ":merge", value)
+        static member hxMerge(this: #HtmlTag, attr: string, value: string) = this.attr(attr + ":merge", value)
         /// Handle responses differently by status code
         /// e.g. hxStatus 422 "swap:innerHTML target:#errors" renders hx-status:422="swap:innerHTML target:#errors"
         [<Extension>]
-        static member hxStatus(this: #HtmlTag, code: string, value: string) =
-            this.attr("hx-status:" + code, value)
+        static member hxStatus(this: #HtmlTag, code: string, value: string) = this.attr("hx-status:" + code, value)

@@ -32,7 +32,8 @@ let ``HxRequestHeader.Boosted equals HX-Boosted`` () =
 
 [<Fact>]
 let ``HxRequestHeader.HistoryRestoreRequest equals HX-History-Restore-Request`` () =
-    HxRequestHeader.HistoryRestoreRequest |> shouldEqual "HX-History-Restore-Request"
+    HxRequestHeader.HistoryRestoreRequest
+    |> shouldEqual "HX-History-Restore-Request"
 
 // ─── Response headers ───
 

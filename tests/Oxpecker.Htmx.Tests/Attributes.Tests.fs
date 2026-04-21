@@ -235,7 +235,8 @@ let ``hxMerge renders attribute with :merge modifier`` () =
 
 [<Fact>]
 let ``hxStatus renders hx-status:code`` () =
-    let result = form(hxPost = "/save").hxStatus("422", "swap:innerHTML target:#errors") { "form" }
+    let result =
+        form(hxPost = "/save").hxStatus("422", "swap:innerHTML target:#errors") { "form" }
     result
     |> Render.toString
     |> shouldEqual """<form hx-post="/save" hx-status:422="swap:innerHTML target:#errors">form</form>"""
