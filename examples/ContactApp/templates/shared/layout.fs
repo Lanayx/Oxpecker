@@ -1,4 +1,4 @@
-﻿namespace ContactApp.templates.shared
+namespace ContactApp.templates.shared
 
 open System
 open Microsoft.AspNetCore.Http
@@ -14,12 +14,11 @@ module layout =
         html(lang="") {
             head() {
                 title() { "Contact App" }
-                script(src="https://unpkg.com/htmx.org@1.9.10",
+                script(src="https://cdn.jsdelivr.net/npm/htmx.org@next/dist/htmx.min.js",
                     crossorigin="anonymous")
                 link(rel="stylesheet", href="/site.css")
             }
-            body(style = "width: 800px; margin: 0 auto",
-                 hxBoost=true) {
+            body(style = "width: 800px; margin: 0 auto").hxInherited("hx-boost", "true") {
                 main() {
                     header() {
                         h1() {

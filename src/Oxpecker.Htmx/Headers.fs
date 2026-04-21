@@ -1,4 +1,4 @@
-﻿namespace Oxpecker.Htmx
+namespace Oxpecker.Htmx
 
 open Microsoft.FSharp.Core
 
@@ -6,33 +6,33 @@ open Microsoft.FSharp.Core
 module HxRequestHeader =
 
     [<Literal>]
-    let Boosted = "HX-Boosted"
+    let Request = "HX-Request"
+    [<Literal>]
+    let RequestType = "HX-Request-Type"
     [<Literal>]
     let CurrentUrl = "HX-Current-URL"
     [<Literal>]
-    let HistoryRestoreRequest = "HX-History-Restore-Request"
-    [<Literal>]
-    let Prompt = "HX-Prompt"
-    [<Literal>]
-    let Request = "HX-Request"
+    let Source = "HX-Source"
     [<Literal>]
     let Target = "HX-Target"
     [<Literal>]
-    let TriggerName = "HX-Trigger-Name"
+    let Boosted = "HX-Boosted"
     [<Literal>]
-    let Trigger = "HX-Trigger"
+    let HistoryRestoreRequest = "HX-History-Restore-Request"
 
 [<RequireQualifiedAccess>]
 module HxResponseHeader =
 
     [<Literal>]
-    let Location = "HX-Location"
+    let Trigger = "HX-Trigger"
     [<Literal>]
-    let PushUrl = "HX-Push-Url"
+    let Location = "HX-Location"
     [<Literal>]
     let Redirect = "HX-Redirect"
     [<Literal>]
     let Refresh = "HX-Refresh"
+    [<Literal>]
+    let PushUrl = "HX-Push-Url"
     [<Literal>]
     let ReplaceUrl = "HX-Replace-Url"
     [<Literal>]
@@ -40,8 +40,4 @@ module HxResponseHeader =
     [<Literal>]
     let Retarget = "HX-Retarget"
     [<Literal>]
-    let Trigger = "HX-Trigger"
-    [<Literal>]
-    let TriggerAfterSettle = "HX-Trigger-After-Settle"
-    [<Literal>]
-    let TriggerAfterSwap = "HX-Trigger-After-Swap"
+    let Reselect = "HX-Reselect"

@@ -1,4 +1,4 @@
-﻿module ContactApp.Handlers
+module ContactApp.Handlers
 open System.Threading.Tasks
 open ContactApp.templates
 open ContactApp.Models
@@ -17,8 +17,8 @@ let getContacts: EndpointHandler =
             let result =
                 ContactService.searchContact search
                 |> Seq.toArray
-            match ctx.TryGetHeaderValue HxRequestHeader.Trigger with
-            | Some "search" ->
+            match ctx.TryGetHeaderValue HxRequestHeader.Source with
+            | Some "input#search" ->
                 ctx.WriteHtmlView (index.rows page result)
             | _ ->
                 ctx |> writeHtml (index.html search page result archiver)
@@ -89,8 +89,8 @@ let deleteContact id: EndpointHandler =
     fun ctx ->
         task {
             ContactService.delete id |> ignore
-            match ctx.TryGetHeaderValue HxRequestHeader.Trigger with
-            | Some "delete-btn" ->
+            match ctx.TryGetHeaderValue HxRequestHeader.Source with
+            | Some "button#delete-btn" ->
                 flash "Deleted Contact!" ctx
                 ctx.Response.Redirect("/contacts")
                 ctx.SetStatusCode(303)

@@ -1,4 +1,4 @@
-﻿module ContactApp.templates.index
+module ContactApp.templates.index
 open ContactApp.Tools
 open Oxpecker.ViewEngine
 open Oxpecker.Htmx
@@ -91,7 +91,8 @@ let html q page (contacts: Contact[]) archiver =
                 span (style="float: left") {
                     button( hxDelete="/contacts",
                             hxConfirm="Are you sure you want to delete these contacts?",
-                            hxTarget="body") {
+                            hxTarget="body",
+                            hxInclude="closest form") {
                         "Delete Selected Contacts"
                     }
                 }
