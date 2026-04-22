@@ -1,7 +1,7 @@
 module GeneralTests
 
 open Xunit
-open FsUnitTyped
+open FsUnit.Light
 open Fli
 open Oxpecker.Solid.Tests.Common
 
@@ -13,7 +13,7 @@ let ``Fable version`` () =
     }
     |> Command.execute
     |> Output.toText
-    |> shouldEqual "5.0.0-rc.7"
+    |> shouldEqual "5.0.0"
 
 [<Fact>]
 let ``Hello world`` () =
