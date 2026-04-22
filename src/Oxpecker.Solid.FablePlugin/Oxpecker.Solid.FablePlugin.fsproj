@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
         <PackageId>Oxpecker.Solid.FablePlugin</PackageId>
         <Title>Oxpecker.Solid.FablePlugin</Title>
@@ -18,13 +19,14 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.7.0</Version>
-        <PackageVersion>0.7.0</PackageVersion>
-        <PackageReleaseNotes>Plugin refactoring</PackageReleaseNotes>
+        <Version>1.0.0</Version>
+        <PackageVersion>1.0.0</PackageVersion>
+        <PackageReleaseNotes>Fable 5 support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fable.AST" Version="4.5.0" />
+        <PackageReference Include="FSharp.Core" Version="10.0.100" />
+        <PackageReference Include="Fable.AST" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>

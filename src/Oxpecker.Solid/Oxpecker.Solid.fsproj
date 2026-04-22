@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <FablePackageType>library</FablePackageType>
         <WarningsAsErrors>3239;0025</WarningsAsErrors>
         <PackageId>Oxpecker.Solid</PackageId>
@@ -19,19 +20,20 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.8.1</Version>
-        <PackageVersion>0.8.1</PackageVersion>
-        <PackageReleaseNotes>SVG support. Several base classes were changed to interfaces.</PackageReleaseNotes>
+        <Version>1.0.0</Version>
+        <PackageVersion>1.0.0</PackageVersion>
+        <PackageReleaseNotes>Fable 5 support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fable.Core" Version="4.5.0" />
-        <PackageReference Include="Fable.Browser.Dom" Version="2.18.1" />
-        <PackageReference Include="Fable.Package.SDK" Version="1.3.0">
+        <PackageReference Include="FSharp.Core" Version="10.0.100" />
+        <PackageReference Include="Fable.Core" Version="5.0.0" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.20.0" />
+        <PackageReference Include="Fable.Package.SDK" Version="1.3.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="0.7.0" />
+        <PackageReference Include="Oxpecker.Solid.FablePlugin" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>

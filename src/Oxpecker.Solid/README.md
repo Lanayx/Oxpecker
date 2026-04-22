@@ -2,7 +2,7 @@
 ---
 # Oxpecker.Solid
 
-Fable (4.23.0+) opinionated bindings for the **Solid.js**, **Solid-router.js** and **Solid-meta.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
+Fable (5.0+) opinionated bindings for the **Solid.js**, **Solid-router.js** and **Solid-meta.js** libraries based on Oxpecker's view engine. This library DOES NOT depend on `Fable.Solid` package.
 
 **Medium article**: [Oxpecker goes full stack](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
 

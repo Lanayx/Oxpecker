@@ -1,7 +1,7 @@
 module Oxpecker.Solid.Tests.Common
 
 open Fli
-open FsUnitTyped
+open FsUnit.Light
 open System.IO
 
 let private runCase folderName caseName =

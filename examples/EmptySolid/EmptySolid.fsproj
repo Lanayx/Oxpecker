@@ -7,9 +7,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Fable.Browser.Dom" Version="2.18.1" />
-        <PackageReference Include="Fable.Core" Version="4.5.0" />
-        <PackageReference Include="Oxpecker.Solid" Version="0.8.1" />
+        <PackageReference Include="Fable.Browser.Dom" Version="2.20.0" />
+        <PackageReference Include="Fable.Core" Version="5.0.0" />
+        <PackageReference Include="Oxpecker.Solid" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
