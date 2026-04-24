@@ -19,14 +19,14 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>0.8.0</Version>
-        <PackageVersion>0.8.0</PackageVersion>
-        <PackageReleaseNotes>Updated Fable.AST dependency to 5.0</PackageReleaseNotes>
+        <Version>1.0.0</Version>
+        <PackageVersion>1.0.0</PackageVersion>
+        <PackageReleaseNotes>Fable 5 support</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="10.0.100" />
-        <PackageReference Include="Fable.AST" Version="5.0.0-rc.4" />
+        <PackageReference Include="Fable.AST" Version="5.0.0" />
     </ItemGroup>
 
     <ItemGroup>
