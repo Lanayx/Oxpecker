@@ -8,7 +8,7 @@
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx) `dotnet add package Oxpecker.Htmx --prerelease`
 
-Markup example:
+Each htmx attribute is a typed value applied to a tag through the variadic `.attr(...)` extension. This keeps the `{ children }` builder syntax intact and lets you compose attributes uniformly:
 
 ```fsharp
 open Oxpecker.ViewEngine
@@ -17,14 +17,14 @@ open Oxpecker.Htmx
 let renderForm q =
     form(action="/contacts", method="get") {
         label(for'="search") { "Search Term" }
-        input(id="search", type'="search", name="q", value=q, style="margin: 0 5px", autocomplete="off",
-              hxGet="/contacts",
-              hxTrigger="search, keyup delay:200ms changed",
-              hxTarget="tbody",
-              hxPushUrl="true",
-              hxIndicator="#spinner")
+        input(id="search", type'="search", name="q", value=q, style="margin: 0 5px", autocomplete="off")
+            .attr(hxGet "/contacts",
+                  hxTrigger "search, keyup delay:200ms changed",
+                  hxTarget "tbody",
+                  hxPushUrl "true",
+                  hxIndicator "#spinner")
         img(id="spinner", class'="spinner htmx-indicator", src="/spinning-circles.svg", alt="Request In Flight...")
-        input(type'="submit", value="Search").hxOn("click", "alert('clicked')")
+        input(type'="submit", value="Search").attr(hxOn("click", "alert('clicked')"))
     }
 ```
 
@@ -72,6 +72,7 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 - hxConfig (new in htmx 4, replaces old `hx-request`)
 - hxIgnore (new in htmx 4, replaces old `hx-disable`)
 - hxOptimistic (new in htmx 4)
+- hxStatus (new in htmx 4)
 
 ### Client side — Event handler
 
@@ -79,23 +80,24 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 
 ### Client side — Modifier helpers
 
-htmx 4 introduces attribute modifiers for explicit inheritance. Use these helper methods:
+Inheritable attributes accept an optional `HxInherited` modifier (`Replace` → `:inherited`, `Append` → `:inherited:append`).
+`hxDisable` additionally accepts `merge: bool` (`:merge`). `hxStatus` writes status-coded attributes (`hx-status:CODE`).
 
 ```fsharp
 // Explicit inheritance: renders hx-boost:inherited="true"
-body().hxInherited("hx-boost", "true") { ... }
+body().attr(hxBoost(true, HxInherited.Replace)) { ... }
 
 // Inherited append: renders hx-include:inherited:append=".extra"
-form().hxInheritedAppend("hx-include", ".extra") { ... }
+form().attr(hxInclude(".extra", HxInherited.Append)) { ... }
 
 // Merge: renders hx-disable:merge="find button"
-main().hxMerge("hx-disable", "find button") { ... }
+main().attr(hxDisable("find button", merge = true)) { ... }
 
 // Status-code swap: renders hx-status:422="swap:innerHTML target:#errors"
-form().hxStatus("422", "swap:innerHTML target:#errors") { ... }
+form().attr(hxPost "/save", hxStatus("422", "swap:innerHTML target:#errors")) { ... }
 
 // Wildcard status: renders hx-status:5xx="swap:none"
-div().hxStatus("5xx", "swap:none") { ... }
+div().attr(hxGet "/data", hxStatus("5xx", "swap:none")) { ... }
 ```
 
 ### Server side — Request headers

@@ -1,4 +1,4 @@
-﻿namespace ContactApp.templates.shared
+namespace ContactApp.templates.shared
 
 open System
 open Microsoft.AspNetCore.Http
@@ -18,7 +18,7 @@ module layout =
                     crossorigin="anonymous")
                 link(rel="stylesheet", href="/site.css")
             }
-            body(style = "width: 800px; margin: 0 auto").hxInherited("hx-boost", "true") {
+            body(style = "width: 800px; margin: 0 auto").attr(hxBoost(true, HxInherited.Replace)) {
                 main() {
                     header() {
                         h1() {

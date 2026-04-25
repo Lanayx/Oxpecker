@@ -1,4 +1,4 @@
-﻿open System
+open System
 open System.Text.Json.Serialization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
@@ -121,7 +121,7 @@ let streamingHtml1: EndpointHandler =
                 head() { script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta2") }
                 body(style = "width: 800px; margin: 0 auto") {
                     h1(style = "text-align: center; color: blue") { "HTML Streaming example" }
-                    h2(hxGet = "/streamHtml2", hxTarget = "this", hxTrigger = "load")
+                    h2().attr(hxGet "/streamHtml2", hxTarget "this", hxTrigger "load")
                 }
             }
         htmlView html ctx

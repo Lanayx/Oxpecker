@@ -1,137 +1,246 @@
 namespace Oxpecker.Htmx
 
+open System
 open System.Diagnostics.CodeAnalysis
+open System.Runtime.CompilerServices
 open Oxpecker.ViewEngine
 
 [<AutoOpen>]
+module ModifierAttributes =
+    /// Inheritance modifier for htmx 4 attributes.
+    /// Replace: emit attribute as `hx-foo:inherited` (overrides children's same-named attribute).
+    /// Append:  emit attribute as `hx-foo:inherited:append` (appends to children's same-named attribute).
+    [<Struct>]
+    type HxInherited =
+        | Replace
+        | Append
+
+    let internal getInheritedSuffix (inherited: HxInherited voption) =
+        match inherited with
+        | ValueNone -> ""
+        | ValueSome HxInherited.Replace -> ":inherited"
+        | ValueSome HxInherited.Append -> ":inherited:append"
+
+    /// Marker interface for typed htmx attribute carriers.
+    /// Each concrete type knows how to apply itself to an HtmlTag.
+    type HxElement =
+        abstract member SetAttribute<'T when 'T :> HtmlTag> : 'T -> 'T
+
+    /// Extension that lets callers attach one or more typed htmx attributes to a tag in a single call:
+    ///     div().attr(hxGet "/api", hxTarget "#out", hxBoost(true, HxInherited.Replace))
+    type HtmlTagHtmxExtensions =
+        [<Extension>]
+        static member attr(this: #HtmlTag, [<ParamArray>] args: HxElement[]) =
+            for arg in args do
+                arg.SetAttribute(this) |> ignore
+            this
+
+
+[<AutoOpen>]
 module CoreAttributes =
-    type HtmlTag with
-        /// Issues a GET to the specified URL
-        member this.hxGet
-            with set (value: string | null) = this.attr("hx-get", value) |> ignore
-        /// Issues a POST to the specified URL
-        member this.hxPost
-            with set (value: string | null) = this.attr("hx-post", value) |> ignore
-        /// Handle events with inline scripts on elements
-        member this.hxOn(event, [<StringSyntax("js")>] value) = this.attr("hx-on:" + event, value)
-        /// Controls how content will swap in (outerHTML, beforeend, afterend, …)
-        member this.hxSwap
-            with set (value: string | null) = this.attr("hx-swap", value) |> ignore
-        /// Specifies the target element to be swapped
-        [<StringSyntax("css")>]
-        member this.hxTarget
-            with set (value: string | null) = this.attr("hx-target", value) |> ignore
-        /// Specifies the event that triggers the request
-        member this.hxTrigger
-            with set (value: string | null) = this.attr("hx-trigger", value) |> ignore
-        /// Select content to swap in from a response
-        [<StringSyntax("css")>]
-        member this.hxSelect
-            with set (value: string | null) = this.attr("hx-select", value) |> ignore
-        /// Issues a PUT to the specified URL
-        member this.hxPut
-            with set (value: string | null) = this.attr("hx-put", value) |> ignore
-        /// Issues a PATCH to the specified URL
-        member this.hxPatch
-            with set (value: string | null) = this.attr("hx-patch", value) |> ignore
-        /// Issues a DELETE to the specified URL
-        member this.hxDelete
-            with set (value: string | null) = this.attr("hx-delete", value) |> ignore
-        /// Add values to submit with the request (JSON format)
-        member this.hxVals
-            with set (value: string | null) = this.attr("hx-vals", value) |> ignore
+    // ─── Verb attributes (no modifiers) ───
+
+    /// Issues a GET to the specified URL.
+    type hxGet(url: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-get", url)
+
+    /// Issues a POST to the specified URL.
+    type hxPost(url: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-post", url)
+
+    /// Issues a PUT to the specified URL.
+    type hxPut(url: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-put", url)
+
+    /// Issues a PATCH to the specified URL.
+    type hxPatch(url: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-patch", url)
+
+    /// Issues a DELETE to the specified URL.
+    type hxDelete(url: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-delete", url)
+
+    /// Handle DOM events with inline scripts on elements (renders `hx-on:{event}`).
+    type hxOn(event: string, [<StringSyntax("js")>] script: string) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr($"hx-on:{event}", script)
+
+    // ─── Inheritable core attributes ───
+
+    /// Controls how content will swap in (outerHTML, beforeend, afterend, …).
+    type hxSwap(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-swap{getInheritedSuffix inherited}", value)
+
+    /// Specifies the target element to be swapped (CSS selector).
+    type hxTarget([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-target{getInheritedSuffix inherited}", value)
+
+    /// Specifies the event that triggers the request.
+    type hxTrigger(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-trigger{getInheritedSuffix inherited}", value)
+
+    /// Select content to swap in from a response (CSS selector).
+    type hxSelect([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-select{getInheritedSuffix inherited}", value)
+
+    /// Add values to submit with the request (JSON format).
+    type hxVals(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-vals{getInheritedSuffix inherited}", value)
 
 
 [<AutoOpen>]
 module AdditionalAttributes =
-    type HtmlTag with
-        /// Mark element to swap in from a response (out of band)
-        member this.hxSwapOob
-            with set (value: string | null) = this.attr("hx-swap-oob", value) |> ignore
-        /// Push a URL into the browser location bar to create history
-        member this.hxPushUrl
-            with set (value: string | null) = this.attr("hx-push-url", value) |> ignore
-        /// Include additional data in requests
-        member this.hxInclude
-            with set (value: string | null) = this.attr("hx-include", value) |> ignore
-        /// Select content to swap in from a response, somewhere other than the target (out of band)
-        [<StringSyntax("css")>]
-        member this.hxSelectOob
-            with set (value: string | null) = this.attr("hx-select-oob", value) |> ignore
-        /// Add progressive enhancement for links and forms
-        member this.hxBoost
-            with set (value: bool) = this.attr("hx-boost", (if value then "true" else "false")) |> ignore
-        /// Replace the URL in the browser location bar
-        member this.hxReplaceUrl
-            with set (value: string | null) = this.attr("hx-replace-url", value) |> ignore
-        /// Shows a confirm() dialog before issuing a request
-        member this.hxConfirm
-            with set (value: string | null) = this.attr("hx-confirm", value) |> ignore
-        /// Adds the disabled attribute to specified elements while a request is in flight
-        member this.hxDisable
-            with set (value: string | null) = this.attr("hx-disable", value) |> ignore
-        /// Specifies elements to keep unchanged between requests
-        member this.hxPreserve
-            with set (value: bool) =
+    // ─── Inheritable additional attributes ───
+
+    /// Mark element to swap in from a response (out of band).
+    type hxSwapOob(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-swap-oob{getInheritedSuffix inherited}", value)
+
+    /// Push a URL into the browser location bar to create history.
+    type hxPushUrl(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-push-url{getInheritedSuffix inherited}", value)
+
+    /// Include additional data in requests.
+    type hxInclude(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-include{getInheritedSuffix inherited}", value)
+
+    /// Select content to swap in from a response, somewhere other than the target (out of band).
+    type hxSelectOob([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-select-oob{getInheritedSuffix inherited}", value)
+
+    /// Add progressive enhancement for links and forms.
+    type hxBoost(value: bool, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr(
+                    $"hx-boost{getInheritedSuffix inherited}",
+                    (if value then "true" else "false")
+                )
+
+    /// Replace the URL in the browser location bar.
+    type hxReplaceUrl(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-replace-url{getInheritedSuffix inherited}", value)
+
+    /// Show a confirm() dialog before issuing a request.
+    type hxConfirm(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-confirm{getInheritedSuffix inherited}", value)
+
+    /// Adds the `disabled` attribute to specified elements (CSS selector) while a request is in flight.
+    /// Optionally `merge` parent values (`hx-disable:merge`) and/or inherit to descendants.
+    type hxDisable(selector: string, [<Struct>] ?merge: bool, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                let mergeSuffix =
+                    if merge |> ValueOption.defaultValue false then ":merge" else ""
+                let inheritedSuffix = getInheritedSuffix inherited
+                tag.attr($"hx-disable{mergeSuffix}{inheritedSuffix}", selector)
+
+    /// Specifies elements to keep unchanged between requests. Renders `hx-preserve` (boolean attribute) when true.
+    type hxPreserve(value: bool, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
                 if value then
-                    this.attr("hx-preserve", "") |> ignore
-        /// Adds to the headers that will be submitted with the request
-        member this.hxHeaders
-            with set (value: string | null) = this.attr("hx-headers", value) |> ignore
-        /// The element to put the htmx-request class on during the request
-        [<StringSyntax("css")>]
-        member this.hxIndicator
-            with set (value: string | null) = this.attr("hx-indicator", value) |> ignore
-        /// Control how requests made by different elements are synchronized
-        member this.hxSync
-            with set (value: string | null) = this.attr("hx-sync", value) |> ignore
-        /// Preload content before user triggers request
-        member this.hxPreload
-            with set (value: string | null) = this.attr("hx-preload", value) |> ignore
-        /// Force elements to validate themselves before a request
-        member this.hxValidate
-            with set (value: bool) = this.attr("hx-validate", (if value then "true" else "false")) |> ignore
-        /// Changes the request encoding type
-        member this.hxEncoding
-            with set (value: string | null) = this.attr("hx-encoding", value) |> ignore
-        /// Specify URL to receive request (use with hxMethod)
-        member this.hxAction
-            with set (value: string | null) = this.attr("hx-action", value) |> ignore
-        /// Specify HTTP method for request (use with hxAction)
-        member this.hxMethod
-            with set (value: string | null) = this.attr("hx-method", value) |> ignore
-        /// Configure request behavior with JSON
-        member this.hxConfig
-            with set (value: string | null) = this.attr("hx-config", value) |> ignore
-        /// Disable htmx processing for the given node and any children nodes
-        member this.hxIgnore
-            with set (value: bool) =
-                if value then
-                    this.attr("hx-ignore", "") |> ignore
-        /// Show optimistic content during request
-        member this.hxOptimistic
-            with set (value: string | null) = this.attr("hx-optimistic", value) |> ignore
+                    tag.attr($"hx-preserve{getInheritedSuffix inherited}", "")
+                else
+                    tag
 
+    /// Adds to the headers that will be submitted with the request (JSON object).
+    type hxHeaders(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-headers{getInheritedSuffix inherited}", value)
 
-[<AutoOpen>]
-module ModifierAttributes =
-    open System.Runtime.CompilerServices
+    /// The element to put the `htmx-request` class on during the request (CSS selector).
+    type hxIndicator([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-indicator{getInheritedSuffix inherited}", value)
 
-    type HtmlTagHtmx4Extensions =
-        /// Set an attribute with the :inherited modifier for explicit inheritance in htmx 4
-        /// e.g. hxInherited "hx-boost" "true" renders hx-boost:inherited="true"
-        [<Extension>]
-        static member hxInherited(this: #HtmlTag, attr: string, value: string) = this.attr(attr + ":inherited", value)
-        /// Set an attribute with the :inherited:append modifier to append to an inherited value
-        /// e.g. hxInheritedAppend "hx-include" ".extra" renders hx-include:inherited:append=".extra"
-        [<Extension>]
-        static member hxInheritedAppend(this: #HtmlTag, attr: string, value: string) =
-            this.attr(attr + ":inherited:append", value)
-        /// Set an attribute with the :merge modifier to merge with parent values
-        /// e.g. hxMerge "hx-disable" "find button" renders hx-disable:merge="find button"
-        [<Extension>]
-        static member hxMerge(this: #HtmlTag, attr: string, value: string) = this.attr(attr + ":merge", value)
-        /// Handle responses differently by status code
-        /// e.g. hxStatus 422 "swap:innerHTML target:#errors" renders hx-status:422="swap:innerHTML target:#errors"
-        [<Extension>]
-        static member hxStatus(this: #HtmlTag, code: string, value: string) = this.attr("hx-status:" + code, value)
+    /// Control how requests made by different elements are synchronized.
+    type hxSync(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-sync{getInheritedSuffix inherited}", value)
+
+    /// Force elements to validate themselves before a request.
+    type hxValidate(value: bool, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr(
+                    $"hx-validate{getInheritedSuffix inherited}",
+                    (if value then "true" else "false")
+                )
+
+    /// Changes the request encoding type.
+    type hxEncoding(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-encoding{getInheritedSuffix inherited}", value)
+
+    /// Preload content before user triggers request.
+    type hxPreload(value: string | null, [<Struct>] ?inherited: HxInherited) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                tag.attr($"hx-preload{getInheritedSuffix inherited}", value)
+
+    // ─── Non-inheritable additional attributes ───
+
+    /// Specify URL to receive request (use with `hxMethod`).
+    type hxAction(value: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-action", value)
+
+    /// Specify HTTP method for request (use with `hxAction`).
+    type hxMethod(value: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-method", value)
+
+    /// Configure request behavior with JSON.
+    type hxConfig(value: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-config", value)
+
+    /// Disable htmx processing for the given node and any children. Renders `hx-ignore` only when true.
+    type hxIgnore(value: bool) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) =
+                if value then tag.attr("hx-ignore", "") else tag
+
+    /// Show optimistic content during request (template id).
+    type hxOptimistic(value: string | null) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-optimistic", value)
+
+    /// Handle responses differently by status code (`hx-status:CODE`).
+    /// `code` is an exact code (e.g. "404"), single-digit wildcard (e.g. "50x"),
+    /// or range wildcard (e.g. "5xx"). `value` takes space-separated `key:value` pairs.
+    type hxStatus(code: string, value: string) =
+        interface HxElement with
+            member _.SetAttribute(tag: #HtmlTag) = tag.attr($"hx-status:{code}", value)
