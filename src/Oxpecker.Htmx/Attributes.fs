@@ -41,27 +41,27 @@ module CoreAttributes =
     // ─── Verb attributes (no modifiers) ───
 
     /// Issues a GET to the specified URL.
-    type hxGet(url: string | null) =
+    type hxGet([<StringSyntax("Uri")>] url: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-get", url)
 
     /// Issues a POST to the specified URL.
-    type hxPost(url: string | null) =
+    type hxPost([<StringSyntax("Uri")>] url: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-post", url)
 
     /// Issues a PUT to the specified URL.
-    type hxPut(url: string | null) =
+    type hxPut([<StringSyntax("Uri")>] url: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-put", url)
 
     /// Issues a PATCH to the specified URL.
-    type hxPatch(url: string | null) =
+    type hxPatch([<StringSyntax("Uri")>] url: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-patch", url)
 
     /// Issues a DELETE to the specified URL.
-    type hxDelete(url: string | null) =
+    type hxDelete([<StringSyntax("Uri")>] url: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-delete", url)
 
@@ -79,7 +79,7 @@ module CoreAttributes =
                 tag.attr($"hx-swap{getInheritedSuffix inherited}", value)
 
     /// Specifies the target element to be swapped (CSS selector).
-    type hxTarget([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+    type hxTarget([<StringSyntax("Css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-target{getInheritedSuffix inherited}", value)
@@ -91,13 +91,13 @@ module CoreAttributes =
                 tag.attr($"hx-trigger{getInheritedSuffix inherited}", value)
 
     /// Select content to swap in from a response (CSS selector).
-    type hxSelect([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+    type hxSelect([<StringSyntax("Css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-select{getInheritedSuffix inherited}", value)
 
     /// Add values to submit with the request (JSON format).
-    type hxVals(value: string | null, [<Struct>] ?inherited: HxInherited) =
+    type hxVals([<StringSyntax("Json")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-vals{getInheritedSuffix inherited}", value)
@@ -119,14 +119,14 @@ module AdditionalAttributes =
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-push-url{getInheritedSuffix inherited}", value)
 
-    /// Include additional data in requests.
-    type hxInclude(value: string | null, [<Struct>] ?inherited: HxInherited) =
+    /// Include additional data in requests (CSS selector or extended selector like `closest form`).
+    type hxInclude([<StringSyntax("Css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-include{getInheritedSuffix inherited}", value)
 
     /// Select content to swap in from a response, somewhere other than the target (out of band).
-    type hxSelectOob([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+    type hxSelectOob([<StringSyntax("Css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-select-oob{getInheritedSuffix inherited}", value)
@@ -151,7 +151,8 @@ module AdditionalAttributes =
 
     /// Adds the `disabled` attribute to specified elements (CSS selector) while a request is in flight.
     /// Optionally `merge` parent values (`hx-disable:merge`) and/or inherit to descendants.
-    type hxDisable(selector: string, [<Struct>] ?merge: bool, [<Struct>] ?inherited: HxInherited) =
+    type hxDisable
+        ([<StringSyntax("Css")>] selector: string, [<Struct>] ?merge: bool, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 let mergeSuffix =
@@ -172,13 +173,13 @@ module AdditionalAttributes =
                     tag
 
     /// Adds to the headers that will be submitted with the request (JSON object).
-    type hxHeaders(value: string | null, [<Struct>] ?inherited: HxInherited) =
+    type hxHeaders([<StringSyntax("Json")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-headers{getInheritedSuffix inherited}", value)
 
     /// The element to put the `htmx-request` class on during the request (CSS selector).
-    type hxIndicator([<StringSyntax("css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
+    type hxIndicator([<StringSyntax("Css")>] value: string | null, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 tag.attr($"hx-indicator{getInheritedSuffix inherited}", value)
@@ -210,7 +211,7 @@ module AdditionalAttributes =
     // ─── Non-inheritable additional attributes ───
 
     /// Specify URL to receive request (use with `hxMethod`).
-    type hxAction(value: string | null) =
+    type hxAction([<StringSyntax("Uri")>] value: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-action", value)
 
@@ -220,7 +221,7 @@ module AdditionalAttributes =
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-method", value)
 
     /// Configure request behavior with JSON.
-    type hxConfig(value: string | null) =
+    type hxConfig([<StringSyntax("Json")>] value: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-config", value)
 
@@ -230,8 +231,8 @@ module AdditionalAttributes =
             member _.SetAttribute(tag: #HtmlTag) =
                 if value then tag.attr("hx-ignore", "") else tag
 
-    /// Show optimistic content during request (template id).
-    type hxOptimistic(value: string | null) =
+    /// Show optimistic content during request (template id, e.g. `#my-template`).
+    type hxOptimistic([<StringSyntax("Css")>] value: string | null) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) = tag.attr("hx-optimistic", value)
 
