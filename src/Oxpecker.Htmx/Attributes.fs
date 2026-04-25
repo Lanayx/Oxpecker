@@ -135,10 +135,7 @@ module AdditionalAttributes =
     type hxBoost(value: bool, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
-                tag.attr(
-                    $"hx-boost{getInheritedSuffix inherited}",
-                    (if value then "true" else "false")
-                )
+                tag.attr($"hx-boost{getInheritedSuffix inherited}", (if value then "true" else "false"))
 
     /// Replace the URL in the browser location bar.
     type hxReplaceUrl(value: string | null, [<Struct>] ?inherited: HxInherited) =
@@ -158,7 +155,10 @@ module AdditionalAttributes =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
                 let mergeSuffix =
-                    if merge |> ValueOption.defaultValue false then ":merge" else ""
+                    if merge |> ValueOption.defaultValue false then
+                        ":merge"
+                    else
+                        ""
                 let inheritedSuffix = getInheritedSuffix inherited
                 tag.attr($"hx-disable{mergeSuffix}{inheritedSuffix}", selector)
 
@@ -193,10 +193,7 @@ module AdditionalAttributes =
     type hxValidate(value: bool, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
-                tag.attr(
-                    $"hx-validate{getInheritedSuffix inherited}",
-                    (if value then "true" else "false")
-                )
+                tag.attr($"hx-validate{getInheritedSuffix inherited}", (if value then "true" else "false"))
 
     /// Changes the request encoding type.
     type hxEncoding(value: string | null, [<Struct>] ?inherited: HxInherited) =

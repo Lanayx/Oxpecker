@@ -283,6 +283,6 @@ let ``null hxGet does not render attribute`` () =
 
 [<Fact>]
 let ``hx attribute get combined with normal attributes`` () =
-    div(id="1").attr(hxGet "/api") { "content" }
+    div(id = "1").attr(hxGet "/api") { "content" }
     |> Render.toString
     |> shouldEqual """<div id="1" hx-get="/api">content</div>"""
