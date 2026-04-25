@@ -66,6 +66,7 @@ Medium posts from the creator:
 
 *   [Oxpecker](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
 *   [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
+*   [Oxpecker.Alpine](https://lanayx.github.io/Oxpecker/src/Oxpecker.Alpine/)
 *   [Oxpecker.Htmx](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
 *   [Oxpecker.OpenApi](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
 *   [Oxpecker.Solid](https://lanayx.github.io/Oxpecker/src/Oxpecker.Solid/)
@@ -87,6 +88,7 @@ If you have developed a library that extends Oxpecker functionality, but it can'
 Find Oxpecker on NuGet:
 *   [Oxpecker](https://www.nuget.org/packages/Oxpecker)
 *   [Oxpecker.ViewEngine](https://www.nuget.org/packages/Oxpecker.ViewEngine)
+*   [Oxpecker.Alpine](https://www.nuget.org/packages/Oxpecker.Alpine)
 *   [Oxpecker.Htmx](https://www.nuget.org/packages/Oxpecker.Htmx)
 *   [Oxpecker.OpenApi](https://www.nuget.org/packages/Oxpecker.OpenApi)
 *   [Oxpecker.Solid](https://www.nuget.org/packages/Oxpecker.Solid)
