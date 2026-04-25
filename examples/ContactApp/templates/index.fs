@@ -22,7 +22,7 @@ let archiveUi (archiver: Archiver) =
             }
         }
     elif archiver.Status = "Complete" then
-        a(href="/contacts/archive/file").attr(hxBoost false) {
+        a(href="/contacts/archive/file").attr(hxBoost "false") {
             "Archive Ready!  Click here to download. "
             raw "&downarrow;"
         }

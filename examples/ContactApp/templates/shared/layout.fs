@@ -18,7 +18,7 @@ module layout =
                     crossorigin="anonymous")
                 link(rel="stylesheet", href="/site.css")
             }
-            body(style = "width: 800px; margin: 0 auto").attr(hxBoost(true, HxInherited.Replace)) {
+            body(style = "width: 800px; margin: 0 auto").attr(hxBoost("true", HxInherited.Set)) {
                 main() {
                     header() {
                         h1() {

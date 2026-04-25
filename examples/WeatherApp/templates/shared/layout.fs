@@ -86,7 +86,7 @@ module layout =
                 script(src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta2", crossorigin="anonymous")
                 script(defer=true, src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js", crossorigin="anonymous")
             }
-            body().attr(hxBoost(true, HxInherited.Replace)) {
+            body().attr(hxBoost("true", HxInherited.Set)) {
                 mainLayout ctx content
             }
         }

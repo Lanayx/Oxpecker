@@ -103,13 +103,13 @@ let ``hxSelectOob renders hx-select-oob`` () =
 
 [<Fact>]
 let ``hxBoost true renders hx-boost=true`` () =
-    body().attr(hxBoost true) { "content" }
+    body().attr(hxBoost "true") { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-boost="true">content</body>"""
 
 [<Fact>]
 let ``hxBoost false renders hx-boost=false`` () =
-    a(href = "/file").attr(hxBoost false) { "Download" }
+    a(href = "/file").attr(hxBoost "false") { "Download" }
     |> Render.toString
     |> shouldEqual """<a href="/file" hx-boost="false">Download</a>"""
 
@@ -227,7 +227,7 @@ let ``hxOptimistic renders hx-optimistic`` () =
 
 [<Fact>]
 let ``hxBoost with HxInherited.Replace renders hx-boost:inherited`` () =
-    body().attr(hxBoost(true, HxInherited.Replace)) { "content" }
+    body().attr(hxBoost("true", HxInherited.Set)) { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-boost:inherited="true">content</body>"""
 
@@ -239,13 +239,13 @@ let ``hxInclude with HxInherited.Append renders hx-include:inherited:append`` ()
 
 [<Fact>]
 let ``hxDisable with merge and inherited combines suffixes`` () =
-    main().attr(hxDisable("find button", merge = true, inherited = HxInherited.Replace)) { "content" }
+    main().attr(hxDisable("find button", merge = true, inherited = HxInherited.Set)) { "content" }
     |> Render.toString
     |> shouldEqual """<main hx-disable:merge:inherited="find button">content</main>"""
 
 [<Fact>]
 let ``hxTarget with HxInherited.Replace renders hx-target:inherited`` () =
-    body().attr(hxTarget("#main", HxInherited.Replace)) { "content" }
+    body().attr(hxTarget("#main", HxInherited.Set)) { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-target:inherited="#main">content</body>"""
 
