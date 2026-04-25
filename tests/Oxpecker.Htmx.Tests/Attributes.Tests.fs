@@ -244,7 +244,7 @@ let ``hxDisable with merge and inherited combines suffixes`` () =
     |> shouldEqual """<main hx-disable:merge:inherited="find button">content</main>"""
 
 [<Fact>]
-let ``hxTarget with HxInherited.Replace renders hx-target:inherited`` () =
+let ``hxTarget with HxInherited.Set renders hx-target:inherited`` () =
     body().attr(hxTarget("#main", HxInherited.Set)) { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-target:inherited="#main">content</body>"""

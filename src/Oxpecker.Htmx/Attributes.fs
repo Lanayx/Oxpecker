@@ -36,7 +36,6 @@ module ModifierAttributes =
                 arg.SetAttribute(this)
             this
 
-
 [<AutoOpen>]
 module CoreAttributes =
     // ─── Verb attributes (no modifiers) ───
