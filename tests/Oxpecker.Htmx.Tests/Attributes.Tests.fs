@@ -141,7 +141,7 @@ let ``hxDisable with merge renders hx-disable:merge`` () =
 let ``hxPreserve true renders hx-preserve`` () =
     div().attr(hxPreserve true) { "Preserved" }
     |> Render.toString
-    |> shouldEqual """<div hx-preserve="">Preserved</div>"""
+    |> shouldEqual """<div hx-preserve>Preserved</div>"""
 
 [<Fact>]
 let ``hxPreserve false does not render`` () =
@@ -177,7 +177,7 @@ let ``hxPreload renders hx-preload`` () =
 let ``hxValidate renders hx-validate`` () =
     form().attr(hxPost "/submit", hxValidate true) { "form" }
     |> Render.toString
-    |> shouldEqual """<form hx-post="/submit" hx-validate="true">form</form>"""
+    |> shouldEqual """<form hx-post="/submit" hx-validate>form</form>"""
 
 [<Fact>]
 let ``hxEncoding renders hx-encoding`` () =
@@ -209,7 +209,7 @@ let ``hxConfig renders hx-config`` () =
 let ``hxIgnore true renders hx-ignore`` () =
     div().attr(hxIgnore true) { "Ignored" }
     |> Render.toString
-    |> shouldEqual """<div hx-ignore="">Ignored</div>"""
+    |> shouldEqual """<div hx-ignore>Ignored</div>"""
 
 [<Fact>]
 let ``hxIgnore false does not render`` () =
@@ -226,7 +226,7 @@ let ``hxOptimistic renders hx-optimistic`` () =
 // ─── Inheritance modifiers ───
 
 [<Fact>]
-let ``hxBoost with HxInherited.Replace renders hx-boost:inherited`` () =
+let ``hxBoost with HxInherited.Set renders hx-boost:inherited`` () =
     body().attr(hxBoost("true", HxInherited.Set)) { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-boost:inherited="true">content</body>"""

@@ -80,12 +80,12 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 
 ### Client side — Modifier helpers
 
-Inheritable attributes accept an optional `HxInherited` modifier (`Replace` → `:inherited`, `Append` → `:inherited:append`).
+Inheritable attributes accept an optional `HxInherited` modifier (`Set` → `:inherited`, `Append` → `:inherited:append`).
 `hxDisable` additionally accepts `merge: bool` (`:merge`). `hxStatus` writes status-coded attributes (`hx-status:CODE`).
 
 ```fsharp
 // Explicit inheritance: renders hx-boost:inherited="true"
-body().attr(hxBoost(true, HxInherited.Replace)) { ... }
+body().attr(hxBoost("true", HxInherited.Set)) { ... }
 
 // Inherited append: renders hx-include:inherited:append=".extra"
 form().attr(hxInclude(".extra", HxInherited.Append)) { ... }

@@ -28,7 +28,7 @@ module ModifierAttributes =
         abstract member SetAttribute<'T when 'T :> HtmlTag> : 'T -> unit
 
     /// Extension that lets callers attach one or more typed htmx attributes to a tag in a single call:
-    ///     div().attr(hxGet "/api", hxTarget "#out", hxBoost(true, HxInherited.Replace))
+    ///     div().attr(hxGet "/api", hxTarget "#out", hxBoost("true", HxInherited.Set))
     type HtmlTagHtmxExtensions =
         [<Extension>]
         static member attr(this: #HtmlTag, [<ParamArray>] args: HxElement[]) =
@@ -137,8 +137,7 @@ module AdditionalAttributes =
     type hxBoost(value: string, [<Struct>] ?inherited: HxInherited) =
         interface HxElement with
             member _.SetAttribute(tag: #HtmlTag) =
-                tag.attr($"hx-boost{getInheritedSuffix inherited}", value)
-                |> ignore
+                tag.attr($"hx-boost{getInheritedSuffix inherited}", value) |> ignore
 
     /// Replace the URL in the browser location bar.
     type hxReplaceUrl(value: string | null, [<Struct>] ?inherited: HxInherited) =
@@ -228,8 +227,7 @@ module AdditionalAttributes =
     /// Disable htmx processing for the given node and any children. Renders `hx-ignore` only when true.
     type hxIgnore(value: bool) =
         interface HxElement with
-            member _.SetAttribute(tag: #HtmlTag) =
-                tag.bool("hx-ignore", value) |> ignore
+            member _.SetAttribute(tag: #HtmlTag) = tag.bool("hx-ignore", value) |> ignore
 
     /// Show optimistic content during request (template id, e.g. `#my-template`).
     type hxOptimistic([<StringSyntax("css")>] value: string | null) =
