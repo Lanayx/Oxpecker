@@ -45,35 +45,42 @@ module ModifierAttributes =
 [<RequireQualifiedAccess>]
 module HxSelector =
     /// `this` — the element itself.
+    [<Literal>]
     let this' = "this"
     /// `body` — the document body.
+    [<Literal>]
     let body = "body"
     /// `document` — the document object (mainly for event triggers).
+    [<Literal>]
     let document = "document"
     /// `window` — the window object (mainly for event triggers).
+    [<Literal>]
     let window = "window"
     /// `host` — the shadow DOM host element (only valid inside shadow DOM).
+    [<Literal>]
     let host = "host"
     /// `next` — the next sibling element.
+    [<Literal>]
     let nextSibling = "next"
     /// `previous` — the previous sibling element.
+    [<Literal>]
     let previousSibling = "previous"
 
     /// `closest <selector>` — nearest ancestor (or self) matching the selector.
-    let closest ([<StringSyntax("css")>] selector: string) = $"closest {selector}"
+    let inline closest ([<StringSyntax("css")>] selector: string) = $"closest {selector}"
     /// `find <selector>` — first child descendant matching the selector.
-    let find ([<StringSyntax("css")>] selector: string) = $"find {selector}"
+    let inline find ([<StringSyntax("css")>] selector: string) = $"find {selector}"
     /// `findAll <selector>` — all child descendants matching the selector.
-    let findAll ([<StringSyntax("css")>] selector: string) = $"findAll {selector}"
+    let inline findAll ([<StringSyntax("css")>] selector: string) = $"findAll {selector}"
     /// `next <selector>` — first following sibling matching the selector.
-    let next ([<StringSyntax("css")>] selector: string) = $"next {selector}"
+    let inline next ([<StringSyntax("css")>] selector: string) = $"next {selector}"
     /// `previous <selector>` — first preceding sibling matching the selector.
-    let previous ([<StringSyntax("css")>] selector: string) = $"previous {selector}"
+    let inline previous ([<StringSyntax("css")>] selector: string) = $"previous {selector}"
     /// `global <selector>` — search the entire document, crossing shadow DOM boundaries.
-    let global' ([<StringSyntax("css")>] selector: string) = $"global {selector}"
+    let inline global' ([<StringSyntax("css")>] selector: string) = $"global {selector}"
 
     /// Comma-join multiple selectors for multi-target attributes (e.g. `hxTarget`).
-    let many (selectors: seq<string>) = String.Join(", ", selectors)
+    let inline many (selectors: seq<string>) = String.Join(", ", selectors)
 
 
 [<AutoOpen>]
