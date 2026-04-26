@@ -18,10 +18,10 @@ let html (contact: ModelState<ContactDTO>) =
         }
 
         button(id="delete-btn")
-            .attr(hxDelete $"/contacts/{contactId}",
-                  hxPushUrl "true",
-                  hxConfirm "Are you sure you want to delete this contact?",
-                  hxTarget "body") { "Delete Contact" }
+            .hxDelete($"/contacts/{contactId}")
+            .hxPushUrl("true")
+            .hxConfirm("Are you sure you want to delete this contact?")
+            .hxTarget("body") { "Delete Contact" }
 
         p() {
             a(href="/contacts") { "Back" }

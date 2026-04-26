@@ -16,9 +16,9 @@ module contactFields =
             p() {
                 label(for'="email") { "Email" }
                 input(name=nameof x.email, id="email", type'="email", placeholder="Email", value=contact.Value(_.email))
-                    .attr(hxTrigger "change, keyup delay:200ms changed",
-                          hxGet $"/contacts/{contact.Value(_.id >> string)}/email",
-                          hxTarget(HxSelector.next ".error"))
+                    .hxTrigger("change, keyup delay:200ms changed")
+                    .hxGet($"/contacts/{contact.Value(_.id >> string)}/email")
+                    .hxTarget(HxSelector.next ".error")
                 showErrors <| nameof x.email
             }
             p() {

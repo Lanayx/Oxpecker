@@ -8,7 +8,7 @@
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx) `dotnet add package Oxpecker.Htmx --prerelease`
 
-Each htmx attribute is a typed value applied to a tag through the variadic `.attr(...)` extension. This keeps the `{ children }` builder syntax intact and lets you compose attributes uniformly:
+Each htmx attribute is exposed as a fluent extension method on `HtmlTag`, so attributes chain directly onto a tag with zero allocation overhead. The `{ children }` builder syntax still works at the end of the chain:
 
 ```fsharp
 open Oxpecker.ViewEngine
@@ -18,13 +18,13 @@ let renderForm q =
     form(action="/contacts", method="get") {
         label(for'="search") { "Search Term" }
         input(id="search", type'="search", name="q", value=q, style="margin: 0 5px", autocomplete="off")
-            .attr(hxGet "/contacts",
-                  hxTrigger "search, keyup delay:200ms changed",
-                  hxTarget "tbody",
-                  hxPushUrl "true",
-                  hxIndicator "#spinner")
+            .hxGet("/contacts")
+            .hxTrigger("search, keyup delay:200ms changed")
+            .hxTarget("tbody")
+            .hxPushUrl("true")
+            .hxIndicator("#spinner")
         img(id="spinner", class'="spinner htmx-indicator", src="/spinning-circles.svg", alt="Request In Flight...")
-        input(type'="submit", value="Search").attr(hxOn("click", "alert('clicked')"))
+        input(type'="submit", value="Search").hxOn("click", "alert('clicked')")
     }
 ```
 
@@ -85,19 +85,19 @@ Inheritable attributes accept an optional `HxInherited` modifier (`Set` → `:in
 
 ```fsharp
 // Explicit inheritance: renders hx-boost:inherited="true"
-body().attr(hxBoost("true", HxInherited.Set)) { ... }
+body().hxBoost("true", HxInherited.Set) { ... }
 
 // Inherited append: renders hx-include:inherited:append=".extra"
-form().attr(hxInclude(".extra", HxInherited.Append)) { ... }
+form().hxInclude(".extra", HxInherited.Append) { ... }
 
 // Merge: renders hx-disable:merge="find button"
-main().attr(hxDisable("find button", merge = true)) { ... }
+main().hxDisable("find button", merge = true) { ... }
 
 // Status-code swap: renders hx-status:422="swap:innerHTML target:#errors"
-form().attr(hxPost "/save", hxStatus("422", "swap:innerHTML target:#errors")) { ... }
+form().hxPost("/save").hxStatus("422", "swap:innerHTML target:#errors") { ... }
 
 // Wildcard status: renders hx-status:5xx="swap:none"
-div().attr(hxGet "/data", hxStatus("5xx", "swap:none")) { ... }
+div().hxGet("/data").hxStatus("5xx", "swap:none") { ... }
 ```
 
 ### Client side — Extended selectors
@@ -105,10 +105,10 @@ div().attr(hxGet "/data", hxStatus("5xx", "swap:none")) { ... }
 Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-selectors) typedly via the `HxSelector` module instead of writing them as plain strings. Pass the result into any selector-typed attribute (`hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`).
 
 ```fsharp
-button().attr(hxDelete "/item/1", hxTarget(HxSelector.closest ".card")) { "Delete" }
-div().attr(hxGet "/user", hxTarget(HxSelector.find ".username")) { "Loading" }
-button().attr(hxGet "/data", hxTarget HxSelector.nextSibling) { "Load" }
-button().attr(hxGet "/data", hxTarget(HxSelector.many [ "#a"; "#b" ])) { "Load" }
+button().hxDelete("/item/1").hxTarget(HxSelector.closest ".card") { "Delete" }
+div().hxGet("/user").hxTarget(HxSelector.find ".username") { "Loading" }
+button().hxGet("/data").hxTarget(HxSelector.nextSibling) { "Load" }
+button().hxGet("/data").hxTarget(HxSelector.many [ "#a"; "#b" ]) { "Load" }
 ```
 
 Available helpers:
