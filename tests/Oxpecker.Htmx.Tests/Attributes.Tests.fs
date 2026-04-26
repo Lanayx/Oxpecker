@@ -350,13 +350,6 @@ let ``HxSelector.global' renders global selector`` () =
     |> shouldEqual """<button hx-get="/data" hx-target="global #results">Load</button>"""
 
 [<Fact>]
-let ``HxSelector.many comma-joins selectors`` () =
-    let target = HxSelector.many [ "#results"; "#cache" ]
-    button().hxGet("/data").hxTarget(target) { "Load" }
-    |> Render.toString
-    |> shouldEqual """<button hx-get="/data" hx-target="#results, #cache">Load</button>"""
-
-[<Fact>]
 let ``HxSelector helpers compose with hxInclude`` () =
     button().hxPost("/save").hxInclude(HxSelector.closest "form") { "Save" }
     |> Render.toString

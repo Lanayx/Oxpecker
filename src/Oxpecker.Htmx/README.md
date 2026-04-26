@@ -108,13 +108,12 @@ Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-s
 button().hxDelete("/item/1").hxTarget(HxSelector.closest ".card") { "Delete" }
 div().hxGet("/user").hxTarget(HxSelector.find ".username") { "Loading" }
 button().hxGet("/data").hxTarget(HxSelector.nextSibling) { "Load" }
-button().hxGet("/data").hxTarget(HxSelector.many [ "#a"; "#b" ]) { "Load" }
+button().hxGet("/data").hxTarget("#a, #b") { "Load" }   // multiple targets: just write the comma-separated string
 ```
 
 Available helpers:
 - Values: `this'`, `body`, `document`, `window`, `host`, `nextSibling`, `previousSibling`
 - Functions: `closest`, `find`, `findAll`, `next`, `previous`, `global'`
-- Composition: `many` (comma-joins multiple selectors)
 
 ### Server side — Request headers
 

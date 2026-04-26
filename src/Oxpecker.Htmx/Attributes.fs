@@ -1,6 +1,5 @@
 namespace Oxpecker.Htmx
 
-open System
 open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open Oxpecker.ViewEngine
@@ -65,9 +64,6 @@ module HxSelector =
     /// `global <selector>` — search the entire document, crossing shadow DOM boundaries.
     let inline global' ([<StringSyntax("css")>] selector: string) = $"global {selector}"
 
-    /// Comma-join multiple selectors for multi-target attributes (e.g. `hxTarget`).
-    let inline many (selectors: seq<string>) = String.Join(", ", selectors)
-
 
 /// htmx 4 verb attributes (no modifiers).
 [<Extension>]
@@ -75,28 +71,23 @@ type HtmxVerbExtensions =
 
     /// Issues a GET to the specified URL.
     [<Extension>]
-    static member hxGet(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-get", url)
+    static member hxGet(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-get", url)
 
     /// Issues a POST to the specified URL.
     [<Extension>]
-    static member hxPost(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-post", url)
+    static member hxPost(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-post", url)
 
     /// Issues a PUT to the specified URL.
     [<Extension>]
-    static member hxPut(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-put", url)
+    static member hxPut(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-put", url)
 
     /// Issues a PATCH to the specified URL.
     [<Extension>]
-    static member hxPatch(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-patch", url)
+    static member hxPatch(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-patch", url)
 
     /// Issues a DELETE to the specified URL.
     [<Extension>]
-    static member hxDelete(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-delete", url)
+    static member hxDelete(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-delete", url)
 
 
 /// htmx 4 event handler attribute.
@@ -251,8 +242,7 @@ type HtmxAdditionalExtensions =
 
     /// Specify URL to receive request (use with `hxMethod`).
     [<Extension>]
-    static member hxAction(this: #HtmlTag, [<StringSyntax("Uri")>] value: string | null) =
-        this.attr("hx-action", value)
+    static member hxAction(this: #HtmlTag, [<StringSyntax("Uri")>] value: string | null) = this.attr("hx-action", value)
 
     /// Specify HTTP method for request (use with `hxAction`).
     [<Extension>]
@@ -276,5 +266,4 @@ type HtmxAdditionalExtensions =
     /// `code` is an exact code (e.g. "404"), single-digit wildcard (e.g. "50x"),
     /// or range wildcard (e.g. "5xx"). `value` takes space-separated `key:value` pairs.
     [<Extension>]
-    static member hxStatus(this: #HtmlTag, code: string, value: string) =
-        this.attr($"hx-status:{code}", value)
+    static member hxStatus(this: #HtmlTag, code: string, value: string) = this.attr($"hx-status:{code}", value)
