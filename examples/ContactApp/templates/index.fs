@@ -7,7 +7,7 @@ open ContactApp.Models
 open ContactApp.templates.shared
 
 let archiveUi (archiver: Archiver) =
-    div(id="archive-ui").attr(hxTarget "this", hxSwap "outerHTML") {
+    div(id="archive-ui").attr(hxTarget HxSelector.this', hxSwap "outerHTML") {
         if archiver.Status = "Waiting" then
             button().attr(hxPost "/contacts/archive"){
                 "Download Contact Archive"
@@ -45,13 +45,13 @@ let rows page (contacts: Contact[]) =
                         .attr(hxDelete $"/contacts/{contact.Id}",
                               hxSwap "outerHTML swap:1s",
                               hxConfirm "Are you sure you want to delete this contact?",
-                              hxTarget "closest tr"){ "Delete" }
+                              hxTarget(HxSelector.closest "tr")){ "Delete" }
                 }
             }
         if contacts.Length = 5 then
             tr() {
                 td(colspan=5, style="text-align: center") {
-                    span().attr(hxTarget "closest tr",
+                    span().attr(hxTarget(HxSelector.closest "tr"),
                                 hxTrigger "revealed",
                                 hxSwap "outerHTML",
                                 hxSelect "tbody > tr",
@@ -93,7 +93,7 @@ let html q page (contacts: Contact[]) archiver =
                     button().attr(hxDelete "/contacts",
                                   hxConfirm "Are you sure you want to delete these contacts?",
                                   hxTarget "body",
-                                  hxInclude "closest form") {
+                                  hxInclude(HxSelector.closest "form")) {
                         "Delete Selected Contacts"
                     }
                 }

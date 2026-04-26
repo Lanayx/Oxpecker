@@ -91,7 +91,7 @@ let ``hxPushUrl renders hx-push-url`` () =
 
 [<Fact>]
 let ``hxInclude renders hx-include`` () =
-    button().attr(hxPost "/submit", hxInclude "closest form") { "Submit" }
+    button().attr(hxPost "/submit", hxInclude (HxSelector.closest "form")) { "Submit" }
     |> Render.toString
     |> shouldEqual """<button hx-post="/submit" hx-include="closest form">Submit</button>"""
 
@@ -127,13 +127,13 @@ let ``hxConfirm renders hx-confirm`` () =
 
 [<Fact>]
 let ``hxDisable renders hx-disable with CSS selector`` () =
-    button().attr(hxPost "/submit", hxDisable "this") { "Submit" }
+    button().attr(hxPost "/submit", hxDisable HxSelector.this') { "Submit" }
     |> Render.toString
     |> shouldEqual """<button hx-post="/submit" hx-disable="this">Submit</button>"""
 
 [<Fact>]
 let ``hxDisable with merge renders hx-disable:merge`` () =
-    main().attr(hxDisable("find button", merge = true)) { "content" }
+    main().attr(hxDisable(HxSelector.find "button", merge = true)) { "content" }
     |> Render.toString
     |> shouldEqual """<main hx-disable:merge="find button">content</main>"""
 
@@ -239,7 +239,7 @@ let ``hxInclude with HxInherited.Append renders hx-include:inherited:append`` ()
 
 [<Fact>]
 let ``hxDisable with merge and inherited combines suffixes`` () =
-    main().attr(hxDisable("find button", merge = true, inherited = HxInherited.Set)) { "content" }
+    main().attr(hxDisable(HxSelector.find "button", merge = true, inherited = HxInherited.Set)) { "content" }
     |> Render.toString
     |> shouldEqual """<main hx-disable:merge:inherited="find button">content</main>"""
 
@@ -286,3 +286,84 @@ let ``hx attribute get combined with normal attributes`` () =
     div(id = "1").attr(hxGet "/api") { "content" }
     |> Render.toString
     |> shouldEqual """<div id="1" hx-get="/api">content</div>"""
+
+// ─── HxSelector helpers ───
+
+[<Fact>]
+let ``HxSelector.this' renders this`` () =
+    button().attr(hxPost "/status", hxTarget HxSelector.this') { "Check" }
+    |> Render.toString
+    |> shouldEqual """<button hx-post="/status" hx-target="this">Check</button>"""
+
+[<Fact>]
+let ``HxSelector.body renders body`` () =
+    a().attr(hxGet "/page", hxTarget HxSelector.body) { "Load" }
+    |> Render.toString
+    |> shouldEqual """<a hx-get="/page" hx-target="body">Load</a>"""
+
+[<Fact>]
+let ``HxSelector.nextSibling renders next`` () =
+    button().attr(hxGet "/more", hxTarget HxSelector.nextSibling) { "Load More" }
+    |> Render.toString
+    |> shouldEqual """<button hx-get="/more" hx-target="next">Load More</button>"""
+
+[<Fact>]
+let ``HxSelector.previousSibling renders previous`` () =
+    button().attr(hxGet "/more", hxTarget HxSelector.previousSibling) { "Load More" }
+    |> Render.toString
+    |> shouldEqual """<button hx-get="/more" hx-target="previous">Load More</button>"""
+
+[<Fact>]
+let ``HxSelector.closest renders closest`` () =
+    button().attr(hxDelete "/item/1", hxTarget(HxSelector.closest ".card")) { "Delete" }
+    |> Render.toString
+    |> shouldEqual """<button hx-delete="/item/1" hx-target="closest .card">Delete</button>"""
+
+[<Fact>]
+let ``HxSelector.find renders find`` () =
+    div().attr(hxGet "/user", hxTarget(HxSelector.find ".username")) { "Loading" }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/user" hx-target="find .username">Loading</div>"""
+
+[<Fact>]
+let ``HxSelector.findAll renders findAll`` () =
+    div().attr(hxGet "/items", hxTarget(HxSelector.findAll ".item")) { "items" }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/items" hx-target="findAll .item">items</div>"""
+
+[<Fact>]
+let ``HxSelector.next renders next selector`` () =
+    button().attr(hxGet "/data", hxTarget(HxSelector.next ".results")) { "Load" }
+    |> Render.toString
+    |> shouldEqual """<button hx-get="/data" hx-target="next .results">Load</button>"""
+
+[<Fact>]
+let ``HxSelector.previous renders previous selector`` () =
+    button().attr(hxGet "/data", hxTarget(HxSelector.previous ".results")) { "Load" }
+    |> Render.toString
+    |> shouldEqual """<button hx-get="/data" hx-target="previous .results">Load</button>"""
+
+[<Fact>]
+let ``HxSelector.global' renders global selector`` () =
+    button().attr(hxGet "/data", hxTarget(HxSelector.global' "#results")) { "Load" }
+    |> Render.toString
+    |> shouldEqual """<button hx-get="/data" hx-target="global #results">Load</button>"""
+
+[<Fact>]
+let ``HxSelector.many comma-joins selectors`` () =
+    let target = HxSelector.many [ "#results"; "#cache" ]
+    button().attr(hxGet "/data", hxTarget target) { "Load" }
+    |> Render.toString
+    |> shouldEqual """<button hx-get="/data" hx-target="#results, #cache">Load</button>"""
+
+[<Fact>]
+let ``HxSelector helpers compose with hxInclude`` () =
+    button().attr(hxPost "/save", hxInclude(HxSelector.closest "form")) { "Save" }
+    |> Render.toString
+    |> shouldEqual """<button hx-post="/save" hx-include="closest form">Save</button>"""
+
+[<Fact>]
+let ``HxSelector helpers compose with hxDisable`` () =
+    form().attr(hxPost "/x", hxDisable(HxSelector.find "button")) { "form" }
+    |> Render.toString
+    |> shouldEqual """<form hx-post="/x" hx-disable="find button">form</form>"""

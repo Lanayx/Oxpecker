@@ -100,6 +100,22 @@ form().attr(hxPost "/save", hxStatus("422", "swap:innerHTML target:#errors")) { 
 div().attr(hxGet "/data", hxStatus("5xx", "swap:none")) { ... }
 ```
 
+### Client side — Extended selectors
+
+Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-selectors) typedly via the `HxSelector` module instead of writing them as plain strings. Pass the result into any selector-typed attribute (`hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`).
+
+```fsharp
+button().attr(hxDelete "/item/1", hxTarget(HxSelector.closest ".card")) { "Delete" }
+div().attr(hxGet "/user", hxTarget(HxSelector.find ".username")) { "Loading" }
+button().attr(hxGet "/data", hxTarget HxSelector.nextSibling) { "Load" }
+button().attr(hxGet "/data", hxTarget(HxSelector.many [ "#a"; "#b" ])) { "Load" }
+```
+
+Available helpers:
+- Values: `this'`, `body`, `document`, `window`, `host`, `nextSibling`, `previousSibling`
+- Functions: `closest`, `find`, `findAll`, `next`, `previous`, `global'`
+- Composition: `many` (comma-joins multiple selectors)
+
 ### Server side — Request headers
 
 - HxRequestHeader.Request
