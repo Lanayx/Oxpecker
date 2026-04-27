@@ -70,28 +70,23 @@ type HtmxVerbExtensions =
 
     /// Issues a GET to the specified URL.
     [<Extension>]
-    static member hxGet(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-get", url)
+    static member hxGet(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-get", url)
 
     /// Issues a POST to the specified URL.
     [<Extension>]
-    static member hxPost(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-post", url)
+    static member hxPost(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-post", url)
 
     /// Issues a PUT to the specified URL.
     [<Extension>]
-    static member hxPut(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-put", url)
+    static member hxPut(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-put", url)
 
     /// Issues a PATCH to the specified URL.
     [<Extension>]
-    static member hxPatch(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-patch", url)
+    static member hxPatch(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-patch", url)
 
     /// Issues a DELETE to the specified URL.
     [<Extension>]
-    static member hxDelete(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
-        this.attr("hx-delete", url)
+    static member hxDelete(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-delete", url)
 
 
 /// Event handler attribute.
@@ -116,7 +111,9 @@ type HtmxCoreExtensions =
 
     /// Specifies the target element to be swapped (CSS selector).
     [<Extension>]
-    static member hxTarget(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string) =
+    static member hxTarget
+        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
+        =
         this.attr($"hx-target%s{getModifierSuffix modifiers}", value)
 
     /// Specifies the event that triggers the request.
@@ -126,7 +123,9 @@ type HtmxCoreExtensions =
 
     /// Select content to swap in from a response (CSS selector).
     [<Extension>]
-    static member hxSelect(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string) =
+    static member hxSelect
+        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
+        =
         this.attr($"hx-select%s{getModifierSuffix modifiers}", value)
 
     /// Add values to submit with the request (JSON format).
@@ -154,12 +153,16 @@ type HtmxAdditionalExtensions =
 
     /// Include additional data in requests (CSS selector or extended selector like `closest form`).
     [<Extension>]
-    static member hxInclude(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string) =
+    static member hxInclude
+        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
+        =
         this.attr($"hx-include%s{getModifierSuffix modifiers}", value)
 
     /// Select content to swap in from a response, somewhere other than the target (out of band).
     [<Extension>]
-    static member hxSelectOob(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string) =
+    static member hxSelectOob
+        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
+        =
         this.attr($"hx-select-oob%s{getModifierSuffix modifiers}", value)
 
     /// Add progressive enhancement for links and forms.
@@ -190,12 +193,16 @@ type HtmxAdditionalExtensions =
 
     /// Adds to the headers that will be submitted with the request (JSON object).
     [<Extension>]
-    static member hxHeaders(this: #HtmlTag, [<StringSyntax("Json")>] value: string | null, [<Struct>] ?modifiers: string) =
+    static member hxHeaders
+        (this: #HtmlTag, [<StringSyntax("Json")>] value: string | null, [<Struct>] ?modifiers: string)
+        =
         this.attr($"hx-headers%s{getModifierSuffix modifiers}", value)
 
     /// The element to put the `htmx-request` class on during the request (CSS selector).
     [<Extension>]
-    static member hxIndicator(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string) =
+    static member hxIndicator
+        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
+        =
         this.attr($"hx-indicator%s{getModifierSuffix modifiers}", value)
 
     /// Control how requests made by different elements are synchronized.
@@ -222,8 +229,7 @@ type HtmxAdditionalExtensions =
 
     /// Specify URL to receive request (use with `hxMethod`).
     [<Extension>]
-    static member hxAction(this: #HtmlTag, [<StringSyntax("Uri")>] value: string | null) =
-        this.attr("hx-action", value)
+    static member hxAction(this: #HtmlTag, [<StringSyntax("Uri")>] value: string | null) = this.attr("hx-action", value)
 
     /// Specify HTTP method for request (use with `hxAction`).
     [<Extension>]
@@ -247,5 +253,4 @@ type HtmxAdditionalExtensions =
     /// `code` is an exact code (e.g. "404"), single-digit wildcard (e.g. "50x"),
     /// or range wildcard (e.g. "5xx"). `value` takes space-separated `key:value` pairs.
     [<Extension>]
-    static member hxStatus(this: #HtmlTag, code: string, value: string) =
-        this.attr($"hx-status:{code}", value)
+    static member hxStatus(this: #HtmlTag, code: string, value: string) = this.attr($"hx-status:{code}", value)
