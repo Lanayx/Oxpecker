@@ -19,6 +19,10 @@ module HxRequestHeader =
     let Boosted = "HX-Boosted"
     [<Literal>]
     let HistoryRestoreRequest = "HX-History-Restore-Request"
+    [<Literal>]
+    let Accept = "Accept"
+    [<Literal>]
+    let LastEventID = "Last-Event-ID"
 
 [<RequireQualifiedAccess>]
 module HxResponseHeader =
