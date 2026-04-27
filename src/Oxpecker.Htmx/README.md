@@ -80,18 +80,20 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 
 ### Client side — Modifier helpers
 
-Inheritable attributes accept an optional `HxInherited` modifier (`Set` → `:inherited`, `Append` → `:inherited:append`).
-`hxDisable` additionally accepts `merge: bool` (`:merge`). `hxStatus` writes status-coded attributes (`hx-status:CODE`).
+Inheritable attributes accept an optional `modifiers` string that is appended **verbatim** after the attribute name — you must include the leading `:`. Pass htmx 4 modifier syntax directly, e.g. `":inherited"`, `":inherited:append"`, or for `hxDisable` also `":merge"` / `":merge:inherited"`. The `HxModifier` module provides constants for the most common ones. `hxStatus` writes status-coded attributes (`hx-status:CODE`) and takes the code as its first argument.
 
 ```fsharp
 // Explicit inheritance: renders hx-boost:inherited="true"
-body().hxBoost("true", HxInherited.Set) { ... }
+body().hxBoost("true", HxModifier.inherited) { ... }
 
 // Inherited append: renders hx-include:inherited:append=".extra"
-form().hxInclude(".extra", HxInherited.Append) { ... }
+form().hxInclude(".extra", HxModifier.inheritedAppend) { ... }
 
 // Merge: renders hx-disable:merge="find button"
-main().hxDisable("find button", merge = true) { ... }
+main().hxDisable("find button", HxModifier.merge) { ... }
+
+// Merge + inherited: renders hx-disable:merge:inherited="find button"
+main().hxDisable("find button", ":merge:inherited") { ... }
 
 // Status-code swap: renders hx-status:422="swap:innerHTML target:#errors"
 form().hxPost("/save").hxStatus("422", "swap:innerHTML target:#errors") { ... }
@@ -102,7 +104,7 @@ div().hxGet("/data").hxStatus("5xx", "swap:none") { ... }
 
 ### Client side — Extended selectors
 
-Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-selectors) typedly via the `HxSelector` module instead of writing them as plain strings. Pass the result into any selector-typed attribute (`hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`).
+Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-selectors) in a type-safe way via the `HxSelector` module instead of writing them as plain strings. Pass the result into any selector-typed attribute (`hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`).
 
 ```fsharp
 button().hxDelete("/item/1").hxTarget(HxSelector.closest ".card") { "Delete" }

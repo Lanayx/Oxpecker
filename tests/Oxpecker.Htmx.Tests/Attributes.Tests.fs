@@ -133,7 +133,7 @@ let ``hxDisable renders hx-disable with CSS selector`` () =
 
 [<Fact>]
 let ``hxDisable with merge renders hx-disable:merge`` () =
-    main().hxDisable(HxSelector.find "button", merge = true) { "content" }
+    main().hxDisable(HxSelector.find "button", HxModifier.merge) { "content" }
     |> Render.toString
     |> shouldEqual """<main hx-disable:merge="find button">content</main>"""
 
@@ -226,26 +226,32 @@ let ``hxOptimistic renders hx-optimistic`` () =
 // ─── Inheritance modifiers ───
 
 [<Fact>]
-let ``hxBoost with HxInherited.Set renders hx-boost:inherited`` () =
-    body().hxBoost("true", HxInherited.Set) { "content" }
+let ``hxBoost with "inherited" modifier renders hx-boost:inherited`` () =
+    body().hxBoost("true", HxModifier.inherited) { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-boost:inherited="true">content</body>"""
 
 [<Fact>]
-let ``hxInclude with HxInherited.Append renders hx-include:inherited:append`` () =
-    form().hxInclude(".extra", HxInherited.Append) { "form" }
+let ``hxInclude with "inherited:append" modifier renders hx-include:inherited:append`` () =
+    form().hxInclude(".extra", HxModifier.inheritedAppend) { "form" }
     |> Render.toString
     |> shouldEqual """<form hx-include:inherited:append=".extra">form</form>"""
 
 [<Fact>]
-let ``hxDisable with merge and inherited combines suffixes`` () =
-    main().hxDisable(HxSelector.find "button", merge = true, inherited = HxInherited.Set) { "content" }
+let ``hxDisable with "merge" renders :merge`` () =
+    main().hxDisable(HxSelector.find "button", HxModifier.merge) { "content" }
+    |> Render.toString
+    |> shouldEqual """<main hx-disable:merge="find button">content</main>"""
+
+[<Fact>]
+let ``hxDisable with combined ":merge:inherited" suffix`` () =
+    main().hxDisable(HxSelector.find "button", ":merge:inherited") { "content" }
     |> Render.toString
     |> shouldEqual """<main hx-disable:merge:inherited="find button">content</main>"""
 
 [<Fact>]
-let ``hxTarget with HxInherited.Set renders hx-target:inherited`` () =
-    body().hxTarget("#main", HxInherited.Set) { "content" }
+let ``hxTarget with "inherited" modifier renders hx-target:inherited`` () =
+    body().hxTarget("#main", HxModifier.inherited) { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-target:inherited="#main">content</body>"""
 
