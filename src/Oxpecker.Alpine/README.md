@@ -6,16 +6,16 @@
 
 [Nuget package](https://www.nuget.org/packages/Oxpecker.Alpine) `dotnet add package Oxpecker.Alpine`
 
-Each Alpine directive is a typed value applied to a tag through the variadic `.attr(...)` extension. This keeps the `{ children }` builder syntax intact and lets you compose Alpine attributes uniformly:
+Each Alpine directive is exposed as a fluent extension method on `HtmlTag`, so attributes chain directly onto a tag with zero allocation overhead. The `{ children }` builder syntax still works at the end of the chain:
 
 ```fsharp
 open Oxpecker.ViewEngine
 open Oxpecker.Alpine
 
 let dropdown =
-    div().attr(xData "{ open: false }") {
-        button(type' = "button").attr(xOn("click", "open = !open")) { "Toggle" }
-        div().attr(xShow "open", xOn("click", "open = false", "outside")) {
+    div().xData("{ open: false }") {
+        button(type' = "button").xOn("click", "open = !open") { "Toggle" }
+        div().xShow("open").xOn("click.outside", "open = false") {
             "Dropdown contents"
         }
     }
@@ -54,16 +54,16 @@ Directives that support Alpine arguments or modifiers accept them directly:
 
 ```fsharp
 // Renders x-on:submit.prevent.once="save()"
-form().attr(xOn("submit", "save()", "prevent", "once")) { ... }
+form().xOn("submit.prevent.once", "save()") { ... }
 
 // Renders x-bind:class="open ? '' : 'hidden'"
-div().attr(xBind("class", "open ? '' : 'hidden'")) { ... }
+div().xBind("class", "open ? '' : 'hidden'") { ... }
 
-// Renders x-transition:enter.duration.300ms="transition ease-out"
-div().attr(xTransition(XTransitionPhase.Enter, "transition ease-out", "duration.300ms")) { ... }
+// Renders x-transition.duration.500ms
+div().xTransition("duration.500ms") { ... }
 
 // Renders x-ignore.self
-div().attr(xIgnore(true, "self")) { ... }
+div().xIgnore(true, "self") { ... }
 ```
 
 ### Valueless Directives
@@ -72,18 +72,18 @@ Use the parameterless overloads for directives Alpine allows without values:
 
 ```fsharp
 // Renders x-data
-div().attr(xData()) { ... }
+div().xData() { ... }
 
 // Renders x-transition
-div().attr(xTransition()) { ... }
+div().xTransition() { ... }
 ```
 
 Boolean-style directives only render when true:
 
 ```fsharp
 // Renders x-cloak
-div().attr(xCloak true) { ... }
+div().xCloak(true) { ... }
 
 // Does not render x-cloak
-div().attr(xCloak false) { ... }
+div().xCloak(false) { ... }
 ```
