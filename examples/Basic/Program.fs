@@ -1,4 +1,4 @@
-﻿open System
+open System
 open System.Text.Json.Serialization
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
@@ -118,13 +118,10 @@ let streamingHtml1: EndpointHandler =
     fun (ctx: HttpContext) ->
         let html =
             html() {
-                head() {
-                    script(src = "https://unpkg.com/htmx.org@1.9.12")
-                    script(src = "https://unpkg.com/htmx.ext...chunked-transfer@1.0.4/dist/index.js") // workaround, see https://github.com/bigskysoftware/htmx/issues/1911
-                }
-                body(style = "width: 800px; margin: 0 auto", hxExt = "chunked-transfer") {
+                head() { script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta2") }
+                body(style = "width: 800px; margin: 0 auto") {
                     h1(style = "text-align: center; color: blue") { "HTML Streaming example" }
-                    h2(hxGet = "/streamHtml2", hxTarget = "this", hxTrigger = "load")
+                    h2().hxGet("/streamHtml2").hxTarget(HxSelector.this').hxTrigger("load")
                 }
             }
         htmlView html ctx

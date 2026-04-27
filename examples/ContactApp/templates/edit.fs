@@ -1,4 +1,4 @@
-﻿module ContactApp.templates.edit
+module ContactApp.templates.edit
 
 open Oxpecker.ModelValidation
 open Oxpecker.ViewEngine
@@ -17,11 +17,11 @@ let html (contact: ModelState<ContactDTO>) =
             }
         }
 
-        button(id="delete-btn",
-               hxDelete= $"/contacts/{contactId}",
-               hxPushUrl="true",
-               hxConfirm="Are you sure you want to delete this contact?",
-               hxTarget="body") { "Delete Contact" }
+        button(id="delete-btn")
+            .hxDelete($"/contacts/{contactId}")
+            .hxPushUrl("true")
+            .hxConfirm("Are you sure you want to delete this contact?")
+            .hxTarget("body") { "Delete Contact" }
 
         p() {
             a(href="/contacts") { "Back" }

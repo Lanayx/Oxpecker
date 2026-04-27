@@ -83,10 +83,10 @@ module layout =
                 link(rel="stylesheet", href="/bootstrap/bootstrap.min.css")
                 link(rel="stylesheet", href="/app.css")
                 link(rel="icon", type'="image/png", href="/favicon.png")
-                script(src="https://unpkg.com/htmx.org@1.9.10", crossorigin="anonymous")
+                script(src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta2", crossorigin="anonymous")
                 script(defer=true, src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js", crossorigin="anonymous")
             }
-            body(hxBoost=true) {
+            body().hxBoost("true", HxModifier.inherited) {
                 mainLayout ctx content
             }
         }
