@@ -35,6 +35,14 @@ let ``HxRequestHeader.HistoryRestoreRequest equals HX-History-Restore-Request`` 
     HxRequestHeader.HistoryRestoreRequest
     |> shouldEqual "HX-History-Restore-Request"
 
+[<Fact>]
+let ``HxRequestHeader.Accept equals Accept`` () =
+    HxRequestHeader.Accept |> shouldEqual "Accept"
+
+[<Fact>]
+let ``HxRequestHeader.LastEventID equals Last-Event-ID`` () =
+    HxRequestHeader.LastEventID |> shouldEqual "Last-Event-ID"
+
 // ─── Response headers ───
 
 [<Fact>]

@@ -126,6 +126,8 @@ Available helpers:
 - HxRequestHeader.Target
 - HxRequestHeader.Boosted
 - HxRequestHeader.HistoryRestoreRequest
+- HxRequestHeader.Accept (content types htmx accepts from the server)
+- HxRequestHeader.LastEventID (last received SSE event ID for reconnection)
 
 ### Server side — Response headers
 
