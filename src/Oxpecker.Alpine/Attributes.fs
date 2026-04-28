@@ -4,17 +4,73 @@ open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open Oxpecker.ViewEngine
 
-[<AutoOpen>]
-module ModifierAttributes =
+/// Frequently used modifiers for Transitions.
+/// Each constant includes the leading `.` and is appended verbatim after the attribute name.
+[<RequireQualifiedAccess>]
+module XTransitionModifier =
 
-    let internal modifierSuffix (modifiers: string option) =
-        match modifiers with
-        | Some m when m.Length > 0 -> $".{m.TrimStart('.')}"
-        | _ -> ""
+    /// Adds `x-transition.duration.XXXms` for a XXX transition duration.
+    let durationMs value = $".duration.%i{value}ms"
 
+    /// Adds `x-transition.delay.XXXms` for a XXX transition delay.
+    let delayMs value = $".delay.%i{value}ms"
 
-/// Alpine.js component and lifecycle directives.
-[<Extension>]
+    /// Adds `x-transition.opacity` for a fade transition.
+    let opacity = ".opacity"
+
+    /// Adds `x-transition.scale` for a scale transition.
+    let scale value = $".scale.%i{value}"
+
+    /// Adds `x-transition.origin.XXX` for a transition origin of XXX (e.g. `"top"`).
+    let scaleOrigin origin = $".scale.origin.%s{origin}"
+
+/// Frequently used modifiers for x-model.
+/// Each constant includes the leading `.` and is appended verbatim after the attribute name.
+[<RequireQualifiedAccess>]
+module XModelModifier =
+
+    /// Adds `x-model.number` for numeric input parsing.
+    let number = ".number"
+
+    /// Adds `x-model.boolean` for storing JS boolean values instead of strings.
+    let boolean = ".boolean"
+
+    /// Adds `x-model.lazy` to only update the property when user focuses away from the input element.
+    let lazy' = ".lazy"
+
+    /// Adds `x-model.change` to sync the data only when the input loses focus and its value has changed.
+    let change = ".change"
+
+    /// Adds `x-model.blur` to sync the data only when the input loses focus.
+    let blur = ".blur"
+
+    /// Adds `x-model.enter` to sync the data only when the user presses the Enter key.
+    let enter = ".enter"
+
+    /// Adds `x-model.fill` to use an input's value attribute to populate the property.
+    let fill = ".fill"
+
+    /// Adds `x-model.debounce` to debounce model updates by 250 milliseconds.
+    let debounce = ".debounce"
+
+    /// Adds `x-model.debounce.XXXms` to debounce model updates by XXX milliseconds.
+    let debounceMs value = $".debounce.%i{value}ms"
+
+    /// Adds `x-model.throttle` to throttle model updates by 250 milliseconds.
+    let throttle = ".throttle"
+
+    /// Adds `x-model.throttle.XXXms` to throttle model updates by XXX milliseconds.
+    let throttleMs value = $".throttle.%i{value}ms"
+
+/// Frequently used modifiers for x-show.
+/// Each constant includes the leading `.` and is appended verbatim after the attribute name.
+[<RequireQualifiedAccess>]
+module XShowModifier =
+
+    /// Adds `x-show.important` to apply `!important` to the generated CSS, ensuring it takes precedence over other styles.
+    let important = ".important"
+
+/// Alpine.js component and lifecycle methods.
 type AlpineComponentExtensions =
 
     /// Defines an Alpine component scope. Renders valueless `x-data`.
@@ -38,42 +94,45 @@ type AlpineComponentExtensions =
     static member xCloak(this: #HtmlTag, value: bool) = this.bool("x-cloak", value)
 
 
-/// Alpine.js binding and event directives.
-[<Extension>]
+/// Alpine.js binding and event methods.
 type AlpineBindingExtensions =
 
-    /// Binds an object of directives or attributes to the element.
-    [<Extension>]
-    static member xBind(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) = this.attr("x-bind", value)
-
-    /// Binds an attribute to an Alpine expression. `name` may include modifiers (e.g. `"class.camel"`).
+    /// Binds an attribute to an Alpine expression.
     [<Extension>]
     static member xBind(this: #HtmlTag, name: string, [<StringSyntax("js")>] value: string | null) =
-        this.attr($"x-bind:{name}", value)
+        this.attr($"x-bind:%s{name}", value)
 
     /// Handles DOM events with Alpine expressions. `event` may include modifiers (e.g. `"submit.prevent.once"`).
     [<Extension>]
     static member xOn(this: #HtmlTag, event: string, [<StringSyntax("js")>] value: string | null) =
-        this.attr($"x-on:{event}", value)
+        this.attr($"x-on:%s{event}", value)
 
-    /// Creates a two-way binding with form inputs. `modifiers` is the optional dot-separated suffix (e.g. `"number.debounce.500ms"`).
+    /// Creates a two-way binding with form inputs.
     [<Extension>]
-    static member xModel(this: #HtmlTag, [<StringSyntax("js")>] value: string | null, ?modifiers: string) =
-        this.attr($"x-model{modifierSuffix modifiers}", value)
+    static member xModel(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) = this.attr("x-model", value)
+
+    /// Creates a two-way binding with form inputs. `modifiers` is the dot-separated suffix (e.g. `"number.debounce.500ms"`).
+    [<Extension>]
+    static member xModel(this: #HtmlTag, [<StringSyntax("js")>] value: string | null, modifiers: string) =
+        this.attr($"x-model%s{modifiers}", value)
 
     /// Exposes an inner x-model value to a parent component.
     [<Extension>]
-    static member xModelable(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) = this.attr("x-modelable", value)
+    static member xModelable(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) =
+        this.attr("x-modelable", value)
 
 
-/// Alpine.js content and conditional rendering directives.
-[<Extension>]
+/// Alpine.js content and conditional rendering methods.
 type AlpineRenderingExtensions =
 
-    /// Toggles element visibility from an Alpine expression. `modifiers` is the optional dot-separated suffix (e.g. `"important"`).
+    /// Toggles element visibility from an Alpine expression.
     [<Extension>]
-    static member xShow(this: #HtmlTag, [<StringSyntax("js")>] value: string | null, ?modifiers: string) =
-        this.attr($"x-show{modifierSuffix modifiers}", value)
+    static member xShow(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) = this.attr("x-show", value)
+
+    /// Toggles element visibility from an Alpine expression. `modifiers` is the dot-separated suffix (e.g. `"important"`).
+    [<Extension>]
+    static member xShow(this: #HtmlTag, [<StringSyntax("js")>] value: string | null, modifiers: string) =
+        this.attr($"x-show%s{modifiers}", value)
 
     /// Sets text content from an Alpine expression.
     [<Extension>]
@@ -93,27 +152,45 @@ type AlpineRenderingExtensions =
 
     /// Teleports a template to another part of the DOM.
     [<Extension>]
-    static member xTeleport(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) = this.attr("x-teleport", value)
+    static member xTeleport(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) =
+        this.attr("x-teleport", value)
 
 
-/// Alpine.js transition directives.
-[<Extension>]
+/// Alpine.js transition methods.
 type AlpineTransitionExtensions =
 
-    /// Adds a valueless Alpine transition directive. `modifiers` is the optional dot-separated suffix (e.g. `"duration.500ms"`).
+    /// Adds a valueless Alpine transition attribute.
     [<Extension>]
-    static member xTransition(this: #HtmlTag, ?modifiers: string) =
-        this.bool($"x-transition{modifierSuffix modifiers}", true)
+    static member xTransition(this: #HtmlTag) = this.bool("x-transition", true)
+
+    /// Adds a valueless Alpine transition attribute.
+    /// `modifiers` is the dot-separated suffix (e.g. `".duration.500ms"`).
+    /// XTransitionModifier provides helper functions for common modifiers.
+    [<Extension>]
+    static member xTransition(this: #HtmlTag, modifiers: string) =
+        this.bool($"x-transition%s{modifiers}", true)
+
+    /// Adds a valueless Alpine transition attribute.
+    /// `phase` is the transition phase (e.g. `"enter"`, `"leave-start"`).
+    [<Extension>]
+    static member xTransitionOn(this: #HtmlTag, phase: string) =
+        this.bool($"x-transition:%s{phase}", true)
+
+    /// Adds a valueless Alpine transition attribute.
+    /// `phase` is the transition phase (e.g. `"enter"`, `"leave-start"`).
+    /// `modifiers` is the dot-separated suffix (e.g. `".duration.500ms"`).
+    /// XTransitionModifier provides helper functions for common modifiers.
+    [<Extension>]
+    static member xTransitionOn(this: #HtmlTag, phase: string, modifiers: string) =
+        this.bool($"x-transition:%s{phase}%s{modifiers}", true)
 
 
-/// Alpine.js utility directives.
-[<Extension>]
+/// Alpine.js utility methods.
 type AlpineUtilityExtensions =
 
-    /// Prevents Alpine from initializing a subtree. `modifiers` is the optional dot-separated suffix (e.g. `"self"`).
+    /// Prevents Alpine from initializing a subtree.
     [<Extension>]
-    static member xIgnore(this: #HtmlTag, value: bool, ?modifiers: string) =
-        this.bool($"x-ignore{modifierSuffix modifiers}", value)
+    static member xIgnore(this: #HtmlTag, value: bool) = this.bool("x-ignore", value)
 
     /// Registers a named reference for the current component.
     [<Extension>]

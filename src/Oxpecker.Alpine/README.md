@@ -27,30 +27,33 @@ Please refer to the [official Alpine.js site](https://alpinejs.dev) for directiv
 
 ## API
 
-After opening `Oxpecker.Alpine` namespace you'll get access to Alpine directives:
+After opening the `Oxpecker.Alpine` namespace you'll get access to the Alpine directives:
 
-- xData
-- xInit
-- xShow
-- xBind
-- xOn
-- xText
-- xHtml
-- xModel
-- xModelable
-- xFor
-- xTransition
-- xEffect
-- xIgnore
-- xRef
-- xCloak
-- xTeleport
-- xIf
-- xId
+| Method        | Renders             | Notes                                                                 |
+|---------------|---------------------|-----------------------------------------------------------------------|
+| `xData`       | `x-data`            | Valueless and value overloads.                                        |
+| `xInit`       | `x-init`            |                                                                       |
+| `xEffect`     | `x-effect`          |                                                                       |
+| `xShow`       | `x-show`            | Optional `modifiers` overload (e.g. `XShowModifier.important`).       |
+| `xBind`       | `x-bind:<name>`     | `name` may include modifiers (e.g. `"class.camel"`).                  |
+| `xOn`         | `x-on:<event>`      | `event` may include modifiers (e.g. `"submit.prevent.once"`).         |
+| `xText`       | `x-text`            |                                                                       |
+| `xHtml`       | `x-html`            |                                                                       |
+| `xModel`      | `x-model`           | Optional `modifiers` overload (e.g. `XModelModifier.number`).         |
+| `xModelable`  | `x-modelable`       |                                                                       |
+| `xFor`        | `x-for`             |                                                                       |
+| `xIf`         | `x-if`              |                                                                       |
+| `xTransition` | `x-transition`      | Valueless; optional `modifiers` overload.                             |
+| `xTransitionOn` | `x-transition:<phase>` | Phase-specific transition. Optional `modifiers` overload.        |
+| `xRef`        | `x-ref`             |                                                                       |
+| `xId`         | `x-id`              |                                                                       |
+| `xCloak`      | `x-cloak`           | Boolean — only renders when `true`.                                   |
+| `xIgnore`     | `x-ignore`          | Boolean — only renders when `true`.                                   |
+| `xTeleport`   | `x-teleport`        |                                                                       |
 
 ### Directive Arguments And Modifiers
 
-Directives that support Alpine arguments or modifiers accept them directly:
+For `xOn` and `xBind`, modifiers are written directly into the directive name string, exactly as you would in markup:
 
 ```fsharp
 // Renders x-on:submit.prevent.once="save()"
@@ -58,12 +61,36 @@ form().xOn("submit.prevent.once", "save()") { ... }
 
 // Renders x-bind:class="open ? '' : 'hidden'"
 div().xBind("class", "open ? '' : 'hidden'") { ... }
+```
+
+Other directives expose an optional `modifiers` parameter that is appended verbatim to the attribute name. Pass it with the leading `.` (the bundled helper modules already include it):
+
+```fsharp
+// Renders x-show.important="open"
+div().xShow("open", XShowModifier.important) { ... }
+
+// Renders x-model.number.debounce.500ms="age"
+input().xModel("age", XModelModifier.number + XModelModifier.debounceMs 500)
 
 // Renders x-transition.duration.500ms
-div().xTransition("duration.500ms") { ... }
+div().xTransition(XTransitionModifier.durationMs 500) { ... }
 
-// Renders x-ignore.self
-div().xIgnore(true, "self") { ... }
+// Renders x-transition:enter.duration.300ms
+div().xTransitionOn("enter", XTransitionModifier.durationMs 300) { ... }
+```
+
+The following helper modules expose the most common Alpine modifier names as constants and helper functions. Each value already includes the leading `.` and can be concatenated with `+`:
+
+| Module                | Examples                                                                 |
+|-----------------------|--------------------------------------------------------------------------|
+| `XShowModifier`       | `important`                                                              |
+| `XModelModifier`      | `number`, `boolean`, `lazy'`, `change`, `blur`, `enter`, `fill`, `debounce`, `debounceMs n`, `throttle`, `throttleMs n` |
+| `XTransitionModifier` | `durationMs n`, `delayMs n`, `opacity`, `scale n`, `scaleOrigin "top"`   |
+
+Custom modifier strings are also accepted; just remember to include the leading `.`:
+
+```fsharp
+input().xModel("query", ".debounce.250ms")
 ```
 
 ### Valueless Directives
@@ -78,7 +105,7 @@ div().xData() { ... }
 div().xTransition() { ... }
 ```
 
-Boolean-style directives only render when true:
+Boolean-style directives only render when `true`:
 
 ```fsharp
 // Renders x-cloak

@@ -31,7 +31,7 @@ let ``xShow renders x-show`` () =
 
 [<Fact>]
 let ``xShow with modifier renders x-show modifier`` () =
-    div().xShow("open", "important") { "content" }
+    div().xShow("open", XShowModifier.important) { "content" }
     |> Render.toString
     |> shouldEqual """<div x-show.important="open">content</div>"""
 
@@ -39,13 +39,8 @@ let ``xShow with modifier renders x-show modifier`` () =
 let ``xBind with attribute renders x-bind attribute`` () =
     input().xData("{ placeholderText: 'Type here...' }").xBind("placeholder", "placeholderText")
     |> Render.toString
-    |> shouldEqual """<input x-data="{ placeholderText: &#39;Type here...&#39; }" x-bind:placeholder="placeholderText">"""
-
-[<Fact>]
-let ``xBind without attribute renders x-bind object binding`` () =
-    button().xBind("trigger") { "Open" }
-    |> Render.toString
-    |> shouldEqual """<button x-bind="trigger">Open</button>"""
+    |> shouldEqual
+        """<input x-data="{ placeholderText: &#39;Type here...&#39; }" x-bind:placeholder="placeholderText">"""
 
 [<Fact>]
 let ``xOn renders x-on event`` () =
@@ -79,7 +74,7 @@ let ``xModel renders x-model`` () =
 
 [<Fact>]
 let ``xModel with modifiers renders modified x-model`` () =
-    input().xModel("age", "number.debounce.500ms")
+    input().xModel("age", XModelModifier.number + XModelModifier.debounceMs 500)
     |> Render.toString
     |> shouldEqual """<input x-model.number.debounce.500ms="age">"""
 
@@ -103,7 +98,7 @@ let ``xTransition without value renders boolean x-transition`` () =
 
 [<Fact>]
 let ``xTransition with modifiers renders modified boolean x-transition`` () =
-    div().xTransition("duration.500ms") { "content" }
+    div().xTransition(XTransitionModifier.durationMs 500) { "content" }
     |> Render.toString
     |> shouldEqual """<div x-transition.duration.500ms>content</div>"""
 
@@ -127,9 +122,9 @@ let ``xIgnore false does not render`` () =
 
 [<Fact>]
 let ``xIgnore with modifier renders modified x-ignore`` () =
-    div().xIgnore(true, "self") { "content" }
+    div().xIgnore(true) { "content" }
     |> Render.toString
-    |> shouldEqual """<div x-ignore.self>content</div>"""
+    |> shouldEqual """<div x-ignore>content</div>"""
 
 [<Fact>]
 let ``xRef renders x-ref`` () =
