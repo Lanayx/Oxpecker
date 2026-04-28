@@ -28,7 +28,9 @@ let data (ctx: HttpContext) (forecasts: WeatherForecast[]) =
             }
         }
         form(action="/weatherData", method="POST")
-            .hxTarget("#weatherData").hxSwap("outerHTML").hxPushUrl("false"){
+            .hxTarget("#weatherData")
+            .hxSwap("outerHTML")
+            .hxPushUrl("false"){
             ctx.GetAntiforgeryInput()
             input(type'="hidden", name="test", value="test")
             button(type'="submit") { "Refresh" }
@@ -42,7 +44,9 @@ let html (ctx: HttpContext) =
     Fragment(){
         h1() { "Weather" }
         p() { "This component demonstrates showing data." }
-        p().hxGet("/weatherData").hxTrigger("load").hxSwap("outerHTML"){
+        p().hxGet("/weatherData")
+            .hxTrigger("load")
+            .hxSwap("outerHTML"){
             em() { "Loading..." }
         }
     }
