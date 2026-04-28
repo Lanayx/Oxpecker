@@ -4,11 +4,6 @@ open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open Oxpecker.ViewEngine
 
-[<AutoOpen>]
-module internal ModifierHelpers =
-    let inline getModifierSuffix (modifiers: string voption) =
-        modifiers |> ValueOption.defaultValue ""
-
 /// Frequently used modifiers for attributes.
 /// Each constant includes the leading `:` and is appended verbatim after the attribute name.
 [<RequireQualifiedAccess>]
@@ -99,131 +94,199 @@ type HtmxEventExtensions =
 
 
 /// Inheritable core attributes.
-/// `modifiers` (optional) is appended verbatim after the attribute name and must include any leading `:`,
-/// e.g. `":inherited"` → `hx-foo:inherited`, `":inherited:append"` → `hx-foo:inherited:append`.
-/// Use the `HxModifier` module for the common cases.
 type HtmxCoreExtensions =
 
     /// Controls how content will swap in (outerHTML, beforeend, afterend, …).
     [<Extension>]
-    static member hxSwap(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-swap%s{getModifierSuffix modifiers}", value)
+    static member hxSwap(this: #HtmlTag, value: string | null) = this.attr($"hx-swap", value)
+
+    /// Controls how content will swap in (outerHTML, beforeend, afterend, …).
+    [<Extension>]
+    static member hxSwap(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-swap%s{modifiers}", value)
 
     /// Specifies the target element to be swapped (CSS selector).
     [<Extension>]
-    static member hxTarget
-        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
-        =
-        this.attr($"hx-target%s{getModifierSuffix modifiers}", value)
+    static member hxTarget(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) = this.attr("hx-target", value)
+
+    /// Specifies the target element to be swapped (CSS selector).
+    [<Extension>]
+    static member hxTarget(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, modifiers: string) =
+        this.attr($"hx-target%s{modifiers}", value)
 
     /// Specifies the event that triggers the request.
     [<Extension>]
-    static member hxTrigger(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-trigger%s{getModifierSuffix modifiers}", value)
+    static member hxTrigger(this: #HtmlTag, value: string | null) = this.attr("hx-trigger", value)
+
+    /// Specifies the event that triggers the request.
+    [<Extension>]
+    static member hxTrigger(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-trigger%s{modifiers}", value)
 
     /// Select content to swap in from a response (CSS selector).
     [<Extension>]
-    static member hxSelect
-        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
-        =
-        this.attr($"hx-select%s{getModifierSuffix modifiers}", value)
+    static member hxSelect(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) = this.attr("hx-select", value)
+
+    /// Select content to swap in from a response (CSS selector).
+    [<Extension>]
+    static member hxSelect(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, modifiers: string) =
+        this.attr($"hx-select%s{modifiers}", value)
 
     /// Add values to submit with the request (JSON format).
     [<Extension>]
-    static member hxVals(this: #HtmlTag, [<StringSyntax("Json")>] value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-vals%s{getModifierSuffix modifiers}", value)
+    static member hxVals(this: #HtmlTag, [<StringSyntax("Json")>] value: string | null) = this.attr("hx-vals", value)
+
+    /// Add values to submit with the request (JSON format).
+    [<Extension>]
+    static member hxVals(this: #HtmlTag, [<StringSyntax("Json")>] value: string | null, modifiers: string) =
+        this.attr($"hx-vals%s{modifiers}", value)
 
 
 /// Additional inheritable + non-inheritable attributes.
-/// For inheritable attributes, `modifiers` (optional) is appended verbatim after the attribute name
-/// and must include any leading `:`. Use the `HxModifier` module for the common cases.
 type HtmxAdditionalExtensions =
 
     // ─── Inheritable additional attributes ───
 
     /// Mark element to swap in from a response (out of band).
     [<Extension>]
-    static member hxSwapOob(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-swap-oob%s{getModifierSuffix modifiers}", value)
+    static member hxSwapOob(this: #HtmlTag, value: string | null) = this.attr("hx-swap-oob", value)
+
+    /// Mark element to swap in from a response (out of band).
+    [<Extension>]
+    static member hxSwapOob(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-swap-oob%s{modifiers}", value)
 
     /// Push a URL into the browser location bar to create history.
     [<Extension>]
-    static member hxPushUrl(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-push-url%s{getModifierSuffix modifiers}", value)
+    static member hxPushUrl(this: #HtmlTag, value: string | null) = this.attr("hx-push-url", value)
+
+    /// Push a URL into the browser location bar to create history.
+    [<Extension>]
+    static member hxPushUrl(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-push-url%s{modifiers}", value)
 
     /// Include additional data in requests (CSS selector or extended selector like `closest form`).
     [<Extension>]
-    static member hxInclude
-        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
-        =
-        this.attr($"hx-include%s{getModifierSuffix modifiers}", value)
+    static member hxInclude(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) =
+        this.attr("hx-include", value)
+
+    /// Include additional data in requests (CSS selector or extended selector like `closest form`).
+    [<Extension>]
+    static member hxInclude(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, modifiers: string) =
+        this.attr($"hx-include%s{modifiers}", value)
 
     /// Select content to swap in from a response, somewhere other than the target (out of band).
     [<Extension>]
-    static member hxSelectOob
-        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
-        =
-        this.attr($"hx-select-oob%s{getModifierSuffix modifiers}", value)
+    static member hxSelectOob(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) =
+        this.attr("hx-select-oob", value)
+
+    /// Select content to swap in from a response, somewhere other than the target (out of band).
+    [<Extension>]
+    static member hxSelectOob(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, modifiers: string) =
+        this.attr($"hx-select-oob%s{modifiers}", value)
 
     /// Add progressive enhancement for links and forms.
     [<Extension>]
-    static member hxBoost(this: #HtmlTag, value: string, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-boost%s{getModifierSuffix modifiers}", value)
+    static member hxBoost(this: #HtmlTag, value: string) = this.attr("hx-boost", value)
+
+    /// Add progressive enhancement for links and forms.
+    [<Extension>]
+    static member hxBoost(this: #HtmlTag, value: string, modifiers: string) =
+        this.attr($"hx-boost%s{modifiers}", value)
 
     /// Replace the URL in the browser location bar.
     [<Extension>]
-    static member hxReplaceUrl(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-replace-url%s{getModifierSuffix modifiers}", value)
+    static member hxReplaceUrl(this: #HtmlTag, value: string | null) = this.attr("hx-replace-url", value)
+
+    /// Replace the URL in the browser location bar.
+    [<Extension>]
+    static member hxReplaceUrl(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-replace-url%s{modifiers}", value)
 
     /// Show a confirm() dialog before issuing a request.
     [<Extension>]
-    static member hxConfirm(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-confirm%s{getModifierSuffix modifiers}", value)
+    static member hxConfirm(this: #HtmlTag, value: string | null) = this.attr("hx-confirm", value)
+
+    /// Show a confirm() dialog before issuing a request.
+    [<Extension>]
+    static member hxConfirm(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-confirm%s{modifiers}", value)
+
+    /// Adds the `disabled` attribute to specified elements (CSS selector) while a request is in flight.
+    [<Extension>]
+    static member hxDisable(this: #HtmlTag, [<StringSyntax("css")>] selector: string) =
+        this.attr("hx-disable", selector)
 
     /// Adds the `disabled` attribute to specified elements (CSS selector) while a request is in flight.
     /// `modifiers` may include `:merge` and/or `:inherited[:append]`, e.g. `":merge"`, `":inherited"`, `":merge:inherited"`.
     [<Extension>]
-    static member hxDisable(this: #HtmlTag, [<StringSyntax("css")>] selector: string, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-disable%s{getModifierSuffix modifiers}", selector)
+    static member hxDisable(this: #HtmlTag, [<StringSyntax("css")>] selector: string, modifiers: string) =
+        this.attr($"hx-disable%s{modifiers}", selector)
 
     /// Specifies elements to keep unchanged between requests. Renders `hx-preserve` (boolean attribute) when true.
     [<Extension>]
-    static member hxPreserve(this: #HtmlTag, value: bool, [<Struct>] ?modifiers: string) =
-        this.bool($"hx-preserve%s{getModifierSuffix modifiers}", value)
+    static member hxPreserve(this: #HtmlTag, value: bool) = this.bool("hx-preserve", value)
+
+    /// Specifies elements to keep unchanged between requests. Renders `hx-preserve` (boolean attribute) when true.
+    [<Extension>]
+    static member hxPreserve(this: #HtmlTag, value: bool, modifiers: string) =
+        this.bool($"hx-preserve%s{modifiers}", value)
 
     /// Adds to the headers that will be submitted with the request (JSON object).
     [<Extension>]
-    static member hxHeaders
-        (this: #HtmlTag, [<StringSyntax("Json")>] value: string | null, [<Struct>] ?modifiers: string)
-        =
-        this.attr($"hx-headers%s{getModifierSuffix modifiers}", value)
+    static member hxHeaders(this: #HtmlTag, [<StringSyntax("Json")>] value: string | null) =
+        this.attr("hx-headers", value)
+
+    /// Adds to the headers that will be submitted with the request (JSON object).
+    [<Extension>]
+    static member hxHeaders(this: #HtmlTag, [<StringSyntax("Json")>] value: string | null, modifiers: string) =
+        this.attr($"hx-headers%s{modifiers}", value)
 
     /// The element to put the `htmx-request` class on during the request (CSS selector).
     [<Extension>]
-    static member hxIndicator
-        (this: #HtmlTag, [<StringSyntax("css")>] value: string | null, [<Struct>] ?modifiers: string)
-        =
-        this.attr($"hx-indicator%s{getModifierSuffix modifiers}", value)
+    static member hxIndicator(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) =
+        this.attr("hx-indicator", value)
+
+    /// The element to put the `htmx-request` class on during the request (CSS selector).
+    [<Extension>]
+    static member hxIndicator(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, modifiers: string) =
+        this.attr($"hx-indicator%s{modifiers}", value)
 
     /// Control how requests made by different elements are synchronized.
     [<Extension>]
-    static member hxSync(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-sync%s{getModifierSuffix modifiers}", value)
+    static member hxSync(this: #HtmlTag, value: string | null) = this.attr("hx-sync", value)
+
+    /// Control how requests made by different elements are synchronized.
+    [<Extension>]
+    static member hxSync(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-sync%s{modifiers}", value)
 
     /// Force elements to validate themselves before a request.
     [<Extension>]
-    static member hxValidate(this: #HtmlTag, value: bool, [<Struct>] ?modifiers: string) =
-        this.bool($"hx-validate%s{getModifierSuffix modifiers}", value)
+    static member hxValidate(this: #HtmlTag, value: bool) = this.bool("hx-validate", value)
+
+    /// Force elements to validate themselves before a request.
+    [<Extension>]
+    static member hxValidate(this: #HtmlTag, value: bool, modifiers: string) =
+        this.bool($"hx-validate%s{modifiers}", value)
 
     /// Changes the request encoding type.
     [<Extension>]
-    static member hxEncoding(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-encoding%s{getModifierSuffix modifiers}", value)
+    static member hxEncoding(this: #HtmlTag, value: string | null) = this.attr("hx-encoding", value)
+
+    /// Changes the request encoding type.
+    [<Extension>]
+    static member hxEncoding(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-encoding%s{modifiers}", value)
 
     /// Preload content before user triggers request.
     [<Extension>]
-    static member hxPreload(this: #HtmlTag, value: string | null, [<Struct>] ?modifiers: string) =
-        this.attr($"hx-preload%s{getModifierSuffix modifiers}", value)
+    static member hxPreload(this: #HtmlTag, value: string | null) = this.attr("hx-preload", value)
+
+    /// Preload content before user triggers request.
+    [<Extension>]
+    static member hxPreload(this: #HtmlTag, value: string | null, modifiers: string) =
+        this.attr($"hx-preload%s{modifiers}", value)
 
     // ─── Non-inheritable additional attributes ───
 
