@@ -121,10 +121,16 @@ let ``xIgnore false does not render`` () =
     |> shouldEqual """<div>content</div>"""
 
 [<Fact>]
-let ``xIgnore with modifier renders modified x-ignore`` () =
-    div().xIgnore(true) { "content" }
+let ``xTransitionOn renders phased x-transition`` () =
+    div().xTransitionOn("enter") { "content" }
     |> Render.toString
-    |> shouldEqual """<div x-ignore>content</div>"""
+    |> shouldEqual """<div x-transition:enter>content</div>"""
+
+[<Fact>]
+let ``xTransitionOn with modifiers renders phased modified x-transition`` () =
+    div().xTransitionOn("enter", XTransitionModifier.durationMs 300) { "content" }
+    |> Render.toString
+    |> shouldEqual """<div x-transition:enter.duration.300ms>content</div>"""
 
 [<Fact>]
 let ``xRef renders x-ref`` () =

@@ -21,7 +21,7 @@ module XTransitionModifier =
     /// Adds `x-transition.scale` for a scale transition.
     let scale value = $".scale.%i{value}"
 
-    /// Adds `x-transition.origin.XXX` for a transition origin of XXX (e.g. `"top"`).
+    /// Adds `x-transition.scale.origin.XXX` for a scale transition origin of XXX (e.g. `"top"`).
     let scaleOrigin origin = $".scale.origin.%s{origin}"
 
 /// Frequently used modifiers for x-model.
@@ -111,7 +111,9 @@ type AlpineBindingExtensions =
     [<Extension>]
     static member xModel(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) = this.attr("x-model", value)
 
-    /// Creates a two-way binding with form inputs. `modifiers` is the dot-separated suffix (e.g. `"number.debounce.500ms"`).
+    /// Creates a two-way binding with form inputs.
+    /// `modifiers` is appended verbatim and must include the leading `.` (e.g. `".number.debounce.500ms"`).
+    /// XModelModifier provides helper values for common modifiers.
     [<Extension>]
     static member xModel(this: #HtmlTag, [<StringSyntax("js")>] value: string | null, modifiers: string) =
         this.attr($"x-model%s{modifiers}", value)
@@ -129,7 +131,9 @@ type AlpineRenderingExtensions =
     [<Extension>]
     static member xShow(this: #HtmlTag, [<StringSyntax("js")>] value: string | null) = this.attr("x-show", value)
 
-    /// Toggles element visibility from an Alpine expression. `modifiers` is the dot-separated suffix (e.g. `"important"`).
+    /// Toggles element visibility from an Alpine expression.
+    /// `modifiers` is appended verbatim and must include the leading `.` (e.g. `".important"`).
+    /// XShowModifier provides helper values for common modifiers.
     [<Extension>]
     static member xShow(this: #HtmlTag, [<StringSyntax("js")>] value: string | null, modifiers: string) =
         this.attr($"x-show%s{modifiers}", value)
