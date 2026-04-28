@@ -1,4 +1,4 @@
-﻿namespace ContactApp.templates.shared
+namespace ContactApp.templates.shared
 
 open ContactApp.templates.shared.errors
 open Oxpecker.Htmx
@@ -15,9 +15,10 @@ module contactFields =
         div() {
             p() {
                 label(for'="email") { "Email" }
-                input(name=nameof x.email, id="email", type'="email", placeholder="Email", value=contact.Value(_.email),
-                      hxTrigger="change, keyup delay:200ms changed",
-                      hxGet= $"/contacts/{contact.Value(_.id >> string)}/email", hxTarget="next .error")
+                input(name=nameof x.email, id="email", type'="email", placeholder="Email", value=contact.Value(_.email))
+                    .hxTrigger("change, keyup delay:200ms changed")
+                    .hxGet($"/contacts/{contact.Value(_.id >> string)}/email")
+                    .hxTarget(HxSelector.next ".error")
                 showErrors <| nameof x.email
             }
             p() {
