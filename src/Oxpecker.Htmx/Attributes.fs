@@ -4,61 +4,6 @@ open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open Oxpecker.ViewEngine
 
-/// Frequently used modifiers for attributes.
-/// Each constant includes the leading `:` and is appended verbatim after the attribute name.
-[<RequireQualifiedAccess>]
-module HxModifier =
-    /// `:inherited` — the attribute is inherited by child elements.
-    [<Literal>]
-    let inherited = ":inherited"
-    /// `:inherited:append` — the attribute value is appended to any existing value instead of replacing it.
-    [<Literal>]
-    let inheritedAppend = ":inherited:append"
-    /// `:merge` — for `hxDisable`, the selector is merged with any existing selector instead of replacing it.
-    [<Literal>]
-    let merge = ":merge"
-
-/// Builders for extended selectors.
-/// See https://four.htmx.org/docs/features/extended-selectors
-/// Each helper returns the htmx selector string ready to pass into selector-typed attributes
-/// such as `hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`.
-[<RequireQualifiedAccess>]
-module HxSelector =
-    /// `this` — the element itself.
-    [<Literal>]
-    let this' = "this"
-    /// `body` — the document body.
-    [<Literal>]
-    let body = "body"
-    /// `document` — the document object (mainly for event triggers).
-    [<Literal>]
-    let document = "document"
-    /// `window` — the window object (mainly for event triggers).
-    [<Literal>]
-    let window = "window"
-    /// `host` — the shadow DOM host element (only valid inside shadow DOM).
-    [<Literal>]
-    let host = "host"
-    /// `next` — the next sibling element.
-    [<Literal>]
-    let nextSibling = "next"
-    /// `previous` — the previous sibling element.
-    [<Literal>]
-    let previousSibling = "previous"
-
-    /// `closest <selector>` — nearest ancestor (or self) matching the selector.
-    let inline closest ([<StringSyntax("css")>] selector: string) = $"closest {selector}"
-    /// `find <selector>` — first child descendant matching the selector.
-    let inline find ([<StringSyntax("css")>] selector: string) = $"find {selector}"
-    /// `findAll <selector>` — all child descendants matching the selector.
-    let inline findAll ([<StringSyntax("css")>] selector: string) = $"findAll {selector}"
-    /// `next <selector>` — first following sibling matching the selector.
-    let inline next ([<StringSyntax("css")>] selector: string) = $"next {selector}"
-    /// `previous <selector>` — first preceding sibling matching the selector.
-    let inline previous ([<StringSyntax("css")>] selector: string) = $"previous {selector}"
-    /// `global <selector>` — search the entire document, crossing shadow DOM boundaries.
-    let inline global' ([<StringSyntax("css")>] selector: string) = $"global {selector}"
-
 
 /// Verb attributes (no modifiers).
 type HtmxVerbExtensions =
