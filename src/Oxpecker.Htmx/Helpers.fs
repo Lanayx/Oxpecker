@@ -1,4 +1,4 @@
-﻿module Oxpecker.Htmx
+﻿namespace Oxpecker.Htmx
 
 open System.Diagnostics.CodeAnalysis
 
