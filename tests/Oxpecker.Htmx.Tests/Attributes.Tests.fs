@@ -233,7 +233,7 @@ let ``hxBoost with "inherited" modifier renders hx-boost:inherited`` () =
 
 [<Fact>]
 let ``hxInclude with "inherited:append" modifier renders hx-include:inherited:append`` () =
-    form().hxInclude(".extra", HxModifier.inheritedAppend) { "form" }
+    form().hxInclude(".extra", HxModifier.inherited + HxModifier.append) { "form" }
     |> Render.toString
     |> shouldEqual """<form hx-include:inherited:append=".extra">form</form>"""
 

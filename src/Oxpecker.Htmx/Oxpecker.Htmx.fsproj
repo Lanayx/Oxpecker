@@ -2,6 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
         <PackageId>Oxpecker.Htmx</PackageId>
         <Title>Oxpecker.Htmx</Title>
@@ -20,9 +21,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0-beta.1</Version>
-        <PackageVersion>4.0.0-beta.1</PackageVersion>
-        <PackageReleaseNotes>HTMX 4 support (breaking changes from 2.x)</PackageReleaseNotes>
+        <Version>4.0.0-beta.2</Version>
+        <PackageVersion>4.0.0-beta.2</PackageVersion>
+        <PackageReleaseNotes>HTMX4 helpers for number of modifiers</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Oxpecker.ViewEngine" Version="2.0.0" />
@@ -30,6 +31,7 @@
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
+        <Compile Include="Helpers.fs" />
         <Compile Include="Attributes.fs" />
         <Compile Include="Headers.fs" />
     </ItemGroup>
