@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
@@ -21,12 +22,12 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0-beta.2</Version>
-        <PackageVersion>4.0.0-beta.2</PackageVersion>
-        <PackageReleaseNotes>HTMX4 helpers for number of modifiers</PackageReleaseNotes>
+        <Version>4.0.0-beta.3</Version>
+        <PackageVersion>4.0.0-beta.3</PackageVersion>
+        <PackageReleaseNotes>HTMX4 helpers for hxBoost and hxSync</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="2.0.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="2.0.1" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

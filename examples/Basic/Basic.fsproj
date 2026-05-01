@@ -7,10 +7,10 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="2.0.0" />
-        <PackageReference Include="Oxpecker.OpenApi" Version="2.1.1" />
-        <PackageReference Include="Oxpecker.Htmx" Version="4.0.0-beta.1" />
-        <PackageReference Include="FSharp.Control.TaskSeq" Version="0.4.0" />
+        <PackageReference Include="Oxpecker" Version="2.0.1" />
+        <PackageReference Include="Oxpecker.OpenApi" Version="2.1.2" />
+        <PackageReference Include="Oxpecker.Htmx" Version="4.0.0-beta.3" />        
+        <PackageReference Include="FSharp.Control.TaskSeq" Version="1.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     </ItemGroup>
 

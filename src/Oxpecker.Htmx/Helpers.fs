@@ -104,8 +104,12 @@ module HxSwapModifier =
     let transition value = $" transition:%b{value}"
     /// `swap` — adds delay before swap.
     let swap value = $" swap:%s{value}"
+    /// `swapMs` — adds delay before swap, in milliseconds.
+    let swapMs value = $" swap:%i{value}ms"
     /// `settle` — adds delay between the swap and the settle phase.
     let settle value = $"settle:%s{value}"
+    /// `settleMs` — adds delay between the swap and the settle phase, in milliseconds.
+    let settleMs value = $"settle:%i{value}ms"
     /// `ignoreTitle` — prevents htmx from updating the document title based on the response.
     let ignoreTitle value = $" ignoreTitle:%b{value}"
     /// `scroll` — auto-scroll to swapped content.
@@ -122,10 +126,12 @@ module HxSwapModifier =
 module HxTriggerModifier =
     /// `delay` — adds delay before triggering the request.
     let delay value = $" delay:%s{value}"
+    /// `delayMs` — adds delay before triggering the request, in milliseconds.
+    let delayMs value = $" delay:%i{value}ms"
     /// `throttle` — throttles the trigger to prevent it from firing too frequently.
     let throttle value = $" throttle:%s{value}"
-    /// `debounce` — debounces the trigger to prevent it from firing until a certain amount of time has passed without it firing again.
-    let debounce value = $" debounce:%s{value}"
+    /// `throttleMs` — throttles the trigger to prevent it from firing too frequently, in milliseconds.
+    let throttleMs value = $" throttle:%i{value}ms"
     /// `once` — ensures the trigger only fires once.
     let once = " once"
     /// `changed` — only triggers when the value of the element has changed.
@@ -154,3 +160,31 @@ module HxStatusModifier =
     let replace value = $" replace:%s{value}"
     /// `transition` — enables View Transitions API for this status code.
     let transition value = $" transition:%b{value}"
+
+/// Modifiers for request synchronization, which control how htmx handles multiple requests that are triggered while a previous request is still in flight.
+[<RequireQualifiedAccess>]
+module HxSyncModifier =
+    /// `drop` — drop (ignore) this request if an existing request is in flight (the default)
+    let drop = ":drop"
+    /// `abort` — drop (ignore) this request if an existing request is in flight, and, if that is not the case, abort this request if another request occurs while it is still in flight
+    let abort = ":abort"
+    /// `replace` — abort the current request, if any, and replace it with this request
+    let replace = ":replace"
+    /// `queue` — place this request in the request queue associated with the given element
+    let queue = ":queue"
+    /// `queueFirst` — queue the first request to show up while a request is in flight
+    let queueFirst = ":queue first"
+    /// `queueLast` — queue the last request to show up while a request is in flight
+    let queueLast = ":queue last"
+    /// `queueAll` — queue all requests that show up while a request is in flight
+    let queueAll = ":queue all"
+
+/// Modifiers for boost mode, which control additional aspects of how htmx handles requests that are triggered on elements with `hx-boost` enabled.
+[<RequireQualifiedAccess>]
+module HxBoostModifier =
+    /// `swap` — Swap strategy (innerHTML, outerHTML, etc.)
+    let swap value = $" swap:%s{value}"
+    /// `target` — CSS selector for the swap target.
+    let target ([<StringSyntax("css")>] value) = $" target:%s{value}"
+    /// `select` — CSS selector to pick content from the response.
+    let select ([<StringSyntax("css")>] value) = $" select:%s{value}"
