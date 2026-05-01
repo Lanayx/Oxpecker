@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <Compile Include="Attributes.Tests.fs" />
+        <Compile Include="Modifiers.Tests.fs" />
         <Compile Include="Headers.Tests.fs" />
     </ItemGroup>
 

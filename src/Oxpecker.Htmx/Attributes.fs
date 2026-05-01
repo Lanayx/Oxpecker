@@ -43,7 +43,7 @@ type HtmxCoreExtensions =
 
     /// Controls how content will swap in (outerHTML, beforeend, afterend, …).
     [<Extension>]
-    static member hxSwap(this: #HtmlTag, value: string | null) = this.attr($"hx-swap", value)
+    static member hxSwap(this: #HtmlTag, value: string | null) = this.attr("hx-swap", value)
 
     /// Controls how content will swap in (outerHTML, beforeend, afterend, …).
     [<Extension>]
@@ -199,7 +199,7 @@ type HtmxAdditionalExtensions =
 
     /// Control how requests made by different elements are synchronized.
     [<Extension>]
-    static member hxSync(this: #HtmlTag, value: string | null) = this.attr("hx-sync", value)
+    static member hxSync(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) = this.attr("hx-sync", value)
 
     /// Control how requests made by different elements are synchronized.
     [<Extension>]

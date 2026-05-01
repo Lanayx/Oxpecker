@@ -21,9 +21,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0-beta.2</Version>
-        <PackageVersion>4.0.0-beta.2</PackageVersion>
-        <PackageReleaseNotes>HTMX4 helpers for number of modifiers</PackageReleaseNotes>
+        <Version>4.0.0-beta.3</Version>
+        <PackageVersion>4.0.0-beta.3</PackageVersion>
+        <PackageReleaseNotes>HTMX4 helpers for hxBoost and hxSync</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

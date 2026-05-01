@@ -2,6 +2,7 @@
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
         <PackageId>Oxpecker.Alpine</PackageId>
         <Title>Oxpecker.Alpine</Title>
@@ -20,13 +21,14 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.1.0</Version>
-        <PackageVersion>0.1.0</PackageVersion>
-        <PackageReleaseNotes>Initial Alpine.js support for Oxpecker.ViewEngine</PackageReleaseNotes>
+        <Version>0.1.1</Version>
+        <PackageVersion>0.1.1</PackageVersion>
+        <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
+        <Compile Include="Helpers.fs" />
         <Compile Include="Attributes.fs" />
     </ItemGroup>
     <ItemGroup>
