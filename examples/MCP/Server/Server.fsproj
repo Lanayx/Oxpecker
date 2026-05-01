@@ -15,8 +15,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="ModelContextProtocol" Version="0.8.0-preview.1" />
-      <PackageReference Include="ModelContextProtocol.AspNetCore" Version="0.8.0-preview.1" />
+      <PackageReference Include="ModelContextProtocol" Version="1.2.0" />
+      <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.2.0" />
     </ItemGroup>
 
 </Project>

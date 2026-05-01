@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
+        <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
@@ -26,6 +27,7 @@
         <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="FSharp.Core" Version="10.0.100" />
         <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="10.0.0" />
     </ItemGroup>
     <ItemGroup>
