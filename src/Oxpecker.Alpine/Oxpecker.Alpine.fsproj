@@ -22,13 +22,14 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.1.1</Version>
-        <PackageVersion>0.1.1</PackageVersion>
-        <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
+        <Version>0.1.2</Version>
+        <PackageVersion>0.1.2</PackageVersion>
+        <PackageReleaseNotes>Improved language injections for x-model</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
         <None Include="README.md" Pack="true" PackagePath="\" />
+        <Compile Include="IdeTweaks.fs" />
         <Compile Include="Helpers.fs" />
         <Compile Include="Attributes.fs" />
     </ItemGroup>
