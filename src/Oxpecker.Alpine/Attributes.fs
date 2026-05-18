@@ -15,7 +15,10 @@ type AlpineComponentExtensions =
 
     /// Defines an Alpine component scope with data.
     [<Extension>]
-    static member xData(this: #HtmlTag, [<LanguageInjection(InjectedLanguage.JAVASCRIPT, Prefix = "this=")>] value: string | null) = this.attr("x-data", value)
+    static member xData
+        (this: #HtmlTag, [<LanguageInjection(InjectedLanguage.JAVASCRIPT, Prefix = "this=")>] value: string | null)
+        =
+        this.attr("x-data", value)
 
     /// Runs an expression when Alpine initializes an element.
     [<Extension>]
