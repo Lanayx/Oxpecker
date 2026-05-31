@@ -38,6 +38,9 @@ module HxRequestHeader =
     /// `HX-PTag` — polling tag sent back to the server by the `hx-ptag` extension.
     [<Literal>]
     let PTag = "HX-PTag"
+    /// `HX-Request-ID` — unique request/response correlation id sent by the `hx-ws` extension in the message headers (echoed back by the server).
+    [<Literal>]
+    let RequestId = "HX-Request-ID"
 
 [<RequireQualifiedAccess>]
 module HxResponseHeader =
@@ -75,6 +78,6 @@ module HxResponseHeader =
     /// `HX-PTag` — polling tag stored by the `hx-ptag` extension and echoed on the next request.
     [<Literal>]
     let PTag = "HX-PTag"
-    /// `HX-Request-ID` — request/response correlation id used by the `hx-ws` extension.
+    /// `HX-Request-ID` — the request/response correlation id echoed back by the server so the `hx-ws` extension can route the response to the originating element.
     [<Literal>]
     let RequestId = "HX-Request-ID"

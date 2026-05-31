@@ -177,6 +177,7 @@ Available helpers:
 - HxRequestHeader.LastEventId (last received SSE event ID for reconnection)
 - HxRequestHeader.Preloaded (`hx-preload` extension)
 - HxRequestHeader.PTag (`hx-ptag` extension)
+- HxRequestHeader.RequestId (`hx-ws` extension)
 
 ### Server side — Response headers
 

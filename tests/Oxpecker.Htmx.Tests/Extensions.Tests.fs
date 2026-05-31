@@ -174,6 +174,7 @@ let ``null hxSseConnect does not render attribute`` () =
 let ``extension request headers expose correct names`` () =
     HxRequestHeader.Preloaded |> shouldEqual "HX-Preloaded"
     HxRequestHeader.PTag |> shouldEqual "HX-PTag"
+    HxRequestHeader.RequestId |> shouldEqual "HX-Request-ID"
 
 [<Fact>]
 let ``extension response headers expose correct names`` () =
