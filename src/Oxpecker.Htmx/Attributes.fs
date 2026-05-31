@@ -4,7 +4,6 @@ open System.Diagnostics.CodeAnalysis
 open System.Runtime.CompilerServices
 open Oxpecker.ViewEngine
 
-
 /// Verb attributes (no modifiers).
 type HtmxVerbExtensions =
 
