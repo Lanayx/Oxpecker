@@ -40,8 +40,8 @@ let ``HxRequestHeader.Accept equals Accept`` () =
     HxRequestHeader.Accept |> shouldEqual "Accept"
 
 [<Fact>]
-let ``HxRequestHeader.LastEventID equals Last-Event-ID`` () =
-    HxRequestHeader.LastEventID |> shouldEqual "Last-Event-ID"
+let ``HxRequestHeader.LastEventId equals Last-Event-ID`` () =
+    HxRequestHeader.LastEventId |> shouldEqual "Last-Event-ID"
 
 // ─── Response headers ───
 

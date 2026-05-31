@@ -78,6 +78,53 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 
 - hxOn
 
+### Client side — Built-in extensions
+
+htmx 4 ships a set of [opt-in extensions](https://four.htmx.org/extensions) that you load client-side with their own `<script>` tags. Open the `Oxpecker.Htmx.Extensions` namespace to get fluent extension methods for the attributes each one introduces:
+
+```fsharp
+open Oxpecker.Htmx
+open Oxpecker.Htmx.Extensions
+```
+
+| Extension | Method(s) | Renders |
+|---|---|---|
+| [hx-sse](https://four.htmx.org/extensions/hx-sse) | `hxSseConnect`, `hxSseClose` | `hx-sse:connect`, `hx-sse:close` |
+| [hx-ws](https://four.htmx.org/extensions/hx-ws) | `hxWsConnect`, `hxWsSend` | `hx-ws:connect`, `hx-ws:send` |
+| [hx-head](https://four.htmx.org/extensions/hx-head) | `hxHead` (see `HxHeadMode`) | `hx-head` |
+| [hx-targets](https://four.htmx.org/extensions/hx-targets) | `hxTargets` | `hx-targets` |
+| [hx-ptag](https://four.htmx.org/extensions/hx-ptag) | `hxPtag` | `hx-ptag` |
+| [hx-browser-indicator](https://four.htmx.org/extensions/hx-browser-indicator) | `hxBrowserIndicator` | `hx-browser-indicator` |
+| [hx-history-cache](https://four.htmx.org/extensions/hx-history-cache) | `hxHistory` | `hx-history` |
+| [hx-csp](https://four.htmx.org/extensions/hx-csp) | `hxNonce` | `hx-nonce` |
+| [hx-live](https://four.htmx.org/extensions/hx-live) | `hxLive` | `hx-live` |
+| [hx-preload](https://four.htmx.org/extensions/hx-preload) | `hxPreload` (core attribute) | `hx-preload` |
+| [hx-optimistic](https://four.htmx.org/extensions/hx-optimistic) | `hxOptimistic` (core attribute) | `hx-optimistic` |
+
+The [hx-download](https://four.htmx.org/extensions/hx-download) and [hx-upsert](https://four.htmx.org/extensions/hx-upsert) extensions reuse `hxSwap`. Use `HxSwapMethod.download` for downloads, and `HxSwapMethod.upsert` with the `HxUpsertModifier` helpers (`sort`, `sortDesc`, `prepend`, `key`) for upserts.
+
+```fsharp
+// hx-sse: persistent stream, append messages
+div().hxSseConnect("/log").hxSwap("beforeend") { h3() { "Log:" } }
+
+// hx-ws: connect + send a form over the socket
+div().hxWsConnect("/chatroom") {
+    form().hxWsSend(true) {
+        input(name="message")
+        button(type'="submit") { "Send" }
+    }
+}
+
+// hx-targets: swap the response into every matching element
+button().hxGet("/api/notification").hxTargets(".alert-box") { "Refresh All" }
+
+// hx-download: save the response as a file
+button().hxGet("/files/report.pdf").hxSwap(HxSwapMethod.download) { "Download" }
+
+// hx-upsert: update-or-insert keyed list items, sorted descending
+div().hxGet("/items").hxSwap(HxSwapMethod.upsert + HxUpsertModifier.sortDesc) { "items" }
+```
+
 ### Client side — Modifier helpers
 
 Inheritable attributes accept an optional `modifiers` string that is appended **verbatim** after the attribute name — you must include the leading `:`. Pass htmx 4 modifier syntax directly, e.g. `":inherited"`, `":inherited:append"`, or for `hxDisable` also `":merge"` / `":merge:inherited"`. The `HxModifier` module provides constants for the most common ones. `hxStatus` writes status-coded attributes (`hx-status:CODE`) and takes the code as its first argument.
@@ -127,7 +174,10 @@ Available helpers:
 - HxRequestHeader.Boosted
 - HxRequestHeader.HistoryRestoreRequest
 - HxRequestHeader.Accept (content types htmx accepts from the server)
-- HxRequestHeader.LastEventID (last received SSE event ID for reconnection)
+- HxRequestHeader.LastEventId (last received SSE event ID for reconnection)
+- HxRequestHeader.Preloaded (`hx-preload` extension)
+- HxRequestHeader.PTag (`hx-ptag` extension)
+- HxRequestHeader.RequestId (`hx-ws` extension)
 
 ### Server side — Response headers
 
@@ -140,6 +190,9 @@ Available helpers:
 - HxResponseHeader.Reswap
 - HxResponseHeader.Retarget
 - HxResponseHeader.Reselect
+- HxResponseHeader.Download (`hx-download` extension)
+- HxResponseHeader.PTag (`hx-ptag` extension)
+- HxResponseHeader.RequestId (`hx-ws` extension)
 
 ## Migration from Oxpecker.Htmx 2.x
 

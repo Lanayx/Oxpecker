@@ -96,6 +96,9 @@ module HxSwapMethod =
     /// `upsert` — updates existing elements by ID and inserts new ones.
     [<Literal>]
     let upsert = "upsert"
+    /// `download` — saves the response as a file download instead of swapping it (requires the `hx-download` extension).
+    [<Literal>]
+    let download = "download"
 
 /// Modifiers for `hxSwap` that control additional aspects of the swapping behavior.
 [<RequireQualifiedAccess>]
