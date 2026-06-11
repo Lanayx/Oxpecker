@@ -58,8 +58,8 @@ module CustomWebUtility =
                 elif '\'' = ch then sb.Append "&#39;"
                 elif '&' = ch then sb.Append "&amp;"
                 else sb.Append ch
+            // The seemingly arbitrary 160 comes from RFC
             else if Char.IsBetween(ch, '\u00A0', '\u00FF') then
-                // The seemingly arbitrary 160 comes from RFC
                 sb.Append("&#").Append(int ch).Append(';')
             elif Char.IsSurrogate(ch) then
                 // i is now at the next code unit after 'ch'

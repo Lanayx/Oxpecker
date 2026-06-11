@@ -55,6 +55,36 @@ let ``xOn with modifiers renders modified event`` () =
     |> shouldEqual """<form x-on:submit.prevent.once="save()">form</form>"""
 
 [<Fact>]
+let ``xOn with XOnModifier renders modified event`` () =
+    form().xOn("submit" + XOnModifier.prevent + XOnModifier.once, "save()") { "form" }
+    |> Render.toString
+    |> shouldEqual """<form x-on:submit.prevent.once="save()">form</form>"""
+
+[<Fact>]
+let ``xOn with key modifiers renders modified event`` () =
+    input().xOn("keyup" + XOnKey.shift + XOnKey.enter, "submit()")
+    |> Render.toString
+    |> shouldEqual """<input x-on:keyup.shift.enter="submit()">"""
+
+[<Fact>]
+let ``xOn with debounceMs modifier renders modified event`` () =
+    input().xOn("input" + XOnModifier.debounceMs 500, "fetchResults()")
+    |> Render.toString
+    |> shouldEqual """<input x-on:input.debounce.500ms="fetchResults()">"""
+
+[<Fact>]
+let ``xOn with key helper renders kebab-case key modifier`` () =
+    input().xOn("keyup.page-down", "next()")
+    |> Render.toString
+    |> shouldEqual """<input x-on:keyup.page-down="next()">"""
+
+[<Fact>]
+let ``xOn with window and passiveFalse modifiers renders modified event`` () =
+    div().xOn("touchmove" + XOnModifier.window + XOnModifier.passiveFalse, "$event.preventDefault()") { "content" }
+    |> Render.toString
+    |> shouldEqual """<div x-on:touchmove.window.passive.false="$event.preventDefault()">content</div>"""
+
+[<Fact>]
 let ``xText renders x-text`` () =
     span().xText("message")
     |> Render.toString

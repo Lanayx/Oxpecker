@@ -59,6 +59,9 @@ For `xOn` and `xBind`, modifiers are written directly into the directive name st
 // Renders x-on:submit.prevent.once="save()"
 form().xOn("submit.prevent.once", "save()") { ... }
 
+// Or compose them with the bundled XOnModifier helpers:
+form().xOn("submit" + XOnModifier.prevent + XOnModifier.once, "save()") { ... }
+
 // Renders x-bind:class="open ? '' : 'hidden'"
 div().xBind("class", "open ? '' : 'hidden'") { ... }
 ```
@@ -84,6 +87,8 @@ The following helper modules expose the most common Alpine modifier names as con
 | Module                | Examples                                                                 |
 |-----------------------|--------------------------------------------------------------------------|
 | `XShowModifier`       | `important`                                                              |
+| `XOnModifier`         | `prevent`, `stop`, `outside`, `window`, `document`, `once`, `debounce`, `debounceMs n`, `throttle`, `throttleMs n`, `self`, `camel`, `dot`, `passive`, `passiveFalse`, `capture` |
+| `XOnKey`              | `shift`, `enter`, `space`, `ctrl`, `cmd`, `meta`, `alt`, `up`, `down`, `left`, `right`, `escape`, `tab`, `capsLock`, `equal`, `period`, `comma`, `slash` |
 | `XModelModifier`      | `number`, `boolean`, `lazy'`, `change`, `blur`, `enter`, `fill`, `debounce`, `debounceMs n`, `throttle`, `throttleMs n` |
 | `XTransitionModifier` | `durationMs n`, `delayMs n`, `opacity`, `scale n`, `scaleOrigin "top"`   |
 

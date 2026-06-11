@@ -120,6 +120,18 @@ let ``hxReplaceUrl renders hx-replace-url`` () =
     |> shouldEqual """<div hx-get="/data" hx-replace-url="true">content</div>"""
 
 [<Fact>]
+let ``hxHistoryElt true renders hx-history-elt`` () =
+    main().hxHistoryElt(true) { "content" }
+    |> Render.toString
+    |> shouldEqual """<main hx-history-elt>content</main>"""
+
+[<Fact>]
+let ``hxHistoryElt false does not render`` () =
+    main().hxHistoryElt(false) { "content" }
+    |> Render.toString
+    |> shouldEqual """<main>content</main>"""
+
+[<Fact>]
 let ``hxConfirm renders hx-confirm`` () =
     button().hxDelete("/item").hxConfirm("Are you sure?") { "Delete" }
     |> Render.toString

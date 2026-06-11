@@ -147,6 +147,10 @@ type HtmxAdditionalExtensions =
     static member hxReplaceUrl(this: #HtmlTag, value: string | null, modifiers: string) =
         this.attr($"hx-replace-url%s{modifiers}", value)
 
+    /// Marks the element to swap on history restore
+    [<Extension>]
+    static member hxHistoryElt(this: #HtmlTag, value: bool) = this.bool("hx-history-elt", value)
+
     /// Show a confirm() dialog before issuing a request.
     [<Extension>]
     static member hxConfirm(this: #HtmlTag, value: string | null) = this.attr("hx-confirm", value)

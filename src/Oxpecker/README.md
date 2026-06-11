@@ -1361,7 +1361,7 @@ let someHandler (person: Person) : EndpointHandler =
     jsonChunked person
 ```
 
-The underlying JSON serializer is configured as a dependency during application startup and defaults to `System.Text.Json` (when you write `services.AddOxpecker()`). You can implement `IJsonSerializer` interface to plug in custom JSON serializer.
+The underlying JSON serializer is configured as a dependency during application startup and defaults to `System.Text.Json` (when you write `services.AddOxpecker()`). You can implement `IJsonSerializer` interface to plug in custom JSON serializer or to pass different [options](https://learn.microsoft.com/en-us/dotnet/api/system.text.json.jsonserializeroptions) to the default one.
 
 ```fsharp
 let configureServices (services : IServiceCollection) =
