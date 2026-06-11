@@ -87,6 +87,9 @@ module HxSwapMethod =
     /// `outerMorph` — morphs entire element, preserving state and focus.
     [<Literal>]
     let outerMorph = "outerMorph"
+    /// `outerSync` — syncs attributes from the response's outer element onto the target, then replaces the target's children, preserving the element itself (listeners and state).
+    [<Literal>]
+    let outerSync = "outerSync"
     /// `delete` — removes element (ignores response content).
     [<Literal>]
     let delete = "delete"
@@ -117,12 +120,31 @@ module HxSwapModifier =
     let ignoreTitle value = $" ignoreTitle:%b{value}"
     /// `scroll` — auto-scroll to swapped content.
     let scroll value = $" scroll:%s{value}"
+    /// `scrollTarget` — CSS selector for the element to scroll, used together with `scroll`.
+    let scrollTarget ([<StringSyntax("css")>] value) = $" scrollTarget:%s{value}"
     /// `show` — scrolls to show the target element in viewport.
     let show value = $" show:%s{value}"
+    /// `showTarget` — CSS selector for the element to show, used together with `show`.
+    let showTarget ([<StringSyntax("css")>] value) = $" showTarget:%s{value}"
     /// `target` — override swap target inline. Alternative to using hx-target attribute.
     let target value = $" target:%s{value}"
     /// `strip` — controls whether the outer element of the response content is removed before swapping.
     let strip value = $" strip:%b{value}"
+
+/// Synthetic event names for `hxTrigger`, beyond the standard DOM events.
+[<RequireQualifiedAccess>]
+module HxTriggerEvent =
+    /// `load` — fires when the element is loaded into the DOM.
+    [<Literal>]
+    let load = "load"
+    /// `revealed` — fires when the element is scrolled into the viewport.
+    [<Literal>]
+    let revealed = "revealed"
+    /// `intersect` — fires when the element becomes visible in the viewport (uses the IntersectionObserver API).
+    [<Literal>]
+    let intersect = "intersect"
+    /// `every <time>` — fires repeatedly on an interval, e.g. `every "1s"`.
+    let every value = $"every %s{value}"
 
 /// Modifiers for event triggers, which control additional aspects of when and how requests are triggered.
 [<RequireQualifiedAccess>]
@@ -139,14 +161,28 @@ module HxTriggerModifier =
     let once = " once"
     /// `changed` — only triggers when the value of the element has changed.
     let changed = " changed"
-    /// `consume` — prevents the event from bubbling up the DOM.
+    /// `prevent` — calls `event.preventDefault()` on the triggering event.
+    let prevent = " prevent"
+    /// `stop` — calls `event.stopPropagation()`, preventing the event from bubbling up the DOM.
+    let stop = " stop"
+    /// `consume` — calls `event.stopPropagation()` (alias of `stop`), preventing the event from bubbling up the DOM.
     let consume = " consume"
+    /// `halt` — shorthand for `prevent stop`: calls both `event.preventDefault()` and `event.stopPropagation()`.
+    let halt = " halt"
+    /// `capture` — listens during the capture phase (top-down) instead of the bubble phase (bottom-up).
+    let capture = " capture"
+    /// `passive` — registers a passive listener so the browser doesn't wait for the handler before scrolling.
+    let passive = " passive"
     /// `from` — The event will be listened for on a different element.
     let from ([<StringSyntax("css")>] value) = $" from:%s{value}"
     /// `target` — The event will only trigger if its event.target matches the given CSS selector.
     let target ([<StringSyntax("css")>] value) = $" target:%s{value}"
-    /// `queue` — the event will be queued if a request is already in flight.
-    let queue value = $" queue:%s{value}"
+    /// `root` — CSS selector for the IntersectionObserver root element (used with the `intersect` event).
+    let root ([<StringSyntax("css")>] value) = $" root:%s{value}"
+    /// `rootMargin` — margin around the IntersectionObserver root (used with the `intersect` event), e.g. `100px`.
+    let rootMargin value = $" rootMargin:%s{value}"
+    /// `threshold` — visibility threshold for the `intersect` event, e.g. `0.5`.
+    let threshold value = $" threshold:%s{value}"
 
 /// Modifiers for response status codes, which control additional aspects of how htmx handles responses with specific status codes.
 [<RequireQualifiedAccess>]

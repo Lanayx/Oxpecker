@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0-beta.4</Version>
-        <PackageVersion>4.0.0-beta.4</PackageVersion>
-        <PackageReleaseNotes>Add Extensions.fs with attributes for built-in htmx 4 extensions (hx-sse, hx-ws, hx-head, hx-targets, hx-ptag, hx-browser-indicator, hx-history-cache, hx-csp, hx-live)</PackageReleaseNotes>
+        <Version>4.0.0-beta.5</Version>
+        <PackageVersion>4.0.0-beta.5</PackageVersion>
+        <PackageReleaseNotes>Added several missing attributes and modifiers</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

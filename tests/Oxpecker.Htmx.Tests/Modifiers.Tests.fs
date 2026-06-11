@@ -157,3 +157,119 @@ let ``HxBoostModifier.select composes with hxBoost`` () =
     body().hxBoost("true" + HxBoostModifier.select ".main") { "content" }
     |> Render.toString
     |> shouldEqual """<body hx-boost="true select:.main">content</body>"""
+
+// ─── HxSwapMethod (new members) ───
+
+[<Fact>]
+let ``HxSwapMethod.outerSync has expected value`` () =
+    HxSwapMethod.outerSync |> shouldEqual "outerSync"
+
+[<Fact>]
+let ``HxSwapMethod.outerSync composes with hxSwap`` () =
+    div().hxGet("/data").hxSwap(HxSwapMethod.outerSync) { "content" }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/data" hx-swap="outerSync">content</div>"""
+
+// ─── HxSwapModifier (new members) ───
+
+[<Fact>]
+let ``HxSwapModifier.scrollTarget returns scrollTarget value`` () =
+    HxSwapModifier.scrollTarget "#other" |> shouldEqual " scrollTarget:#other"
+
+[<Fact>]
+let ``HxSwapModifier.showTarget returns showTarget value`` () =
+    HxSwapModifier.showTarget "#other" |> shouldEqual " showTarget:#other"
+
+[<Fact>]
+let ``HxSwapModifier.scrollTarget composes with hxSwap`` () =
+    div().hxGet("/data").hxSwap(HxSwapMethod.innerHtml + HxSwapModifier.scroll "top" + HxSwapModifier.scrollTarget "#other") {
+        "content"
+    }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/data" hx-swap="innerHTML scroll:top scrollTarget:#other">content</div>"""
+
+[<Fact>]
+let ``HxSwapModifier.showTarget composes with hxSwap`` () =
+    div().hxGet("/data").hxSwap(HxSwapMethod.innerHtml + HxSwapModifier.show "top" + HxSwapModifier.showTarget "#other") {
+        "content"
+    }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/data" hx-swap="innerHTML show:top showTarget:#other">content</div>"""
+
+// ─── HxTriggerEvent ───
+
+[<Fact>]
+let ``HxTriggerEvent.load has expected value`` () =
+    HxTriggerEvent.load |> shouldEqual "load"
+
+[<Fact>]
+let ``HxTriggerEvent.revealed has expected value`` () =
+    HxTriggerEvent.revealed |> shouldEqual "revealed"
+
+[<Fact>]
+let ``HxTriggerEvent.intersect has expected value`` () =
+    HxTriggerEvent.intersect |> shouldEqual "intersect"
+
+[<Fact>]
+let ``HxTriggerEvent.every returns interval value`` () =
+    HxTriggerEvent.every "1s" |> shouldEqual "every 1s"
+
+[<Fact>]
+let ``HxTriggerEvent.load composes with hxTrigger`` () =
+    div().hxGet("/data").hxTrigger(HxTriggerEvent.load) { "Loading" }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/data" hx-trigger="load">Loading</div>"""
+
+[<Fact>]
+let ``HxTriggerEvent.every composes with hxTrigger`` () =
+    div().hxGet("/updates").hxTrigger(HxTriggerEvent.every "2s") { "content" }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/updates" hx-trigger="every 2s">content</div>"""
+
+// ─── HxTriggerModifier (new members) ───
+
+[<Fact>]
+let ``HxTriggerModifier.prevent has expected value`` () =
+    HxTriggerModifier.prevent |> shouldEqual " prevent"
+
+[<Fact>]
+let ``HxTriggerModifier.stop has expected value`` () =
+    HxTriggerModifier.stop |> shouldEqual " stop"
+
+[<Fact>]
+let ``HxTriggerModifier.halt has expected value`` () =
+    HxTriggerModifier.halt |> shouldEqual " halt"
+
+[<Fact>]
+let ``HxTriggerModifier.capture has expected value`` () =
+    HxTriggerModifier.capture |> shouldEqual " capture"
+
+[<Fact>]
+let ``HxTriggerModifier.passive has expected value`` () =
+    HxTriggerModifier.passive |> shouldEqual " passive"
+
+[<Fact>]
+let ``HxTriggerModifier.root returns root value`` () =
+    HxTriggerModifier.root "#scroll-container" |> shouldEqual " root:#scroll-container"
+
+[<Fact>]
+let ``HxTriggerModifier.rootMargin returns rootMargin value`` () =
+    HxTriggerModifier.rootMargin "100px" |> shouldEqual " rootMargin:100px"
+
+[<Fact>]
+let ``HxTriggerModifier.threshold returns threshold value`` () =
+    HxTriggerModifier.threshold "0.5" |> shouldEqual " threshold:0.5"
+
+[<Fact>]
+let ``HxTriggerModifier.halt composes with hxTrigger`` () =
+    a().hxGet("/data").hxTrigger("click" + HxTriggerModifier.halt) { "Link" }
+    |> Render.toString
+    |> shouldEqual """<a hx-get="/data" hx-trigger="click halt">Link</a>"""
+
+[<Fact>]
+let ``HxTriggerModifier intersect modifiers compose with hxTrigger`` () =
+    div().hxGet("/data").hxTrigger(HxTriggerEvent.intersect + HxTriggerModifier.root "#scroll-container" + HxTriggerModifier.threshold "0.5") {
+        "content"
+    }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/data" hx-trigger="intersect root:#scroll-container threshold:0.5">content</div>"""
