@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>0.1.2</Version>
-        <PackageVersion>0.1.2</PackageVersion>
-        <PackageReleaseNotes>Improved language injections for x-model</PackageReleaseNotes>
+        <Version>0.2.0</Version>
+        <PackageVersion>0.2.0</PackageVersion>
+        <PackageReleaseNotes>xOn helpers and modifiers added</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

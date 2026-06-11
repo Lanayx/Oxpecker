@@ -182,7 +182,13 @@ let ``HxSwapModifier.showTarget returns showTarget value`` () =
 
 [<Fact>]
 let ``HxSwapModifier.scrollTarget composes with hxSwap`` () =
-    div().hxGet("/data").hxSwap(HxSwapMethod.innerHtml + HxSwapModifier.scroll "top" + HxSwapModifier.scrollTarget "#other") {
+    div()
+        .hxGet("/data")
+        .hxSwap(
+            HxSwapMethod.innerHtml
+            + HxSwapModifier.scroll "top"
+            + HxSwapModifier.scrollTarget "#other"
+        ) {
         "content"
     }
     |> Render.toString
@@ -190,7 +196,13 @@ let ``HxSwapModifier.scrollTarget composes with hxSwap`` () =
 
 [<Fact>]
 let ``HxSwapModifier.showTarget composes with hxSwap`` () =
-    div().hxGet("/data").hxSwap(HxSwapMethod.innerHtml + HxSwapModifier.show "top" + HxSwapModifier.showTarget "#other") {
+    div()
+        .hxGet("/data")
+        .hxSwap(
+            HxSwapMethod.innerHtml
+            + HxSwapModifier.show "top"
+            + HxSwapModifier.showTarget "#other"
+        ) {
         "content"
     }
     |> Render.toString
@@ -250,7 +262,8 @@ let ``HxTriggerModifier.passive has expected value`` () =
 
 [<Fact>]
 let ``HxTriggerModifier.root returns root value`` () =
-    HxTriggerModifier.root "#scroll-container" |> shouldEqual " root:#scroll-container"
+    HxTriggerModifier.root "#scroll-container"
+    |> shouldEqual " root:#scroll-container"
 
 [<Fact>]
 let ``HxTriggerModifier.rootMargin returns rootMargin value`` () =
@@ -268,7 +281,13 @@ let ``HxTriggerModifier.halt composes with hxTrigger`` () =
 
 [<Fact>]
 let ``HxTriggerModifier intersect modifiers compose with hxTrigger`` () =
-    div().hxGet("/data").hxTrigger(HxTriggerEvent.intersect + HxTriggerModifier.root "#scroll-container" + HxTriggerModifier.threshold "0.5") {
+    div()
+        .hxGet("/data")
+        .hxTrigger(
+            HxTriggerEvent.intersect
+            + HxTriggerModifier.root "#scroll-container"
+            + HxTriggerModifier.threshold "0.5"
+        ) {
         "content"
     }
     |> Render.toString
