@@ -14,7 +14,7 @@ module layout =
         html(lang="") {
             head() {
                 title() { "Contact App" }
-                script(src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4",
+                script(src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta2",
                     crossorigin="anonymous")
                 link(rel="stylesheet", href="/site.css")
             }
