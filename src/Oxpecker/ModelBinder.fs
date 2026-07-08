@@ -13,10 +13,16 @@ open TypeShape.Core.Utils
 type ModelBinderOptions = {
     CultureInfo: CultureInfo
     CaseInsensitiveMatching: bool
+    /// Upper bound on the index used when binding indexed collections (e.g. "Items[N].Field").
+    /// Since the index comes straight from the (untrusted) request key, an unbounded value would
+    /// let a single small request drive an arbitrarily large allocation. Indices at or above this
+    /// limit are ignored. Defaults to 1024 (same as ASP.NET Core's MaxModelBindingCollectionSize).
+    MaxCollectionSize: int
 } with
     static member Default = {
         CultureInfo = CultureInfo.InvariantCulture
         CaseInsensitiveMatching = false
+        MaxCollectionSize = 1024
     }
 
 /// <summary>
@@ -109,6 +115,13 @@ type internal UnsupportedTypeException(ty: Type) =
 type internal NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
+type internal MaxCollectionSizeExceededException(maxCollectionSize: int) =
+    inherit
+        exn(
+            $"The collection index reached or exceeded the maximum allowed value of %i{maxCollectionSize}. "
+            + "Increase ModelBinderOptions.MaxCollectionSize if you need to bind larger collections."
+        )
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -122,32 +135,41 @@ module internal ModelParser =
         else ValueNone
 
     /// Active pattern for parsing keys in the format "[index].subKey".
-    let private (|IndexAccess|_|) (offset: int) (key: string) =
+    /// All span accesses are bounds-checked so that malformed keys (e.g. "[", "[5]") fail the
+    /// match instead of throwing. A well-formed index that reaches or exceeds maxCollectionSize
+    /// (or overflows Int32) raises <see cref="MaxCollectionSizeExceededException"/> to bound
+    /// allocations, mirroring ASP.NET Core's MaxModelBindingCollectionSize behaviour.
+    let private (|IndexAccess|_|) (offset: int) (maxCollectionSize: int) (key: string) =
         let key = key.AsSpan(offset)
-        if key[0] = '[' then
+        if key.Length > 1 && key[0] = '[' then
             let lastIndex = key.Length - 1
             let mutable currentIndex = 1
-            while key[currentIndex] |> Char.IsDigit do
+            while currentIndex < key.Length && Char.IsDigit key[currentIndex] do
                 currentIndex <- currentIndex + 1
             if
                 currentIndex > 1 // at least one digit
+                && currentIndex + 1 < key.Length // key[currentIndex] and key[currentIndex + 1] are in range
                 && key[currentIndex] = ']'
                 && key[currentIndex + 1] = '.'
                 && currentIndex + 2 < lastIndex // at least one symbol after '].'
             then
-                let index = Int32.Parse(key.Slice(1, currentIndex - 1))
-                let newOffset = offset + currentIndex + 2
-                ValueSome(struct (index, newOffset))
+                // Valid "[index].subKey" syntax: enforce the collection-size limit.
+                // A failed TryParse here means the index overflowed Int32, i.e. far above the limit.
+                match Int32.TryParse(key.Slice(1, currentIndex - 1)) with
+                | true, index when index < maxCollectionSize ->
+                    let newOffset = offset + currentIndex + 2
+                    ValueSome(struct (index, newOffset))
+                | _ -> raise <| MaxCollectionSizeExceededException maxCollectionSize
             else
                 ValueNone
         else
             ValueNone
 
-    let private (|ComplexArray|) { Offset = offset; Data = data } =
+    let private (|ComplexArray|) (maxCollectionSize: int) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.getIndexed()
         for KeyValue(key, value) in data do
             match key with
-            | IndexAccess offset (index, newOffset) ->
+            | IndexAccess offset maxCollectionSize (index, newOffset) ->
                 match matchedData.TryGetValue(index) with
                 | true, struct (_, subdict) -> subdict[key] <- value
                 | false, _ ->
@@ -251,7 +273,7 @@ module internal ModelParser =
                     let rawData = SimpleData(StringValues values[i])
                     parser rawData
             res
-        | ComplexData(ComplexArray indexedDicts) ->
+        | ComplexData(ComplexArray options.MaxCollectionSize indexedDicts) ->
             use indexedDicts = indexedDicts
             let res = ResizeArray()
             for i in indexedDicts.Keys do

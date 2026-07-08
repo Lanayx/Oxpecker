@@ -822,3 +822,53 @@ let ``defaultParseModel<Poco> parses valid POCO data`` () =
     let expected = Poco(Id = 666, Name = "Lorem ipsum", Value = 1_234)
     let result = defaultParseModel<Poco> modelData
     result |> shouldEquivalent expected
+
+// Regression tests for the collection-index binding hardening (unbounded-allocation DoS + malformed keys)
+
+[<Fact>]
+let ``parseModel throws when collection index reaches MaxCollectionSize`` () =
+    // Without the cap this single key would drive an allocation of ~2 billion elements.
+    let modelData =
+        [ "Children[2000000000].Name", StringValues "x" ] |> toComplexData
+    let result () = defaultParseModel<Model> modelData |> ignore
+    result |> shouldFail<MaxCollectionSizeExceededException>
+
+[<Fact>]
+let ``parseModel binds collection index just below MaxCollectionSize`` () =
+    let modelData =
+        [
+            "Children[1023].Name", StringValues "Ali"
+            "Children[1023].Age", StringValues "22"
+        ]
+        |> toComplexData
+    let result = defaultParseModel<Model> modelData
+    result.Children.Length |> shouldEqual 1024
+    result.Children[1023] |> shouldEqual { Name = "Ali"; Age = 22 }
+
+[<Fact>]
+let ``parseModel throws for index at a custom MaxCollectionSize`` () =
+    let options = { ModelBinderOptions.Default with MaxCollectionSize = 4 }
+    let cache = TypeShape.Core.Utils.TypeCache()
+    let modelData = [ "Children[10].Name", StringValues "x" ] |> toComplexData
+    let result () =
+        ModelParser.parseModel<Model> cache options modelData |> ignore
+    result |> shouldFail<MaxCollectionSizeExceededException>
+
+[<Fact>]
+let ``parseModel throws on index above Int32 max`` () =
+    let modelData =
+        [ "Children[9999999999].Name", StringValues "x" ] |> toComplexData
+    let result () = defaultParseModel<Model> modelData |> ignore
+    result |> shouldFail<MaxCollectionSizeExceededException>
+
+[<Fact>]
+let ``parseModel does not throw on unterminated index key`` () =
+    let modelData = [ "Children[", StringValues "x" ] |> toComplexData
+    let result = defaultParseModel<Model> modelData
+    result.Children |> shouldEqual [||]
+
+[<Fact>]
+let ``parseModel does not throw on index without subkey`` () =
+    let modelData = [ "Children[5]", StringValues "x" ] |> toComplexData
+    let result = defaultParseModel<Model> modelData
+    result.Children |> shouldEqual [||]
