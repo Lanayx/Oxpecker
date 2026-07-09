@@ -40,6 +40,10 @@ type CompositeModel = {
     SecondChild: Child option
 }
 
+type Point = { X: int; Y: int }
+
+type PointsModel = { Points: Point[] }
+
 [<Fact>]
 let ``parseModel<Model2> returns empty array for null SearchTerms`` () =
     let modelData =
@@ -881,3 +885,17 @@ let ``parseModel does not throw on unterminated property`` () =
     let modelData = [ "Children[5].", StringValues "x" ] |> toComplexData
     let result = defaultParseModel<Model> modelData
     result.Children |> shouldEqual [||]
+
+[<Fact>]
+let ``parseModel binds collection with single-character subkey`` () =
+    let modelData =
+        [
+            "Points[0].X", StringValues "1"
+            "Points[1].X", StringValues "2"
+        ]
+        |> toComplexData
+    let expected = {
+        Points = [| { X = 1; Y = 0 }; { X = 2; Y = 0 } |]
+    }
+    let result = defaultParseModel<PointsModel> modelData
+    result |> shouldEqual expected

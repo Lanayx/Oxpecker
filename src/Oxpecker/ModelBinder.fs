@@ -148,7 +148,7 @@ module internal ModelParser =
                 currentIndex <- currentIndex + 1
             if
                 currentIndex > 1 // at least one digit
-                && currentIndex + 2 < lastIndex // at least one symbol after '].' (also keeps the reads below in range)
+                && currentIndex + 2 <= lastIndex // at least one symbol after '].' (also keeps the reads below in range)
                 && key[currentIndex] = ']'
                 && key[currentIndex + 1] = '.'
             then
