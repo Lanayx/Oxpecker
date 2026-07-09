@@ -14,9 +14,9 @@ type ModelBinderOptions = {
     CultureInfo: CultureInfo
     CaseInsensitiveMatching: bool
     /// Upper bound on the index used when binding indexed collections (e.g. "Items[N].Field").
-    /// Since the index comes straight from the (untrusted) request key, an unbounded value would
-    /// let a single small request drive an arbitrarily large allocation. Indices at or above this
-    /// limit are ignored. Defaults to 1024 (same as ASP.NET Core's MaxModelBindingCollectionSize).
+    /// Since the index comes from the (untrusted) request key, an unbounded value would let a small request drive a large allocation.
+    /// Indices that reach or exceed this limit (or overflow Int32) raise <see cref="MaxCollectionSizeExceededException"/>.
+    /// Defaults to 1024 (same as ASP.NET Core's MaxModelBindingCollectionSize).
     MaxCollectionSize: int
 } with
     static member Default = {
