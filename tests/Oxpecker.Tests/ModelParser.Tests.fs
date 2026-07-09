@@ -828,9 +828,9 @@ let ``defaultParseModel<Poco> parses valid POCO data`` () =
 [<Fact>]
 let ``parseModel throws when collection index reaches MaxCollectionSize`` () =
     // Without the cap this single key would drive an allocation of ~2 billion elements.
-    let modelData =
-        [ "Children[2000000000].Name", StringValues "x" ] |> toComplexData
-    let result () = defaultParseModel<Model> modelData |> ignore
+    let modelData = [ "Children[2000000000].Name", StringValues "x" ] |> toComplexData
+    let result () =
+        defaultParseModel<Model> modelData |> ignore
     result |> shouldFail<MaxCollectionSizeExceededException>
 
 [<Fact>]
@@ -847,7 +847,10 @@ let ``parseModel binds collection index just below MaxCollectionSize`` () =
 
 [<Fact>]
 let ``parseModel throws for index at a custom MaxCollectionSize`` () =
-    let options = { ModelBinderOptions.Default with MaxCollectionSize = 4 }
+    let options = {
+        ModelBinderOptions.Default with
+            MaxCollectionSize = 4
+    }
     let cache = TypeShape.Core.Utils.TypeCache()
     let modelData = [ "Children[10].Name", StringValues "x" ] |> toComplexData
     let result () =
@@ -856,9 +859,9 @@ let ``parseModel throws for index at a custom MaxCollectionSize`` () =
 
 [<Fact>]
 let ``parseModel throws on index above Int32 max`` () =
-    let modelData =
-        [ "Children[9999999999].Name", StringValues "x" ] |> toComplexData
-    let result () = defaultParseModel<Model> modelData |> ignore
+    let modelData = [ "Children[9999999999].Name", StringValues "x" ] |> toComplexData
+    let result () =
+        defaultParseModel<Model> modelData |> ignore
     result |> shouldFail<MaxCollectionSizeExceededException>
 
 [<Fact>]
@@ -870,5 +873,11 @@ let ``parseModel does not throw on unterminated index key`` () =
 [<Fact>]
 let ``parseModel does not throw on index without subkey`` () =
     let modelData = [ "Children[5]", StringValues "x" ] |> toComplexData
+    let result = defaultParseModel<Model> modelData
+    result.Children |> shouldEqual [||]
+
+[<Fact>]
+let ``parseModel does not throw on unterminated property`` () =
+    let modelData = [ "Children[5].", StringValues "x" ] |> toComplexData
     let result = defaultParseModel<Model> modelData
     result.Children |> shouldEqual [||]

@@ -144,14 +144,13 @@ module internal ModelParser =
         if key.Length > 1 && key[0] = '[' then
             let lastIndex = key.Length - 1
             let mutable currentIndex = 1
-            while currentIndex < key.Length && Char.IsDigit key[currentIndex] do
+            while currentIndex < key.Length && Char.IsAsciiDigit key[currentIndex] do
                 currentIndex <- currentIndex + 1
             if
                 currentIndex > 1 // at least one digit
-                && currentIndex + 1 < key.Length // key[currentIndex] and key[currentIndex + 1] are in range
+                && currentIndex + 2 < lastIndex // at least one symbol after '].' (also keeps the reads below in range)
                 && key[currentIndex] = ']'
                 && key[currentIndex + 1] = '.'
-                && currentIndex + 2 < lastIndex // at least one symbol after '].'
             then
                 // Valid "[index].subKey" syntax: enforce the collection-size limit.
                 // A failed TryParse here means the index overflowed Int32, i.e. far above the limit.
