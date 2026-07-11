@@ -15,7 +15,7 @@ type ModelBinderOptions = {
     CaseInsensitiveMatching: bool
     /// Upper bound on the index used when binding indexed collections (e.g. "Items[N]" or "Items[N].Field").
     /// The index comes from the (untrusted) request key; indices that reach or exceed this limit
-    /// (or overflow Int32) raise <see cref="MaxCollectionSizeExceededException"/>.
+    /// (or overflow Int32) raise <see cref="ModelBindException"/>.
     /// Defaults to 1024 (same as ASP.NET Core's MaxModelBindingCollectionSize).
     MaxCollectionSize: int
 } with
@@ -123,11 +123,10 @@ type internal UnsupportedTypeException(ty: Type) =
 type internal NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
-type MaxCollectionSizeExceededException(maxCollectionSize: int) =
+type internal MaxCollectionSizeExceededException(maxCollectionSize: int) =
     inherit
         exn(
-            $"The collection index reached or exceeded the maximum allowed value of %i{maxCollectionSize}. "
-            + "Increase ModelBinderOptions.MaxCollectionSize if you need to bind larger collections."
+            $"The collection index reached or exceeded the maximum allowed value of %i{maxCollectionSize}."
         )
 
 /// <summary>

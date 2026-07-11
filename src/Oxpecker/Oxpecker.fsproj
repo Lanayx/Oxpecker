@@ -24,7 +24,7 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Version>2.1.0</Version>
         <PackageVersion>2.1.0</PackageVersion>
-        <PackageReleaseNotes>MaxCollectionSize model binder option introduced</PackageReleaseNotes>
+        <PackageReleaseNotes>MaxCollectionSize model binder option introduced.</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
