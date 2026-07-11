@@ -78,7 +78,7 @@ module private DictionaryPool =
                             false
                         else
                             dict.Clear()
-                            dict.Count = 0
+                            true
                 },
                 maximumRetained
             )
@@ -145,80 +145,94 @@ module internal ModelParser =
     /// Parses a "[index]" prefix of the span, returning the index and the position just after ']'.
     /// All span accesses are bounds-checked so that malformed keys (e.g. "[", "[]x") fail the
     /// match instead of throwing. A well-formed index that reaches or exceeds maxCollectionSize
-    /// (or overflows Int32) raises <see cref="MaxCollectionSizeExceededException"/> to bound
-    /// allocations, mirroring ASP.NET Core's MaxModelBindingCollectionSize behaviour.
-    let private tryParseIndex (maxCollectionSize: int) (key: ReadOnlySpan<char>) =
+    /// (or overflows Int32) yields the sentinel index -1 so the caller can reject the request,
+    /// mirroring ASP.NET Core's MaxModelBindingCollectionSize behaviour.
+    let inline private tryParseIndex (maxCollectionSize: int) (key: ReadOnlySpan<char>) =
         if key.Length > 2 && key[0] = '[' then
             let mutable currentIndex = 1
+            let mutable index = 0L
             while currentIndex < key.Length && Char.IsAsciiDigit key[currentIndex] do
+                // Once the value is out of range the accumulation stops, so an absurdly long
+                // digit run cannot overflow Int64 while the shape is still being scanned.
+                if index <= int64 Int32.MaxValue then
+                    index <- index * 10L + int64(key[currentIndex] - '0')
                 currentIndex <- currentIndex + 1
             if
                 currentIndex > 1 // at least one digit
                 && currentIndex < key.Length
                 && key[currentIndex] = ']'
             then
-                // Valid "[index]" syntax: enforce the collection-size limit.
-                // A failed TryParse here means the index overflowed Int32, i.e. far above the limit.
-                match Int32.TryParse(key.Slice(1, currentIndex - 1)) with
-                | true, index when index < maxCollectionSize -> ValueSome(struct (index, currentIndex + 1))
-                | _ -> raise <| MaxCollectionSizeExceededException maxCollectionSize
+                if index < int64 maxCollectionSize then
+                    ValueSome(struct (int index, currentIndex + 1))
+                else
+                    ValueSome(struct (-1, currentIndex + 1))
             else
                 ValueNone
         else
             ValueNone
 
     /// Active pattern for parsing keys in the format "[index].subKey".
+    /// Index -1 means the index reached MaxCollectionSize, regardless of what follows the bracket.
     let private (|IndexAccess|_|) (offset: int) (maxCollectionSize: int) (key: string) =
         let key = key.AsSpan(offset)
         match tryParseIndex maxCollectionSize key with
-        | ValueSome(struct (index, afterBracket)) when afterBracket + 1 < key.Length && key[afterBracket] = '.' ->
+        | ValueSome(struct (index, afterBracket)) when
+            index < 0 || (afterBracket + 1 < key.Length && key[afterBracket] = '.')
+            ->
             ValueSome(struct (index, offset + afterBracket + 1))
         | _ -> ValueNone
 
     /// Active pattern for parsing keys in the format "[index]".
+    /// Index -1 means the index reached MaxCollectionSize, regardless of what follows the bracket.
     let private (|IndexedValue|_|) (offset: int) (maxCollectionSize: int) (key: string) =
         let key = key.AsSpan(offset)
         match tryParseIndex maxCollectionSize key with
-        | ValueSome(struct (index, afterBracket)) when afterBracket = key.Length -> ValueSome index
+        | ValueSome(struct (index, afterBracket)) when index < 0 || afterBracket = key.Length -> ValueSome index
         | _ -> ValueNone
 
     let private (|IndexedValues|) (maxCollectionSize: int) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.getIndexedValues()
-        try
-            for KeyValue(key, value) in data do
-                match key with
-                | IndexedValue offset maxCollectionSize index ->
+        let mutable overLimit = false
+        for KeyValue(key, value) in data do
+            match key with
+            | IndexedValue offset maxCollectionSize index ->
+                if index < 0 then
+                    overLimit <- true
+                else
                     // Distinct key spellings of the same index (e.g. "[1]" and "[01]") keep the first value.
                     matchedData.TryAdd(index, value) |> ignore
-                | _ -> ()
-            matchedData
-        with _ ->
-            // The index limit check can raise mid-loop; the rented dictionary must still be
-            // returned, otherwise hostile requests would drain the pool.
+            | _ -> ()
+        if overLimit then
+            // The rented dictionary must be returned before rejecting the request,
+            // otherwise hostile requests would drain the pool.
             matchedData.Dispose()
-            reraise()
+            raise <| MaxCollectionSizeExceededException maxCollectionSize
+        matchedData
 
     let private (|ComplexArray|) (maxCollectionSize: int) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.getIndexed()
-        try
-            for KeyValue(key, value) in data do
-                match key with
-                | IndexAccess offset maxCollectionSize (index, newOffset) ->
+        let mutable overLimit = false
+        for KeyValue(key, value) in data do
+            match key with
+            | IndexAccess offset maxCollectionSize (index, newOffset) ->
+                if index < 0 then
+                    overLimit <- true
+                else
                     match matchedData.TryGetValue(index) with
                     | true, struct (_, subdict) -> subdict[key] <- value
                     | false, _ ->
                         let subdict = DictionaryPool.get()
                         subdict[key] <- value
                         matchedData[index] <- struct (newOffset, subdict)
-                | _ -> ()
-            matchedData
-        with _ ->
-            // The index limit check can raise mid-loop; the rented dictionaries must still be
-            // returned, otherwise hostile requests would drain the pool.
+            | _ -> ()
+        if overLimit then
+            // The rented dictionaries must be returned before rejecting the request,
+            // otherwise hostile requests would drain the pool.
             for struct (_, subdict) in matchedData.Values do
                 subdict.Dispose()
             matchedData.Dispose()
-            reraise()
+            raise <| MaxCollectionSizeExceededException maxCollectionSize
+        matchedData
 
     let private (|ExactMatch|_|) (memberName: string) (ignoreCase: bool) { Offset = offset; Data = data } =
         if offset = 0 && (not ignoreCase) then
