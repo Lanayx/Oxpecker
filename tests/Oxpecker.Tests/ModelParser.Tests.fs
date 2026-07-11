@@ -19,6 +19,10 @@ type Sex =
     | Male
     | Female
 
+type internal InternalChoice =
+    | ChoiceA
+    | ChoiceB
+
 type Child = { Name: string | null; Age: int }
 
 type Model = {
@@ -117,6 +121,52 @@ let ``parseModel<Model2> handles indexed string array`` () =
     result |> shouldEqual expected
 
 [<Fact>]
+let ``parseModel<Model2> ignores indexed values after a missing index`` () =
+    let modelData =
+        [ "SearchTerms[0]", StringValues "a"; "SearchTerms[5]", StringValues "b" ]
+        |> toComplexData
+    let expected = { SearchTerms = [| "a" |] }
+    let result = defaultParseModel<Model2> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``parseModel<Model2> binds empty array when the first index is missing`` () =
+    let modelData = [ "SearchTerms[10]", StringValues "a" ] |> toComplexData
+    let expected = { SearchTerms = [||] }
+    let result = defaultParseModel<Model2> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``parseModel<Model2> binds first value for a multi-valued index`` () =
+    // Duplicated key (e.g. "SearchTerms[0]=a&SearchTerms[0]=b") arrives merged into one StringValues.
+    let modelData = [ "SearchTerms[0]", StringValues [| "a"; "b" |] ] |> toComplexData
+    let expected = { SearchTerms = [| "a" |] }
+    let result = defaultParseModel<Model2> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``parseModel<Model2> binds first value for distinct spellings of the same index`` () =
+    let modelData =
+        [
+            "SearchTerms[0]", StringValues "z"
+            "SearchTerms[1]", StringValues "a"
+            "SearchTerms[01]", StringValues "b"
+        ]
+        |> toComplexData
+    let expected = { SearchTerms = [| "z"; "a" |] }
+    let result = defaultParseModel<Model2> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
+let ``parseModel<Model2> ignores non-indexed subkeys regardless of key order`` () =
+    let data = [ "SearchTerms[0]", StringValues "a"; "SearchTerms.x", StringValues "1" ]
+    let expected = { SearchTerms = [| "a" |] }
+
+    defaultParseModel<Model2>(toComplexData data) |> shouldEqual expected
+
+    defaultParseModel<Model2>(toComplexData(List.rev data)) |> shouldEqual expected
+
+[<Fact>]
 let ``defaultParseModel<Model> parses complete model data correctly`` () =
     let id = Guid.NewGuid()
     let modelData =
@@ -212,11 +262,8 @@ let ``defaultParseModel<Model> handles missing array items`` () =
         Sex = Female
         BirthDate = DateTime(1986, 12, 29)
         Nicknames = None
-        Children = [|
-            { Name = "Hamed"; Age = 32 }
-            Unchecked.defaultof<_>
-            { Name = "Gholi"; Age = 44 }
-        |]
+        // Binding stops at the first missing index, so Children[2] is ignored.
+        Children = [| { Name = "Hamed"; Age = 32 } |]
     }
     let result = defaultParseModel<Model> modelData
     result |> shouldEqual expected
@@ -597,6 +644,22 @@ let ``defaultParseModel parses indexed collections of supported scalar types`` (
     |> shouldEqual [| Female; Male |]
 
 [<Fact>]
+let ``defaultParseModel stops binding at the first missing index`` () =
+    defaultParseModel<int array>(toComplexData [ "[0]", StringValues "1"; "[2]", StringValues "2" ])
+    |> shouldEqual [| 1 |]
+
+    defaultParseModel<string array>(toComplexData [ "[1]", StringValues "b" ])
+    |> shouldEqual [||]
+
+[<Fact>]
+let ``defaultParseModel parses indexed collection of internal union type`` () =
+    let modelData =
+        [ "[0]", StringValues "ChoiceB"; "[1]", StringValues "ChoiceA" ]
+        |> toComplexData
+    let result = defaultParseModel<InternalChoice array> modelData
+    result |> shouldEqual [| ChoiceB; ChoiceA |]
+
+[<Fact>]
 let ``defaultParseModel<BookType> parses a valid enum value 'Paperback'`` () =
     let modelData = "Paperback" |> StringValues |> SimpleData
     let expected = BookType.Paperback
@@ -681,7 +744,7 @@ type Bar = { Bar: string | null; Baz: Baz | null }
 type Foo = { Foo: string; Bars: Bar option seq }
 
 [<Fact>]
-let ``defaultParseModel<Foo> parses data with non-sequential index elements`` () =
+let ``defaultParseModel<Foo> stops binding at the first missing index`` () =
     let modelData =
         [
             "Bars[2].Bar", StringValues "Bar"
@@ -700,7 +763,31 @@ let ``defaultParseModel<Foo> parses data with non-sequential index elements`` ()
                     Value = Nullable 0
                 }
             }
-            None
+        |]
+    }
+    let result = defaultParseModel<Foo> modelData
+    result |> shouldEquivalent expected
+
+[<Fact>]
+let ``defaultParseModel<Foo> parses out-of-order sequential index elements`` () =
+    let modelData =
+        [
+            "Bars[1].Bar", StringValues "Bar"
+            "Bars[0].Baz.Name", StringValues "abc"
+            "Bars[0].Baz.Value", StringValues "0"
+            "Bars[1].Baz.Value", StringValues "1"
+        ]
+        |> toComplexData
+    let expected = {
+        Foo = Unchecked.defaultof<_>
+        Bars = [|
+            Some {
+                Bar = null
+                Baz = {
+                    Name = Some "abc"
+                    Value = Nullable 0
+                }
+            }
             Some {
                 Bar = "Bar"
                 Baz = { Name = None; Value = Nullable 1 }
@@ -804,15 +891,14 @@ type AnonymousType2 = {|
 let ``defaultParseModel<AnonymousType2> parses deeply nested anonymous type data`` () =
     let modelData =
         [
-            "Values[2].Value.Values[2].Value.Name", StringValues "foo"
-            "Values[2].Value.Values[0].Value.Id", StringValues "111"
-            "Values[1].Value.Values[0].Value.Name", StringValues "bar"
-            "Values[2].Value.Values[2].Value.Id", StringValues "222"
+            "Values[1].Value.Values[1].Value.Name", StringValues "foo"
+            "Values[1].Value.Values[0].Value.Id", StringValues "111"
+            "Values[0].Value.Values[0].Value.Name", StringValues "bar"
+            "Values[1].Value.Values[1].Value.Id", StringValues "222"
         ]
         |> toComplexData
     let expected: AnonymousType2 = {|
         Values = [|
-            Unchecked.defaultof<_>
             {|
                 Value = {|
                     Values = [| {| Value = {| Id = 0; Name = "bar" |} |} |]
@@ -824,7 +910,6 @@ let ``defaultParseModel<AnonymousType2> parses deeply nested anonymous type data
                         {|
                             Value = {| Id = 111; Name = null |}
                         |}
-                        Unchecked.defaultof<_>
                         {|
                             Value = {| Id = 222; Name = "foo" |}
                         |}
@@ -887,7 +972,36 @@ let ``parseModel throws when indexed string collection reaches MaxCollectionSize
     result |> shouldFail<MaxCollectionSizeExceededException>
 
 [<Fact>]
+let ``parseModel throws when simple-element index with subkey exceeds MaxCollectionSize`` () =
+    // The limit is enforced for any well-formed "[N]" segment, even when the key shape
+    // ("[N].subKey" on a simple-element collection) won't bind anything.
+    let modelData = [ "SearchTerms[2000000000].x", StringValues "x" ] |> toComplexData
+    let result () =
+        defaultParseModel<Model2> modelData |> ignore
+    result |> shouldFail<MaxCollectionSizeExceededException>
+
+[<Fact>]
+let ``parseModel throws when complex-element index without subkey exceeds MaxCollectionSize`` () =
+    let modelData = [ "Children[2000000000]", StringValues "x" ] |> toComplexData
+    let result () =
+        defaultParseModel<Model> modelData |> ignore
+    result |> shouldFail<MaxCollectionSizeExceededException>
+
+[<Fact>]
 let ``parseModel binds collection index just below MaxCollectionSize`` () =
+    let modelData =
+        [
+            for i in 0..1023 do
+                $"Children[%i{i}].Name", StringValues "Ali"
+                $"Children[%i{i}].Age", StringValues(string i)
+        ]
+        |> toComplexData
+    let result = defaultParseModel<Model> modelData
+    result.Children.Length |> shouldEqual 1024
+    result.Children[1023] |> shouldEqual { Name = "Ali"; Age = 1023 }
+
+[<Fact>]
+let ``parseModel ignores index just below MaxCollectionSize when earlier indices are missing`` () =
     let modelData =
         [
             "Children[1023].Name", StringValues "Ali"
@@ -895,8 +1009,7 @@ let ``parseModel binds collection index just below MaxCollectionSize`` () =
         ]
         |> toComplexData
     let result = defaultParseModel<Model> modelData
-    result.Children.Length |> shouldEqual 1024
-    result.Children[1023] |> shouldEqual { Name = "Ali"; Age = 22 }
+    result.Children |> shouldEqual [||]
 
 [<Fact>]
 let ``parseModel throws for index at a custom MaxCollectionSize`` () =

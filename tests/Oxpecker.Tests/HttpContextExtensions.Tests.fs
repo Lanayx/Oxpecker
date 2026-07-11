@@ -120,6 +120,17 @@ let ``BindForm binds indexed scalar collections`` () =
     }
 
 [<Fact>]
+let ``BindForm binds first value for duplicated collection index`` () =
+    task {
+        // The checkbox + hidden-input fallback idiom: both inputs share the same indexed name.
+        let ctx = createFormContext "Flags[0]=true&Flags[0]=false&Flags[1]=false"
+
+        let! result = ctx.BindForm<ScalarCollectionModel>()
+
+        result.Flags |> shouldEqual(seq [ true; false ])
+    }
+
+[<Fact>]
 let ``BindQuery binds indexed string collections`` () =
     let ctx = DefaultHttpContext()
     let services = ServiceCollection()
