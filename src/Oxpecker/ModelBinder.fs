@@ -13,10 +13,16 @@ open TypeShape.Core.Utils
 type ModelBinderOptions = {
     CultureInfo: CultureInfo
     CaseInsensitiveMatching: bool
+    /// Upper bound on the index used when binding indexed collections (e.g. "Items[N]" or "Items[N].Field").
+    /// The index comes from the (untrusted) request key; indices that reach or exceed this limit
+    /// (or overflow Int32) raise <see cref="ModelBindException"/>.
+    /// Defaults to 1024 (same as ASP.NET Core's MaxModelBindingCollectionSize).
+    MaxCollectionSize: int
 } with
     static member Default = {
         CultureInfo = CultureInfo.InvariantCulture
         CaseInsensitiveMatching = false
+        MaxCollectionSize = 1024
     }
 
 /// <summary>
@@ -54,6 +60,10 @@ module private DictionaryPool =
     open Microsoft.Extensions.ObjectPool
 
     let private maximumRetained = Environment.ProcessorCount * 2
+    /// Dictionaries grown by a single large request are dropped instead of pooled:
+    /// Clear() keeps the grown bucket arrays, so retaining them would pin that
+    /// capacity in the pool for the process lifetime.
+    let private maximumRetainedCount = 256
 
     type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() as that =
         inherit
@@ -64,13 +74,17 @@ module private DictionaryPool =
                             member this.Dispose() = that.Return(this)
                         }
                     member _.Return(dict) =
-                        dict.Clear()
-                        dict.Count = 0
+                        if dict.Count > maximumRetainedCount then
+                            false
+                        else
+                            dict.Clear()
+                            true
                 },
                 maximumRetained
             )
 
     let get = DictionaryPool<string, StringValues>().Get
+    let getIndexedValues = DictionaryPool<int, StringValues>().Get
     let getIndexed =
         DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
 
@@ -109,6 +123,9 @@ type internal UnsupportedTypeException(ty: Type) =
 type internal NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
+type internal MaxCollectionSizeExceededException(maxCollectionSize: int) =
+    inherit exn($"The collection index reached or exceeded the maximum allowed value of %i{maxCollectionSize}.")
+
 /// <summary>
 /// Module for parsing models from a generic data set.
 /// </summary>
@@ -121,40 +138,96 @@ module internal ModelParser =
         elif rawValue.Count = 1 then ValueSome rawValue[0]
         else ValueNone
 
-    /// Active pattern for parsing keys in the format "[index].subKey".
-    let private (|IndexAccess|_|) (offset: int) (key: string) =
-        let key = key.AsSpan(offset)
-        if key[0] = '[' then
-            let lastIndex = key.Length - 1
+    /// Parses a "[index]" prefix of the span, returning the index and the position just after ']'.
+    /// All span accesses are bounds-checked so that malformed keys (e.g. "[", "[]x") fail the
+    /// match instead of throwing. A well-formed index that reaches or exceeds maxCollectionSize
+    /// (or overflows Int32) yields the sentinel index -1 so the caller can reject the request,
+    /// mirroring ASP.NET Core's MaxModelBindingCollectionSize behaviour.
+    let inline private tryParseIndex (maxCollectionSize: int) (key: ReadOnlySpan<char>) =
+        if key.Length > 2 && key[0] = '[' then
             let mutable currentIndex = 1
-            while key[currentIndex] |> Char.IsDigit do
+            let mutable index = 0L
+            while currentIndex < key.Length && Char.IsAsciiDigit key[currentIndex] do
+                // Once the value is out of range the accumulation stops, so an absurdly long
+                // digit run cannot overflow Int64 while the shape is still being scanned.
+                if index <= int64 Int32.MaxValue then
+                    index <- index * 10L + int64(key[currentIndex] - '0')
                 currentIndex <- currentIndex + 1
             if
                 currentIndex > 1 // at least one digit
+                && currentIndex < key.Length
                 && key[currentIndex] = ']'
-                && key[currentIndex + 1] = '.'
-                && currentIndex + 2 < lastIndex // at least one symbol after '].'
             then
-                let index = Int32.Parse(key.Slice(1, currentIndex - 1))
-                let newOffset = offset + currentIndex + 2
-                ValueSome(struct (index, newOffset))
+                if index < int64 maxCollectionSize then
+                    ValueSome(struct (int index, currentIndex + 1))
+                else
+                    ValueSome(struct (-1, currentIndex + 1))
             else
                 ValueNone
         else
             ValueNone
 
-    let private (|ComplexArray|) { Offset = offset; Data = data } =
-        let matchedData = DictionaryPool.getIndexed()
+    /// Active pattern for parsing keys in the format "[index].subKey".
+    /// Index -1 means the index reached MaxCollectionSize, regardless of what follows the bracket.
+    let private (|IndexAccess|_|) (offset: int) (maxCollectionSize: int) (key: string) =
+        let key = key.AsSpan(offset)
+        match tryParseIndex maxCollectionSize key with
+        | ValueSome(struct (index, afterBracket)) when
+            index < 0 || (afterBracket + 1 < key.Length && key[afterBracket] = '.')
+            ->
+            ValueSome(struct (index, offset + afterBracket + 1))
+        | _ -> ValueNone
+
+    /// Active pattern for parsing keys in the format "[index]".
+    /// Index -1 means the index reached MaxCollectionSize, regardless of what follows the bracket.
+    let private (|IndexedValue|_|) (offset: int) (maxCollectionSize: int) (key: string) =
+        let key = key.AsSpan(offset)
+        match tryParseIndex maxCollectionSize key with
+        | ValueSome(struct (index, afterBracket)) when index < 0 || afterBracket = key.Length -> ValueSome index
+        | _ -> ValueNone
+
+    let private (|IndexedValues|) (maxCollectionSize: int) { Offset = offset; Data = data } =
+        let matchedData = DictionaryPool.getIndexedValues()
+        let mutable overLimit = false
         for KeyValue(key, value) in data do
             match key with
-            | IndexAccess offset (index, newOffset) ->
-                match matchedData.TryGetValue(index) with
-                | true, struct (_, subdict) -> subdict[key] <- value
-                | false, _ ->
-                    let subdict = DictionaryPool.get()
-                    subdict[key] <- value
-                    matchedData[index] <- struct (newOffset, subdict)
+            | IndexedValue offset maxCollectionSize index ->
+                if index < 0 then
+                    overLimit <- true
+                else
+                    // Distinct key spellings of the same index (e.g. "[1]" and "[01]") keep the first value.
+                    matchedData.TryAdd(index, value) |> ignore
             | _ -> ()
+        if overLimit then
+            // The rented dictionary must be returned before rejecting the request,
+            // otherwise hostile requests would drain the pool.
+            matchedData.Dispose()
+            raise <| MaxCollectionSizeExceededException maxCollectionSize
+        matchedData
+
+    let private (|ComplexArray|) (maxCollectionSize: int) { Offset = offset; Data = data } =
+        let matchedData = DictionaryPool.getIndexed()
+        let mutable overLimit = false
+        for KeyValue(key, value) in data do
+            match key with
+            | IndexAccess offset maxCollectionSize (index, newOffset) ->
+                if index < 0 then
+                    overLimit <- true
+                else
+                    match matchedData.TryGetValue(index) with
+                    | true, struct (_, subdict) -> subdict[key] <- value
+                    | false, _ ->
+                        let subdict = DictionaryPool.get()
+                        subdict[key] <- value
+                        matchedData[index] <- struct (newOffset, subdict)
+            | _ -> ()
+        if overLimit then
+            // The rented dictionaries must be returned before rejecting the request,
+            // otherwise hostile requests would drain the pool.
+            for struct (_, subdict) in matchedData.Values do
+                subdict.Dispose()
+            matchedData.Dispose()
+            raise <| MaxCollectionSizeExceededException maxCollectionSize
         matchedData
 
     let private (|ExactMatch|_|) (memberName: string) (ignoreCase: bool) { Offset = offset; Data = data } =
@@ -173,7 +246,10 @@ module internal ModelParser =
             let candidate = memberName.AsSpan()
             while result.IsValueNone && enumerator.MoveNext() do
                 let (KeyValue(key, value)) = enumerator.Current
-                let current = key.AsSpan(offset)
+                let mutable current = key.AsSpan(offset)
+                // At nested levels the key still carries its '.' separator; skip it before comparing.
+                if offset > 0 && current.Length > 0 && current[0] = '.' then
+                    current <- current.Slice(1)
                 if MemoryExtensions.Equals(current, candidate, comparisonType) then
                     result <- ValueSome value
             result
@@ -187,12 +263,22 @@ module internal ModelParser =
             else
                 StringComparison.Ordinal
         for KeyValue(key, value) in data do
-            if key.AsSpan(offset).StartsWith(prefix, comparisonType) then
-                nextOffset <- offset + prefix.Length
-                if key[nextOffset] = '.' then // property access
-                    nextOffset <- nextOffset + 1
-                    matchedData[key] <- value
-                elif key[nextOffset] = '[' then // index access
+            let mutable keySpan = key.AsSpan(offset)
+            let mutable separatorLength = 0
+            // At nested levels the key still carries its '.' separator; skip it before comparing.
+            // The separator is NOT consumed into nextOffset: keys sharing a prefix can mix '.'
+            // and '[' shapes, so consuming it would make the offset depend on key order.
+            if offset > 0 && keySpan.Length > 0 && keySpan[0] = '.' then
+                keySpan <- keySpan.Slice(1)
+                separatorLength <- 1
+            if keySpan.StartsWith(prefix, comparisonType) then
+                let candidateOffset = offset + separatorLength + prefix.Length
+                if
+                    candidateOffset < key.Length
+                    && (key[candidateOffset] = '.' // property access
+                        || key[candidateOffset] = '[') // index access
+                then
+                    nextOffset <- candidateOffset
                     matchedData[key] <- value
         struct (nextOffset, matchedData)
 
@@ -224,6 +310,26 @@ module internal ModelParser =
 
         raise <| NotParsedException(value, typeof<'T>)
 
+    /// Determines whether a collection element of the given type is parsed from a single flat
+    /// value (the indexed "simple value" path, e.g. Items[0]=1) rather than from a nested object.
+    /// The dispatch deliberately mirrors the simple-data branches of createParser (same TypeShape
+    /// patterns, same order) so the two cannot drift apart. Unions qualify because they are always
+    /// bound from a single case-name string, and wrappers (nullable/option/collections) delegate
+    /// to their element type.
+    let rec private supportsSimpleData (ty: Type) : bool =
+        match TypeShape.Create ty with
+        | Shape.String -> true
+        | Shape.Parsable _ -> true
+        | Shape.Enum _ -> true
+        | Shape.Nullable _ -> supportsSimpleData(ty.GetGenericArguments()[0])
+        | Shape.FSharpOption shape -> supportsSimpleData shape.Element.Type
+        | Shape.FSharpList shape -> supportsSimpleData shape.Element.Type
+        | Shape.Array shape when shape.Rank = 1 -> supportsSimpleData shape.Element.Type
+        | Shape.ResizeArray shape -> supportsSimpleData shape.Element.Type
+        | Shape.Enumerable shape -> supportsSimpleData shape.Element.Type
+        | Shape.FSharpUnion _ -> true
+        | _ -> false
+
     let rec private getOrCreateParser<'T> (cache: TypeCache) (options: ModelBinderOptions) : Parser<'T> =
         match cache.TryFind() with
         | Some x -> x
@@ -243,26 +349,51 @@ module internal ModelParser =
         (options: ModelBinderOptions)
         : Parser<'Element seq> =
         let parser = getOrCacheParser<'Element> ctx options
-        function
-        | SimpleData values ->
+
+        let parseSimpleValues (values: StringValues) =
             let res = Array.zeroCreate(values.Count)
             for i in 0 .. values.Count - 1 do
                 res[i] <-
                     let rawData = SimpleData(StringValues values[i])
                     parser rawData
             res
-        | ComplexData(ComplexArray indexedDicts) ->
-            use indexedDicts = indexedDicts
-            let res = ResizeArray()
-            for i in indexedDicts.Keys do
-                while i > res.Count - 1 do
-                    res.Add(Unchecked.defaultof<_>)
-                let struct (offset, dict) = indexedDicts[i]
-                use dict = dict
-                res[i] <-
-                    let rawData = ComplexData { Offset = offset; Data = dict }
-                    parser rawData
-            res
+
+        // Elements are bound sequentially from index 0; binding stops at the first missing
+        // index and later indices are ignored, matching ASP.NET Core's collection binding.
+        if supportsSimpleData typeof<'Element> then
+            function
+            | SimpleData values -> parseSimpleValues values
+            | ComplexData(IndexedValues options.MaxCollectionSize indexedValues) ->
+                use indexedValues = indexedValues
+                let res = ResizeArray(indexedValues.Count)
+                let mutable proceed = true
+                while proceed do
+                    match indexedValues.TryGetValue res.Count with
+                    | true, values ->
+                        // A multi-valued index (e.g. the checkbox + hidden-input fallback idiom)
+                        // binds its first value.
+                        let values = if values.Count > 1 then StringValues values[0] else values
+                        res.Add(parser(SimpleData values))
+                    | false, _ -> proceed <- false
+                res
+        else
+            function
+            | SimpleData values -> parseSimpleValues values
+            | ComplexData(ComplexArray options.MaxCollectionSize indexedDicts) ->
+                use indexedDicts = indexedDicts
+                try
+                    let res = ResizeArray(indexedDicts.Count)
+                    let mutable proceed = true
+                    while proceed do
+                        match indexedDicts.TryGetValue res.Count with
+                        | true, struct (offset, dict) -> res.Add(parser(ComplexData { Offset = offset; Data = dict }))
+                        | false, _ -> proceed <- false
+                    res
+                finally
+                    // Subdictionaries after a gap are never visited, so they are returned
+                    // here rather than one by one inside the loop.
+                    for struct (_, subdict) in indexedDicts.Values do
+                        subdict.Dispose()
 
     and private createMemberParser (ctx: TypeGenerationContext) (options: ModelBinderOptions) : MemberParser<'T> =
         fun shape ->

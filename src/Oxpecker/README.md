@@ -906,6 +906,8 @@ let webApp = [
 
 Just like in the previous examples the record type must be decorated with the `[<CLIMutable>]` attribute in order for the model binding to work.
 
+Collections of supported values, including strings, numbers, booleans, enums, nullable values, and options, accept repeated keys (`tags=dotnet&tags=mvc&tags=api`) and indexed keys (`tags[0]=dotnet&tags[1]=mvc&tags[2]=api`). Indexed keys are bound sequentially from index 0 and, as in ASP.NET Core, binding stops at the first missing index (values after a gap are ignored). When the same index is sent multiple times (e.g. the checkbox + hidden-input fallback idiom) the first value wins. Indexed collection binding is capped by `ModelBinderOptions.MaxCollectionSize` (default 1024); indices that reach or exceed the limit fail binding.
+
 The underlying model binder is configured as a dependency during application startup:
 
 ```fsharp
@@ -921,6 +923,8 @@ let configureServices (services : IServiceCollection) =
 #### Binding Query Strings
 
 The `BindQuery<'T>` extension method binds query string parameters to an object of type `'T`:
+
+Collections accept the same repeated and indexed key formats as form binding.
 
 ```fsharp
 [<CLIMutable>]
