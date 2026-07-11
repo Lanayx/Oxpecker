@@ -13,7 +13,7 @@ open TypeShape.Core.Utils
 type ModelBinderOptions = {
     CultureInfo: CultureInfo
     CaseInsensitiveMatching: bool
-    /// Upper bound on the index used when binding indexed collections (e.g. "Items[N].Field").
+    /// Upper bound on the index used when binding indexed collections (e.g. "Items[N]" or "Items[N].Field").
     /// Since the index comes from the (untrusted) request key, an unbounded value would let a small request drive a large allocation.
     /// Indices that reach or exceed this limit (or overflow Int32) raise <see cref="MaxCollectionSizeExceededException"/>.
     /// Defaults to 1024 (same as ASP.NET Core's MaxModelBindingCollectionSize).
@@ -77,6 +77,7 @@ module private DictionaryPool =
             )
 
     let get = DictionaryPool<string, StringValues>().Get
+    let getIndexedValues = DictionaryPool<int, StringValues>().Get
     let getIndexed =
         DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
 
@@ -163,6 +164,30 @@ module internal ModelParser =
                 ValueNone
         else
             ValueNone
+
+    /// Active pattern for parsing keys in the format "[index]".
+    let private (|IndexedValue|_|) (offset: int) (maxCollectionSize: int) (key: string) =
+        let key = key.AsSpan(offset)
+        if key.Length > 2 && key[0] = '[' then
+            let mutable currentIndex = 1
+            while currentIndex < key.Length && Char.IsAsciiDigit key[currentIndex] do
+                currentIndex <- currentIndex + 1
+            if currentIndex > 1 && currentIndex = key.Length - 1 && key[currentIndex] = ']' then
+                match Int32.TryParse(key.Slice(1, currentIndex - 1)) with
+                | true, index when index < maxCollectionSize -> ValueSome index
+                | _ -> raise <| MaxCollectionSizeExceededException maxCollectionSize
+            else
+                ValueNone
+        else
+            ValueNone
+
+    let private (|IndexedValues|) (maxCollectionSize: int) { Offset = offset; Data = data } =
+        let matchedData = DictionaryPool.getIndexedValues()
+        for KeyValue(key, value) in data do
+            match key with
+            | IndexedValue offset maxCollectionSize index -> matchedData[index] <- value
+            | _ -> ()
+        matchedData
 
     let private (|ComplexArray|) (maxCollectionSize: int) { Offset = offset; Data = data } =
         let matchedData = DictionaryPool.getIndexed()
@@ -264,26 +289,41 @@ module internal ModelParser =
         (options: ModelBinderOptions)
         : Parser<'Element seq> =
         let parser = getOrCacheParser<'Element> ctx options
-        function
-        | SimpleData values ->
+
+        let parseSimpleValues (values: StringValues) =
             let res = Array.zeroCreate(values.Count)
             for i in 0 .. values.Count - 1 do
                 res[i] <-
                     let rawData = SimpleData(StringValues values[i])
                     parser rawData
             res
-        | ComplexData(ComplexArray options.MaxCollectionSize indexedDicts) ->
-            use indexedDicts = indexedDicts
-            let res = ResizeArray()
-            for i in indexedDicts.Keys do
-                while i > res.Count - 1 do
-                    res.Add(Unchecked.defaultof<_>)
-                let struct (offset, dict) = indexedDicts[i]
-                use dict = dict
-                res[i] <-
-                    let rawData = ComplexData { Offset = offset; Data = dict }
-                    parser rawData
-            res
+
+        if Type.(=)(typeof<'Element>, typeof<string>) then
+            function
+            | SimpleData values -> parseSimpleValues values
+            | ComplexData(IndexedValues options.MaxCollectionSize indexedValues) ->
+                use indexedValues = indexedValues
+                let res = ResizeArray()
+                for i in indexedValues.Keys do
+                    while i > res.Count - 1 do
+                        res.Add(Unchecked.defaultof<_>)
+                    res[i] <- parser(SimpleData indexedValues[i])
+                res
+        else
+            function
+            | SimpleData values -> parseSimpleValues values
+            | ComplexData(ComplexArray options.MaxCollectionSize indexedDicts) ->
+                use indexedDicts = indexedDicts
+                let res = ResizeArray()
+                for i in indexedDicts.Keys do
+                    while i > res.Count - 1 do
+                        res.Add(Unchecked.defaultof<_>)
+                    let struct (offset, dict) = indexedDicts[i]
+                    use dict = dict
+                    res[i] <-
+                        let rawData = ComplexData { Offset = offset; Data = dict }
+                        parser rawData
+                res
 
     and private createMemberParser (ctx: TypeGenerationContext) (options: ModelBinderOptions) : MemberParser<'T> =
         fun shape ->

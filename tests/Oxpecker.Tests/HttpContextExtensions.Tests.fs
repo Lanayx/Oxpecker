@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Text
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.WebUtilities
 open Microsoft.Extensions.DependencyInjection
@@ -12,6 +13,17 @@ open Oxpecker
 
 
 #nowarn "3391"
+
+type StringCollectionModel = { Tags: string list }
+
+let private createFormContext (body: string) =
+    let ctx = DefaultHttpContext()
+    ctx.Request.Body <- new MemoryStream(Encoding.UTF8.GetBytes body)
+    ctx.Request.ContentType <- "application/x-www-form-urlencoded"
+    let services = ServiceCollection()
+    services.AddSingleton<IModelBinder>(ModelBinder()) |> ignore
+    ctx.RequestServices <- services.BuildServiceProvider()
+    ctx
 
 [<Fact>]
 let ``GetRequestUrl returns entire URL of the HTTP request`` () =
@@ -50,6 +62,55 @@ let ``TryGetQueryStringValue during HTTP GET request with query string returns c
     let result = ctx.TryGetQueryValue "BirthDate"
 
     result |> shouldEqual(Some "1990-04-20")
+
+[<Fact>]
+let ``ReadFormAsync groups repeated string collection values`` () =
+    task {
+        let ctx = createFormContext "tags=dotnet&tags=mvc&tags=api"
+
+        let! form = ctx.Request.ReadFormAsync()
+
+        form.Keys |> Seq.toList |> shouldEqual [ "tags" ]
+        form["tags"] |> Seq.toList |> shouldEqual [ "dotnet"; "mvc"; "api" ]
+    }
+
+[<Fact>]
+let ``ReadFormAsync preserves indexed string collection keys`` () =
+    task {
+        let ctx = createFormContext "tags[0]=dotnet&tags[1]=mvc&tags[2]=api"
+
+        let! form = ctx.Request.ReadFormAsync()
+
+        form.Keys |> Set.ofSeq |> shouldEqual(set [ "tags[0]"; "tags[1]"; "tags[2]" ])
+        form["tags[0]"] |> string |> shouldEqual "dotnet"
+        form["tags[1]"] |> string |> shouldEqual "mvc"
+        form["tags[2]"] |> string |> shouldEqual "api"
+    }
+
+[<Fact>]
+let ``BindForm binds repeated and indexed string collections`` () =
+    task {
+        let repeatedContext = createFormContext "Tags=dotnet&Tags=mvc&Tags=api"
+        let indexedContext = createFormContext "Tags[0]=dotnet&Tags[1]=mvc&Tags[2]=api"
+
+        let! repeated = repeatedContext.BindForm<StringCollectionModel>()
+        let! indexed = indexedContext.BindForm<StringCollectionModel>()
+
+        repeated.Tags |> shouldEqual [ "dotnet"; "mvc"; "api" ]
+        indexed.Tags |> shouldEqual repeated.Tags
+    }
+
+[<Fact>]
+let ``BindQuery binds indexed string collections`` () =
+    let ctx = DefaultHttpContext()
+    let services = ServiceCollection()
+    services.AddSingleton<IModelBinder>(ModelBinder()) |> ignore
+    ctx.RequestServices <- services.BuildServiceProvider()
+    ctx.Request.Query <- QueryCollection(QueryHelpers.ParseQuery "?Tags[0]=dotnet&Tags[1]=mvc&Tags[2]=api")
+
+    let result = ctx.BindQuery<StringCollectionModel>()
+
+    result.Tags |> shouldEqual [ "dotnet"; "mvc"; "api" ]
 
 [<Fact>]
 let ``WriteText with HTTP GET should return text in body`` () =

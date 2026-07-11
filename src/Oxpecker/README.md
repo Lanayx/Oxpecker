@@ -850,6 +850,8 @@ The underlying JSON serializer can be configured as a dependency during applicat
 
 The `BindForm<'T>` extension method binds form data to an object of type `'T`:
 
+String collections accept repeated keys (`tags=dotnet&tags=mvc&tags=api`) and indexed keys (`tags[0]=dotnet&tags[1]=mvc&tags[2]=api`).
+
 ```fsharp
 [<CLIMutable>]
 type Car = {
@@ -921,6 +923,8 @@ let configureServices (services : IServiceCollection) =
 #### Binding Query Strings
 
 The `BindQuery<'T>` extension method binds query string parameters to an object of type `'T`:
+
+String collections accept the same repeated and indexed key formats as form binding.
 
 ```fsharp
 [<CLIMutable>]

@@ -102,6 +102,21 @@ let ``parseModel<Model2> handles multi-element string array`` () =
     result |> shouldEqual expected
 
 [<Fact>]
+let ``parseModel<Model2> handles indexed string array`` () =
+    let modelData =
+        [
+            "SearchTerms[2]", StringValues "abcdef"
+            "SearchTerms[0]", StringValues "a"
+            "SearchTerms[1]", StringValues "abc"
+        ]
+        |> toComplexData
+    let expected = {
+        SearchTerms = [| "a"; "abc"; "abcdef" |]
+    }
+    let result = defaultParseModel<Model2> modelData
+    result |> shouldEqual expected
+
+[<Fact>]
 let ``defaultParseModel<Model> parses complete model data correctly`` () =
     let id = Guid.NewGuid()
     let modelData =
@@ -838,6 +853,13 @@ let ``parseModel throws when collection index reaches MaxCollectionSize`` () =
     result |> shouldFail<MaxCollectionSizeExceededException>
 
 [<Fact>]
+let ``parseModel throws when indexed string collection reaches MaxCollectionSize`` () =
+    let modelData = [ "SearchTerms[1024]", StringValues "x" ] |> toComplexData
+    let result () =
+        defaultParseModel<Model2> modelData |> ignore
+    result |> shouldFail<MaxCollectionSizeExceededException>
+
+[<Fact>]
 let ``parseModel binds collection index just below MaxCollectionSize`` () =
     let modelData =
         [
@@ -889,10 +911,7 @@ let ``parseModel does not throw on unterminated property`` () =
 [<Fact>]
 let ``parseModel binds collection with single-character subkey`` () =
     let modelData =
-        [
-            "Points[0].X", StringValues "1"
-            "Points[1].X", StringValues "2"
-        ]
+        [ "Points[0].X", StringValues "1"; "Points[1].X", StringValues "2" ]
         |> toComplexData
     let expected = {
         Points = [| { X = 1; Y = 0 }; { X = 2; Y = 0 } |]
