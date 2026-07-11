@@ -124,10 +124,7 @@ type internal NotParsedException(value: string, ty: Type) =
     inherit exn($"Could not parse value '%s{value}' to type '{ty}'.")
 
 type internal MaxCollectionSizeExceededException(maxCollectionSize: int) =
-    inherit
-        exn(
-            $"The collection index reached or exceeded the maximum allowed value of %i{maxCollectionSize}."
-        )
+    inherit exn($"The collection index reached or exceeded the maximum allowed value of %i{maxCollectionSize}.")
 
 /// <summary>
 /// Module for parsing models from a generic data set.
