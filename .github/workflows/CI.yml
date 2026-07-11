@@ -8,7 +8,7 @@ on:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
-  DOTNET_VERSION: 10.0.204
+  DOTNET_VERSION: 10.0.301
 
 # Kill other jobs when we trigger this workflow by sending new commits
 # to the PR.
@@ -22,10 +22,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -40,14 +40,14 @@ jobs:
     needs: ['fantomas-check']
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # workaround for https://github.com/actions/runner/issues/2033
       - name: ownership workaround
         run: git config --global --add safe.directory '*'
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
