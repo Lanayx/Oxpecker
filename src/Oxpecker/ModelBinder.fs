@@ -3,6 +3,7 @@ namespace Oxpecker
 open System
 open System.Collections.Generic
 open System.Globalization
+open Microsoft.FSharp.Reflection
 open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Primitives
 open TypeShape.Core.Utils
@@ -253,6 +254,11 @@ module internal ModelParser =
 
     type private Nullable<'T when Struct<'T>> = 'T
 
+    // Concrete stand-in used only to obtain the open generic definition of IParsable<'T>
+    // (via typedefof<IParsable<AnyParsable>>), since typedefof cannot be applied to an
+    // open type argument directly. Any type implementing IParsable<'T> works here.
+    type private AnyParsable = int
+
     type private Parser<'T> = RawData -> 'T
 
     type private MemberSetter<'T> = delegate of RawData * 'T byref -> unit
@@ -269,6 +275,40 @@ module internal ModelParser =
             | ComplexData { Data = rawData } -> $"%A{rawData}"
 
         raise <| NotParsedException(value, typeof<'T>)
+
+    /// Determines whether a collection element of the given type is parsed from a single flat
+    /// value (the indexed "simple value" path, e.g. Items[0]=1) rather than from a nested object.
+    /// Unions qualify because they are always bound from a single case-name string (see the
+    /// FSharpUnion branch in createParser), and wrappers (nullable/option/collections) delegate
+    /// to their element type.
+    let rec private supportsSimpleData (ty: Type) =
+        let nullableType = Nullable.GetUnderlyingType ty
+        if Type.(=)(ty, typeof<string>) || ty.IsEnum then
+            true
+        elif
+            ty.GetInterfaces()
+            |> Array.exists(fun interfaceType ->
+                interfaceType.IsGenericType
+                && Type.(=)(interfaceType.GetGenericTypeDefinition(), typedefof<IParsable<AnyParsable>>))
+        then
+            true
+        elif not(isNull nullableType) then
+            supportsSimpleData(Unchecked.nonNull nullableType)
+        elif ty.IsArray && ty.GetArrayRank() = 1 then
+            supportsSimpleData(ty.GetElementType() |> Unchecked.nonNull)
+        elif ty.IsGenericType then
+            let typeDefinition = ty.GetGenericTypeDefinition()
+            if
+                Type.(=)(typeDefinition, typedefof<option<_>>)
+                || Type.(=)(typeDefinition, typedefof<list<_>>)
+                || Type.(=)(typeDefinition, typedefof<ResizeArray<_>>)
+                || Type.(=)(typeDefinition, typedefof<seq<_>>)
+            then
+                supportsSimpleData(ty.GetGenericArguments()[0])
+            else
+                FSharpType.IsUnion ty
+        else
+            FSharpType.IsUnion ty
 
     let rec private getOrCreateParser<'T> (cache: TypeCache) (options: ModelBinderOptions) : Parser<'T> =
         match cache.TryFind() with
@@ -298,7 +338,7 @@ module internal ModelParser =
                     parser rawData
             res
 
-        if Type.(=)(typeof<'Element>, typeof<string>) then
+        if supportsSimpleData typeof<'Element> then
             function
             | SimpleData values -> parseSimpleValues values
             | ComplexData(IndexedValues options.MaxCollectionSize indexedValues) ->

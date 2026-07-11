@@ -570,6 +570,33 @@ type BookType =
     | EBook = 3
 
 [<Fact>]
+let ``defaultParseModel parses indexed collections of supported scalar types`` () =
+    let indexedData (values: string list) =
+        values
+        |> List.mapi(fun index value -> $"[%i{index}]", StringValues value)
+        |> toComplexData
+
+    defaultParseModel<int array>(indexedData [ "1"; "2" ]) |> shouldEqual [| 1; 2 |]
+
+    defaultParseModel<float list>(indexedData [ "1.5"; "2.25" ])
+    |> shouldEqual [ 1.5; 2.25 ]
+
+    defaultParseModel<ResizeArray<bool>>(indexedData [ "true"; "FALSE" ])
+    |> shouldEqual(ResizeArray [ true; false ])
+
+    defaultParseModel<BookType seq>(indexedData [ "EBook"; "Paperback" ])
+    |> shouldEqual(seq [ BookType.EBook; BookType.Paperback ])
+
+    defaultParseModel<int option array>(indexedData [ "1"; "2" ])
+    |> shouldEqual [| Some 1; Some 2 |]
+
+    defaultParseModel<Nullable<int> array>(indexedData [ "1"; "2" ])
+    |> shouldEqual [| Nullable 1; Nullable 2 |]
+
+    defaultParseModel<Sex array>(indexedData [ "Female"; "Male" ])
+    |> shouldEqual [| Female; Male |]
+
+[<Fact>]
 let ``defaultParseModel<BookType> parses a valid enum value 'Paperback'`` () =
     let modelData = "Paperback" |> StringValues |> SimpleData
     let expected = BookType.Paperback

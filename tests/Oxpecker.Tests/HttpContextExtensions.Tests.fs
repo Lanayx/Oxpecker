@@ -16,6 +16,12 @@ open Oxpecker
 
 type StringCollectionModel = { Tags: string list }
 
+type ScalarCollectionModel = {
+    Counts: int array
+    Ratios: float list
+    Flags: bool seq
+}
+
 let private createFormContext (body: string) =
     let ctx = DefaultHttpContext()
     ctx.Request.Body <- new MemoryStream(Encoding.UTF8.GetBytes body)
@@ -98,6 +104,19 @@ let ``BindForm binds repeated and indexed string collections`` () =
 
         repeated.Tags |> shouldEqual [ "dotnet"; "mvc"; "api" ]
         indexed.Tags |> shouldEqual repeated.Tags
+    }
+
+[<Fact>]
+let ``BindForm binds indexed scalar collections`` () =
+    task {
+        let ctx =
+            createFormContext "Counts[0]=1&Counts[1]=2&Ratios[0]=1.5&Ratios[1]=2.25&Flags[0]=true&Flags[1]=false"
+
+        let! result = ctx.BindForm<ScalarCollectionModel>()
+
+        result.Counts |> shouldEqual [| 1; 2 |]
+        result.Ratios |> shouldEqual [ 1.5; 2.25 ]
+        result.Flags |> shouldEqual(seq [ true; false ])
     }
 
 [<Fact>]
