@@ -17,7 +17,7 @@ module HxRequestHeader =
     /// `HX-Source` — identifier (`tag#id` format) of the element that triggered the request. Replaces the old `HX-Trigger` request header. New in htmx 4.
     [<Literal>]
     let Source = "HX-Source"
-    /// `HX-Target` — the `id` of the target element, if it has one.
+    /// `HX-Target` — the `id` of the target element, if it has one. Format: <tag>#<id> (e.g. div#results) or just <tag> for elements without an ID. This header is only included when a target is specified.
     [<Literal>]
     let Target = "HX-Target"
     /// `HX-Boosted` — present when the request was made by a `hx-boost`-ed element.
