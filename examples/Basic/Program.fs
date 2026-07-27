@@ -162,7 +162,7 @@ let endpoints = [
         route "/" <| text "Hello World"
         route "/iresult" <| %Ok {| Text = "Hello World" |}
         route "/ibadResult" <| %BadRequest()
-        routef "/text/{%s}" text
+        routef "/json/{%s}" (MyDu.Name3 >> json)
         |> configureEndpoint _.WithName("GetText")
         |> addOpenApiSimple<unit, MyDu>
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
