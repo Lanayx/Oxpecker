@@ -177,18 +177,18 @@ let endpoints = [
     ]
     POST [
         route "/x" (bindJson handler4)
-        // routef "/x/{%s}/{%s}" (bindForm <<+ handler5)
-        // |> configureEndpoint _.WithName("BindForm")
-        // |> addOpenApi(
-        //     OpenApiConfig(
-        //         requestBody =
-        //             RequestBody(
-        //                 typeof<MyModelWithOption>,
-        //                 [| "multipart/form-data"; "application/x-www-form-urlencoded" |]
-        //             ),
-        //         responseBodies = [ ResponseBody(typeof<MyModel>) ]
-        //     )
-        // )
+        routef "/x/{%s}/{%s}" (bindForm <<+ handler5)
+        |> configureEndpoint _.WithName("BindForm")
+        |> addOpenApi(
+            OpenApiConfig(
+                requestBody =
+                    RequestBody(
+                        typeof<MyModelWithOption>,
+                        [| "multipart/form-data"; "application/x-www-form-urlencoded" |]
+                    ),
+                responseBodies = [ ResponseBody(typeof<MyModel>) ]
+            )
+        )
         route "/y" (bindQuery(bindJson << handler7))
         routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
         routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
