@@ -110,23 +110,24 @@ module private Helpers =
         | set -> set
 
     /// Schema for a union case field, unwrapping option/voption fields into nullable schemas.
-    let getFieldSchema (ctx: OpenApiSchemaTransformerContext) (fieldType: Type) (ct: CancellationToken) = task {
-        match fieldType with
-        | FSharpOptionKind innerType ->
-            let! innerSchema = ctx.GetOrCreateSchemaAsync(innerType, null, ct)
-            match tryGetRefSchema innerSchema with
-            | None ->
-                innerSchema.Type <- unionWithNull innerSchema.Type
-                return innerSchema :> IOpenApiSchema
-            | Some _ ->
-                let items = ResizeArray<IOpenApiSchema>()
-                items.Add nullSchema
-                items.Add innerSchema
-                return OpenApiSchema(OneOf = items) :> IOpenApiSchema
-        | _ ->
-            let! schema = ctx.GetOrCreateSchemaAsync(fieldType, null, ct)
-            return schema :> IOpenApiSchema
-    }
+    let getFieldSchema (ctx: OpenApiSchemaTransformerContext) (fieldType: Type) (ct: CancellationToken) =
+        task {
+            match fieldType with
+            | FSharpOptionKind innerType ->
+                let! innerSchema = ctx.GetOrCreateSchemaAsync(innerType, null, ct)
+                match tryGetRefSchema innerSchema with
+                | None ->
+                    innerSchema.Type <- unionWithNull innerSchema.Type
+                    return innerSchema :> IOpenApiSchema
+                | Some _ ->
+                    let items = ResizeArray<IOpenApiSchema>()
+                    items.Add nullSchema
+                    items.Add innerSchema
+                    return OpenApiSchema(OneOf = items) :> IOpenApiSchema
+            | _ ->
+                let! schema = ctx.GetOrCreateSchemaAsync(fieldType, null, ct)
+                return schema :> IOpenApiSchema
+        }
 
     let convertName (ctx: OpenApiSchemaTransformerContext) name =
         match ctx.JsonTypeInfo.Options.PropertyNamingPolicy with
@@ -134,7 +135,7 @@ module private Helpers =
         | policy -> policy.ConvertName name
     let getCaseName ctx (case: UnionCaseInfo) =
         case.GetCustomAttributes typeof<JsonPropertyNameAttribute>
-        |> Array.tryPick(function
+        |> Array.tryPick (function
             | :? JsonPropertyNameAttribute as attr -> Some attr.Name
             | _ -> None)
         |> Option.defaultWith(fun () -> convertName ctx case.Name)
