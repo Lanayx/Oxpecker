@@ -63,9 +63,13 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddOpenApi(
-            // support for Option<_> and ValueOption<_> (ASP.NET Core 10+)
-            fun o -> o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore
+        .AddOpenApi(fun o ->
+            o
+                // support for Option<_> and ValueOption<_> (ASP.NET Core 10+)
+                .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
+                // support for discriminated unions (ASP.NET Core 11+)
+                .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
+            |> ignore
         ) // OpenAPI dependencies
     |> ignore
 
@@ -126,6 +130,8 @@ _Note1: you don't have to describe routing parameters when using those functions
 _Note2: use `[<CLIMutable>]` attribute on your records and `[<Required>]` or `[<JsonRequired>]` on their fields to control `required` fields in schema._
 
 _Note3: use `<Nullable>enable</Nullable>` in your project to disallow `null` value for reference types._
+
+_Note4: .NET 11 added `System.Text.Json` support for F# discriminated unions: fieldless cases are serialized as JSON strings, cases with fields as JSON objects with a type discriminator property (`"$type"` by default, customizable via `JsonPolymorphicAttribute` on the union type). Register `FSharpUnionSchemaTransformer` to get matching OpenAPI schemas: unions where every case is fieldless become a string `enum`; otherwise each case becomes a `oneOf` branch in declaration order — a `const` string for a fieldless case, an object with a `const` discriminator for a case with fields (recursive unions are supported via schema references). Case and field names respect `JsonPropertyNameAttribute` and the configured `PropertyNamingPolicy`._
 
 
 

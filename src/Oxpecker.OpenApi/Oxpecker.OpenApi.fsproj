@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
         <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -23,12 +23,12 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.1.2</Version>
-        <PackageVersion>2.1.2</PackageVersion>
-        <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
+        <Version>3.0.0</Version>
+        <PackageVersion>3.0.0</PackageVersion>
+        <PackageReleaseNotes>Added FSharpUnionSchemaTransformer for F# discriminated union schemas (.NET 11 System.Text.Json union serialization format)</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="11.0.0-preview.6.26359.118" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

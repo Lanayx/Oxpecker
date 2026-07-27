@@ -37,6 +37,13 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 
 
 type MyModel = { Name: string; Age: int }
+
+type MyDu =
+    | Name1
+    | Name2
+    | Name3 of string
+    | Age of int
+
 [<CLIMutable>]
 type MyModelWithOption = {
     Name: string option
@@ -157,7 +164,7 @@ let endpoints = [
         route "/ibadResult" <| %BadRequest()
         routef "/text/{%s}" text
         |> configureEndpoint _.WithName("GetText")
-        |> addOpenApiSimple<unit, string>
+        |> addOpenApiSimple<unit, MyDu>
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         route "/x" (bindQuery handler4)
         routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
@@ -170,18 +177,18 @@ let endpoints = [
     ]
     POST [
         route "/x" (bindJson handler4)
-        routef "/x/{%s}/{%s}" (bindForm <<+ handler5)
-        |> configureEndpoint _.WithName("BindForm")
-        |> addOpenApi(
-            OpenApiConfig(
-                requestBody =
-                    RequestBody(
-                        typeof<MyModelWithOption>,
-                        [| "multipart/form-data"; "application/x-www-form-urlencoded" |]
-                    ),
-                responseBodies = [ ResponseBody(typeof<MyModel>) ]
-            )
-        )
+        // routef "/x/{%s}/{%s}" (bindForm <<+ handler5)
+        // |> configureEndpoint _.WithName("BindForm")
+        // |> addOpenApi(
+        //     OpenApiConfig(
+        //         requestBody =
+        //             RequestBody(
+        //                 typeof<MyModelWithOption>,
+        //                 [| "multipart/form-data"; "application/x-www-form-urlencoded" |]
+        //             ),
+        //         responseBodies = [ ResponseBody(typeof<MyModel>) ]
+        //     )
+        // )
         route "/y" (bindQuery(bindJson << handler7))
         routef "/y/{%s}" (bindQuery << (bindJson <<+ handler8))
         routef "/y/{%s}/{%s}" (setHeaderMw "foo" "yy" >>=>+ (bindQuery <<+ (bindJson <<++ handler9)))
@@ -252,7 +259,11 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddOpenApi(fun o -> o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore)
+        .AddOpenApi(fun o ->
+            o
+                .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
+                .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
+            |> ignore)
     |> ignore
 
 

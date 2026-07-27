@@ -34,7 +34,10 @@ module WebApp =
                                 services
                                     .AddRouting()
                                     .AddOpenApi(fun o ->
-                                        o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore)
+                                        o
+                                            .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
+                                            .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
+                                        |> ignore)
                                 |> ignore)
                         |> ignore)
                     .Build()
@@ -86,14 +89,14 @@ let ``Option and voption on primitive types works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -189,14 +192,14 @@ let ``nested objects with options work fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -281,14 +284,14 @@ let ``Issue 87 CreateSchemaReferenceId works well`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -367,6 +370,197 @@ let ``Issue 87 CreateSchemaReferenceId works well`` () =
         resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
+type Color =
+    | Red
+    | Green
+    | Blue
+
+type Shape =
+    | Point
+    | Circle of radius: float
+    | Rect of width: float * height: float * label: string option
+    | Node of left: Shape * name: string
+
+type Request5 = { Shape: Shape; Color: Color }
+
+[<Fact>]
+let ``F# unions are represented according to STJ union serialization format`` () =
+    task {
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request5, Color> ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request5"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Color"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Color": {
+        "enum": [
+          "red",
+          "green",
+          "blue"
+        ],
+        "type": "string"
+      },
+      "Request5": {
+        "required": [
+          "shape",
+          "color"
+        ],
+        "type": "object",
+        "properties": {
+          "shape": {
+            "$ref": "#/components/schemas/Shape"
+          },
+          "color": {
+            "$ref": "#/components/schemas/Color"
+          }
+        }
+      },
+      "Shape": {
+        "oneOf": [
+          {
+            "const": "point",
+            "type": "string"
+          },
+          {
+            "required": [
+              "$type",
+              "radius"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "circle",
+                "type": "string"
+              },
+              "radius": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              }
+            }
+          },
+          {
+            "required": [
+              "$type",
+              "width",
+              "height",
+              "label"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "rect",
+                "type": "string"
+              },
+              "width": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              },
+              "height": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              },
+              "label": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          {
+            "required": [
+              "$type",
+              "left",
+              "name"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "node",
+                "type": "string"
+              },
+              "left": {
+                "$ref": "#/components/schemas/Shape"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
 [<CLIMutable>]
 [<Description("Inner type description")>]
 type Response4Inner = {
@@ -407,14 +601,14 @@ let ``Additional configuration works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
