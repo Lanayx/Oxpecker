@@ -151,16 +151,22 @@ let ``xIgnore false does not render`` () =
     |> shouldEqual """<div>content</div>"""
 
 [<Fact>]
-let ``xTransitionOn renders phased x-transition`` () =
-    div().xTransitionOn("enter") { "content" }
-    |> Render.toString
-    |> shouldEqual """<div x-transition:enter>content</div>"""
-
-[<Fact>]
-let ``xTransitionOn with modifiers renders phased modified x-transition`` () =
+let ``xTransitionOn with modifiers renders staged modified x-transition`` () =
     div().xTransitionOn("enter", XTransitionModifier.durationMs 300) { "content" }
     |> Render.toString
     |> shouldEqual """<div x-transition:enter.duration.300ms>content</div>"""
+
+[<Fact>]
+let ``xTransitionClassesOn renders staged x-transition with classes`` () =
+    div().xTransitionClassesOn(XTransitionStage.enterStart, "opacity-0 translate-y-1.5") { "content" }
+    |> Render.toString
+    |> shouldEqual """<div x-transition:enter-start="opacity-0 translate-y-1.5">content</div>"""
+
+[<Fact>]
+let ``xTransitionClassesOn with null does not render`` () =
+    div().xTransitionClassesOn(XTransitionStage.enter, null) { "content" }
+    |> Render.toString
+    |> shouldEqual """<div>content</div>"""
 
 [<Fact>]
 let ``xRef renders x-ref`` () =

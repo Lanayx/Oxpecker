@@ -114,18 +114,20 @@ type AlpineTransitionExtensions =
         this.bool($"x-transition%s{modifiers}", true)
 
     /// Adds a valueless Alpine transition attribute.
-    /// `phase` is the transition phase (e.g. `"enter"`, `"leave-start"`).
-    [<Extension>]
-    static member xTransitionOn(this: #HtmlTag, phase: string) =
-        this.bool($"x-transition:%s{phase}", true)
-
-    /// Adds a valueless Alpine transition attribute.
-    /// `phase` is the transition phase (e.g. `"enter"`, `"leave-start"`).
+    /// `stage` is the transition stage (e.g. `"enter"`, `"leave-start"`).
     /// `modifiers` is the dot-separated suffix (e.g. `".duration.500ms"`).
+    /// XTransitionStage provides helper values for the available stages.
     /// XTransitionModifier provides helper functions for common modifiers.
     [<Extension>]
-    static member xTransitionOn(this: #HtmlTag, phase: string, modifiers: string) =
-        this.bool($"x-transition:%s{phase}%s{modifiers}", true)
+    static member xTransitionOn(this: #HtmlTag, stage: string, modifiers: string) =
+        this.bool($"x-transition:%s{stage}%s{modifiers}", true)
+
+    /// Adds an Alpine transition attribute carrying a CSS class list.
+    /// `stage` is the transition stage (e.g. `"enter"`, `"leave-start"`).
+    /// XTransitionStage provides helper values for the available stages.
+    [<Extension>]
+    static member xTransitionClassesOn(this: #HtmlTag, stage: string, classes: string | null) =
+        this.attr($"x-transition:%s{stage}", classes)
 
 
 /// Alpine.js utility methods.
