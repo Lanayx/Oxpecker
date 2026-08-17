@@ -61,7 +61,7 @@ Medium posts from the creator:
 *   [7 reasons to try Oxpecker.ViewEngine](https://medium.com/@lanayx/7-reasons-to-try-oxpecker-viewengine-af642b4d191c)
 *   [Oxpecker vs Blazor](https://medium.com/@lanayx/blazor-vs-oxpecker-067cbcda9f99)
 *   [Oxpecker.Solid introduction](https://medium.com/@lanayx/oxpecker-goes-full-stack-45beb1f3da34)
-
+*   [How to fully leverage Oxpecker](https://medium.com/@Lanayx/how-to-fully-leverage-oxpecker-or-at-least-use-iresult-fae4a8fcd9d3)
 ## Comprehensive Documentation:
 
 *   [Oxpecker](https://lanayx.github.io/Oxpecker/src/Oxpecker/)
