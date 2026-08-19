@@ -5,5 +5,6 @@ open Oxpecker.Solid
 
 [<SolidComponent>]
 let Test () =
+    let count, _ = createSignal 0
     let x = span()
     body() { x }

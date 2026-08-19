@@ -549,14 +549,22 @@ module internal rec AST =
         )
 
     let transformMain (expr: Expr) =
-        match expr with
-        | Let(name,
-              (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
-              expr) when not name.IsCompilerGenerated ->
-            match expr.Range with
-            | Some range -> failwith $"`let` binding to HtmlElement can't be converted to JSX:line {range.start.line}"
-            | None -> failwith $"`let` binding to HtmlElement can't be converted to JSX"
-        | expr -> transform expr
+        let rec validate expr =
+            match expr with
+            | Let(name,
+                  (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
+                  _) when not name.IsCompilerGenerated ->
+                match name.Range with
+                | Some range ->
+                    failwith
+                        $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding:line {range.start.line}"
+                | None ->
+                    failwith
+                        $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding"
+            | Let(_, _, cont) -> validate cont
+            | _ -> ()
+        validate expr
+        transform expr
 
 type SolidComponentFlag =
     | Default = 0

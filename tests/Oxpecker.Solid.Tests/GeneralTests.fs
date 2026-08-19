@@ -75,4 +75,7 @@ let ``Let bindings 2`` () =
         }
         |> Command.execute
     output |> Output.toExitCode |> shouldEqual 1
-    output |> Output.toText |> shouldContainText """`let` binding to HtmlElement can't be converted to JSX:line 9"""
+    output
+    |> Output.toText
+    |> shouldContainText
+        """`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding:line 9"""
