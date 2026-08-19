@@ -491,14 +491,18 @@ module internal rec AST =
 
     let (|ExplicitLetBinding|_|) =
         function
-        | Let({ IsCompilerGenerated = false; Range = range },
+        | Let({
+                  IsCompilerGenerated = false
+                  Range = range
+              },
               (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
               _) ->
             let linePostfix =
                 match range with
                 | Some range -> $":line {range.start.line}"
                 | None -> ""
-            Some $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding{linePostfix}"
+            $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding{linePostfix}"
+            |> Some
         | _ -> None
 
     let transform (expr: Expr) =
