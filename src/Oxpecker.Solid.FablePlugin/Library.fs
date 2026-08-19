@@ -491,15 +491,6 @@ module internal rec AST =
 
     let transform (expr: Expr) =
         match expr with
-        // user-authored `let` binding: transform the bound element and keep the continuation,
-        // so bound elements can be referenced later (e.g. as a fallback prop)
-        | Let(ident, value, cont) when not ident.IsCompilerGenerated ->
-            match value with
-            | TagNoChildrenWithProps tagInfo
-            | CallTagNoChildrenWithHandler tagInfo
-            | TagWithChildren tagInfo
-            | LibraryTagImport tagInfo -> Let(ident, transformTagInfo tagInfo, transform cont)
-            | _ -> Let(ident, value, transform cont)
         | TagNoChildrenWithProps tagInfo
         | Let(IdentElement, TagNoChildrenWithProps tagInfo, _)
         | CallTagNoChildrenWithHandler tagInfo

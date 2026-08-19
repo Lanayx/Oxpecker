@@ -1,28 +1,6 @@
 
 import { createSignal } from "solid-js";
 
-export function LetBoundFallback() {
-    const patternInput = createSignal([]);
-    const emptyMsg = <div class="empty">
-        Nothing yet
-    </div>;
-    return <div class="wrapper">
-        <Show when={patternInput[0]().length > 0}
-            fallback={emptyMsg}>
-            <div class="list">
-                items go here
-            </div>
-        </Show>
-        <form novalidate={true}>
-            <input type="text"
-                name="host" />
-            <button type="submit">
-                Add
-            </button>
-        </form>
-    </div>;
-}
-
 export function Test(show) {
     const x = createSignal(7)[0];
     return <ErrorBoundary fallback={(err, _arg) => <div>
