@@ -489,8 +489,21 @@ module internal rec AST =
             range = range
         )
 
+    let (|ExplicitLetBinding|_|) =
+        function
+        | Let({ IsCompilerGenerated = false; Range = range },
+              (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
+              _) ->
+            let linePostfix =
+                match range with
+                | Some range -> $":line {range.start.line}"
+                | None -> ""
+            Some $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding{linePostfix}"
+        | _ -> None
+
     let transform (expr: Expr) =
         match expr with
+        | ExplicitLetBinding failText -> failwith failText
         | TagNoChildrenWithProps tagInfo
         | Let(IdentElement, TagNoChildrenWithProps tagInfo, _)
         | CallTagNoChildrenWithHandler tagInfo
@@ -548,24 +561,6 @@ module internal rec AST =
             range = range
         )
 
-    let transformMain (expr: Expr) =
-        let rec validate expr =
-            match expr with
-            | Let(name,
-                  (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
-                  _) when not name.IsCompilerGenerated ->
-                match name.Range with
-                | Some range ->
-                    failwith
-                        $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding:line {range.start.line}"
-                | None ->
-                    failwith
-                        $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding"
-            | Let(_, _, cont) -> validate cont
-            | _ -> ()
-        validate expr
-        transform expr
-
 type SolidComponentFlag =
     | Default = 0
     | Debug = 1
@@ -593,7 +588,7 @@ type SolidComponentAttribute(flag: int) =
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
-            | _ -> AST.transformMain memberDecl.Body
+            | _ -> AST.transform memberDecl.Body
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr
