@@ -405,8 +405,8 @@ module internal rec AST =
             | _ ->
                 match range with
                 | Some range ->
-                    failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
-                | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
+                    failwith $"`let` binding inside HtmlElement can't be converted to JSX:line {range.start.line}"
+                | None -> failwith $"`let` binding inside HtmlElement can't be converted to JSX"
         | _ -> currentList
 
     let listItemType =
@@ -548,6 +548,16 @@ module internal rec AST =
             range = range
         )
 
+    let transformMain (expr: Expr) =
+        match expr with
+        | Let(name,
+              (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
+              expr) when not name.IsCompilerGenerated ->
+            match expr.Range with
+            | Some range -> failwith $"`let` binding to HtmlElement can't be converted to JSX:line {range.start.line}"
+            | None -> failwith $"`let` binding to HtmlElement can't be converted to JSX"
+        | expr -> transform expr
+
 type SolidComponentFlag =
     | Default = 0
     | Debug = 1
@@ -575,7 +585,7 @@ type SolidComponentAttribute(flag: int) =
         let newBody =
             match memberDecl.Body with
             | Extended(Throw _, range) -> AST.transformException pluginHelper range
-            | _ -> AST.transform memberDecl.Body
+            | _ -> AST.transformMain memberDecl.Body
         { memberDecl with Body = newBody }
 
     override _.TransformCall(_: PluginHelper, _: MemberFunctionOrValue, expr: Expr) : Expr = expr

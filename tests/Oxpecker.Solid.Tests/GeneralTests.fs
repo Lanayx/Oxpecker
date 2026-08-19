@@ -62,5 +62,17 @@ let ``Let bindings`` () =
         }
         |> Command.execute
     output |> Output.toExitCode |> shouldEqual 1
-    output |> Output.toText |> shouldContainText """`let` binding inside HTML CE can't be converted to JSX:line 9"""
+    output |> Output.toText |> shouldContainText """`let` binding inside HtmlElement can't be converted to JSX:line 9"""
 
+[<Fact>]
+let ``Let bindings 2`` () =
+    let dir = $"{__SOURCE_DIRECTORY__}/Cases/LetBindings2"
+    let output =
+        cli {
+            Shell CMD
+            WorkingDirectory dir
+            Command "dotnet fable --noCache --exclude Oxpecker.Solid.FablePlugin"
+        }
+        |> Command.execute
+    output |> Output.toExitCode |> shouldEqual 1
+    output |> Output.toText |> shouldContainText """`let` binding to HtmlElement can't be converted to JSX:line 9"""
