@@ -172,9 +172,7 @@ let ``Prerender renders the same as the original element`` () =
             br()
         }
     let expected = view |> Render.toString
-    prerender view
-    |> Render.toString
-    |> shouldEqual expected
+    prerender view |> Render.toString |> shouldEqual expected
 
 [<Fact>]
 let ``Prerender includes all children`` () =
@@ -334,3 +332,18 @@ let ``Prerendered template rejects a hole used twice`` () =
             })
         |> ignore)
     |> ignore
+
+[<Fact>]
+let ``Prerendered template rejects a hole rendered into another buffer`` () =
+    Assert.Throws<ArgumentException>(fun () -> prerenderAround(fun content -> div() { prerender content }) |> ignore)
+    |> ignore
+
+[<Fact>]
+let ``Prerendered template allows the hole to be rendered elsewhere first`` () =
+    let layout =
+        prerenderAround(fun content ->
+            let _ = Render.toString content
+            div() { content })
+    layout() { "dynamic" }
+    |> Render.toString
+    |> shouldEqual """<div>dynamic</div>"""

@@ -121,11 +121,20 @@ module Builder =
 
     /// Placeholder that records where the dynamic part of a template begins
     type internal HoleMarker() =
+        let mutable buffer: StringBuilder | null = null
         let mutable position = -1
         let mutable count = 0
         member this.Position = position
-        member this.Count = count
+        /// Forgets renders that happened while the template was being built
+        member this.Reset() =
+            buffer <- null
+            position <- -1
+            count <- 0
+        /// True only when the hole was rendered exactly once, into this very buffer
+        member this.WasRenderedOnceInto(sb: StringBuilder) =
+            count = 1 && obj.ReferenceEquals(buffer, sb)
         member this.Render(sb: StringBuilder) =
+            buffer <- sb
             position <- sb.Length
             count <- count + 1
         interface HtmlElement with
@@ -167,9 +176,11 @@ module Builder =
         let sb = StringBuilderPool.Get()
         let prefix, suffix =
             try
+                // the template may have rendered the hole into a buffer of its own while being built
+                hole.Reset()
                 view.Render sb
-                if hole.Count <> 1 then
-                    invalidArg (nameof template) "Template has to use the provided hole exactly once"
+                if not(hole.WasRenderedOnceInto sb) then
+                    invalidArg (nameof template) "Template has to render the provided hole exactly once"
                 sb.ToString(0, hole.Position), sb.ToString(hole.Position, sb.Length - hole.Position)
             finally
                 StringBuilderPool.Return(sb)
