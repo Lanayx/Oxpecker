@@ -172,21 +172,22 @@ let ``Prerender renders the same as the original element`` () =
             br()
         }
     let expected = view |> Render.toString
-    prerender view |> Render.toString |> shouldEqual expected
+    prerender view
+    |> Render.toString
+    |> shouldEqual expected
 
 [<Fact>]
 let ``Prerender includes all children`` () =
     let result =
-        prerender(
-            html() {
-                div(id = "1") { 1 }
-                div(id = "2") {
-                    div(id = "3", class' = "test")
-                    br()
-                    ul() { yield! [ li() { "one" }; li() { "two" } ] }
-                }
+        html() {
+            div(id = "1") { 1 }
+            div(id = "2") {
+                div(id = "3", class' = "test")
+                br()
+                ul() { yield! [ li() { "one" }; li() { "two" } ] }
             }
-        )
+        }
+        |> prerender
     result
     |> Render.toString
     |> shouldEqual
@@ -195,12 +196,11 @@ let ``Prerender includes all children`` () =
 [<Fact>]
 let ``Prerendered node is not escaped again when embedded`` () =
     let prerendered =
-        prerender(
-            p(id = "<br>") {
-                raw "<hr>"
-                span() { "<hr>" }
-            }
-        )
+        p(id = "<br>") {
+            raw "<hr>"
+            span() { "<hr>" }
+        }
+        |> prerender
     let result = div() { prerendered }
     result
     |> Render.toString
@@ -208,7 +208,7 @@ let ``Prerendered node is not escaped again when embedded`` () =
 
 [<Fact>]
 let ``Prerendered node is embedded without a wrapper`` () =
-    let header = prerender(h1() { "My site" })
+    let header = h1() { "My site" } |> prerender
     let result = html() { body() { header } }
     result
     |> Render.toString
@@ -217,12 +217,11 @@ let ``Prerendered node is embedded without a wrapper`` () =
 [<Fact>]
 let ``Prerender of a fragment renders children only`` () =
     let result =
-        prerender(
-            Fragment() {
-                span() { "one" }
-                span() { "two" }
-            }
-        )
+        Fragment() {
+            span() { "one" }
+            span() { "two" }
+        }
+        |> prerender
     result |> Render.toString |> shouldEqual """<span>one</span><span>two</span>"""
 
 [<Fact>]
@@ -244,3 +243,94 @@ let ``Double render of a prerendered node works`` () =
     let result2 = prerendered |> Render.toString
     result1 |> shouldEqual """<span id="test1">test2</span>"""
     result2 |> shouldEqual """<span id="test1">test2</span>"""
+
+[<Fact>]
+let ``Prerendered template renders the same as the original view`` () =
+    let layout =
+        prerenderAround(fun content ->
+            html() {
+                body() {
+                    h1() { "My site" }
+                    main() { content }
+                }
+            })
+    let expected =
+        html() {
+            body() {
+                h1() { "My site" }
+                main() { p() { "Dynamic" } }
+            }
+        }
+        |> Render.toString
+    layout() { p() { "Dynamic" } } |> Render.toString |> shouldEqual expected
+
+[<Fact>]
+let ``Prerendered template accepts several children`` () =
+    let layout = prerenderAround(fun content -> div(id = "wrap") { content })
+    layout() {
+        span() { "one" }
+        span() { "two" }
+    }
+    |> Render.toString
+    |> shouldEqual """<div id="wrap"><span>one</span><span>two</span></div>"""
+
+[<Fact>]
+let ``Prerendered template can be filled more than once`` () =
+    let layout = prerenderAround(fun content -> div() { content })
+    let first = layout() { "one" }
+    let second = layout() { "two" }
+    first |> Render.toString |> shouldEqual """<div>one</div>"""
+    second |> Render.toString |> shouldEqual """<div>two</div>"""
+
+[<Fact>]
+let ``Prerendered template with an unfilled hole`` () =
+    let layout = prerenderAround(fun content -> div() { content })
+    layout() |> Render.toString |> shouldEqual """<div></div>"""
+
+[<Fact>]
+let ``Prerendered template still escapes the hole content`` () =
+    let layout = prerenderAround(fun content -> p(id = "<br>") { content })
+    layout() { "<hr>" }
+    |> Render.toString
+    |> shouldEqual """<p id="&lt;br&gt;">&lt;hr&gt;</p>"""
+
+[<Fact>]
+let ``Prerendered template with an empty prefix and suffix`` () =
+    let layout = prerenderAround(fun content -> Fragment() { content })
+    layout() { span() { "only" } }
+    |> Render.toString
+    |> shouldEqual """<span>only</span>"""
+
+[<Fact>]
+let ``Prerendered template hole accepts a for loop`` () =
+    let layout = prerenderAround(fun content -> ul() { content })
+    layout() {
+        for i in 1..3 do
+            li() { i }
+    }
+    |> Render.toString
+    |> shouldEqual """<ul><li>1</li><li>2</li><li>3</li></ul>"""
+
+[<Fact>]
+let ``Prerendered templates can be nested`` () =
+    let outer = prerenderAround(fun content -> html() { body() { content } })
+    let inner = prerenderAround(fun content -> main(class' = "c") { content })
+    outer() { inner() { p() { "text" } } }
+    |> Render.toString
+    |> shouldEqual """<html><body><main class="c"><p>text</p></main></body></html>"""
+
+[<Fact>]
+let ``Prerendered template requires the hole to be used`` () =
+    Assert.Throws<ArgumentException>(fun () -> prerenderAround(fun _ -> div() { "no hole" }) |> ignore)
+    |> ignore
+
+[<Fact>]
+let ``Prerendered template rejects a hole used twice`` () =
+    Assert.Throws<ArgumentException>(fun () ->
+        prerenderAround(fun content ->
+            div() {
+                content
+                content
+            })
+        |> ignore)
+    |> ignore

@@ -24,7 +24,7 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Version>2.1.0</Version>
         <PackageVersion>2.1.0</PackageVersion>
-        <PackageReleaseNotes>Added prerender function</PackageReleaseNotes>
+        <PackageReleaseNotes>Added prerender and prerenderAround functions</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="10.0.100" />
