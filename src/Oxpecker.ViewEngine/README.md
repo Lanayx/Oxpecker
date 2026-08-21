@@ -44,6 +44,7 @@ let mainView (model: Person) =
 - [Attributes](#attributes)
 - [Event handlers](#event-handlers)
 - [Html escaping](#html-escaping)
+- [Prerendering](#prerendering)
 - [Rendering](#rendering)
 - [ARIA](#aria)
 - [Fragments](#fragments)
@@ -63,7 +64,7 @@ let mainView (model: Person) =
         abstract member AddChild: HtmlElement -> unit
     ...
 ```
-There are 5 types of HTML elements available: `RegularNode`, `VoidNode` (only attributes), `FragmentNode` (only children), `RegularTextNode`(escaped text), `RawTextNode`(unescaped text).
+There are 6 types of HTML elements available: `RegularNode`, `VoidNode` (only attributes), `FragmentNode` (only children), `RegularTextNode`(escaped text), `RawTextNode`(unescaped text), `IntNode`(integer).
 
 All HTML tags inherit from `RegularNode` or `VoidNode` and you can easily create your own tag:
 
@@ -139,6 +140,33 @@ div(){
     123 // Numbers are NOT escaped
 }
 ```
+
+### Prerendering
+
+Views are object trees that are walked (and their text and attributes escaped) on every render. When a part of your view is static, `prerender` lets you pay that cost once: it renders an element **together with all its children** into a snapshot that is appended as a plain string on every subsequent render.
+
+```fsharp
+// rendered once, when the module is initialized
+let pageHeader =
+    prerender(
+        header() {
+            h1() { "My site" }
+            nav() { a(href = "/") { "Home" } }
+        }
+    )
+
+let page (model: Model) =
+    html() {
+        body() {
+            pageHeader // appended as a plain string on every request
+            main() { model.Content }
+        }
+    }
+```
+
+`prerender` returns a `RawTextNode` holding already-escaped HTML, so the snapshot is not escaped again when embedded.
+
+Note that the snapshot is taken **eagerly**, at the moment of the call: children or attributes added to the original element afterwards won't be reflected in the returned node.
 
 ### Rendering
 

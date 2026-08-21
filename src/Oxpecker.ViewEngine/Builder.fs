@@ -109,6 +109,22 @@ module Builder =
     /// Create text node that will NOT be HTML-escaped
     let inline raw text = RawTextNode text
 
+    /// <summary>
+    /// Renders an element together with all its children into a static HTML snapshot.
+    /// Use it to render static parts of a view once, instead of re-rendering them on every request.
+    /// </summary>
+    /// <remarks>
+    /// The snapshot is taken eagerly, at the moment of the call. Children or attributes added
+    /// to the original element afterwards will not be reflected in the returned node.
+    /// </remarks>
+    let prerender (view: #HtmlElement) =
+        let sb = StringBuilderPool.Get()
+        try
+            view.Render sb
+            RawTextNode(sb.ToString())
+        finally
+            StringBuilderPool.Return(sb)
+
     type HtmlContainerFun = HtmlContainer -> unit
 
     // builder methods

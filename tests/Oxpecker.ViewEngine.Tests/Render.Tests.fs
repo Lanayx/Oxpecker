@@ -163,3 +163,84 @@ let ``Render to text writer`` () =
         |> Encoding.UTF8.GetString
         |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="1"></div></html>"""
     }
+
+[<Fact>]
+let ``Prerender renders the same as the original element`` () =
+    let view =
+        div(id = "1") {
+            span(class' = "a") { "Hello" }
+            br()
+        }
+    let expected = view |> Render.toString
+    prerender view |> Render.toString |> shouldEqual expected
+
+[<Fact>]
+let ``Prerender includes all children`` () =
+    let result =
+        prerender(
+            html() {
+                div(id = "1") { 1 }
+                div(id = "2") {
+                    div(id = "3", class' = "test")
+                    br()
+                    ul() { yield! [ li() { "one" }; li() { "two" } ] }
+                }
+            }
+        )
+    result
+    |> Render.toString
+    |> shouldEqual
+        """<html><div id="1">1</div><div id="2"><div id="3" class="test"></div><br><ul><li>one</li><li>two</li></ul></div></html>"""
+
+[<Fact>]
+let ``Prerendered node is not escaped again when embedded`` () =
+    let prerendered =
+        prerender(
+            p(id = "<br>") {
+                raw "<hr>"
+                span() { "<hr>" }
+            }
+        )
+    let result = div() { prerendered }
+    result
+    |> Render.toString
+    |> shouldEqual """<div><p id="&lt;br&gt;"><hr><span>&lt;hr&gt;</span></p></div>"""
+
+[<Fact>]
+let ``Prerendered node is embedded without a wrapper`` () =
+    let header = prerender(h1() { "My site" })
+    let result = html() { body() { header } }
+    result
+    |> Render.toString
+    |> shouldEqual """<html><body><h1>My site</h1></body></html>"""
+
+[<Fact>]
+let ``Prerender of a fragment renders children only`` () =
+    let result =
+        prerender(
+            Fragment() {
+                span() { "one" }
+                span() { "two" }
+            }
+        )
+    result |> Render.toString |> shouldEqual """<span>one</span><span>two</span>"""
+
+[<Fact>]
+let ``Prerender takes an eager snapshot`` () =
+    let view = div() { span() { "early" } }
+    let prerendered = prerender view
+    view.AddChild(span() { "late" })
+    prerendered
+    |> Render.toString
+    |> shouldEqual """<div><span>early</span></div>"""
+    view
+    |> Render.toString
+    |> shouldEqual """<div><span>early</span><span>late</span></div>"""
+
+[<Fact>]
+let ``Double render of a prerendered node works`` () =
+    let prerendered = prerender(span(id = "test1") { "test2" })
+    let result1 = prerendered |> Render.toString
+    let result2 = prerendered |> Render.toString
+    result1 |> shouldEqual """<span id="test1">test2</span>"""
+    result2 |> shouldEqual """<span id="test1">test2</span>"""

@@ -21,6 +21,8 @@ module OxpeckerViewRender =
             }
         }
 
+    let prerenderedHtml = prerender staticHtml
+
 module FalcoViewRender =
     open Falco.Markup
     open Falco.Markup.Elem
@@ -59,22 +61,27 @@ module GiraffeViewRender =
 type ViewEngineRender() =
 
 
-    // BenchmarkDotNet v0.15.6, Windows 11 (10.0.26200.7171)
-    // AMD Ryzen 5 5600H with Radeon Graphics 3.30GHz, 1 CPU, 12 logical and 6 physical cores
-    // .NET SDK 10.0.100
-    //   [Host]     : .NET 10.0.0 (10.0.0, 10.0.25.52411), X64 RyuJIT x86-64-v3 DEBUG
-    //   DefaultJob : .NET 10.0.0 (10.0.0, 10.0.25.52411), X64 RyuJIT x86-64-v3
+    // BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.9168/25H2/2025Update/HudsonValley2)
+    // AMD Ryzen AI 9 HX PRO 370 w/ Radeon 890M 2.00GHz, 1 CPU, 24 logical and 12 physical cores
+    // .NET SDK 10.0.400
+    //   [Host]     : .NET 10.0.11 (10.0.11, 10.0.1126.37416), X64 RyuJIT x86-64-v4 DEBUG
+    //   DefaultJob : .NET 10.0.11 (10.0.11, 10.0.1126.37416), X64 RyuJIT x86-64-v4
     //
     //
-    // | Method             | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
-    // |------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
-    // | RenderOxpeckerView |   880.5 ns | 11.63 ns |  9.71 ns | 0.1440 |      - |   1.18 KB |
-    // | RenderGiraffeView  | 1,012.6 ns | 20.04 ns | 31.21 ns | 1.3647 | 0.0753 |  11.15 KB |
-    // | RenderFalcoView    | 1,298.4 ns | 24.82 ns | 23.22 ns | 0.4730 | 0.0019 |   3.87 KB |
+    // | Method                        | Mean      | Error     | StdDev    | Gen0   | Gen1   | Allocated |
+    // |------------------------------ |----------:|----------:|----------:|-------:|-------:|----------:|
+    // | RenderOxpeckerView            | 521.12 ns |  7.769 ns |  6.066 ns | 0.1612 |      - |   1.32 KB |
+    // | RenderPrerenderedOxpeckerView |  59.82 ns |  2.067 ns |  5.761 ns | 0.1616 |      - |   1.32 KB |
+    // | RenderGiraffeView             | 515.69 ns | 10.182 ns | 22.351 ns | 1.3647 | 0.0753 |  11.15 KB |
+    // | RenderFalcoView               | 908.01 ns | 14.278 ns | 11.148 ns | 0.4730 | 0.0029 |   3.87 KB |
 
     [<Benchmark>]
     member this.RenderOxpeckerView() =
         OxpeckerViewRender.staticHtml |> Oxpecker.ViewEngine.Render.toHtmlDocString
+
+    [<Benchmark>]
+    member this.RenderPrerenderedOxpeckerView() =
+        OxpeckerViewRender.prerenderedHtml |> Oxpecker.ViewEngine.Render.toHtmlDocString
 
     [<Benchmark>]
     member this.RenderGiraffeView() =
