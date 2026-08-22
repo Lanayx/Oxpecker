@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.0.1</Version>
-        <PackageVersion>2.0.1</PackageVersion>
-        <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
+        <Version>2.1.0</Version>
+        <PackageVersion>2.1.0</PackageVersion>
+        <PackageReleaseNotes>Added prerender and prerenderAround functions</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="10.0.100" />
