@@ -263,7 +263,7 @@ let private isNotNull (value: string) = obj.ReferenceEquals(value, null) |> not
 
 /// Key/value pairs exactly as they arrive on the wire. The urlencoded syntax is
 /// the same for a query string and a form body, so both are driven from these.
-let wireCases: seq<array<obj>>  =
+let wireCases: seq<array<obj>> =
     seq {
         [| "q=a"; "a"; [| "a" |] |]
         [| "q=a&q=bb"; "a,bb"; [| "a"; "bb" |] |]
