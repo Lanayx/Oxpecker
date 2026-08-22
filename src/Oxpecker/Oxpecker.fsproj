@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.1.0</Version>
-        <PackageVersion>2.1.0</PackageVersion>
-        <PackageReleaseNotes>MaxCollectionSize model binder option introduced.</PackageReleaseNotes>
+        <Version>2.1.1</Version>
+        <PackageVersion>2.1.1</PackageVersion>
+        <PackageReleaseNotes>Improve performance of TryGet* extension methods.</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
