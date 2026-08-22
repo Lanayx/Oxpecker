@@ -53,7 +53,7 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetCookieValue(ctx: HttpContext, key: string) =
         match ctx.Request.Cookies.TryGetValue key with
-        | true, value -> value |> Some
+        | true, value -> (Unchecked.nonNull value) |> Some
         | _ -> None
 
     /// <summary>
@@ -65,7 +65,7 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetHeaderValue(ctx: HttpContext, key: string) =
         match ctx.Request.Headers.TryGetValue key with
-        | true, value -> value |> string |> Some
+        | true, value -> value.ToString() |> Some
         | _ -> None
 
     /// <summary>
@@ -77,7 +77,9 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetHeaderValues(ctx: HttpContext, key: string) =
         match ctx.Request.Headers.TryGetValue key with
-        | true, value -> value |> Seq.map string |> Some
+        // StringValues is immutable and never holds null entries, so it can be handed out
+        // directly as a string seq instead of paying for a Seq.map wrapper
+        | true, value -> Some(boxv value :?> string seq)
         | _ -> None
 
     /// <summary>
@@ -89,7 +91,7 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetQueryValue(ctx: HttpContext, key: string) =
         match ctx.Request.Query.TryGetValue key with
-        | true, value -> value |> string |> Some
+        | true, value -> value.ToString() |> Some
         | _ -> None
 
     /// <summary>
@@ -101,7 +103,9 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetQueryValues(ctx: HttpContext, key: string) =
         match ctx.Request.Query.TryGetValue key with
-        | true, value -> value |> Seq.map string |> Some
+        // StringValues is immutable and never holds null entries, so it can be handed out
+        // directly as a string seq instead of paying for a Seq.map wrapper
+        | true, value -> Some(boxv value :?> string seq)
         | _ -> None
 
     /// <summary>
@@ -113,7 +117,7 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetFormValue(ctx: HttpContext, key: string) =
         match ctx.Request.Form.TryGetValue key with
-        | true, value -> value |> string |> Some
+        | true, value -> value.ToString() |> Some
         | _ -> None
 
     /// <summary>
@@ -125,7 +129,9 @@ type HttpContextExtensions() =
     [<Extension>]
     static member TryGetFormValues(ctx: HttpContext, key: string) =
         match ctx.Request.Form.TryGetValue key with
-        | true, value -> value |> Seq.map string |> Some
+        // StringValues is immutable and never holds null entries, so it can be handed out
+        // directly as a string seq instead of paying for a Seq.map wrapper
+        | true, value -> Some(boxv value :?> string seq)
         | _ -> None
 
     /// <summary>

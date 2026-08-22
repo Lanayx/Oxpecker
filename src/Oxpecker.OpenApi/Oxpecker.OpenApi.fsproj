@@ -28,7 +28,7 @@
         <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="2.1.0" />
+        <PackageReference Include="Oxpecker" Version="2.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     </ItemGroup>
     <ItemGroup>

@@ -1,9 +1,11 @@
 ﻿module Oxpecker.Tests.HttpContextExtensions
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Text
 open Microsoft.AspNetCore.Http
+open Microsoft.Extensions.Primitives
 open Microsoft.AspNetCore.WebUtilities
 open Microsoft.Extensions.DependencyInjection
 open Oxpecker.ViewEngine
@@ -232,3 +234,188 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
         |> shouldEqual
             $"""<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1 id="header">Hello world</h1></body></html>"""
     }
+
+// ---------------------------------------------------------------------------
+// TryGet* extensions: StringValues conversion behaviour.
+//
+// Inputs are produced the way a real request produces them - a parsed query
+// string, a parsed urlencoded form body and the request header dictionary -
+// so the cases only cover values these getters can actually receive.
+// ---------------------------------------------------------------------------
+
+let private queryContext (wire: string) =
+    let ctx = DefaultHttpContext()
+    ctx.Request.QueryString <- QueryString("?" + wire)
+    ctx
+
+let private headerContext (values: string array) =
+    let ctx = DefaultHttpContext()
+    for value in values do
+        ctx.Request.Headers.Append("X-Test", value)
+    ctx
+
+/// The implementations these extensions used to have, kept so the current ones
+/// can be checked against the behaviour they replaced.
+let private legacySingle (value: StringValues) = value |> string
+let private legacyValues (value: StringValues) = value |> Seq.map string
+
+let private isNotNull (value: string) = obj.ReferenceEquals(value, null) |> not
+
+/// Key/value pairs exactly as they arrive on the wire. The urlencoded syntax is
+/// the same for a query string and a form body, so both are driven from these.
+let wireCases: seq<array<obj>> =
+    seq {
+        [| "q=a"; "a"; [| "a" |] |]
+        [| "q=a&q=bb"; "a,bb"; [| "a"; "bb" |] |]
+        [| "q=a&q=bb&q=ccc"; "a,bb,ccc"; [| "a"; "bb"; "ccc" |] |]
+        [| "q="; ""; [| "" |] |]
+        // joining skips blank entries, so the single-value getter drops the empty one
+        [| "q=&q=a"; "a"; [| ""; "a" |] |]
+        [| "q=a%20b"; "a b"; [| "a b" |] |]
+        [| "q=%C3%A9"; "é"; [| "é" |] |]
+    }
+
+let headerCases: seq<array<obj>> =
+    seq {
+        [| [| "a" |]; "a"; [| "a" |] |]
+        [| [| "a"; "bb" |]; "a,bb"; [| "a"; "bb" |] |]
+        [|
+            [| "gzip"; "deflate"; "br" |]
+            "gzip,deflate,br"
+            [| "gzip"; "deflate"; "br" |]
+        |]
+    }
+
+[<Theory; MemberData(nameof wireCases)>]
+let ``TryGetQueryValue and TryGetQueryValues convert a parsed query string``
+    (wire: string, singleExpected: string, valuesExpected: string array)
+    =
+    let ctx = queryContext wire
+
+    ctx.TryGetQueryValue "q" |> shouldEqual(Some singleExpected)
+    ctx.TryGetQueryValues "q"
+    |> Option.map Array.ofSeq
+    |> shouldEqual(Some valuesExpected)
+
+[<Theory; MemberData(nameof wireCases)>]
+let ``TryGetFormValue and TryGetFormValues convert a parsed form body``
+    (wire: string, singleExpected: string, valuesExpected: string array)
+    =
+    task {
+        let ctx = createFormContext wire
+        let! _ = ctx.Request.ReadFormAsync()
+
+        ctx.TryGetFormValue "q" |> shouldEqual(Some singleExpected)
+        ctx.TryGetFormValues "q"
+        |> Option.map Array.ofSeq
+        |> shouldEqual(Some valuesExpected)
+    }
+
+[<Theory; MemberData(nameof headerCases)>]
+let ``TryGetHeaderValue and TryGetHeaderValues convert request headers``
+    (values: string array, singleExpected: string, valuesExpected: string array)
+    =
+    let ctx = headerContext values
+
+    ctx.TryGetHeaderValue "X-Test" |> shouldEqual(Some singleExpected)
+    ctx.TryGetHeaderValues "X-Test"
+    |> Option.map Array.ofSeq
+    |> shouldEqual(Some valuesExpected)
+
+[<Fact>]
+let ``TryGet value extensions return None for a missing key`` () =
+    task {
+        let ctx = queryContext "other=1"
+        ctx.TryGetQueryValue "q" |> shouldEqual None
+        ctx.TryGetQueryValues "q" |> shouldEqual None
+        ctx.TryGetHeaderValue "X-Test" |> shouldEqual None
+        ctx.TryGetHeaderValues "X-Test" |> shouldEqual None
+
+        let formCtx = createFormContext "other=1"
+        let! _ = formCtx.Request.ReadFormAsync()
+        formCtx.TryGetFormValue "q" |> shouldEqual None
+        formCtx.TryGetFormValues "q" |> shouldEqual None
+    }
+
+[<Fact>]
+let ``Appending an empty header value leaves the header absent`` () =
+    // HeaderDictionary drops empty StringValues, so there is no "present but empty" header
+    let ctx = headerContext [| "" |]
+
+    ctx.Request.Headers.ContainsKey "X-Test" |> shouldEqual false
+    ctx.TryGetHeaderValue "X-Test" |> shouldEqual None
+    ctx.TryGetHeaderValues "X-Test" |> shouldEqual None
+
+[<Theory; MemberData(nameof wireCases)>]
+let ``TryGetQuery and TryGetForm match the previous implementation`` (wire: string, _: string, _: string array) =
+    task {
+        let ctx = queryContext wire
+        let queryValue = ctx.Request.Query["q"]
+        ctx.TryGetQueryValue "q" |> shouldEqual(Some(legacySingle queryValue))
+        ctx.TryGetQueryValues "q"
+        |> Option.map List.ofSeq
+        |> shouldEqual(Some(legacyValues queryValue |> List.ofSeq))
+
+        let formCtx = createFormContext wire
+        let! _ = formCtx.Request.ReadFormAsync()
+        let formValue = formCtx.Request.Form["q"]
+        formCtx.TryGetFormValue "q" |> shouldEqual(Some(legacySingle formValue))
+        formCtx.TryGetFormValues "q"
+        |> Option.map List.ofSeq
+        |> shouldEqual(Some(legacyValues formValue |> List.ofSeq))
+    }
+
+[<Theory; MemberData(nameof headerCases)>]
+let ``TryGetHeader matches the previous implementation`` (values: string array, _: string, _: string array) =
+    let ctx = headerContext values
+    let headerValue = ctx.Request.Headers["X-Test"]
+
+    ctx.TryGetHeaderValue "X-Test" |> shouldEqual(Some(legacySingle headerValue))
+    ctx.TryGetHeaderValues "X-Test"
+    |> Option.map List.ofSeq
+    |> shouldEqual(Some(legacyValues headerValue |> List.ofSeq))
+
+[<Theory; MemberData(nameof wireCases)>]
+let ``Values from real collections are never null`` (wire: string, _: string, _: string array) =
+    // TryGet*Values hands out the StringValues itself, which is only sound while
+    // real query/form/header collections cannot contain null entries.
+    task {
+        let ctx = queryContext wire
+        (ctx.TryGetQueryValues "q").Value |> Seq.forall isNotNull |> shouldEqual true
+
+        let formCtx = createFormContext wire
+        let! _ = formCtx.Request.ReadFormAsync()
+        (formCtx.TryGetFormValues "q").Value |> Seq.forall isNotNull |> shouldEqual true
+
+        let headerCtx = headerContext [| "a"; "bb" |]
+        (headerCtx.TryGetHeaderValues "X-Test").Value
+        |> Seq.forall isNotNull
+        |> shouldEqual true
+    }
+
+[<Fact>]
+let ``TryGetHeaderValues result can be enumerated more than once`` () =
+    let ctx = headerContext [| "a"; "bb" |]
+
+    let result = (ctx.TryGetHeaderValues "X-Test").Value
+
+    result |> List.ofSeq |> shouldEqual [ "a"; "bb" ]
+    result |> List.ofSeq |> shouldEqual [ "a"; "bb" ]
+
+[<Fact>]
+let ``TryGetHeaderValues result cannot be mutated into the header collection`` () =
+    // The result is the StringValues itself rather than a copy, so it must not
+    // expose a writable view onto the request headers.
+    let ctx = headerContext [| "a"; "bb" |]
+
+    let result = (ctx.TryGetHeaderValues "X-Test").Value
+
+    result :? (string array) |> shouldEqual false
+    match result with
+    | :? IList<string> as list -> Assert.Throws<NotSupportedException>(fun () -> list[0] <- "mutated") |> ignore
+    | _ -> ()
+
+    ctx.Request.Headers["X-Test"] |> Array.ofSeq |> shouldEqual [| "a"; "bb" |]
+    ctx.TryGetHeaderValues "X-Test"
+    |> Option.map List.ofSeq
+    |> shouldEqual(Some [ "a"; "bb" ])

@@ -21,6 +21,27 @@ module OxpeckerViewRender =
             }
         }
 
+    let prerenderedHtml = prerender staticHtml
+
+    /// Same document, but with the one paragraph that would change per request left as a hole
+    let template =
+        prerenderAround(fun content ->
+            html() {
+                body(style = "width: 800px; margin: 0 auto") {
+                    h1(style = "text-align: center; color: red") { "Error" }
+                    content
+                    p() { raw "<h2>Raw HTML</h2>" }
+                    ul() {
+                        for _ in 1..10 do
+                            li() { span() { "Hellö 𝓦orld!" } }
+                    }
+                }
+            })
+
+    let dynamicPart = p() { "Some long error text" }
+
+    let renderTemplate () = template() { dynamicPart }
+
 module FalcoViewRender =
     open Falco.Markup
     open Falco.Markup.Elem
@@ -58,23 +79,33 @@ module GiraffeViewRender =
 [<MemoryDiagnoser>]
 type ViewEngineRender() =
 
-
-    // BenchmarkDotNet v0.15.6, Windows 11 (10.0.26200.7171)
-    // AMD Ryzen 5 5600H with Radeon Graphics 3.30GHz, 1 CPU, 12 logical and 6 physical cores
-    // .NET SDK 10.0.100
-    //   [Host]     : .NET 10.0.0 (10.0.0, 10.0.25.52411), X64 RyuJIT x86-64-v3 DEBUG
-    //   DefaultJob : .NET 10.0.0 (10.0.0, 10.0.25.52411), X64 RyuJIT x86-64-v3
+    // BenchmarkDotNet v0.15.8, Windows 11 (10.0.26200.9168/25H2/2025Update/HudsonValley2)
+    // AMD Ryzen AI 9 HX PRO 370 w/ Radeon 890M 2.00GHz, 1 CPU, 24 logical and 12 physical cores
+    // .NET SDK 10.0.400
+    //   [Host]     : .NET 10.0.11 (10.0.11, 10.0.1126.37416), X64 RyuJIT x86-64-v4 DEBUG
+    //   DefaultJob : .NET 10.0.11 (10.0.11, 10.0.1126.37416), X64 RyuJIT x86-64-v4
     //
     //
-    // | Method             | Mean       | Error    | StdDev   | Gen0   | Gen1   | Allocated |
-    // |------------------- |-----------:|---------:|---------:|-------:|-------:|----------:|
-    // | RenderOxpeckerView |   880.5 ns | 11.63 ns |  9.71 ns | 0.1440 |      - |   1.18 KB |
-    // | RenderGiraffeView  | 1,012.6 ns | 20.04 ns | 31.21 ns | 1.3647 | 0.0753 |  11.15 KB |
-    // | RenderFalcoView    | 1,298.4 ns | 24.82 ns | 23.22 ns | 0.4730 | 0.0019 |   3.87 KB |
+    // | Method                        | Mean      | Error     | StdDev    | Gen0   | Gen1   | Allocated |
+    // |------------------------------ |----------:|----------:|----------:|-------:|-------:|----------:|
+    // | RenderOxpeckerView            | 550.75 ns |  9.861 ns | 12.471 ns | 0.1612 |      - |   1.32 KB |
+    // | RenderPrerenderedOxpeckerView |  69.19 ns |  2.367 ns |  6.904 ns | 0.1615 |      - |   1.32 KB |
+    // | RenderTemplateOxpeckerView    | 116.56 ns | 10.984 ns | 32.042 ns | 0.1712 |      - |    1.4 KB |
+    // | RenderGiraffeView             | 586.42 ns | 11.716 ns | 32.659 ns | 1.3647 | 0.0753 |  11.15 KB |
+    // | RenderFalcoView               | 976.39 ns | 18.912 ns | 23.226 ns | 0.4730 | 0.0019 |   3.87 KB |
 
     [<Benchmark>]
     member this.RenderOxpeckerView() =
         OxpeckerViewRender.staticHtml |> Oxpecker.ViewEngine.Render.toHtmlDocString
+
+    [<Benchmark>]
+    member this.RenderPrerenderedOxpeckerView() =
+        OxpeckerViewRender.prerenderedHtml |> Oxpecker.ViewEngine.Render.toHtmlDocString
+
+    [<Benchmark>]
+    member this.RenderTemplateOxpeckerView() =
+        OxpeckerViewRender.renderTemplate()
+        |> Oxpecker.ViewEngine.Render.toHtmlDocString
 
     [<Benchmark>]
     member this.RenderGiraffeView() =
@@ -84,7 +115,6 @@ type ViewEngineRender() =
     [<Benchmark>]
     member this.RenderFalcoView() =
         FalcoViewRender.staticHtml |> Falco.Markup.XmlNodeRenderer.renderHtml
-
 
 // let unencodedFortunes =
 // """<!doctype html><html>

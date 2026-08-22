@@ -27,7 +27,7 @@
         <PackageReleaseNotes>Added several missing attributes and modifiers</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="2.0.1" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="2.1.0" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
