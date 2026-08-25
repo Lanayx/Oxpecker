@@ -37,6 +37,13 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 
 
 type MyModel = { Name: string; Age: int }
+
+type MyDu =
+    | Name1
+    | Name2
+    | Name3 of string
+    | Age of int
+
 [<CLIMutable>]
 type MyModelWithOption = {
     Name: string option
@@ -155,9 +162,9 @@ let endpoints = [
         route "/" <| text "Hello World"
         route "/iresult" <| %Ok {| Text = "Hello World" |}
         route "/ibadResult" <| %BadRequest()
-        routef "/text/{%s}" text
+        routef "/json/{%s}" (MyDu.Name3 >> json)
         |> configureEndpoint _.WithName("GetText")
-        |> addOpenApiSimple<unit, string>
+        |> addOpenApiSimple<unit, MyDu>
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         route "/x" (bindQuery handler4)
         routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
@@ -252,7 +259,11 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddOpenApi(fun o -> o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore)
+        .AddOpenApi(fun o ->
+            o
+                .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
+                .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
+            |> ignore)
     |> ignore
 
 
