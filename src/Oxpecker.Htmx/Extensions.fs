@@ -33,6 +33,26 @@ module HxUpsertModifier =
     /// `key:<attr>` — sort by a different attribute than `id`.
     let key (attr: string) = $" key:%s{attr}"
 
+/// Special binding names for `hxLiveBind` (`hx-live:{name}`) provided by the `hx-live` extension.
+/// Any other name binds the attribute or property of that name.
+/// See https://four.htmx.org/extensions/hx-live
+[<RequireQualifiedAccess>]
+module HxLiveBinding =
+    /// `text` — bind the element's `textContent` to the expression.
+    [<Literal>]
+    let text = "text"
+    /// `html` — bind the element's `innerHTML` to the expression.
+    [<Literal>]
+    let html = "html"
+    /// `style` — bind inline styles; the expression returns a `"prop: value; …"` string or an object of declarations.
+    [<Literal>]
+    let style = "style"
+    /// `class` — bind classes; the expression returns a class name or an object mapping class names to booleans.
+    [<Literal>]
+    let class' = "class"
+    /// `.{name}` — toggle the single class `name` on the truthiness of the expression.
+    let inline toggleClass (name: string) = $".%s{name}"
+
 
 /// Attributes provided by the built-in htmx 4 extensions.
 /// Each extension must be loaded client-side via its own script tag.
@@ -52,6 +72,20 @@ type HtmxExtensionExtensions =
     [<Extension>]
     static member hxSseClose(this: #HtmlTag, event: string | null) = this.attr("hx-sse:close", event)
 
+    // ─── hx-multipart (multipart/mixed + multipart/parallel streaming) ───
+
+    /// `hx-multipart:connect` — open a persistent GET request that streams `multipart/mixed` parts,
+    /// reconnecting automatically. Requires the `hx-multipart` extension.
+    [<Extension>]
+    static member hxMultipartConnect(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) =
+        this.attr("hx-multipart:connect", url)
+
+    /// `hx-multipart:close` — an `hx-trigger`-style event spec: when that event fires on the element the
+    /// persistent multipart connection is closed. The server can fire it from a part via an `HX-Trigger`
+    /// header. Requires the `hx-multipart` extension.
+    [<Extension>]
+    static member hxMultipartClose(this: #HtmlTag, event: string | null) = this.attr("hx-multipart:close", event)
+
     // ─── hx-ws (WebSockets) ───
 
     /// `hx-ws:connect` — establish a WebSocket connection to the URL.
@@ -69,6 +103,39 @@ type HtmxExtensionExtensions =
     /// Requires the `hx-ws` extension.
     [<Extension>]
     static member hxWsSend(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-ws:send", url)
+
+    // ─── hx-prompt (browser prompt before request) ───
+
+    /// `hx-prompt` — show a browser prompt before the request; the answer is sent URI-encoded as the
+    /// `HX-Prompt` request header (decode it with `Uri.UnescapeDataString`) and cancelling aborts the
+    /// request. Inheritable. Requires the `hx-prompt` extension.
+    [<Extension>]
+    static member hxPrompt(this: #HtmlTag, question: string | null) = this.attr("hx-prompt", question)
+
+    /// `hx-prompt` — show a browser prompt before the request; the answer is sent URI-encoded as the
+    /// `HX-Prompt` request header (decode it with `Uri.UnescapeDataString`) and cancelling aborts the
+    /// request. Inheritable. Requires the `hx-prompt` extension.
+    [<Extension>]
+    static member hxPrompt(this: #HtmlTag, question: string | null, modifiers: string) =
+        this.attr($"hx-prompt%s{modifiers}", question)
+
+    // ─── hx-pending (content shown while a request is in flight) ───
+
+    /// `hx-pending` — CSS selector of a `<template>` (or element) whose content is shown while the
+    /// request is in flight. The inserted wrapper gets the `hx-pending` class and a `data-*`
+    /// attribute per request parameter. Inheritable.
+    /// Requires the `hx-pending` extension.
+    [<Extension>]
+    static member hxPending(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) =
+        this.attr("hx-pending", value)
+
+    /// `hx-pending` — CSS selector of a `<template>` (or element) whose content is shown while the
+    /// request is in flight. The inserted wrapper gets the `hx-pending` class and a `data-*`
+    /// attribute per request parameter. Inheritable.
+    /// Requires the `hx-pending` extension.
+    [<Extension>]
+    static member hxPending(this: #HtmlTag, [<StringSyntax("css")>] value: string | null, modifiers: string) =
+        this.attr($"hx-pending%s{modifiers}", value)
 
     // ─── hx-head (head merging) ───
 
@@ -127,3 +194,11 @@ type HtmxExtensionExtensions =
     [<Extension>]
     static member hxLive(this: #HtmlTag, [<StringSyntax("js")>] expression: string | null) =
         this.attr("hx-live", expression)
+
+    /// `hx-live:{name}` — bind an attribute or property to a reactive JavaScript expression that is
+    /// re-evaluated whenever the DOM changes, e.g. `hxLiveBind("disabled", "!q('#name').value")`.
+    /// `name` is usually an attribute or property name; see `HxLiveBinding` for the special names
+    /// `text`, `html`, `style`, `class` and `.{class}`. Requires the `hx-live` extension.
+    [<Extension>]
+    static member hxLiveBind(this: #HtmlTag, name: string, [<StringSyntax("js")>] expression: string | null) =
+        this.attr($"hx-live:{name}", expression)

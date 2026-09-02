@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0-beta.5</Version>
-        <PackageVersion>4.0.0-beta.5</PackageVersion>
-        <PackageReleaseNotes>Added several missing attributes and modifiers</PackageReleaseNotes>
+        <Version>4.0.0</Version>
+        <PackageVersion>4.0.0</PackageVersion>
+        <PackageReleaseNotes>Aligned with htmx 4.0.0: added hxQuery, hxMorphSkip, hxMorphSkipChildren, HxSwapModifier.swapEmpty, hxPrompt, hxPending, hxMultipartConnect/hxMultipartClose, hxLiveBind (with HxLiveBinding) and the HX-Prompt/HX-Last-Part-ID/HX-Part-ID headers. HxSwapModifier.settle/settleMs now emit a leading space like the other swap modifiers. Breaking: removed hxOptimistic and the HX-Request-ID headers, which no longer exist in htmx.</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
