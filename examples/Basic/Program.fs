@@ -118,7 +118,7 @@ let streamingHtml1: EndpointHandler =
     fun (ctx: HttpContext) ->
         let html =
             html() {
-                head() { script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4") }
+                head() { script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0") }
                 body(style = "width: 800px; margin: 0 auto") {
                     h1(style = "text-align: center; color: blue") { "HTML Streaming example" }
                     h2().hxGet("/streamHtml2").hxTarget(HxSelector.this').hxTrigger("load")

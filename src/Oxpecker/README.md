@@ -69,6 +69,7 @@ An in depth functional reference to all of Oxpecker's features.
     - [Streaming](#streaming)
     - [Redirection](#redirection)
     - [Response compression](#response-compression)
+    - [Static files](#static-files)
 - [Testing](#testing)
 
 ## Fundamentals
@@ -1678,6 +1679,38 @@ The third and last parameter is a `string[] option` which defines an optional li
 ### Response Compression
 
 ASP.NET Core has its own [Response Compression Middleware](https://learn.microsoft.com/en-us/aspnet/core/performance/response-compression) which works out of the box with Oxpecker. There's no additional functionality or http handlers required in order to make it work with Oxpecker web applications.
+
+### Static files
+
+Oxpecker uses ASP.NET Core's built-in [static file support](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/static-files). Place static assets such as CSS, JavaScript, and images in the application's `wwwroot` directory.
+
+For assets known at build time, use [`MapStaticAssets`](https://learn.microsoft.com/en-us/aspnet/core/release-notes/aspnetcore-9.0#static-asset-delivery-optimization). It serves the assets as endpoints and provides build-time compression, fingerprinting, and optimized caching:
+
+```fsharp
+let app = builder.Build()
+
+app.UseRouting() |> ignore
+app.MapStaticAssets() |> ignore
+app.UseOxpecker(webApp) |> ignore
+
+app.Run()
+```
+
+Use `UseStaticFiles` instead when files are generated at runtime, served from outside the web root, or require features provided by static file middleware:
+
+```fsharp
+let app = builder.Build()
+
+app
+    .UseStaticFiles()
+    .UseRouting()
+    .UseOxpecker(webApp)
+|> ignore
+
+app.Run()
+```
+
+`MapStaticAssets` is preferred for most applications. The two approaches can also be combined when an application serves both build-time assets and files that require static file middleware.
 
 ## Testing
 

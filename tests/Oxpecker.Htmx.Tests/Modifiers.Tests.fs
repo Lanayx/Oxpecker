@@ -21,13 +21,25 @@ let ``HxSwapModifier.swapMs composes with hxSwap`` () =
 
 [<Fact>]
 let ``HxSwapModifier.settleMs returns settle with ms suffix`` () =
-    HxSwapModifier.settleMs 500 |> shouldEqual "settle:500ms"
+    HxSwapModifier.settleMs 500 |> shouldEqual " settle:500ms"
 
 [<Fact>]
 let ``HxSwapModifier.settleMs composes with hxSwap`` () =
-    div().hxGet("/data").hxSwap(HxSwapMethod.outerHtml + " " + HxSwapModifier.settleMs 250) { "content" }
+    div().hxGet("/data").hxSwap(HxSwapMethod.outerHtml + HxSwapModifier.settleMs 250) { "content" }
     |> Render.toString
     |> shouldEqual """<div hx-get="/data" hx-swap="outerHTML settle:250ms">content</div>"""
+
+// ─── HxSwapModifier.swapEmpty ───
+
+[<Fact>]
+let ``HxSwapModifier.swapEmpty returns swapEmpty flag`` () =
+    HxSwapModifier.swapEmpty true |> shouldEqual " swapEmpty:true"
+
+[<Fact>]
+let ``HxSwapModifier.swapEmpty composes with hxSwap`` () =
+    div().hxGet("/data").hxSwap(HxSwapMethod.innerHtml + HxSwapModifier.swapEmpty false) { "content" }
+    |> Render.toString
+    |> shouldEqual """<div hx-get="/data" hx-swap="innerHTML swapEmpty:false">content</div>"""
 
 // ─── HxTriggerModifier.delayMs ───
 

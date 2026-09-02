@@ -4,9 +4,9 @@
 
 `Oxpecker.Htmx` extends `Oxpecker.ViewEngine` package with [HTMX 4](https://four.htmx.org) attributes and headers.
 
-> **This is a beta release targeting htmx 4.** It is a clean break from the htmx 2.x API — there are no compatibility shims or aliases for removed features.
+> **This release targets htmx 4.0 (GA).** It is a clean break from the htmx 2.x API — there are no compatibility shims or aliases for removed features.
 
-[Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx) `dotnet add package Oxpecker.Htmx --prerelease`
+[Nuget package](https://www.nuget.org/packages/Oxpecker.Htmx) `dotnet add package Oxpecker.Htmx`
 
 Each htmx attribute is exposed as a fluent extension method on `HtmlTag`, so attributes chain directly onto a tag with zero allocation overhead. The `{ children }` builder syntax still works at the end of the chain:
 
@@ -44,6 +44,7 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 - hxPut
 - hxPatch
 - hxDelete
+- hxQuery
 - hxSwap
 - hxTarget
 - hxTrigger
@@ -71,8 +72,9 @@ After opening `Oxpecker.Htmx` namespace you'll get access to HTMX attributes:
 - hxMethod (new in htmx 4)
 - hxConfig (new in htmx 4, replaces old `hx-request`)
 - hxIgnore (new in htmx 4, replaces old `hx-disable`)
-- hxOptimistic (new in htmx 4)
 - hxStatus (new in htmx 4)
+- hxMorphSkip (morph swaps only)
+- hxMorphSkipChildren (morph swaps only)
 
 ### Client side — Event handler
 
@@ -91,15 +93,17 @@ open Oxpecker.Htmx.Extensions
 |---|---|---|
 | [hx-sse](https://four.htmx.org/extensions/hx-sse) | `hxSseConnect`, `hxSseClose` | `hx-sse:connect`, `hx-sse:close` |
 | [hx-ws](https://four.htmx.org/extensions/hx-ws) | `hxWsConnect`, `hxWsSend` | `hx-ws:connect`, `hx-ws:send` |
+| [hx-multipart](https://four.htmx.org/extensions/hx-multipart) | `hxMultipartConnect`, `hxMultipartClose` | `hx-multipart:connect`, `hx-multipart:close` |
 | [hx-head](https://four.htmx.org/extensions/hx-head) | `hxHead` (see `HxHeadMode`) | `hx-head` |
 | [hx-targets](https://four.htmx.org/extensions/hx-targets) | `hxTargets` | `hx-targets` |
 | [hx-ptag](https://four.htmx.org/extensions/hx-ptag) | `hxPtag` | `hx-ptag` |
 | [hx-browser-indicator](https://four.htmx.org/extensions/hx-browser-indicator) | `hxBrowserIndicator` | `hx-browser-indicator` |
 | [hx-history-cache](https://four.htmx.org/extensions/hx-history-cache) | `hxHistory` | `hx-history` |
 | [hx-csp](https://four.htmx.org/extensions/hx-csp) | `hxNonce` | `hx-nonce` |
-| [hx-live](https://four.htmx.org/extensions/hx-live) | `hxLive` | `hx-live` |
-| [hx-preload](https://four.htmx.org/extensions/hx-preload) | `hxPreload` (core attribute) | `hx-preload` |
-| [hx-optimistic](https://four.htmx.org/extensions/hx-optimistic) | `hxOptimistic` (core attribute) | `hx-optimistic` |
+| [hx-live](https://four.htmx.org/extensions/hx-live) | `hxLive`, `hxLiveBind` (see `HxLiveBinding`) | `hx-live`, `hx-live:{name}` |
+| [hx-prompt](https://four.htmx.org/extensions/hx-prompt) | `hxPrompt` | `hx-prompt` |
+| [hx-pending](https://four.htmx.org/extensions/hx-pending) | `hxPending` | `hx-pending` |
+| [hx-preload](https://four.htmx.org/extensions/hx-preload) | `hxPreload` (lives in the core `Oxpecker.Htmx` namespace; the extension script is still required) | `hx-preload` |
 
 The [hx-download](https://four.htmx.org/extensions/hx-download) and [hx-upsert](https://four.htmx.org/extensions/hx-upsert) extensions reuse `hxSwap`. Use `HxSwapMethod.download` for downloads, and `HxSwapMethod.upsert` with the `HxUpsertModifier` helpers (`sort`, `sortDesc`, `prepend`, `key`) for upserts.
 
@@ -123,6 +127,24 @@ button().hxGet("/files/report.pdf").hxSwap(HxSwapMethod.download) { "Download" }
 
 // hx-upsert: update-or-insert keyed list items, sorted descending
 div().hxGet("/items").hxSwap(HxSwapMethod.upsert + HxUpsertModifier.sortDesc) { "items" }
+
+// hx-multipart: stream parts from a persistent connection until a part fires the "done" event (HX-Trigger: done)
+div().hxMultipartConnect("/events").hxMultipartClose("done") { "Waiting..." }
+
+// hx-prompt: ask before deleting, answer arrives as the HX-Prompt request header
+button().hxDelete("/item/1").hxPrompt("Reason?") { "Delete" }
+
+// hx-pending: show a template while the request is in flight
+form().hxPost("/message").hxTarget("#messages").hxSwap("beforeend").hxPending("#sending") {
+    input(name="body")
+    button() { "Send" }
+}
+
+// hx-live: bind an attribute to a reactive expression
+button().hxLiveBind("disabled", "!q('#name').value") { "Save" }
+// hx-live: special bindings — textContent and a single class toggle
+span().hxLiveBind(HxLiveBinding.text, "q('#count').value")
+div().hxLiveBind(HxLiveBinding.toggleClass "active", "q('#tab').value === 'a'") { "tab" }
 ```
 
 ### Client side — Modifier helpers
@@ -134,7 +156,7 @@ Inheritable attributes accept an optional `modifiers` string that is appended **
 body().hxBoost("true", HxModifier.inherited) { ... }
 
 // Inherited append: renders hx-include:inherited:append=".extra"
-form().hxInclude(".extra", HxModifier.inheritedAppend) { ... }
+form().hxInclude(".extra", HxModifier.inherited + HxModifier.append) { ... }
 
 // Merge: renders hx-disable:merge="find button"
 main().hxDisable("find button", HxModifier.merge) { ... }
@@ -151,7 +173,7 @@ div().hxGet("/data").hxStatus("5xx", "swap:none") { ... }
 
 ### Client side — Extended selectors
 
-Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-selectors) in a type-safe way via the `HxSelector` module instead of writing them as plain strings. Pass the result into any selector-typed attribute (`hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`).
+Build [htmx 4 extended selectors](https://four.htmx.org/docs/features/extended-selectors) in a type-safe way via the `HxSelector` module instead of writing them as plain strings. Pass the result into any selector-typed attribute (`hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`).
 
 ```fsharp
 button().hxDelete("/item/1").hxTarget(HxSelector.closest ".card") { "Delete" }
@@ -177,7 +199,8 @@ Available helpers:
 - HxRequestHeader.LastEventId (last received SSE event ID for reconnection)
 - HxRequestHeader.Preloaded (`hx-preload` extension)
 - HxRequestHeader.PTag (`hx-ptag` extension)
-- HxRequestHeader.RequestId (`hx-ws` extension)
+- HxRequestHeader.Prompt (`hx-prompt` extension; the value is URI-encoded, decode it with `Uri.UnescapeDataString`)
+- HxRequestHeader.LastPartId (`hx-multipart` extension)
 
 ### Server side — Response headers
 
@@ -192,7 +215,7 @@ Available helpers:
 - HxResponseHeader.Reselect
 - HxResponseHeader.Download (`hx-download` extension)
 - HxResponseHeader.PTag (`hx-ptag` extension)
-- HxResponseHeader.RequestId (`hx-ws` extension)
+- HxResponseHeader.PartId (`hx-multipart` extension)
 
 ## Migration from Oxpecker.Htmx 2.x
 
@@ -203,18 +226,35 @@ Available helpers:
 - `hxHistory` — removed (no localStorage cache)
 - `hxHistoryElt` — removed
 - `hxParams` — use `htmx:config:request` event instead
-- `hxPrompt` — use `hxConfirm` with `js:` prefix
 - `hxRequest` — use `hxConfig`
 
 ### Renamed attributes
 - Old `hxDisable` (skip htmx processing) → `hxIgnore`
 - Old `hxDisabledElt` (disable form elements during request) → `hxDisable`
 
+### Moved to extensions
+- `hxPrompt` and `HxRequestHeader.Prompt` — now provided by the `hx-prompt` extension: open `Oxpecker.Htmx.Extensions` and load the extension script client-side
+
 ### Removed request headers
 - `HxRequestHeader.Trigger` — use `HxRequestHeader.Source`
 - `HxRequestHeader.TriggerName` — use `HxRequestHeader.Source`
-- `HxRequestHeader.Prompt` — removed
 
 ### Removed response headers
 - `HxResponseHeader.TriggerAfterSettle` — use `HxResponseHeader.Trigger`
 - `HxResponseHeader.TriggerAfterSwap` — use `HxResponseHeader.Trigger`
+
+## Migration from Oxpecker.Htmx 4.0.0-beta (htmx 4 beta4 → 4.0.0 GA)
+
+### Removed
+- `hxOptimistic` / the `hx-optimistic` extension — replaced by `hxPending` (`hx-pending` extension), which takes the same kind of template selector
+- `HxRequestHeader.RequestId` / `HxResponseHeader.RequestId` — the `hx-ws` extension was rewritten in GA and no longer uses `HX-Request-ID`
+
+### Added
+- `hxQuery` — the new `QUERY` verb (safe and idempotent like `GET`, body-carrying like `POST`)
+- `hxMorphSkip` / `hxMorphSkipChildren` — opt elements out of morph swaps
+- `HxSwapModifier.swapEmpty` — force or suppress the main swap when the response is empty after out-of-band content is removed
+- `hxPrompt` (`hx-prompt` extension) and `HxRequestHeader.Prompt` — htmx 2's prompt behaviour, restored as an extension
+- `hxPending` (`hx-pending` extension)
+- `hxMultipartConnect` / `hxMultipartClose` (`hx-multipart` extension), plus `HxRequestHeader.LastPartId` and `HxResponseHeader.PartId`
+- `hxLiveBind` — the `hx-live:{name}` reactive attribute binding added to the `hx-live` extension, with `HxLiveBinding` constants for the special `text`, `html`, `style`, `class` and `.{class}` names
+- `HxSwapModifier.settle` / `settleMs` now emit a leading space like every other swap modifier, so they compose with `+` directly; drop any manual `+ " " +` you had inserted
