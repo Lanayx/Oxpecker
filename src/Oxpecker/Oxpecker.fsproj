@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.1.1</Version>
-        <PackageVersion>2.1.1</PackageVersion>
-        <PackageReleaseNotes>Improve performance of TryGet* extension methods.</PackageReleaseNotes>
+        <Version>2.2.0</Version>
+        <PackageVersion>2.2.0</PackageVersion>
+        <PackageReleaseNotes>Added WriteMultipart and WriteMultipartChunked (with multipart and multipartChunked handlers) for htmx 4 hx-multipart responses.</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -44,6 +44,7 @@
         <Compile Include="ResponseCaching.fs" />
         <Compile Include="Preconditional.fs" />
         <Compile Include="Streaming.fs" />
+        <Compile Include="Multipart.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="Middleware.fs" />
     </ItemGroup>
