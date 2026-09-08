@@ -2,6 +2,7 @@
 module Oxpecker.Multipart
 
 open System
+open System.Buffers
 open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
@@ -62,8 +63,9 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     member this.Body = body
 
     /// <summary>
-    /// Additional part headers, written after `Content-Type` in insertion order, e.g. `HX-Target`, `HX-Swap`,
-    /// `HX-Trigger`, `HX-Part-ID` or `Content-ID`. Header names and values must not contain line breaks.
+    /// Additional part headers, written after `Content-Type` in insertion order, e.g. `HX-Target` (or `HX-Retarget`),
+    /// `HX-Swap` (or `HX-Reswap`), `HX-Trigger`, `HX-Part-ID` or `Content-ID`. Header names must be valid HTTP tokens
+    /// and header values must not contain control characters such as line breaks.
     /// </summary>
     member this.Headers = headers
 
@@ -124,12 +126,38 @@ module internal MultipartWriter =
         | MultipartSubtype.Mixed -> $"multipart/mixed; boundary={boundary}"
         | MultipartSubtype.Parallel -> $"multipart/parallel; boundary={boundary}"
 
-    let private validateHeader (name: string) (value: string) =
-        if String.IsNullOrEmpty name || name.AsSpan().IndexOfAny("\r\n:") >= 0 then
-            raise <| ArgumentException($"Invalid multipart header name '{name}'.")
-        if value.AsSpan().IndexOfAny('\r', '\n') >= 0 then
+    /// Characters allowed in an HTTP token (RFC 9110 section 5.6.2), i.e. in a header name.
+    let private tokenChars =
+        SearchValues.Create("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".AsSpan())
+
+    /// ASCII control characters other than the horizontal tab; not allowed in a header value.
+    let private controlChars =
+        let chars = [|
+            for c in 0..127 do
+                if (c < 32 && c <> 9) || c = 127 then
+                    char c
+        |]
+        SearchValues.Create(ReadOnlySpan chars)
+
+    let private validateHeaderValue (name: string) (value: string) =
+        if value.AsSpan().ContainsAny controlChars then
             raise
-            <| ArgumentException($"Multipart header '{name}' value must not contain line breaks.")
+            <| ArgumentException($"Multipart header '{name}' value must not contain control characters.")
+
+    let private validateHeader (name: string) (value: string) =
+        if String.IsNullOrEmpty name || name.AsSpan().ContainsAnyExcept tokenChars then
+            raise
+            <| ArgumentException($"Invalid multipart header name '{name}', header names must be valid HTTP tokens.")
+        validateHeaderValue name value
+
+    let private validateContentType (contentType: string) =
+        if String.IsNullOrEmpty contentType then
+            raise <| ArgumentException("Multipart part Content-Type must not be empty.")
+        validateHeaderValue "Content-Type" contentType
+
+    let raiseEmpty () : 'a =
+        raise
+        <| ArgumentException("Multipart response must contain at least one part.", "parts")
 
     /// Writes the opening delimiter `--{boundary}` (without a trailing line break).
     let writeOpeningAsync (writer: TextWriter) (boundary: string) =
@@ -144,6 +172,7 @@ module internal MultipartWriter =
         let sb = StringBuilderPool.Get()
         task {
             try
+                validateContentType part.ContentType
                 sb.Append("\r\nContent-Type: ").Append(part.ContentType).Append("\r\n")
                 |> ignore
                 for KeyValue(name, value) in part.Headers do
@@ -184,6 +213,7 @@ type MultipartExtensions() =
     /// <para>Writes the given parts as a `multipart/mixed` (or `multipart/parallel`) response compatible with the htmx 4 `hx-multipart` extension.</para>
     /// <para>The whole response is rendered in memory first, so the `Content-Length` header is set accordingly.
     /// To stream parts as they become available use <see cref="WriteMultipartChunked"/> instead.</para>
+    /// <para>At least one part is required, an `ArgumentException` is thrown otherwise.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="parts">The parts to be sent back to the client.</param>
@@ -198,8 +228,12 @@ type MultipartExtensions() =
             try
                 use writer = new StreamWriter(memoryStream, leaveOpen = true)
                 do! MultipartWriter.writeOpeningAsync writer boundary
+                let mutable isEmpty = true
                 for part in parts do
+                    isEmpty <- false
                     do! MultipartWriter.writePartAsync writer memoryStream boundary part
+                if isEmpty then
+                    MultipartWriter.raiseEmpty()
                 do! MultipartWriter.writeClosingAsync writer
                 do! writer.FlushAsync()
                 ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
@@ -214,6 +248,7 @@ type MultipartExtensions() =
     /// <summary>
     /// <para>Writes a stream of parts as a `multipart/mixed` (or `multipart/parallel`) response compatible with the htmx 4 `hx-multipart` extension, using chunked transfer encoding.</para>
     /// <para>Each part is flushed to the client as soon as it has been produced, so the client can process it while the next part is still being generated.</para>
+    /// <para>At least one part is required: if the stream completes without producing any, an `ArgumentException` is thrown before anything is written to the response.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="parts">The stream of parts to be sent back to the client.</param>
@@ -225,21 +260,28 @@ type MultipartExtensions() =
         =
         let subtype = defaultArg subtype MultipartSubtype.Mixed
         let boundary = MultipartWriter.createBoundary()
-        ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
         if ctx.Request.Method <> HttpMethods.Head then
-            let writer = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
             task {
-                use _ = writer :> IAsyncDisposable
                 let enumerator = parts.GetAsyncEnumerator(ctx.RequestAborted)
                 use _ = enumerator :> IAsyncDisposable
+                let! hasParts = enumerator.MoveNextAsync()
+                if not hasParts then
+                    MultipartWriter.raiseEmpty()
+                ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
+                let writer = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
+                use _ = writer :> IAsyncDisposable
                 do! MultipartWriter.writeOpeningAsync writer boundary
-                while! enumerator.MoveNextAsync() do
+                let mutable hasNext = hasParts
+                while hasNext do
                     do! MultipartWriter.writePartAsync writer ctx.Response.Body boundary enumerator.Current
                     do! writer.FlushAsync()
+                    let! next = enumerator.MoveNextAsync()
+                    hasNext <- next
                 do! MultipartWriter.writeClosingAsync writer
             }
             :> Task
         else
+            ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
             Task.CompletedTask
 
 // ---------------------------
@@ -249,6 +291,7 @@ type MultipartExtensions() =
 /// <summary>
 /// Writes the given parts as a `multipart/mixed` response compatible with the htmx 4 `hx-multipart` extension.
 /// The whole response is rendered in memory first, so the `Content-Length` header is set accordingly.
+/// At least one part is required, an `ArgumentException` is thrown otherwise.
 /// </summary>
 /// <param name="parts">The parts to be sent back to the client.</param>
 /// <param name="ctx">HttpContext</param>
@@ -258,7 +301,7 @@ let multipart (parts: MultipartPart seq) : EndpointHandler =
 
 /// <summary>
 /// Writes a stream of parts as a `multipart/mixed` response compatible with the htmx 4 `hx-multipart` extension, using chunked transfer encoding.
-/// Each part is flushed to the client as soon as it has been produced.
+/// Each part is flushed to the client as soon as it has been produced. At least one part is required, an `ArgumentException` is thrown otherwise.
 /// </summary>
 /// <param name="parts">The stream of parts to be sent back to the client.</param>
 /// <param name="ctx">HttpContext</param>

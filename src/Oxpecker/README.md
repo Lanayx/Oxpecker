@@ -1559,7 +1559,7 @@ Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtyp
 ctx.WriteMultipartChunked(parts, MultipartSubtype.Parallel)
 ```
 
-A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. Part header names and values must not contain line breaks, otherwise an `ArgumentException` is thrown.
+A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part, part header names must be valid HTTP tokens (letters, digits and `!#$%&'*+-.^_`|~`, no spaces or colons), and header values as well as the part `ContentType` must not contain control characters such as line breaks; an `ArgumentException` is thrown otherwise.
 
 ### Streaming
 

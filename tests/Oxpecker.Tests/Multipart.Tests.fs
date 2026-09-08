@@ -264,13 +264,73 @@ let ``WriteMultipart rejects header values containing line breaks`` () =
     }
 
 [<Fact>]
-let ``WriteMultipart rejects invalid header names`` () =
+let ``WriteMultipart rejects header values containing control characters`` () =
     task {
         let ctx = createContext()
-        let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger: x", "y" ]) ]
+        let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger", "bad\000value" ]) ]
 
-        let! _ = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart parts)
-        ()
+        let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart parts)
+
+        ex.Message.Contains "HX-Trigger" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart accepts tabs and non-ASCII text in header values`` () =
+    task {
+        let ctx = createContext()
+        let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger", "tab\tok Привет" ]) ]
+
+        do! ctx.WriteMultipart parts
+
+        (readBody ctx).Contains "HX-Trigger: tab\tok Привет\r\n" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart rejects header names that are not HTTP tokens`` () =
+    task {
+        for name in [ ""; "HX-Trigger: x"; "Bad Header"; "Tab\tHeader"; "Quoted\"Name"; "Ünïcode" ] do
+            let ctx = createContext()
+            let parts = [ MultipartPart.Text("done", headers = [ name, "value" ]) ]
+            let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart parts)
+            ex.Message.Contains name |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart accepts header names made of HTTP token characters`` () =
+    task {
+        let ctx = createContext()
+        let parts = [
+            MultipartPart.Text("done", headers = [ "X-Custom_Header.1!#$%&'*+^`|~", "value" ])
+        ]
+
+        do! ctx.WriteMultipart parts
+
+        (readBody ctx).Contains "X-Custom_Header.1!#$%&'*+^`|~: value\r\n"
+        |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart rejects an empty or line-broken ContentType`` () =
+    task {
+        for contentType in [ ""; "text/plain\r\nHX-Redirect: /" ] do
+            let ctx = createContext()
+            let part = MultipartPart.Text "done"
+            part.ContentType <- contentType
+            let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
+            ex.Message.Contains "Content-Type" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart rejects an empty sequence of parts and writes nothing`` () =
+    task {
+        let ctx = createContext()
+
+        let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [])
+
+        ex.ParamName |> shouldEqual "parts"
+        responseContentType ctx |> shouldEqual ""
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
+        readBody ctx |> shouldEqual ""
     }
 
 [<Fact>]
@@ -343,6 +403,18 @@ let ``WriteMultipartChunked with HTTP HEAD sets Content-Type but writes no body`
         ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
         readBody ctx |> shouldEqual ""
         enumerated.Value |> shouldEqual false
+    }
+
+[<Fact>]
+let ``WriteMultipartChunked rejects an empty stream of parts and writes nothing`` () =
+    task {
+        let ctx = createContext()
+
+        let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipartChunked(AsyncParts []))
+
+        ex.ParamName |> shouldEqual "parts"
+        responseContentType ctx |> shouldEqual ""
+        readBody ctx |> shouldEqual ""
     }
 
 [<Fact>]
