@@ -1515,6 +1515,7 @@ Every factory accepts an optional `headers` sequence; headers can also be set la
 ```fsharp
 open System.Linq
 open System.Threading
+open System.Threading.Tasks
 open Oxpecker.Htmx
 
 let statusView = div(id = "status") { "Report ready" }
@@ -1559,7 +1560,7 @@ csvPart.ContentType <- "text/csv; charset=utf-8"
 csvPart.Headers[HxResponseHeader.PartId] <- "row-1"
 ```
 
-Any `IAsyncEnumerable<MultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator.
+Any `IAsyncEnumerable<MultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. The enumerator is created with `HttpContext.RequestAborted`, and the same token cancels the pending writes, so a producer can stop as soon as the client disconnects. For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
 
 Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtype.Mixed` (the default) htmx finishes swapping a part before it reads the next one; with `MultipartSubtype.Parallel` the response is `multipart/parallel` and swaps start as parts arrive, without waiting for each other:
 
@@ -1567,7 +1568,7 @@ Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtyp
 ctx.WriteMultipartChunked(parts, MultipartSubtype.Parallel)
 ```
 
-A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part, part header names must be valid HTTP tokens (letters, digits and `!#$%&'*+-.^_`|~`, no spaces or colons), and header values as well as the part `ContentType` must not contain control characters such as line breaks; an `ArgumentException` is thrown otherwise.
+A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part, part header names must be valid HTTP tokens (letters, digits and ``!#$%&'*+-.^_`|~``, no spaces or colons), header values as well as the part `ContentType` must not contain control characters such as line breaks, and no header line (`Name: value`, including `Content-Type`) may exceed 998 bytes; an `ArgumentException` is thrown otherwise.
 
 ### Streaming
 

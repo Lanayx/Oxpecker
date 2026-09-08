@@ -8,6 +8,7 @@ open System.Net.Http
 open System.Text
 open System.Text.Json
 open System.Text.RegularExpressions
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
@@ -310,14 +311,53 @@ let ``WriteMultipart accepts header names made of HTTP token characters`` () =
     }
 
 [<Fact>]
-let ``WriteMultipart rejects an empty or line-broken ContentType`` () =
+let ``WriteMultipart rejects header lines longer than 998 bytes`` () =
     task {
-        for contentType in [ ""; "text/plain\r\nHX-Redirect: /" ] do
+        // "HX-Trigger: " takes 12 bytes, so the line may hold a 986-byte value at most
+        for value in [ String('x', 987); String('П', 494) ] do
+            let ctx = createContext()
+            let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger", value ]) ]
+            let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart parts)
+            ex.Message.Contains "HX-Trigger" |> shouldEqual true
+            ex.Message.Contains "998" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart accepts header lines of exactly 998 bytes`` () =
+    task {
+        let ctx = createContext()
+        let value = String('x', 986)
+        let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger", value ]) ]
+
+        do! ctx.WriteMultipart parts
+
+        (readBody ctx).Contains $"HX-Trigger: {value}\r\n" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart rejects an empty, line-broken or overlong ContentType`` () =
+    task {
+        // "Content-Type: " takes 14 bytes, so the line may hold a 984-byte value at most
+        for contentType in [ ""; "text/plain\r\nHX-Redirect: /"; "text/plain; " + String('x', 973) ] do
             let ctx = createContext()
             let part = MultipartPart.Text "done"
             part.ContentType <- contentType
             let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
             ex.Message.Contains "Content-Type" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart stops rendering when the request is aborted`` () =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        cts.Cancel()
+
+        let! _ = Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> ctx.WriteMultipart(twoParts()))
+
+        responseContentType ctx |> shouldEqual ""
+        readBody ctx |> shouldEqual ""
     }
 
 [<Fact>]
@@ -415,6 +455,22 @@ let ``WriteMultipartChunked rejects an empty stream of parts and writes nothing`
         ex.ParamName |> shouldEqual "parts"
         responseContentType ctx |> shouldEqual ""
         readBody ctx |> shouldEqual ""
+    }
+
+[<Fact>]
+let ``WriteMultipartChunked does not write a part produced after the request was aborted`` () =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let data = Array.create 4096 1uy
+        // the client disconnects while the producer is generating the part
+        let parts =
+            AsyncParts([ MultipartPart.Bytes("application/octet-stream", data) ], (fun () -> cts.Cancel()))
+
+        let! _ = Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> ctx.WriteMultipartChunked parts)
+
+        (readBytes ctx).Length < data.Length |> shouldEqual true
     }
 
 [<Fact>]
