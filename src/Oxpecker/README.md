@@ -1513,6 +1513,8 @@ Parts are created with the `MultipartPart` factory members:
 Every factory accepts an optional `headers` sequence; headers can also be set later through the `Headers` dictionary, and the `ContentType` property can be changed as well. The header constants from `Oxpecker.Htmx` can be used for htmx headers.
 
 ```fsharp
+open System.Linq
+open System.Threading
 open Oxpecker.Htmx
 
 let statusView = div(id = "status") { "Report ready" }
@@ -1529,20 +1531,26 @@ let reportHandler: EndpointHandler =
         MultipartPart.Json({| ReportId = 42; Status = "done" |}, headers = [ "Content-ID", "result" ])
     ]
 
-// Streamed: each part is flushed to the client as soon as it is produced (chunked transfer encoding)
+// Streamed: each part is flushed to the client as soon as it is produced (chunked transfer encoding).
+// The parts are produced with System.Linq.AsyncEnumerable, which ships with .NET 10.
 let progressHandler: EndpointHandler =
     fun (ctx: HttpContext) ->
+        let steps =
+            AsyncEnumerable
+                .Range(1, 5)
+                .Select(fun i (ct: CancellationToken) ->
+                    ValueTask<MultipartPart>(
+                        task {
+                            do! Task.Delay(500, ct)
+                            return
+                                MultipartPart.Html(
+                                    div(id = "progress") { $"Step {i} of 5" },
+                                    headers = [ HxResponseHeader.Retarget, "#progress" ]
+                                )
+                        }
+                    ))
         let parts =
-            taskSeq {
-                for i in 1..5 do
-                    do! Task.Delay 500
-                    yield
-                        MultipartPart.Html(
-                            div(id = "progress") { $"Step {i} of 5" },
-                            headers = [ HxResponseHeader.Retarget, "#progress" ]
-                        )
-                yield MultipartPart.Text("done", headers = [ HxResponseHeader.Trigger, "done" ])
-            }
+            steps.Append(MultipartPart.Text("done", headers = [ HxResponseHeader.Trigger, "done" ]))
         ctx.WriteMultipartChunked parts
 
 // Setting properties after creation
@@ -1551,7 +1559,7 @@ csvPart.ContentType <- "text/csv; charset=utf-8"
 csvPart.Headers[HxResponseHeader.PartId] <- "row-1"
 ```
 
-`taskSeq` comes from the [FSharp.Control.TaskSeq](https://www.nuget.org/packages/FSharp.Control.TaskSeq) package; any `IAsyncEnumerable<MultipartPart>` works.
+Any `IAsyncEnumerable<MultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator.
 
 Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtype.Mixed` (the default) htmx finishes swapping a part before it reads the next one; with `MultipartSubtype.Parallel` the response is `multipart/parallel` and swaps start as parts arrive, without waiting for each other:
 

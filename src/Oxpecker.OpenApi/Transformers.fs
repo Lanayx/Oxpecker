@@ -6,7 +6,6 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.OpenApi
 open Microsoft.OpenApi
-open FSharp.Control
 open type Microsoft.AspNetCore.Http.TypedResults
 
 module private Helpers =
