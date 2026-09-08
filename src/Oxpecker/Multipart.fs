@@ -67,6 +67,7 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     /// Additional part headers, written after `Content-Type` in insertion order, e.g. `HX-Target` (or `HX-Retarget`),
     /// `HX-Swap` (or `HX-Reswap`), `HX-Trigger`, `HX-Part-ID` or `Content-ID`. Header names must be valid HTTP tokens,
     /// header values must not contain control characters such as line breaks, and a header line must not exceed 998 bytes.
+    /// `Content-Type` is not allowed here, set <see cref="ContentType"/> instead.
     /// </summary>
     member this.Headers = headers
 
@@ -131,12 +132,12 @@ module internal MultipartWriter =
     let private tokenChars =
         SearchValues.Create("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".AsSpan())
 
-    /// ASCII control characters other than the horizontal tab; not allowed in a header value.
+    /// Control characters (C0 and C1 controls as well as DEL) other than the horizontal tab; not allowed in a header value.
     let private controlChars =
         let chars = [|
-            for c in 0..127 do
-                if (c < 32 && c <> 9) || c = 127 then
-                    char c
+            for c in Char.MinValue .. Char.MaxValue do
+                if Char.IsControl c && c <> '\t' then
+                    c
         |]
         SearchValues.Create(ReadOnlySpan chars)
 
@@ -146,6 +147,9 @@ module internal MultipartWriter =
 
     /// Validates the header value and the length of the `{name}: {value}` line.
     let private validateHeaderLine (name: string) (value: string) =
+        // the dictionary does not prevent null values from being inserted, e.g. by C# callers
+        if obj.ReferenceEquals(value, null) then
+            raise <| ArgumentException($"Multipart header '{name}' value must not be null.")
         if value.AsSpan().ContainsAny controlChars then
             raise
             <| ArgumentException($"Multipart header '{name}' value must not contain control characters.")
@@ -157,6 +161,11 @@ module internal MultipartWriter =
         if String.IsNullOrEmpty name || name.AsSpan().ContainsAnyExcept tokenChars then
             raise
             <| ArgumentException($"Invalid multipart header name '{name}', header names must be valid HTTP tokens.")
+        if name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase) then
+            raise
+            <| ArgumentException(
+                "Multipart part headers must not contain 'Content-Type', set MultipartPart.ContentType instead."
+            )
         validateHeaderLine name value
 
     let private validateContentType (contentType: string) =

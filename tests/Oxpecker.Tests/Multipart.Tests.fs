@@ -267,12 +267,36 @@ let ``WriteMultipart rejects header values containing line breaks`` () =
 [<Fact>]
 let ``WriteMultipart rejects header values containing control characters`` () =
     task {
+        // C0 control, DEL and C1 controls
+        for value in [ "bad\000value"; "bad\127value"; "bad\u0085value"; "bad\u009Fvalue" ] do
+            let ctx = createContext()
+            let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger", value ]) ]
+            let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart parts)
+            ex.Message.Contains "HX-Trigger" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart rejects a null header value`` () =
+    task {
         let ctx = createContext()
-        let parts = [ MultipartPart.Text("done", headers = [ "HX-Trigger", "bad\000value" ]) ]
+        let part = MultipartPart.Text "done"
+        part.Headers["HX-Trigger"] <- Unchecked.defaultof<string>
+
+        let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
+
+        ex.Message.Contains "HX-Trigger" |> shouldEqual true
+    }
+
+[<Fact>]
+let ``WriteMultipart rejects Content-Type in the part headers`` () =
+    task {
+        let ctx = createContext()
+        let parts = [ MultipartPart.Text("done", headers = [ "content-type", "text/csv" ]) ]
 
         let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart parts)
 
-        ex.Message.Contains "HX-Trigger" |> shouldEqual true
+        ex.Message.Contains "Content-Type" |> shouldEqual true
+        readBody ctx |> shouldEqual ""
     }
 
 [<Fact>]
