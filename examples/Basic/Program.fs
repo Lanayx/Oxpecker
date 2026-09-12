@@ -144,7 +144,7 @@ let streamingHtml2: EndpointHandler =
             "Hello world using Oxpecker streaming!"
                 .ToAsyncEnumerable()
                 .Select(fun ch (ct: CancellationToken) ->
-                    ValueTask<MultipartPart>(
+                    ValueTask<IMultipartPart>(
                         task {
                             do! Task.Delay(20, ct)
                             return MultipartPart.Html(raw(string ch))

@@ -1503,17 +1503,18 @@ let myHtmlView (htmlView: MyHtmlElement) : EndpointHandler =
 
 The `WriteMultipart` and `WriteMultipartChunked` extension methods (and the `multipart` / `multipartChunked` handlers) write a `multipart/mixed` response in which every part has its own headers and body. This is the format consumed by the htmx 4 [hx-multipart](https://four.htmx.org/extensions/hx-multipart) extension: each part is swapped into the page as soon as it arrives, and part headers such as `HX-Retarget`, `HX-Reswap` or `HX-Trigger` override the request's swap settings for that part only. The wire format matches the [multipart-response](https://github.com/scriptogre/multipart-response) reference implementation.
 
-Parts are created with the `MultipartPart` factory members:
+Parts are created with the `MultipartPart` factory members (or directly through the `HtmlPart`, `TextPart`, `JsonPart` and `BytesPart` constructors):
 
 - `MultipartPart.Html(view)` — an `HtmlElement`, sent as `text/html; charset=utf-8`
 - `MultipartPart.Text(text)` — a string, sent as `text/plain; charset=utf-8`
 - `MultipartPart.Json(value)` — a value serialized with `System.Text.Json` (`JsonSerializerOptions.Web` by default, pass `options` to override), sent as `application/json; charset=utf-8`
 - `MultipartPart.Bytes(contentType, data)` — raw bytes with the given content type
 
-Every factory accepts an optional `headers` sequence of name/value pairs, which is stored as is (no copy) and written in the given order; the `Headers` and `ContentType` properties can also be set after creation. The header constants from `Oxpecker.Htmx` can be used for htmx headers.
+Every factory and constructor accepts an optional `headers` sequence of name/value pairs, which is stored as is (no copy) and written after `Content-Type` in the given order. The header constants from `Oxpecker.Htmx` can be used for htmx headers. Text with another content type, e.g. CSV, is sent as a `Bytes` part or with a custom part as shown below.
 
 ```fsharp
 open System.Linq
+open System.Text
 open System.Threading
 open System.Threading.Tasks
 open Oxpecker.Htmx
@@ -1540,7 +1541,7 @@ let progressHandler: EndpointHandler =
             AsyncEnumerable
                 .Range(1, 5)
                 .Select(fun i (ct: CancellationToken) ->
-                    ValueTask<MultipartPart>(
+                    ValueTask<IMultipartPart>(
                         task {
                             do! Task.Delay(500, ct)
                             return
@@ -1554,35 +1555,37 @@ let progressHandler: EndpointHandler =
             steps.Append(MultipartPart.Text("done", headers = [ HxResponseHeader.Trigger, "done" ]))
         ctx.WriteMultipartChunked parts
 
-// Setting properties after creation
-let csvPart = MultipartPart.Text "id,name"
-csvPart.ContentType <- "text/csv; charset=utf-8"
-csvPart.Headers <- [ HxResponseHeader.PartId, "row-1" ]
+// Text with another content type is sent as raw bytes
+let csvPart =
+    MultipartPart.Bytes(
+        "text/csv; charset=utf-8",
+        Encoding.UTF8.GetBytes "id,name",
+        headers = [ HxResponseHeader.PartId, "row-1" ]
+    )
 ```
 
-Each factory wraps its content in one of the built-in `MultipartBody` implementations (`HtmlBody`, `TextBody`, `JsonBody`, `BytesBody`), exposed through the `Body` property of the part. Other content can be sent by implementing the `MultipartBody` interface and passing the body together with its content type to `MultipartPart.Create`. The body writes bytes to the response `PipeWriter`: text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync writer`; the writer is flushed after each part:
+The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `WriteAsync` member writes the whole part to the response `PipeWriter`, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync writer`; the writer is flushed after each part:
 
 ```fsharp
 open System.IO
-open System.IO.Pipelines
+open System.Text
 
-// A custom body streaming a file from disk
-type FileBody(path: string) =
-    interface MultipartBody with
+// A custom part streaming a file from disk
+type FilePart(path: string) =
+    interface IMultipartPart with
         member this.WriteAsync writer =
+            Encoding.UTF8.GetBytes("Content-Type: application/pdf\r\nContent-ID: attachment\r\n\r\n".AsSpan(), writer)
+            |> ignore
             task {
                 use file = File.OpenRead path
                 do! file.CopyToAsync writer
             }
 
 let attachmentHandler: EndpointHandler =
-    fun ctx ->
-        let attachment =
-            MultipartPart.Create("application/pdf", FileBody "report.pdf", [ "Content-ID", "attachment" ])
-        ctx.WriteMultipart [ attachment ]
+    fun ctx -> ctx.WriteMultipart [ FilePart "report.pdf" ]
 ```
 
-Any `IAsyncEnumerable<MultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
+Any `IAsyncEnumerable<IMultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
 
 Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtype.Mixed` (the default) htmx finishes swapping a part before it reads the next one; with `MultipartSubtype.Parallel` the response is `multipart/parallel` and swaps start as parts arrive, without waiting for each other:
 
@@ -1590,7 +1593,7 @@ Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtyp
 ctx.WriteMultipartChunked(parts, MultipartSubtype.Parallel)
 ```
 
-A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part, part header names must be valid HTTP tokens (letters, digits and ``!#$%&'*+-.^_`|~``, no spaces or colons), header values as well as the part `ContentType` must not contain control characters such as line breaks, no header line (`Name: value`, including `Content-Type`) may exceed 998 bytes, and `Content-Type` must be set through the `ContentType` property rather than `Headers`; an `ArgumentException` is thrown otherwise.
+A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part. For the built-in parts, header names must be valid HTTP tokens (letters, digits and ``!#$%&'*+-.^_`|~``, no spaces or colons), header values as well as the content type must not contain control characters such as line breaks, no header line (`Name: value`, including `Content-Type`) may exceed 998 bytes, and `Content-Type` must be given as the content type rather than among the headers; an `ArgumentException` is thrown otherwise.
 
 ### Streaming
 

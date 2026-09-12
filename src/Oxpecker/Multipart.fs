@@ -19,98 +19,22 @@ open Oxpecker.ViewEngine.Tools
 // ---------------------------
 
 /// <summary>
-/// <para>Body of a single part of a multipart response, written after the part headers.</para>
-/// <para>The built-in implementations are <see cref="HtmlBody"/>, <see cref="TextBody"/>, <see cref="JsonBody"/> and <see cref="BytesBody"/>;
-/// other content can be sent by implementing this interface and passing the body to <see cref="MultipartPart.Create"/>.</para>
+/// <para>A single part of a multipart response, compatible with the htmx 4 `hx-multipart` extension.</para>
+/// <para>The built-in implementations <see cref="HtmlPart"/>, <see cref="TextPart"/>, <see cref="JsonPart{T}"/> and <see cref="BytesPart"/>
+/// are created directly or through the <see cref="MultipartPart"/> factory members; any other content can be sent by implementing this interface.</para>
 /// </summary>
-type MultipartBody =
+type IMultipartPart =
     /// <summary>
-    /// <para>Writes the body as bytes to the response writer. Text has to be encoded as UTF-8, e.g. with
-    /// `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`; raw bytes can be copied with `writer.Write` and a stream with `stream.CopyToAsync writer`.</para>
-    /// <para>The writer is flushed after each part, so the body does not need to flush it.</para>
+    /// <para>Writes the part to the response writer: the header lines, each ending with a line break, an empty line and then the body.
+    /// The delimiter lines around the part are written by the framework, which also flushes the writer after each part.</para>
+    /// <para>The built-in parts write a `Content-Type` header line followed by their additional headers. A part without headers starts with
+    /// the empty line right away; note that the htmx `hx-multipart` extension expects at least one header line per part.</para>
+    /// <para>Text has to be encoded as UTF-8, e.g. with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`; raw bytes can be copied with
+    /// `writer.Write` and a stream with `stream.CopyToAsync writer`.</para>
     /// </summary>
-    /// <param name="writer">The response writer to write the body to.</param>
-    /// <returns>Task of writing the body.</returns>
+    /// <param name="writer">The response writer to write the part to.</param>
+    /// <returns>Task of writing the part.</returns>
     abstract member WriteAsync: writer: PipeWriter -> Task
-
-module internal Utf8 =
-
-    /// Encodes the content of the builder as UTF-8 into the writer chunk by chunk; the stateful encoder
-    /// keeps a surrogate pair intact even when it spans two chunks.
-    let write (writer: PipeWriter) (sb: StringBuilder) =
-        let encoder = Encoding.UTF8.GetEncoder()
-        let mutable bytesUsed = 0L
-        let mutable completed = false
-        for chunk in sb.GetChunks() do
-            encoder.Convert(chunk.Span, writer, false, &bytesUsed, &completed)
-        encoder.Convert(ReadOnlySpan<char>.Empty, writer, true, &bytesUsed, &completed)
-
-/// <summary>
-/// Part body rendered from an `HtmlElement` with the Oxpecker view engine (without a DOCTYPE prefix) and written as UTF-8 text.
-/// </summary>
-/// <param name="view">The HTML element to render.</param>
-type HtmlBody(view: HtmlElement) =
-
-    member this.View = view
-
-    member this.WriteAsync(writer: PipeWriter) : Task =
-        let sb = StringBuilderPool.Get()
-        try
-            view.Render sb
-            Utf8.write writer sb
-        finally
-            StringBuilderPool.Return sb
-        Task.CompletedTask
-
-    interface MultipartBody with
-        member this.WriteAsync writer = this.WriteAsync writer
-
-/// <summary>
-/// Part body written as UTF-8 text.
-/// </summary>
-/// <param name="text">The text to write.</param>
-type TextBody(text: string) =
-
-    member this.Text = text
-
-    member this.WriteAsync(writer: PipeWriter) : Task =
-        Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
-        Task.CompletedTask
-
-    interface MultipartBody with
-        member this.WriteAsync writer = this.WriteAsync writer
-
-/// <summary>
-/// Part body serialized with System.Text.Json and written as UTF-8 JSON.
-/// </summary>
-/// <param name="value">The value to serialize, its runtime type determines the serialization contract.</param>
-/// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
-type JsonBody(value: objnull, ?options: JsonSerializerOptions) =
-
-    member this.Value = value
-
-    member this.Options = options
-
-    member this.WriteAsync(writer: PipeWriter) : Task =
-        JsonSerializer.SerializeAsync(writer, value, defaultArg options JsonSerializerOptions.Web)
-
-    interface MultipartBody with
-        member this.WriteAsync writer = this.WriteAsync writer
-
-/// <summary>
-/// Part body written as raw bytes, without any re-encoding.
-/// </summary>
-/// <param name="data">The bytes to write.</param>
-type BytesBody(data: byte array) =
-
-    member this.Data = data
-
-    member this.WriteAsync(writer: PipeWriter) : Task =
-        writer.Write(ReadOnlySpan data)
-        Task.CompletedTask
-
-    interface MultipartBody with
-        member this.WriteAsync writer = this.WriteAsync writer
 
 /// <summary>
 /// Subtype of the multipart response, i.e. the `multipart/{subtype}` media type.
@@ -122,98 +46,17 @@ type MultipartSubtype =
     /// `multipart/parallel`: the htmx `hx-multipart` extension starts swapping a part without waiting for the previous one.
     | Parallel
 
-/// <summary>
-/// A single part of a multipart response, compatible with the htmx 4 `hx-multipart` extension.
-/// Use the static factory members (`Html`, `Text`, `Json`, `Bytes`, or `Create` for a custom body), then adjust
-/// <see cref="ContentType"/> and <see cref="Headers"/> as needed.
-/// </summary>
-/// <param name="contentType">Value of the part `Content-Type` header, e.g. `text/html; charset=utf-8`.</param>
-/// <param name="body">Body of the part: a <see cref="HtmlBody"/>, <see cref="TextBody"/>, <see cref="JsonBody"/> or <see cref="BytesBody"/>, or a custom <see cref="MultipartBody"/> implementation.</param>
-type MultipartPart internal (contentType: string, body: MultipartBody, headers: (string * string) seq) =
+module internal MultipartHeaders =
 
-    /// <summary>
-    /// Value of the part `Content-Type` header.
-    /// </summary>
-    member val ContentType = contentType with get, set
-
-    /// <summary>
-    /// Body of the part.
-    /// </summary>
-    member this.Body = body
-
-    /// <summary>
-    /// Additional part headers as name/value pairs, written after `Content-Type` in the given order, e.g. `HX-Target` (or `HX-Retarget`),
-    /// `HX-Swap` (or `HX-Reswap`), `HX-Trigger`, `HX-Part-ID` or `Content-ID`. The collection is stored as is, without copying,
-    /// and validated when the part is written: header names must be valid HTTP tokens, header values must not contain
-    /// control characters such as line breaks, and a header line must not exceed 998 bytes.
-    /// `Content-Type` is not allowed here, set <see cref="ContentType"/> instead.
-    /// </summary>
-    member val Headers = headers with get, set
-
-    /// <summary>
-    /// Creates a part with the given content type and body, e.g. a custom <see cref="MultipartBody"/> implementation.
-    /// </summary>
-    /// <param name="contentType">Value of the part `Content-Type` header.</param>
-    /// <param name="body">Body of the part.</param>
-    /// <param name="headers">Optional additional part headers, see <see cref="Headers"/>.</param>
-    static member Create(contentType: string, body: MultipartBody, ?headers: (string * string) seq) =
-        MultipartPart(contentType, body, defaultArg headers Seq.empty)
-
-    /// <summary>
-    /// Creates a `text/html; charset=utf-8` part from an `HtmlElement`.
-    /// </summary>
-    /// <param name="view">The HTML element to render as the part body.</param>
-    /// <param name="headers">Optional additional part headers.</param>
-    static member Html(view: #HtmlElement, ?headers: (string * string) seq) =
-        MultipartPart.Create("text/html; charset=utf-8", HtmlBody(view :> HtmlElement), ?headers = headers)
-
-    /// <summary>
-    /// Creates a `text/plain; charset=utf-8` part from a string.
-    /// </summary>
-    /// <param name="text">The text to write as the part body.</param>
-    /// <param name="headers">Optional additional part headers.</param>
-    static member Text(text: string, ?headers: (string * string) seq) =
-        MultipartPart.Create("text/plain; charset=utf-8", TextBody text, ?headers = headers)
-
-    /// <summary>
-    /// Creates an `application/json; charset=utf-8` part by serializing a value with System.Text.Json.
-    /// </summary>
-    /// <param name="value">The value to serialize as the part body.</param>
-    /// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
-    /// <param name="headers">Optional additional part headers.</param>
-    static member Json<'T>(value: 'T, ?options: JsonSerializerOptions, ?headers: (string * string) seq) =
-        MultipartPart.Create(
-            "application/json; charset=utf-8",
-            JsonBody(box value, ?options = options),
-            ?headers = headers
-        )
-
-    /// <summary>
-    /// Creates a part with the given content type from raw bytes.
-    /// </summary>
-    /// <param name="contentType">Value of the part `Content-Type` header.</param>
-    /// <param name="data">The bytes to write as the part body.</param>
-    /// <param name="headers">Optional additional part headers.</param>
-    static member Bytes(contentType: string, data: byte array, ?headers: (string * string) seq) =
-        MultipartPart.Create(contentType, BytesBody data, ?headers = headers)
-
-// ---------------------------
-// Wire format
-// ---------------------------
-
-module internal MultipartWriter =
-
-    let createBoundary () =
-        "multipart-" + Guid.NewGuid().ToString("N")
-
-    let contentType (subtype: MultipartSubtype) (boundary: string) =
-        match subtype with
-        | MultipartSubtype.Mixed -> $"multipart/mixed; boundary=%s{boundary}"
-        | MultipartSubtype.Parallel -> $"multipart/parallel; boundary=%s{boundary}"
-
-    /// The delimiter `\r\n--{boundary}` as bytes (the boundary consists of ASCII characters only).
-    let delimiter (boundary: string) =
-        Encoding.ASCII.GetBytes("\r\n--" + boundary)
+    /// Encodes the content of the builder as UTF-8 into the writer chunk by chunk; the stateful encoder
+    /// keeps a surrogate pair intact even when it spans two chunks.
+    let writeUtf8 (writer: PipeWriter) (sb: StringBuilder) =
+        let encoder = Encoding.UTF8.GetEncoder()
+        let mutable bytesUsed = 0L
+        let mutable completed = false
+        for chunk in sb.GetChunks() do
+            encoder.Convert(chunk.Span, writer, false, &bytesUsed, &completed)
+        encoder.Convert(ReadOnlySpan<char>.Empty, writer, true, &bytesUsed, &completed)
 
     /// Characters allowed in an HTTP token (RFC 9110 section 5.6.2), i.e. in a header name.
     let private tokenChars =
@@ -252,7 +95,7 @@ module internal MultipartWriter =
         if name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase) then
             raise
             <| ArgumentException(
-                "Multipart part headers must not contain 'Content-Type', set MultipartPart.ContentType instead."
+                "Multipart part headers must not contain 'Content-Type', pass the content type separately instead."
             )
         validateHeaderLine name value
 
@@ -260,6 +103,146 @@ module internal MultipartWriter =
         if String.IsNullOrEmpty contentType then
             raise <| ArgumentException("Multipart part Content-Type must not be empty.")
         validateHeaderLine "Content-Type" contentType
+
+    /// Writes the validated header block: the `Content-Type` header, the additional headers in the given order
+    /// and the empty line ending the headers.
+    let write (writer: PipeWriter) (contentType: string) (headers: (string * string) seq) =
+        let sb = StringBuilderPool.Get()
+        try
+            validateContentType contentType
+            sb.Append("Content-Type: ").Append(contentType).Append("\r\n") |> ignore
+            for name, value in headers do
+                validateHeader name value
+                sb.Append(name).Append(": ").Append(value).Append("\r\n") |> ignore
+            sb.Append("\r\n") |> ignore
+            writeUtf8 writer sb
+        finally
+            StringBuilderPool.Return sb
+
+/// <summary>
+/// `text/html; charset=utf-8` part rendered from an `HtmlElement` with the Oxpecker view engine (without a DOCTYPE prefix) and written as UTF-8 text.
+/// </summary>
+/// <param name="view">The HTML element to render as the part body.</param>
+/// <param name="headers">Optional additional part headers as name/value pairs, written after `Content-Type` in the given order.</param>
+type HtmlPart(view: HtmlElement, [<Struct>] ?headers: (string * string) seq) =
+
+    let headers = defaultValueArg headers Seq.empty
+
+    interface IMultipartPart with
+        member this.WriteAsync writer =
+            MultipartHeaders.write writer "text/html; charset=utf-8" headers
+            let sb = StringBuilderPool.Get()
+            try
+                view.Render sb
+                MultipartHeaders.writeUtf8 writer sb
+            finally
+                StringBuilderPool.Return sb
+            Task.CompletedTask
+
+/// <summary>
+/// `text/plain; charset=utf-8` part written as UTF-8 text.
+/// </summary>
+/// <param name="text">The text to write as the part body.</param>
+/// <param name="headers">Optional additional part headers as name/value pairs, written after `Content-Type` in the given order.</param>
+type TextPart(text: string, [<Struct>] ?headers: (string * string) seq) =
+    let headers = defaultValueArg headers Seq.empty
+
+    interface IMultipartPart with
+        member this.WriteAsync writer =
+            MultipartHeaders.write writer "text/plain; charset=utf-8" headers
+            Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
+            Task.CompletedTask
+
+/// <summary>
+/// `application/json; charset=utf-8` part serialized with System.Text.Json and written as UTF-8 JSON.
+/// </summary>
+/// <param name="value">The value to serialize as the part body, its static type determines the serialization contract.</param>
+/// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
+/// <param name="headers">Optional additional part headers as name/value pairs, written after `Content-Type` in the given order.</param>
+type JsonPart<'T>(value: 'T, [<Struct>] ?options: JsonSerializerOptions, [<Struct>] ?headers: (string * string) seq) =
+
+    let headers = defaultValueArg headers Seq.empty
+
+    interface IMultipartPart with
+        member this.WriteAsync writer =
+            MultipartHeaders.write writer "application/json; charset=utf-8" headers
+            JsonSerializer.SerializeAsync<'T>(writer, value, defaultValueArg options JsonSerializerOptions.Web)
+
+/// <summary>
+/// Part with the given content type written as raw bytes, without any re-encoding.
+/// </summary>
+/// <param name="contentType">Value of the part `Content-Type` header.</param>
+/// <param name="data">The bytes to write as the part body.</param>
+/// <param name="headers">Optional additional part headers as name/value pairs, written after `Content-Type` in the given order.</param>
+type BytesPart(contentType: string, data: byte array, [<Struct>] ?headers: (string * string) seq) =
+
+    interface IMultipartPart with
+        member this.WriteAsync writer =
+            MultipartHeaders.write writer contentType (defaultValueArg headers Seq.empty)
+            writer.Write(ReadOnlySpan data)
+            Task.CompletedTask
+
+/// <summary>
+/// Factory members creating the built-in <see cref="IMultipartPart"/> implementations.
+/// </summary>
+[<AbstractClass; Sealed>]
+type MultipartPart =
+
+    /// <summary>
+    /// Creates a `text/html; charset=utf-8` part from an `HtmlElement`, see <see cref="HtmlPart"/>.
+    /// </summary>
+    /// <param name="view">The HTML element to render as the part body.</param>
+    /// <param name="headers">Optional additional part headers.</param>
+    static member Html(view: #HtmlElement, [<Struct>] ?headers: (string * string) seq) : IMultipartPart =
+        HtmlPart(view, ?headers = headers)
+
+    /// <summary>
+    /// Creates a `text/plain; charset=utf-8` part from a string, see <see cref="TextPart"/>.
+    /// </summary>
+    /// <param name="text">The text to write as the part body.</param>
+    /// <param name="headers">Optional additional part headers.</param>
+    static member Text(text: string, [<Struct>] ?headers: (string * string) seq) : IMultipartPart =
+        TextPart(text, ?headers = headers)
+
+    /// <summary>
+    /// Creates an `application/json; charset=utf-8` part by serializing a value with System.Text.Json, see <see cref="JsonPart{T}"/>.
+    /// </summary>
+    /// <param name="value">The value to serialize as the part body.</param>
+    /// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
+    /// <param name="headers">Optional additional part headers.</param>
+    static member Json<'T>
+        (value: 'T, [<Struct>] ?options: JsonSerializerOptions, [<Struct>] ?headers: (string * string) seq)
+        : IMultipartPart =
+        JsonPart<'T>(value, ?options = options, ?headers = headers)
+
+    /// <summary>
+    /// Creates a part with the given content type from raw bytes, see <see cref="BytesPart"/>.
+    /// </summary>
+    /// <param name="contentType">Value of the part `Content-Type` header.</param>
+    /// <param name="data">The bytes to write as the part body.</param>
+    /// <param name="headers">Optional additional part headers.</param>
+    static member Bytes
+        (contentType: string, data: byte array, [<Struct>] ?headers: (string * string) seq)
+        : IMultipartPart =
+        BytesPart(contentType, data, ?headers = headers)
+
+// ---------------------------
+// Wire format
+// ---------------------------
+
+module internal MultipartWriter =
+
+    let createBoundary () =
+        "multipart-" + Guid.NewGuid().ToString("N")
+
+    let contentType (subtype: MultipartSubtype) (boundary: string) =
+        match subtype with
+        | MultipartSubtype.Mixed -> $"multipart/mixed; boundary=%s{boundary}"
+        | MultipartSubtype.Parallel -> $"multipart/parallel; boundary=%s{boundary}"
+
+    /// The delimiter `\r\n--{boundary}` as bytes (the boundary consists of ASCII characters only).
+    let delimiter (boundary: string) =
+        Encoding.ASCII.GetBytes("\r\n--" + boundary)
 
     let raiseEmpty () : 'a =
         raise
@@ -269,23 +252,12 @@ module internal MultipartWriter =
     let writeOpening (writer: PipeWriter) (delimiter: byte array) =
         writer.Write(ReadOnlySpan(delimiter, 2, delimiter.Length - 2))
 
-    /// Writes one part: a line break ending the previous delimiter, the part headers, a blank line,
-    /// the body and the next delimiter `\r\n--{boundary}` (without a trailing line break).
-    let writePartAsync (writer: PipeWriter) (delimiter: byte array) (part: MultipartPart) =
-        let sb = StringBuilderPool.Get()
-        try
-            validateContentType part.ContentType
-            sb.Append("\r\nContent-Type: ").Append(part.ContentType).Append("\r\n")
-            |> ignore
-            for name, value in part.Headers do
-                validateHeader name value
-                sb.Append(name).Append(": ").Append(value).Append("\r\n") |> ignore
-            sb.Append("\r\n") |> ignore
-            Utf8.write writer sb
-        finally
-            StringBuilderPool.Return sb
+    /// Writes one part: the line break ending the previous delimiter line, the part itself (its headers, an empty line
+    /// and the body) and the next delimiter `\r\n--{boundary}` (without a trailing line break).
+    let writePartAsync (writer: PipeWriter) (delimiter: byte array) (part: IMultipartPart) =
+        writer.Write(ReadOnlySpan "\r\n"B)
         task {
-            do! part.Body.WriteAsync writer
+            do! part.WriteAsync writer
             writer.Write(ReadOnlySpan delimiter)
         }
 
@@ -309,8 +281,8 @@ type MultipartExtensions() =
     /// <param name="subtype">The multipart subtype, `MultipartSubtype.Mixed` by default.</param>
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
-    static member WriteMultipart(ctx: HttpContext, parts: MultipartPart seq, ?subtype: MultipartSubtype) =
-        let subtype = defaultArg subtype MultipartSubtype.Mixed
+    static member WriteMultipart(ctx: HttpContext, parts: IMultipartPart seq, [<Struct>] ?subtype: MultipartSubtype) =
+        let subtype = defaultValueArg subtype MultipartSubtype.Mixed
         let boundary = MultipartWriter.createBoundary()
         let delimiter = MultipartWriter.delimiter boundary
         let memoryStream = recyclableMemoryStreamManager.Value.GetStream()
@@ -333,7 +305,7 @@ type MultipartExtensions() =
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
                     do! memoryStream.CopyToAsync(ctx.Response.Body)
             finally
-                // completing the writer returns its pooled buffers, also when validation or a body throws
+                // completing the writer returns its pooled buffers, also when validation or a part throws
                 writer.Complete()
                 memoryStream.Dispose()
         }
@@ -350,9 +322,9 @@ type MultipartExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteMultipartChunked
-        (ctx: HttpContext, parts: #IAsyncEnumerable<MultipartPart>, ?subtype: MultipartSubtype)
+        (ctx: HttpContext, parts: #IAsyncEnumerable<IMultipartPart>, [<Struct>] ?subtype: MultipartSubtype)
         =
-        let subtype = defaultArg subtype MultipartSubtype.Mixed
+        let subtype = defaultValueArg subtype MultipartSubtype.Mixed
         let boundary = MultipartWriter.createBoundary()
         if ctx.Request.Method <> HttpMethods.Head then
             let delimiter = MultipartWriter.delimiter boundary
@@ -392,7 +364,7 @@ type MultipartExtensions() =
 /// <param name="parts">The parts to be sent back to the client.</param>
 /// <param name="ctx">HttpContext</param>
 /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-let multipart (parts: MultipartPart seq) : EndpointHandler =
+let multipart (parts: IMultipartPart seq) : EndpointHandler =
     fun (ctx: HttpContext) -> ctx.WriteMultipart(parts)
 
 /// <summary>
@@ -403,5 +375,5 @@ let multipart (parts: MultipartPart seq) : EndpointHandler =
 /// <param name="parts">The stream of parts to be sent back to the client.</param>
 /// <param name="ctx">HttpContext</param>
 /// <returns>An Oxpecker <see cref="EndpointHandler"/> function which can be composed into a bigger web application.</returns>
-let multipartChunked (parts: #IAsyncEnumerable<MultipartPart>) : EndpointHandler =
+let multipartChunked (parts: #IAsyncEnumerable<IMultipartPart>) : EndpointHandler =
     fun (ctx: HttpContext) -> ctx.WriteMultipartChunked(parts)

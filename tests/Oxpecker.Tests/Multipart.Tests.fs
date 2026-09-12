@@ -75,13 +75,13 @@ let private readSections (boundary: string) (stream: Stream) =
 
 /// An asynchronous producer of parts: every part is delivered after a hop to the thread pool, like a real
 /// stream would, and `onMoveNext` is called each time the next part is requested.
-type private AsyncParts(parts: MultipartPart list, onMoveNext: unit -> unit) =
-    new(parts: MultipartPart list) = AsyncParts(parts, ignore)
-    interface IAsyncEnumerable<MultipartPart> with
+type private AsyncParts(parts: IMultipartPart list, onMoveNext: unit -> unit) =
+    new(parts: IMultipartPart list) = AsyncParts(parts, ignore)
+    interface IAsyncEnumerable<IMultipartPart> with
         member this.GetAsyncEnumerator _ =
             let mutable remaining = parts
-            let mutable current = Unchecked.defaultof<MultipartPart>
-            { new IAsyncEnumerator<MultipartPart> with
+            let mutable current = Unchecked.defaultof<IMultipartPart>
+            { new IAsyncEnumerator<IMultipartPart> with
                 member this.Current = current
                 member this.MoveNextAsync() =
                     ValueTask<bool>(
@@ -227,35 +227,42 @@ let ``WriteMultipart writes Bytes parts without re-encoding`` () =
         ctx.Response.Headers.ContentLength |> shouldEqual(int64 expected.Length)
     }
 
-/// Custom body encoding text into the writer and then copying raw bytes into it from a stream
-type private TextThenBytesBody(text: string, data: byte array) =
-    interface MultipartBody with
+/// Custom part writing constant header lines, text and then raw bytes copied from a stream
+type private TextThenBytesPart(text: string, data: byte array) =
+    interface IMultipartPart with
         member this.WriteAsync writer =
+            Encoding.UTF8.GetBytes(
+                "Content-Type: application/octet-stream\r\nContent-ID: custom\r\n\r\n".AsSpan(),
+                writer
+            )
+            |> ignore
             Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
             task {
                 use stream = new MemoryStream(data)
                 do! stream.CopyToAsync writer
             }
 
-/// Custom body that remembers the writer it was given and then fails
-type private FailingBody() =
+/// Custom part without any headers: only the empty line ending the header block, then the body
+type private HeaderlessPart(text: string) =
+    interface IMultipartPart with
+        member this.WriteAsync writer =
+            Encoding.UTF8.GetBytes(("\r\n" + text).AsSpan(), writer) |> ignore
+            Task.CompletedTask
+
+/// Custom part that remembers the writer it was given and then fails
+type private FailingPart() =
     member val Writer = Unchecked.defaultof<PipeWriter> with get, set
 
-    interface MultipartBody with
+    interface IMultipartPart with
         member this.WriteAsync writer =
             this.Writer <- writer
             raise <| InvalidOperationException "body failed"
 
 [<Fact>]
-let ``WriteMultipart writes custom MultipartBody implementations`` () =
+let ``WriteMultipart writes custom IMultipartPart implementations`` () =
     task {
         let ctx = createContext()
-        let part =
-            MultipartPart.Create(
-                "application/octet-stream",
-                TextThenBytesBody("head:", [| 0uy; 255uy |]),
-                [ "Content-ID", "custom" ]
-            )
+        let part = TextThenBytesPart("head:", [| 0uy; 255uy |])
 
         do! ctx.WriteMultipart [ part ]
 
@@ -270,6 +277,17 @@ let ``WriteMultipart writes custom MultipartBody implementations`` () =
         readBytes ctx |> shouldEqual expected
     }
 
+[<Fact>]
+let ``WriteMultipart writes a custom part without headers as an empty header block followed by the body`` () =
+    task {
+        let ctx = createContext()
+
+        do! ctx.WriteMultipart [ HeaderlessPart "plain" ]
+
+        let boundary = getBoundary(responseContentType ctx)
+        readBody ctx |> shouldEqual $"--{boundary}\r\n\r\nplain\r\n--{boundary}--\r\n"
+    }
+
 /// Number of chunks the builder currently consists of
 let private countChunks (sb: StringBuilder) =
     let mutable chunks = 0
@@ -278,7 +296,7 @@ let private countChunks (sb: StringBuilder) =
     chunks
 
 [<Fact>]
-let ``Utf8.write keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
+let ``MultipartHeaders.writeUtf8 keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
     task {
         // capacity 2: "a" and the high surrogate fill the first chunk, the low surrogate lands in the second one
         let sb = StringBuilder(2).Append("a").Append("\U0001F600")
@@ -286,42 +304,11 @@ let ``Utf8.write keeps a surrogate pair that spans two StringBuilder chunks inta
 
         use stream = new MemoryStream()
         let writer = PipeWriter.Create(stream, StreamPipeWriterOptions(leaveOpen = true))
-        Utf8.write writer sb
+        MultipartHeaders.writeUtf8 writer sb
         do! writer.CompleteAsync()
 
         stream.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes "a\U0001F600")
     }
-
-[<Fact>]
-let ``MultipartPart factories wrap the content in the built-in MultipartBody implementations`` () =
-    let view = div() { "Hi" }
-    let options = JsonSerializerOptions()
-
-    let htmlBody = (MultipartPart.Html view).Body :?> HtmlBody
-    obj.ReferenceEquals(htmlBody.View, view) |> shouldEqual true
-
-    let textBody = (MultipartPart.Text "hello").Body :?> TextBody
-    textBody.Text |> shouldEqual "hello"
-
-    let jsonBody =
-        MultipartPart.Json({| Id = 42 |}, options = options).Body :?> JsonBody
-    jsonBody.Value |> shouldEqual(box {| Id = 42 |})
-    jsonBody.Options |> shouldEqual(Some options)
-
-    let defaultJsonBody = (MultipartPart.Json {| Id = 42 |}).Body :?> JsonBody
-    defaultJsonBody.Options |> shouldEqual None
-
-    let bytesBody =
-        MultipartPart.Bytes("application/octet-stream", [| 1uy; 2uy |]).Body :?> BytesBody
-    bytesBody.Data |> shouldEqual [| 1uy; 2uy |]
-
-[<Fact>]
-let ``MultipartPart stores the given headers without copying and has none by default`` () =
-    let headers = [ "HX-Trigger", "done"; "HX-Part-ID", "part-1" ]
-
-    obj.ReferenceEquals(MultipartPart.Text("done", headers = headers).Headers, headers)
-    |> shouldEqual true
-    (MultipartPart.Text "done").Headers |> Seq.isEmpty |> shouldEqual true
 
 [<Fact>]
 let ``WriteMultipart writes repeated headers in the given order`` () =
@@ -341,29 +328,6 @@ let ``WriteMultipart writes repeated headers in the given order`` () =
             + "hx-trigger: second\r\n"
             + "\r\n"
             + "done"
-            + $"\r\n--{boundary}--\r\n"
-        )
-    }
-
-[<Fact>]
-let ``WriteMultipart respects ContentType and Headers set on the part`` () =
-    task {
-        let ctx = createContext()
-        let part = MultipartPart.Text "id,name"
-        part.ContentType <- "text/csv; charset=utf-8"
-        part.Headers <- [ "HX-Trigger", "export-ready"; "HX-Part-ID", "part-1" ]
-
-        do! ctx.WriteMultipart [ part ]
-
-        let boundary = getBoundary(responseContentType ctx)
-        readBody ctx
-        |> shouldEqual(
-            $"--{boundary}\r\n"
-            + "Content-Type: text/csv; charset=utf-8\r\n"
-            + "HX-Trigger: export-ready\r\n"
-            + "HX-Part-ID: part-1\r\n"
-            + "\r\n"
-            + "id,name"
             + $"\r\n--{boundary}--\r\n"
         )
     }
@@ -396,8 +360,7 @@ let ``WriteMultipart rejects header values containing control characters`` () =
 let ``WriteMultipart rejects a null header value`` () =
     task {
         let ctx = createContext()
-        let part = MultipartPart.Text "done"
-        part.Headers <- [ "HX-Trigger", Unchecked.defaultof<string> ]
+        let part = TextPart("done", headers = [ "HX-Trigger", Unchecked.defaultof<string> ])
 
         let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
 
@@ -476,18 +439,6 @@ let ``WriteMultipart accepts header lines of exactly 998 bytes`` () =
     }
 
 [<Fact>]
-let ``WriteMultipart rejects an empty, line-broken or overlong ContentType`` () =
-    task {
-        // "Content-Type: " takes 14 bytes, so the line may hold a 984-byte value at most
-        for contentType in [ ""; "text/plain\r\nHX-Redirect: /"; "text/plain; " + String('x', 973) ] do
-            let ctx = createContext()
-            let part = MultipartPart.Text "done"
-            part.ContentType <- contentType
-            let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
-            ex.Message.Contains "Content-Type" |> shouldEqual true
-    }
-
-[<Fact>]
 let ``WriteMultipart rejects an empty sequence of parts and writes nothing`` () =
     task {
         let ctx = createContext()
@@ -504,15 +455,13 @@ let ``WriteMultipart rejects an empty sequence of parts and writes nothing`` () 
 let ``WriteMultipart completes the pipe writer when a body throws`` () =
     task {
         let ctx = createContext()
-        let body = FailingBody()
+        let part = FailingPart()
 
-        let! ex =
-            Assert.ThrowsAsync<InvalidOperationException>(fun () ->
-                ctx.WriteMultipart [ MultipartPart.Create("text/plain", body) ])
+        let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> ctx.WriteMultipart [ part ])
 
         ex.Message |> shouldEqual "body failed"
         // a completed PipeWriter rejects further writes, which proves its buffers were returned
-        Assert.Throws<InvalidOperationException>(fun () -> body.Writer.GetMemory() |> ignore)
+        Assert.Throws<InvalidOperationException>(fun () -> part.Writer.GetMemory() |> ignore)
         |> ignore
         readBody ctx |> shouldEqual ""
     }
