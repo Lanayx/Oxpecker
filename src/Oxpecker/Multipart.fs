@@ -50,14 +50,9 @@ module internal Utf8 =
 /// </summary>
 /// <param name="view">The HTML element to render.</param>
 type HtmlBody(view: HtmlElement) =
-    /// <summary>
-    /// The HTML element rendered as the body.
-    /// </summary>
+
     member this.View = view
 
-    /// <summary>
-    /// Renders <see cref="View"/> and writes the result as UTF-8 to <paramref name="writer"/>.
-    /// </summary>
     member this.WriteAsync(writer: PipeWriter) : Task =
         let sb = StringBuilderPool.Get()
         try
@@ -75,14 +70,9 @@ type HtmlBody(view: HtmlElement) =
 /// </summary>
 /// <param name="text">The text to write.</param>
 type TextBody(text: string) =
-    /// <summary>
-    /// The text written as the body.
-    /// </summary>
+
     member this.Text = text
 
-    /// <summary>
-    /// Writes <see cref="Text"/> as UTF-8 to <paramref name="writer"/>.
-    /// </summary>
     member this.WriteAsync(writer: PipeWriter) : Task =
         Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
         Task.CompletedTask
@@ -96,19 +86,11 @@ type TextBody(text: string) =
 /// <param name="value">The value to serialize, its runtime type determines the serialization contract.</param>
 /// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
 type JsonBody(value: objnull, ?options: JsonSerializerOptions) =
-    /// <summary>
-    /// The value serialized as the body.
-    /// </summary>
+
     member this.Value = value
 
-    /// <summary>
-    /// The serializer options, `None` when `JsonSerializerOptions.Web` is used.
-    /// </summary>
     member this.Options = options
 
-    /// <summary>
-    /// Serializes <see cref="Value"/> to <paramref name="writer"/>.
-    /// </summary>
     member this.WriteAsync(writer: PipeWriter) : Task =
         JsonSerializer.SerializeAsync(writer, value, defaultArg options JsonSerializerOptions.Web)
 
@@ -120,14 +102,9 @@ type JsonBody(value: objnull, ?options: JsonSerializerOptions) =
 /// </summary>
 /// <param name="data">The bytes to write.</param>
 type BytesBody(data: byte array) =
-    /// <summary>
-    /// The bytes written as the body.
-    /// </summary>
+
     member this.Data = data
 
-    /// <summary>
-    /// Writes <see cref="Data"/> to <paramref name="writer"/>.
-    /// </summary>
     member this.WriteAsync(writer: PipeWriter) : Task =
         writer.Write(ReadOnlySpan data)
         Task.CompletedTask
@@ -315,13 +292,6 @@ module internal MultipartWriter =
     /// Writes the `--` and line break that turn the last delimiter into the closing delimiter `--{boundary}--`.
     let writeClosing (writer: PipeWriter) = writer.Write(ReadOnlySpan "--\r\n"B)
 
-    /// Flushes the writer so that everything written so far is sent to the client.
-    let flushAsync (writer: PipeWriter) : Task =
-        task {
-            let! _flushResult = writer.FlushAsync()
-            ()
-        }
-
 // ---------------------------
 // HttpContext extensions
 // ---------------------------
@@ -344,10 +314,10 @@ type MultipartExtensions() =
         let boundary = MultipartWriter.createBoundary()
         let delimiter = MultipartWriter.delimiter boundary
         let memoryStream = recyclableMemoryStreamManager.Value.GetStream()
+        let writer =
+            PipeWriter.Create(memoryStream, StreamPipeWriterOptions(leaveOpen = true))
         task {
             try
-                let writer =
-                    PipeWriter.Create(memoryStream, StreamPipeWriterOptions(leaveOpen = true))
                 MultipartWriter.writeOpening writer delimiter
                 let mutable isEmpty = true
                 for part in parts do
@@ -356,14 +326,15 @@ type MultipartExtensions() =
                 if isEmpty then
                     MultipartWriter.raiseEmpty()
                 MultipartWriter.writeClosing writer
-                do! MultipartWriter.flushAsync writer
-                do! writer.CompleteAsync()
+                let! _ = writer.FlushAsync()
                 ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
                 ctx.Response.ContentLength <- memoryStream.Length
                 if ctx.Request.Method <> HttpMethods.Head then
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
                     do! memoryStream.CopyToAsync(ctx.Response.Body)
             finally
+                // completing the writer returns its pooled buffers, also when validation or a body throws
+                writer.Complete()
                 memoryStream.Dispose()
         }
 
@@ -397,11 +368,12 @@ type MultipartExtensions() =
                 let mutable hasNext = hasParts
                 while hasNext do
                     do! MultipartWriter.writePartAsync writer delimiter enumerator.Current
-                    do! MultipartWriter.flushAsync writer
+                    let! _ = writer.FlushAsync()
                     let! next = enumerator.MoveNextAsync()
                     hasNext <- next
                 MultipartWriter.writeClosing writer
-                do! MultipartWriter.flushAsync writer
+                let! _ = writer.FlushAsync()
+                ()
             }
             :> Task
         else

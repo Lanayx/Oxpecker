@@ -237,6 +237,15 @@ type private TextThenBytesBody(text: string, data: byte array) =
                 do! stream.CopyToAsync writer
             }
 
+/// Custom body that remembers the writer it was given and then fails
+type private FailingBody() =
+    member val Writer = Unchecked.defaultof<PipeWriter> with get, set
+
+    interface MultipartBody with
+        member this.WriteAsync writer =
+            this.Writer <- writer
+            raise <| InvalidOperationException "body failed"
+
 [<Fact>]
 let ``WriteMultipart writes custom MultipartBody implementations`` () =
     task {
@@ -488,6 +497,23 @@ let ``WriteMultipart rejects an empty sequence of parts and writes nothing`` () 
         ex.ParamName |> shouldEqual "parts"
         responseContentType ctx |> shouldEqual ""
         ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
+        readBody ctx |> shouldEqual ""
+    }
+
+[<Fact>]
+let ``WriteMultipart completes the pipe writer when a body throws`` () =
+    task {
+        let ctx = createContext()
+        let body = FailingBody()
+
+        let! ex =
+            Assert.ThrowsAsync<InvalidOperationException>(fun () ->
+                ctx.WriteMultipart [ MultipartPart.Create("text/plain", body) ])
+
+        ex.Message |> shouldEqual "body failed"
+        // a completed PipeWriter rejects further writes, which proves its buffers were returned
+        Assert.Throws<InvalidOperationException>(fun () -> body.Writer.GetMemory() |> ignore)
+        |> ignore
         readBody ctx |> shouldEqual ""
     }
 
