@@ -5,13 +5,12 @@ open System
 open System.Buffers
 open System.Collections.Generic
 open System.IO
+open System.IO.Pipelines
 open System.Runtime.CompilerServices
 open System.Text
 open System.Text.Json
-open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
-open Microsoft.AspNetCore.WebUtilities
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Tools
 
@@ -20,18 +19,121 @@ open Oxpecker.ViewEngine.Tools
 // ---------------------------
 
 /// <summary>
-/// Body of a single part of a multipart response.
+/// <para>Body of a single part of a multipart response, written after the part headers.</para>
+/// <para>The built-in implementations are <see cref="HtmlBody"/>, <see cref="TextBody"/>, <see cref="JsonBody"/> and <see cref="BytesBody"/>;
+/// other content can be sent by implementing this interface and passing the body to <see cref="MultipartPart.Create"/>.</para>
 /// </summary>
-[<RequireQualifiedAccess>]
 type MultipartBody =
-    /// An `HtmlElement` rendered with the Oxpecker view engine (without a DOCTYPE prefix).
-    | Html of HtmlElement
-    /// A string written as UTF-8 text.
-    | Text of string
-    /// A value serialized with System.Text.Json. When no options are given, `JsonSerializerOptions.Web` is used.
-    | Json of value: objnull * options: JsonSerializerOptions option
-    /// Raw bytes written as is.
-    | Bytes of byte array
+    /// <summary>
+    /// <para>Writes the body as bytes to the response writer. Text has to be encoded as UTF-8, e.g. with
+    /// `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`; raw bytes can be copied with `writer.Write` and a stream with `stream.CopyToAsync writer`.</para>
+    /// <para>The writer is flushed after each part, so the body does not need to flush it.</para>
+    /// </summary>
+    /// <param name="writer">The response writer to write the body to.</param>
+    /// <returns>Task of writing the body.</returns>
+    abstract member WriteAsync: writer: PipeWriter -> Task
+
+module internal Utf8 =
+
+    /// Encodes the content of the builder as UTF-8 into the writer chunk by chunk; the stateful encoder
+    /// keeps a surrogate pair intact even when it spans two chunks.
+    let write (writer: PipeWriter) (sb: StringBuilder) =
+        let encoder = Encoding.UTF8.GetEncoder()
+        let mutable bytesUsed = 0L
+        let mutable completed = false
+        for chunk in sb.GetChunks() do
+            encoder.Convert(chunk.Span, writer, false, &bytesUsed, &completed)
+        encoder.Convert(ReadOnlySpan<char>.Empty, writer, true, &bytesUsed, &completed)
+
+/// <summary>
+/// Part body rendered from an `HtmlElement` with the Oxpecker view engine (without a DOCTYPE prefix) and written as UTF-8 text.
+/// </summary>
+/// <param name="view">The HTML element to render.</param>
+type HtmlBody(view: HtmlElement) =
+    /// <summary>
+    /// The HTML element rendered as the body.
+    /// </summary>
+    member this.View = view
+
+    /// <summary>
+    /// Renders <see cref="View"/> and writes the result as UTF-8 to <paramref name="writer"/>.
+    /// </summary>
+    member this.WriteAsync(writer: PipeWriter) : Task =
+        let sb = StringBuilderPool.Get()
+        try
+            view.Render sb
+            Utf8.write writer sb
+        finally
+            StringBuilderPool.Return sb
+        Task.CompletedTask
+
+    interface MultipartBody with
+        member this.WriteAsync writer = this.WriteAsync writer
+
+/// <summary>
+/// Part body written as UTF-8 text.
+/// </summary>
+/// <param name="text">The text to write.</param>
+type TextBody(text: string) =
+    /// <summary>
+    /// The text written as the body.
+    /// </summary>
+    member this.Text = text
+
+    /// <summary>
+    /// Writes <see cref="Text"/> as UTF-8 to <paramref name="writer"/>.
+    /// </summary>
+    member this.WriteAsync(writer: PipeWriter) : Task =
+        Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
+        Task.CompletedTask
+
+    interface MultipartBody with
+        member this.WriteAsync writer = this.WriteAsync writer
+
+/// <summary>
+/// Part body serialized with System.Text.Json and written as UTF-8 JSON.
+/// </summary>
+/// <param name="value">The value to serialize, its runtime type determines the serialization contract.</param>
+/// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
+type JsonBody(value: objnull, ?options: JsonSerializerOptions) =
+    /// <summary>
+    /// The value serialized as the body.
+    /// </summary>
+    member this.Value = value
+
+    /// <summary>
+    /// The serializer options, `None` when `JsonSerializerOptions.Web` is used.
+    /// </summary>
+    member this.Options = options
+
+    /// <summary>
+    /// Serializes <see cref="Value"/> to <paramref name="writer"/>.
+    /// </summary>
+    member this.WriteAsync(writer: PipeWriter) : Task =
+        JsonSerializer.SerializeAsync(writer, value, defaultArg options JsonSerializerOptions.Web)
+
+    interface MultipartBody with
+        member this.WriteAsync writer = this.WriteAsync writer
+
+/// <summary>
+/// Part body written as raw bytes, without any re-encoding.
+/// </summary>
+/// <param name="data">The bytes to write.</param>
+type BytesBody(data: byte array) =
+    /// <summary>
+    /// The bytes written as the body.
+    /// </summary>
+    member this.Data = data
+
+    /// <summary>
+    /// Writes <see cref="Data"/> to <paramref name="writer"/>.
+    /// </summary>
+    member this.WriteAsync(writer: PipeWriter) : Task =
+        writer.Write(ReadOnlySpan data)
+        Task.CompletedTask
+
+    interface MultipartBody with
+        member this.WriteAsync writer = this.WriteAsync writer
 
 /// <summary>
 /// Subtype of the multipart response, i.e. the `multipart/{subtype}` media type.
@@ -45,13 +147,12 @@ type MultipartSubtype =
 
 /// <summary>
 /// A single part of a multipart response, compatible with the htmx 4 `hx-multipart` extension.
-/// Use the static factory members (`Html`, `Text`, `Json`, `Bytes`) or the constructor, then adjust
+/// Use the static factory members (`Html`, `Text`, `Json`, `Bytes`, or `Create` for a custom body), then adjust
 /// <see cref="ContentType"/> and <see cref="Headers"/> as needed.
 /// </summary>
 /// <param name="contentType">Value of the part `Content-Type` header, e.g. `text/html; charset=utf-8`.</param>
-/// <param name="body">Body of the part.</param>
-type MultipartPart(contentType: string, body: MultipartBody) =
-    let headers = Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+/// <param name="body">Body of the part: a <see cref="HtmlBody"/>, <see cref="TextBody"/>, <see cref="JsonBody"/> or <see cref="BytesBody"/>, or a custom <see cref="MultipartBody"/> implementation.</param>
+type MultipartPart internal (contentType: string, body: MultipartBody, headers: (string * string) seq) =
 
     /// <summary>
     /// Value of the part `Content-Type` header.
@@ -64,21 +165,22 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     member this.Body = body
 
     /// <summary>
-    /// Additional part headers, written after `Content-Type` in insertion order, e.g. `HX-Target` (or `HX-Retarget`),
-    /// `HX-Swap` (or `HX-Reswap`), `HX-Trigger`, `HX-Part-ID` or `Content-ID`. Header names must be valid HTTP tokens,
-    /// header values must not contain control characters such as line breaks, and a header line must not exceed 998 bytes.
+    /// Additional part headers as name/value pairs, written after `Content-Type` in the given order, e.g. `HX-Target` (or `HX-Retarget`),
+    /// `HX-Swap` (or `HX-Reswap`), `HX-Trigger`, `HX-Part-ID` or `Content-ID`. The collection is stored as is, without copying,
+    /// and validated when the part is written: header names must be valid HTTP tokens, header values must not contain
+    /// control characters such as line breaks, and a header line must not exceed 998 bytes.
     /// `Content-Type` is not allowed here, set <see cref="ContentType"/> instead.
     /// </summary>
-    member this.Headers = headers
+    member val Headers = headers with get, set
 
-    static member private Create(contentType: string, body: MultipartBody, headers: (string * string) seq option) =
-        let part = MultipartPart(contentType, body)
-        match headers with
-        | Some headers ->
-            for name, value in headers do
-                part.Headers[name] <- value
-        | None -> ()
-        part
+    /// <summary>
+    /// Creates a part with the given content type and body, e.g. a custom <see cref="MultipartBody"/> implementation.
+    /// </summary>
+    /// <param name="contentType">Value of the part `Content-Type` header.</param>
+    /// <param name="body">Body of the part.</param>
+    /// <param name="headers">Optional additional part headers, see <see cref="Headers"/>.</param>
+    static member Create(contentType: string, body: MultipartBody, ?headers: (string * string) seq) =
+        MultipartPart(contentType, body, defaultArg headers Seq.empty)
 
     /// <summary>
     /// Creates a `text/html; charset=utf-8` part from an `HtmlElement`.
@@ -86,7 +188,7 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     /// <param name="view">The HTML element to render as the part body.</param>
     /// <param name="headers">Optional additional part headers.</param>
     static member Html(view: #HtmlElement, ?headers: (string * string) seq) =
-        MultipartPart.Create("text/html; charset=utf-8", MultipartBody.Html(view :> HtmlElement), headers)
+        MultipartPart.Create("text/html; charset=utf-8", HtmlBody(view :> HtmlElement), ?headers = headers)
 
     /// <summary>
     /// Creates a `text/plain; charset=utf-8` part from a string.
@@ -94,7 +196,7 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     /// <param name="text">The text to write as the part body.</param>
     /// <param name="headers">Optional additional part headers.</param>
     static member Text(text: string, ?headers: (string * string) seq) =
-        MultipartPart.Create("text/plain; charset=utf-8", MultipartBody.Text text, headers)
+        MultipartPart.Create("text/plain; charset=utf-8", TextBody text, ?headers = headers)
 
     /// <summary>
     /// Creates an `application/json; charset=utf-8` part by serializing a value with System.Text.Json.
@@ -103,7 +205,11 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     /// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
     /// <param name="headers">Optional additional part headers.</param>
     static member Json<'T>(value: 'T, ?options: JsonSerializerOptions, ?headers: (string * string) seq) =
-        MultipartPart.Create("application/json; charset=utf-8", MultipartBody.Json(box value, options), headers)
+        MultipartPart.Create(
+            "application/json; charset=utf-8",
+            JsonBody(box value, ?options = options),
+            ?headers = headers
+        )
 
     /// <summary>
     /// Creates a part with the given content type from raw bytes.
@@ -112,7 +218,7 @@ type MultipartPart(contentType: string, body: MultipartBody) =
     /// <param name="data">The bytes to write as the part body.</param>
     /// <param name="headers">Optional additional part headers.</param>
     static member Bytes(contentType: string, data: byte array, ?headers: (string * string) seq) =
-        MultipartPart.Create(contentType, MultipartBody.Bytes data, headers)
+        MultipartPart.Create(contentType, BytesBody data, ?headers = headers)
 
 // ---------------------------
 // Wire format
@@ -125,8 +231,12 @@ module internal MultipartWriter =
 
     let contentType (subtype: MultipartSubtype) (boundary: string) =
         match subtype with
-        | MultipartSubtype.Mixed -> $"multipart/mixed; boundary={boundary}"
-        | MultipartSubtype.Parallel -> $"multipart/parallel; boundary={boundary}"
+        | MultipartSubtype.Mixed -> $"multipart/mixed; boundary=%s{boundary}"
+        | MultipartSubtype.Parallel -> $"multipart/parallel; boundary=%s{boundary}"
+
+    /// The delimiter `\r\n--{boundary}` as bytes (the boundary consists of ASCII characters only).
+    let delimiter (boundary: string) =
+        Encoding.ASCII.GetBytes("\r\n--" + boundary)
 
     /// Characters allowed in an HTTP token (RFC 9110 section 5.6.2), i.e. in a header name.
     let private tokenChars =
@@ -147,20 +257,21 @@ module internal MultipartWriter =
 
     /// Validates the header value and the length of the `{name}: {value}` line.
     let private validateHeaderLine (name: string) (value: string) =
-        // the dictionary does not prevent null values from being inserted, e.g. by C# callers
+        // tuples do not prevent null values, e.g. from C# callers or Unchecked.defaultof
         if obj.ReferenceEquals(value, null) then
-            raise <| ArgumentException($"Multipart header '{name}' value must not be null.")
+            raise
+            <| ArgumentException($"Multipart header '%s{name}' value must not be null.")
         if value.AsSpan().ContainsAny controlChars then
             raise
-            <| ArgumentException($"Multipart header '{name}' value must not contain control characters.")
+            <| ArgumentException($"Multipart header '%s{name}' value must not contain control characters.")
         if Encoding.UTF8.GetByteCount name + 2 + Encoding.UTF8.GetByteCount value > MaxHeaderLineLength then
             raise
-            <| ArgumentException($"Multipart header '{name}' line must not exceed {MaxHeaderLineLength} bytes.")
+            <| ArgumentException($"Multipart header '%s{name}' line must not exceed {MaxHeaderLineLength} bytes.")
 
     let private validateHeader (name: string) (value: string) =
         if String.IsNullOrEmpty name || name.AsSpan().ContainsAnyExcept tokenChars then
             raise
-            <| ArgumentException($"Invalid multipart header name '{name}', header names must be valid HTTP tokens.")
+            <| ArgumentException($"Invalid multipart header name '%s{name}', header names must be valid HTTP tokens.")
         if name.Equals("Content-Type", StringComparison.OrdinalIgnoreCase) then
             raise
             <| ArgumentException(
@@ -178,55 +289,38 @@ module internal MultipartWriter =
         <| ArgumentException("Multipart response must contain at least one part.", "parts")
 
     /// Writes the opening delimiter `--{boundary}` (without a trailing line break).
-    let writeOpeningAsync (writer: TextWriter) (boundary: string) (ct: CancellationToken) =
-        task {
-            do! writer.WriteAsync("--".AsMemory(), ct)
-            do! writer.WriteAsync(boundary.AsMemory(), ct)
-        }
+    let writeOpening (writer: PipeWriter) (delimiter: byte array) =
+        writer.Write(ReadOnlySpan(delimiter, 2, delimiter.Length - 2))
 
     /// Writes one part: a line break ending the previous delimiter, the part headers, a blank line,
     /// the body and the next delimiter `\r\n--{boundary}` (without a trailing line break).
-    let writePartAsync
-        (writer: TextWriter)
-        (stream: Stream)
-        (boundary: string)
-        (part: MultipartPart)
-        (ct: CancellationToken)
-        =
+    let writePartAsync (writer: PipeWriter) (delimiter: byte array) (part: MultipartPart) =
         let sb = StringBuilderPool.Get()
+        try
+            validateContentType part.ContentType
+            sb.Append("\r\nContent-Type: ").Append(part.ContentType).Append("\r\n")
+            |> ignore
+            for name, value in part.Headers do
+                validateHeader name value
+                sb.Append(name).Append(": ").Append(value).Append("\r\n") |> ignore
+            sb.Append("\r\n") |> ignore
+            Utf8.write writer sb
+        finally
+            StringBuilderPool.Return sb
         task {
-            try
-                validateContentType part.ContentType
-                sb.Append("\r\nContent-Type: ").Append(part.ContentType).Append("\r\n")
-                |> ignore
-                for KeyValue(name, value) in part.Headers do
-                    validateHeader name value
-                    sb.Append(name).Append(": ").Append(value).Append("\r\n") |> ignore
-                sb.Append("\r\n") |> ignore
-                match part.Body with
-                | MultipartBody.Html view ->
-                    view.Render sb
-                    do! writer.WriteAsync(sb, ct)
-                | MultipartBody.Text text ->
-                    sb.Append(text) |> ignore
-                    do! writer.WriteAsync(sb, ct)
-                | MultipartBody.Json(value, options) ->
-                    do! writer.WriteAsync(sb, ct)
-                    do! writer.FlushAsync ct
-                    do! JsonSerializer.SerializeAsync(stream, value, defaultArg options JsonSerializerOptions.Web, ct)
-                | MultipartBody.Bytes data ->
-                    do! writer.WriteAsync(sb, ct)
-                    do! writer.FlushAsync ct
-                    do! stream.WriteAsync(data, 0, data.Length, ct)
-                do! writer.WriteAsync("\r\n--".AsMemory(), ct)
-                do! writer.WriteAsync(boundary.AsMemory(), ct)
-            finally
-                StringBuilderPool.Return sb
+            do! part.Body.WriteAsync writer
+            writer.Write(ReadOnlySpan delimiter)
         }
 
     /// Writes the `--` and line break that turn the last delimiter into the closing delimiter `--{boundary}--`.
-    let writeClosingAsync (writer: TextWriter) (ct: CancellationToken) =
-        writer.WriteAsync("--\r\n".AsMemory(), ct)
+    let writeClosing (writer: PipeWriter) = writer.Write(ReadOnlySpan "--\r\n"B)
+
+    /// Flushes the writer so that everything written so far is sent to the client.
+    let flushAsync (writer: PipeWriter) : Task =
+        task {
+            let! _flushResult = writer.FlushAsync()
+            ()
+        }
 
 // ---------------------------
 // HttpContext extensions
@@ -239,7 +333,6 @@ type MultipartExtensions() =
     /// <para>The whole response is rendered in memory first, so the `Content-Length` header is set accordingly.
     /// To stream parts as they become available use <see cref="WriteMultipartChunked"/> instead.</para>
     /// <para>At least one part is required, an `ArgumentException` is thrown otherwise.</para>
-    /// <para>Rendering and writing are cancelled when the request is aborted (`HttpContext.RequestAborted`).</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="parts">The parts to be sent back to the client.</param>
@@ -249,35 +342,36 @@ type MultipartExtensions() =
     static member WriteMultipart(ctx: HttpContext, parts: MultipartPart seq, ?subtype: MultipartSubtype) =
         let subtype = defaultArg subtype MultipartSubtype.Mixed
         let boundary = MultipartWriter.createBoundary()
-        let ct = ctx.RequestAborted
+        let delimiter = MultipartWriter.delimiter boundary
         let memoryStream = recyclableMemoryStreamManager.Value.GetStream()
         task {
             try
-                use writer = new StreamWriter(memoryStream, leaveOpen = true)
-                do! MultipartWriter.writeOpeningAsync writer boundary ct
+                let writer =
+                    PipeWriter.Create(memoryStream, StreamPipeWriterOptions(leaveOpen = true))
+                MultipartWriter.writeOpening writer delimiter
                 let mutable isEmpty = true
                 for part in parts do
                     isEmpty <- false
-                    do! MultipartWriter.writePartAsync writer memoryStream boundary part ct
+                    do! MultipartWriter.writePartAsync writer delimiter part
                 if isEmpty then
                     MultipartWriter.raiseEmpty()
-                do! MultipartWriter.writeClosingAsync writer ct
-                do! writer.FlushAsync ct
+                MultipartWriter.writeClosing writer
+                do! MultipartWriter.flushAsync writer
+                do! writer.CompleteAsync()
                 ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
                 ctx.Response.ContentLength <- memoryStream.Length
                 if ctx.Request.Method <> HttpMethods.Head then
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
-                    do! memoryStream.CopyToAsync(ctx.Response.Body, ct)
+                    do! memoryStream.CopyToAsync(ctx.Response.Body)
             finally
                 memoryStream.Dispose()
         }
 
     /// <summary>
     /// <para>Writes a stream of parts as a `multipart/mixed` (or `multipart/parallel`) response compatible with the htmx 4 `hx-multipart` extension, using chunked transfer encoding.</para>
-    /// <para>Each part is flushed to the client as soon as it has been produced, so the client can process it while the next part is still being generated.</para>
+    /// <para>Each part is written to `HttpResponse.BodyWriter` and flushed as soon as it has been produced, so the client can process it while the next part is still being generated.</para>
     /// <para>At least one part is required: if the stream completes without producing any, an `ArgumentException` is thrown before anything is written to the response.
     /// For `HEAD` requests only the `Content-Type` header is set and the parts are not enumerated, so this check does not apply.</para>
-    /// <para>The enumerator is created with `HttpContext.RequestAborted` and the same token cancels the pending writes, so nothing more is produced or written once the client disconnects.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="parts">The stream of parts to be sent back to the client.</param>
@@ -290,24 +384,24 @@ type MultipartExtensions() =
         let subtype = defaultArg subtype MultipartSubtype.Mixed
         let boundary = MultipartWriter.createBoundary()
         if ctx.Request.Method <> HttpMethods.Head then
-            let ct = ctx.RequestAborted
+            let delimiter = MultipartWriter.delimiter boundary
             task {
-                let enumerator = parts.GetAsyncEnumerator ct
+                let enumerator = parts.GetAsyncEnumerator()
                 use _ = enumerator :> IAsyncDisposable
                 let! hasParts = enumerator.MoveNextAsync()
                 if not hasParts then
                     MultipartWriter.raiseEmpty()
                 ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
-                let writer = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
-                use _ = writer :> IAsyncDisposable
-                do! MultipartWriter.writeOpeningAsync writer boundary ct
+                let writer = ctx.Response.BodyWriter
+                MultipartWriter.writeOpening writer delimiter
                 let mutable hasNext = hasParts
                 while hasNext do
-                    do! MultipartWriter.writePartAsync writer ctx.Response.Body boundary enumerator.Current ct
-                    do! writer.FlushAsync ct
+                    do! MultipartWriter.writePartAsync writer delimiter enumerator.Current
+                    do! MultipartWriter.flushAsync writer
                     let! next = enumerator.MoveNextAsync()
                     hasNext <- next
-                do! MultipartWriter.writeClosingAsync writer ct
+                MultipartWriter.writeClosing writer
+                do! MultipartWriter.flushAsync writer
             }
             :> Task
         else

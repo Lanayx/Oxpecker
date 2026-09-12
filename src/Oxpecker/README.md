@@ -1510,7 +1510,7 @@ Parts are created with the `MultipartPart` factory members:
 - `MultipartPart.Json(value)` — a value serialized with `System.Text.Json` (`JsonSerializerOptions.Web` by default, pass `options` to override), sent as `application/json; charset=utf-8`
 - `MultipartPart.Bytes(contentType, data)` — raw bytes with the given content type
 
-Every factory accepts an optional `headers` sequence; headers can also be set later through the `Headers` dictionary, and the `ContentType` property can be changed as well. The header constants from `Oxpecker.Htmx` can be used for htmx headers.
+Every factory accepts an optional `headers` sequence of name/value pairs, which is stored as is (no copy) and written in the given order; the `Headers` and `ContentType` properties can also be set after creation. The header constants from `Oxpecker.Htmx` can be used for htmx headers.
 
 ```fsharp
 open System.Linq
@@ -1557,10 +1557,32 @@ let progressHandler: EndpointHandler =
 // Setting properties after creation
 let csvPart = MultipartPart.Text "id,name"
 csvPart.ContentType <- "text/csv; charset=utf-8"
-csvPart.Headers[HxResponseHeader.PartId] <- "row-1"
+csvPart.Headers <- [ HxResponseHeader.PartId, "row-1" ]
 ```
 
-Any `IAsyncEnumerable<MultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. The enumerator is created with `HttpContext.RequestAborted`, and the same token cancels the pending writes, so a producer can stop as soon as the client disconnects. For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
+Each factory wraps its content in one of the built-in `MultipartBody` implementations (`HtmlBody`, `TextBody`, `JsonBody`, `BytesBody`), exposed through the `Body` property of the part. Other content can be sent by implementing the `MultipartBody` interface and passing the body together with its content type to `MultipartPart.Create`. The body writes bytes to the response `PipeWriter`: text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync writer`; the writer is flushed after each part:
+
+```fsharp
+open System.IO
+open System.IO.Pipelines
+
+// A custom body streaming a file from disk
+type FileBody(path: string) =
+    interface MultipartBody with
+        member this.WriteAsync writer =
+            task {
+                use file = File.OpenRead path
+                do! file.CopyToAsync writer
+            }
+
+let attachmentHandler: EndpointHandler =
+    fun ctx ->
+        let attachment =
+            MultipartPart.Create("application/pdf", FileBody "report.pdf", [ "Content-ID", "attachment" ])
+        ctx.WriteMultipart [ attachment ]
+```
+
+Any `IAsyncEnumerable<MultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
 
 Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtype.Mixed` (the default) htmx finishes swapping a part before it reads the next one; with `MultipartSubtype.Parallel` the response is `multipart/parallel` and swaps start as parts arrive, without waiting for each other:
 

@@ -3,12 +3,12 @@ module Oxpecker.Tests.Multipart
 open System
 open System.Collections.Generic
 open System.IO
+open System.IO.Pipelines
 open System.Net
 open System.Net.Http
 open System.Text
 open System.Text.Json
 open System.Text.RegularExpressions
-open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
@@ -78,7 +78,7 @@ let private readSections (boundary: string) (stream: Stream) =
 type private AsyncParts(parts: MultipartPart list, onMoveNext: unit -> unit) =
     new(parts: MultipartPart list) = AsyncParts(parts, ignore)
     interface IAsyncEnumerable<MultipartPart> with
-        member this.GetAsyncEnumerator(_) =
+        member this.GetAsyncEnumerator _ =
             let mutable remaining = parts
             let mutable current = Unchecked.defaultof<MultipartPart>
             { new IAsyncEnumerator<MultipartPart> with
@@ -227,14 +227,122 @@ let ``WriteMultipart writes Bytes parts without re-encoding`` () =
         ctx.Response.Headers.ContentLength |> shouldEqual(int64 expected.Length)
     }
 
+/// Custom body encoding text into the writer and then copying raw bytes into it from a stream
+type private TextThenBytesBody(text: string, data: byte array) =
+    interface MultipartBody with
+        member this.WriteAsync writer =
+            Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
+            task {
+                use stream = new MemoryStream(data)
+                do! stream.CopyToAsync writer
+            }
+
+[<Fact>]
+let ``WriteMultipart writes custom MultipartBody implementations`` () =
+    task {
+        let ctx = createContext()
+        let part =
+            MultipartPart.Create(
+                "application/octet-stream",
+                TextThenBytesBody("head:", [| 0uy; 255uy |]),
+                [ "Content-ID", "custom" ]
+            )
+
+        do! ctx.WriteMultipart [ part ]
+
+        let boundary = getBoundary(responseContentType ctx)
+        let expected =
+            Array.concat [
+                Encoding.ASCII.GetBytes
+                    $"--{boundary}\r\nContent-Type: application/octet-stream\r\nContent-ID: custom\r\n\r\nhead:"
+                [| 0uy; 255uy |]
+                Encoding.ASCII.GetBytes $"\r\n--{boundary}--\r\n"
+            ]
+        readBytes ctx |> shouldEqual expected
+    }
+
+/// Number of chunks the builder currently consists of
+let private countChunks (sb: StringBuilder) =
+    let mutable chunks = 0
+    for _ in sb.GetChunks() do
+        chunks <- chunks + 1
+    chunks
+
+[<Fact>]
+let ``Utf8.write keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
+    task {
+        // capacity 2: "a" and the high surrogate fill the first chunk, the low surrogate lands in the second one
+        let sb = StringBuilder(2).Append("a").Append("\U0001F600")
+        countChunks sb |> shouldEqual 2
+
+        use stream = new MemoryStream()
+        let writer = PipeWriter.Create(stream, StreamPipeWriterOptions(leaveOpen = true))
+        Utf8.write writer sb
+        do! writer.CompleteAsync()
+
+        stream.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes "a\U0001F600")
+    }
+
+[<Fact>]
+let ``MultipartPart factories wrap the content in the built-in MultipartBody implementations`` () =
+    let view = div() { "Hi" }
+    let options = JsonSerializerOptions()
+
+    let htmlBody = (MultipartPart.Html view).Body :?> HtmlBody
+    obj.ReferenceEquals(htmlBody.View, view) |> shouldEqual true
+
+    let textBody = (MultipartPart.Text "hello").Body :?> TextBody
+    textBody.Text |> shouldEqual "hello"
+
+    let jsonBody =
+        MultipartPart.Json({| Id = 42 |}, options = options).Body :?> JsonBody
+    jsonBody.Value |> shouldEqual(box {| Id = 42 |})
+    jsonBody.Options |> shouldEqual(Some options)
+
+    let defaultJsonBody = (MultipartPart.Json {| Id = 42 |}).Body :?> JsonBody
+    defaultJsonBody.Options |> shouldEqual None
+
+    let bytesBody =
+        MultipartPart.Bytes("application/octet-stream", [| 1uy; 2uy |]).Body :?> BytesBody
+    bytesBody.Data |> shouldEqual [| 1uy; 2uy |]
+
+[<Fact>]
+let ``MultipartPart stores the given headers without copying and has none by default`` () =
+    let headers = [ "HX-Trigger", "done"; "HX-Part-ID", "part-1" ]
+
+    obj.ReferenceEquals(MultipartPart.Text("done", headers = headers).Headers, headers)
+    |> shouldEqual true
+    (MultipartPart.Text "done").Headers |> Seq.isEmpty |> shouldEqual true
+
+[<Fact>]
+let ``WriteMultipart writes repeated headers in the given order`` () =
+    task {
+        let ctx = createContext()
+        let part =
+            MultipartPart.Text("done", headers = [ "HX-Trigger", "first"; "hx-trigger", "second" ])
+
+        do! ctx.WriteMultipart [ part ]
+
+        let boundary = getBoundary(responseContentType ctx)
+        readBody ctx
+        |> shouldEqual(
+            $"--{boundary}\r\n"
+            + "Content-Type: text/plain; charset=utf-8\r\n"
+            + "HX-Trigger: first\r\n"
+            + "hx-trigger: second\r\n"
+            + "\r\n"
+            + "done"
+            + $"\r\n--{boundary}--\r\n"
+        )
+    }
+
 [<Fact>]
 let ``WriteMultipart respects ContentType and Headers set on the part`` () =
     task {
         let ctx = createContext()
         let part = MultipartPart.Text "id,name"
         part.ContentType <- "text/csv; charset=utf-8"
-        part.Headers["HX-Trigger"] <- "export-ready"
-        part.Headers["HX-Part-ID"] <- "part-1"
+        part.Headers <- [ "HX-Trigger", "export-ready"; "HX-Part-ID", "part-1" ]
 
         do! ctx.WriteMultipart [ part ]
 
@@ -280,7 +388,7 @@ let ``WriteMultipart rejects a null header value`` () =
     task {
         let ctx = createContext()
         let part = MultipartPart.Text "done"
-        part.Headers["HX-Trigger"] <- Unchecked.defaultof<string>
+        part.Headers <- [ "HX-Trigger", Unchecked.defaultof<string> ]
 
         let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
 
@@ -368,20 +476,6 @@ let ``WriteMultipart rejects an empty, line-broken or overlong ContentType`` () 
             part.ContentType <- contentType
             let! ex = Assert.ThrowsAsync<ArgumentException>(fun () -> ctx.WriteMultipart [ part ])
             ex.Message.Contains "Content-Type" |> shouldEqual true
-    }
-
-[<Fact>]
-let ``WriteMultipart stops rendering when the request is aborted`` () =
-    task {
-        let ctx = createContext()
-        use cts = new CancellationTokenSource()
-        ctx.RequestAborted <- cts.Token
-        cts.Cancel()
-
-        let! _ = Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> ctx.WriteMultipart(twoParts()))
-
-        responseContentType ctx |> shouldEqual ""
-        readBody ctx |> shouldEqual ""
     }
 
 [<Fact>]
@@ -479,22 +573,6 @@ let ``WriteMultipartChunked rejects an empty stream of parts and writes nothing`
         ex.ParamName |> shouldEqual "parts"
         responseContentType ctx |> shouldEqual ""
         readBody ctx |> shouldEqual ""
-    }
-
-[<Fact>]
-let ``WriteMultipartChunked does not write a part produced after the request was aborted`` () =
-    task {
-        let ctx = createContext()
-        use cts = new CancellationTokenSource()
-        ctx.RequestAborted <- cts.Token
-        let data = Array.create 4096 1uy
-        // the client disconnects while the producer is generating the part
-        let parts =
-            AsyncParts([ MultipartPart.Bytes("application/octet-stream", data) ], (fun () -> cts.Cancel()))
-
-        let! _ = Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> ctx.WriteMultipartChunked parts)
-
-        (readBytes ctx).Length < data.Length |> shouldEqual true
     }
 
 [<Fact>]
