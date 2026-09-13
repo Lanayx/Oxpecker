@@ -38,6 +38,17 @@ let private createContext () =
     ctx.Response.Body <- new MemoryStream()
     ctx
 
+let private configureServices (configure: IServiceCollection -> unit) (ctx: HttpContext) =
+    let services = ServiceCollection()
+    configure services
+    ctx.RequestServices <- services.BuildServiceProvider()
+    ctx
+
+/// Registers the given serializer as the `IJsonSerializer` of the request, as `MultipartPart.Json` resolves it from there
+let private withJsonSerializer (serializer: IJsonSerializer) (ctx: HttpContext) =
+    ctx
+    |> configureServices(fun services -> services.AddSingleton<IJsonSerializer>(serializer) |> ignore)
+
 let private responseContentType (ctx: HttpContext) =
     ctx.Response.Headers.ContentType.ToString()
 
@@ -182,15 +193,16 @@ let ``WriteMultipart generates a fresh boundary per response`` () =
     }
 
 [<Fact>]
-let ``WriteMultipart serializes Json parts with web defaults or custom options`` () =
+let ``WriteMultipart serializes Json parts with the registered IJsonSerializer`` () =
     task {
-        let ctx = createContext()
-        let parts = [
-            MultipartPart.Json({| Hello = "World" |}, headers = [ "Content-ID", "result" ])
-            MultipartPart.Json({| Hello = "World" |}, options = JsonSerializerOptions())
-        ]
+        let ctx = createContext() |> withJsonSerializer(SystemTextJsonSerializer())
+        let customCtx =
+            createContext()
+            |> withJsonSerializer(SystemTextJsonSerializer(JsonSerializerOptions())) // Pascal case
+        let value = {| Hello = "World" |}
 
-        do! ctx.WriteMultipart parts
+        do! ctx.WriteMultipart [ MultipartPart.Json(value, headers = [ "Content-ID", "result" ]) ]
+        do! customCtx.WriteMultipart [ MultipartPart.Json value ]
 
         let boundary = getBoundary(responseContentType ctx)
         readBody ctx
@@ -200,11 +212,16 @@ let ``WriteMultipart serializes Json parts with web defaults or custom options``
             + "Content-ID: result\r\n"
             + "\r\n"
             + """{"hello":"World"}"""
-            + $"\r\n--{boundary}\r\n"
+            + $"\r\n--{boundary}--\r\n"
+        )
+        let customBoundary = getBoundary(responseContentType customCtx)
+        readBody customCtx
+        |> shouldEqual(
+            $"--{customBoundary}\r\n"
             + "Content-Type: application/json; charset=utf-8\r\n"
             + "\r\n"
             + """{"Hello":"World"}"""
-            + $"\r\n--{boundary}--\r\n"
+            + $"\r\n--{customBoundary}--\r\n"
         )
     }
 
@@ -230,7 +247,7 @@ let ``WriteMultipart writes Bytes parts without re-encoding`` () =
 /// Custom part writing constant header lines, text and then raw bytes copied from a stream
 type private TextThenBytesPart(text: string, data: byte array) =
     interface IMultipartPart with
-        member this.WriteAsync(writer, cancellationToken) =
+        member this.WriteAsync(ctx, writer) =
             Encoding.UTF8.GetBytes(
                 "Content-Type: application/octet-stream\r\nContent-ID: custom\r\n\r\n".AsSpan(),
                 writer
@@ -239,13 +256,13 @@ type private TextThenBytesPart(text: string, data: byte array) =
             Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
             task {
                 use stream = new MemoryStream(data)
-                do! stream.CopyToAsync(writer, cancellationToken)
+                do! stream.CopyToAsync(writer, ctx.RequestAborted)
             }
 
 /// Custom part without any headers: only the empty line ending the header block, then the body
 type private HeaderlessPart(text: string) =
     interface IMultipartPart with
-        member this.WriteAsync(writer, _) =
+        member this.WriteAsync(_, writer) =
             Encoding.UTF8.GetBytes(("\r\n" + text).AsSpan(), writer) |> ignore
             Task.CompletedTask
 
@@ -254,7 +271,7 @@ type private FailingPart() =
     member val Writer = Unchecked.defaultof<PipeWriter> with get, set
 
     interface IMultipartPart with
-        member this.WriteAsync(writer, _) =
+        member this.WriteAsync(_, writer) =
             this.Writer <- writer
             raise <| InvalidOperationException "body failed"
 
@@ -447,7 +464,7 @@ let ``WriteMultipart completes the pipe writer when a body throws`` () =
 [<Fact>]
 let ``WriteMultipart output is parsed back by MultipartReader`` () =
     task {
-        let ctx = createContext()
+        let ctx = createContext() |> withJsonSerializer(SystemTextJsonSerializer())
         let parts = [
             MultipartPart.Html(statusView, headers = [ "HX-Target", "#status" ])
             MultipartPart.Json({| Id = 42 |})

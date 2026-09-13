@@ -1383,6 +1383,8 @@ let configureServices (services : IServiceCollection) =
             SystemTextJsonSerializer(specificOptions)) |> ignore
 ```
 
+`IJsonSerializer` has three members: `Serialize(value, ctx, chunked)` writes a value as the response body and sets the `Content-Type` header (and `Content-Length`, unless chunked), `Deserialize(ctx)` reads a value from the request body, and `SerializePart(value, writer, cancellationToken)` writes a value as UTF-8 JSON to a `PipeWriter` without touching the response headers. The latter is used by `MultipartPart.Json`, so the JSON parts of a [multipart response](#writing-multipart) follow the registered serializer as well. An implementation of `SerializePart` must not complete the writer (a serializer that needs a `Stream` can use `writer.AsStream(leaveOpen = true)`) and does not have to flush it, but it has to pass the token to every asynchronous write, just like `ctx.RequestAborted` in the other two members.
+
 #### Writing IResult
 
 If you like what ASP.NET Core IResult offers, you might be pleased to know that Oxpecker supports it as well. You can simplify returning responses together with status codes using `Microsoft.AspNetCore.Http.TypedResults`:
@@ -1491,7 +1493,7 @@ Parts are created with the `MultipartPart` factory members (or directly through 
 
 - `MultipartPart.Html(view)` — an `HtmlElement`, sent as `text/html; charset=utf-8`
 - `MultipartPart.Text(text)` — a string, sent as `text/plain; charset=utf-8`
-- `MultipartPart.Json(value)` — a value serialized with `System.Text.Json` (`JsonSerializerOptions.Web` by default, pass `options` to override), sent as `application/json; charset=utf-8`
+- `MultipartPart.Json(value)` — a value serialized with the registered `IJsonSerializer` (see [Writing JSON](#writing-json): `System.Text.Json` with web defaults unless another serializer or other options are registered), sent as `application/json; charset=utf-8`
 - `MultipartPart.Bytes(contentType, data)` — raw bytes with the given content type
 
 Every factory and constructor accepts an optional `headers` sequence of name/value pairs, which is stored as is (no copy) and written after `Content-Type` in the given order. The header constants from `Oxpecker.Htmx` can be used for htmx headers. Text with another content type, e.g. CSV, is sent as a `Bytes` part or with a custom part as shown below.
@@ -1548,7 +1550,7 @@ let csvPart =
     )
 ```
 
-The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `WriteAsync` member receives the response `PipeWriter` and the request's cancellation token (`ctx.RequestAborted`) and writes the whole part, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync(writer, cancellationToken)`; the writer is flushed after each part:
+The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `WriteAsync` member receives the `HttpContext` (to resolve services, and for the request's cancellation token `ctx.RequestAborted`) and the response `PipeWriter` and writes the whole part, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync(writer, ctx.RequestAborted)`; the writer is flushed after each part:
 
 ```fsharp
 open System.IO
@@ -1557,12 +1559,12 @@ open System.Text
 // A custom part streaming a file from disk
 type FilePart(path: string) =
     interface IMultipartPart with
-        member this.WriteAsync(writer, cancellationToken) =
+        member this.WriteAsync(ctx, writer) =
             Encoding.UTF8.GetBytes("Content-Type: application/pdf\r\nContent-ID: attachment\r\n\r\n".AsSpan(), writer)
             |> ignore
             task {
                 use file = File.OpenRead path
-                do! file.CopyToAsync(writer, cancellationToken)
+                do! file.CopyToAsync(writer, ctx.RequestAborted)
             }
 
 let attachmentHandler: EndpointHandler =
@@ -1581,7 +1583,7 @@ A fresh boundary (`multipart-` followed by 32 hex characters) is generated for e
 
 #### Cancellation
 
-All response writing methods (`WriteBytes`, `WriteText`, `WriteJson`, `WriteJsonChunked`, `WriteHtmlView`, `WriteHtmlViewChunked`, `WriteHtmlChunked`, `WriteMultipart`, `WriteMultipartChunked`, `WriteStream`, `WriteFileStream`) and the corresponding endpoint handlers observe `ctx.RequestAborted`, the token that ASP.NET Core cancels when the client disconnects (or when a [request timeout](https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts) expires). It is passed to every write and flush, to `GetAsyncEnumerator` when a stream of JSON values, HTML elements or multipart parts is written, and to `IMultipartPart.WriteAsync`, so a producer that awaits with the token it receives stops as soon as the client is gone:
+All response writing methods (`WriteBytes`, `WriteText`, `WriteJson`, `WriteJsonChunked`, `WriteHtmlView`, `WriteHtmlViewChunked`, `WriteHtmlChunked`, `WriteMultipart`, `WriteMultipartChunked`, `WriteStream`, `WriteFileStream`) and the corresponding endpoint handlers observe `ctx.RequestAborted`, the token that ASP.NET Core cancels when the client disconnects (or when a [request timeout](https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts) expires). It is passed to every write and flush, to `GetAsyncEnumerator` when a stream of JSON values, HTML elements or multipart parts is written, and a multipart part receives the `HttpContext` whose `RequestAborted` it passes to its own writes, so a producer that awaits with the token it receives stops as soon as the client is gone:
 
 ```fsharp
 open System.Linq
