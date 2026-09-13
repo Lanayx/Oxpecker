@@ -246,6 +246,9 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
         try
             return! next.Invoke(ctx)
         with
+        | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
+            // the client disconnected: nothing can be written back and it is not an application error
+            ctx.GetLogger().LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
         | :? ModelBindException
         | :? RouteParseException as ex ->
             let logger = ctx.GetLogger()

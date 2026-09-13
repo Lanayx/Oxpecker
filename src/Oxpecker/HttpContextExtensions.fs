@@ -249,7 +249,7 @@ type HttpContextExtensions() =
     static member WriteBytes(ctx: HttpContext, bytes: byte array) =
         ctx.Response.ContentLength <- bytes.LongLength
         if ctx.Request.Method <> HttpMethods.Head then
-            ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length)
+            ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length, ctx.RequestAborted)
         else
             Task.CompletedTask
 
@@ -311,15 +311,17 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteHtmlView(ctx: HttpContext, htmlView: #HtmlElement) =
+        let cancellationToken = ctx.RequestAborted
+        cancellationToken.ThrowIfCancellationRequested()
         let memoryStream = recyclableMemoryStreamManager.Value.GetStream()
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         if ctx.Request.Method <> HttpMethods.Head then
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync memoryStream htmlView
+                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView)
                     ctx.Response.ContentLength <- memoryStream.Length
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
-                    return! memoryStream.CopyToAsync ctx.Response.Body
+                    return! memoryStream.CopyToAsync(ctx.Response.Body, cancellationToken)
                 finally
                     memoryStream.Dispose()
             }
@@ -327,7 +329,7 @@ type HttpContextExtensions() =
         else
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync memoryStream htmlView
+                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView)
                     ctx.Response.ContentLength <- memoryStream.Length
                 finally
                     memoryStream.Dispose()
@@ -343,12 +345,14 @@ type HttpContextExtensions() =
     [<Extension>]
     static member WriteHtmlChunked(ctx: HttpContext, htmlStream: #IAsyncEnumerable<#HtmlElement>) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
-        let enumerator = htmlStream.GetAsyncEnumerator()
+        let cancellationToken = ctx.RequestAborted
         let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
         task {
             use _ = textWriter :> IAsyncDisposable
+            let enumerator = htmlStream.GetAsyncEnumerator(cancellationToken)
+            use _ = enumerator :> IAsyncDisposable
             while! enumerator.MoveNextAsync() do
-                do! Render.toTextWriterAsync textWriter enumerator.Current
+                do! Render.toTextWriterAsync(textWriter, enumerator.Current, cancellationToken)
         }
 
     /// <summary>
@@ -364,7 +368,7 @@ type HttpContextExtensions() =
         let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
         task {
             use _ = textWriter :> IAsyncDisposable
-            return! Render.toHtmlDocTextWriterAsync textWriter htmlElement
+            return! Render.toHtmlDocTextWriterAsync(textWriter, htmlElement, ctx.RequestAborted)
         }
 
     /// <summary>
@@ -384,7 +388,7 @@ type HttpContextExtensions() =
         task {
             try
                 return! serializer.Deserialize<'T>(ctx)
-            with ex ->
+            with ex when not(ex :? OperationCanceledException) ->
                 return raise <| ModelBindException("Unable to deserialize model from JSON", ex)
         }
 
@@ -408,9 +412,9 @@ type HttpContextExtensions() =
             | false, NonNull err -> ExceptionDispatchInfo.Throw err
         task {
             try
-                let! form = ctx.Request.ReadFormAsync()
+                let! form = ctx.Request.ReadFormAsync(ctx.RequestAborted)
                 return binder.Bind<'T> form
-            with ex ->
+            with ex when not(ex :? OperationCanceledException) ->
                 return raise <| ModelBindException("Unable to deserialize model from form", ex)
         }
 

@@ -132,46 +132,42 @@ type StreamingExtensions() =
     [<Extension>]
     static member internal WriteStreamToBody(ctx: HttpContext, stream: Stream, rangeBoundary: RangeBoundary option) =
         task {
-            try
-                use input = stream
-                let numberOfBytes =
-                    match rangeBoundary with
-                    | Some range ->
-                        let contentRange =
-                            $"%s{ctx.RangeUnit()} %i{range.Start}-%i{range.End}/%i{stream.Length}"
+            use input = stream
+            let numberOfBytes =
+                match rangeBoundary with
+                | Some range ->
+                    let contentRange =
+                        $"%s{ctx.RangeUnit()} %i{range.Start}-%i{range.End}/%i{stream.Length}"
 
-                        // Set additional HTTP headers for range response
-                        ctx.SetHttpHeader(HeaderNames.ContentRange, contentRange)
-                        ctx.SetHttpHeader(HeaderNames.ContentLength, string range.Length)
+                    // Set additional HTTP headers for range response
+                    ctx.SetHttpHeader(HeaderNames.ContentRange, contentRange)
+                    ctx.SetHttpHeader(HeaderNames.ContentLength, string range.Length)
 
-                        // Set special status code for partial content response
-                        ctx.SetStatusCode StatusCodes.Status206PartialContent
+                    // Set special status code for partial content response
+                    ctx.SetStatusCode StatusCodes.Status206PartialContent
 
-                        // Forward to start position of streaming
-                        input.Seek(range.Start, SeekOrigin.Begin) |> ignore
+                    // Forward to start position of streaming
+                    input.Seek(range.Start, SeekOrigin.Begin) |> ignore
 
-                        Nullable<int64>(range.Length)
-                    | None ->
-                        // Only set HTTP Content-Length if the stream can be seeked
-                        if stream.CanSeek then
-                            ctx.SetHttpHeader(HeaderNames.ContentLength, string input.Length)
-                        Nullable()
+                    Nullable<int64>(range.Length)
+                | None ->
+                    // Only set HTTP Content-Length if the stream can be seeked
+                    if stream.CanSeek then
+                        ctx.SetHttpHeader(HeaderNames.ContentLength, string input.Length)
+                    Nullable()
 
-                // If the HTTP request was not HEAD then write to the body
-                if not(HttpMethods.IsHead ctx.Request.Method) then
-                    let bufferSize = 64 * 1024
-                    do!
-                        StreamCopyOperation.CopyToAsync(
-                            input,
-                            ctx.Response.Body,
-                            numberOfBytes,
-                            bufferSize,
-                            ctx.RequestAborted
-                        )
-            with :? OperationCanceledException ->
-                // Don't throw this exception, it's most likely caused by the client disconnecting.
-                // However, if it was cancelled for any other reason we need to prevent empty responses.
-                ctx.Abort()
+            // If the HTTP request was not HEAD then write to the body. The copy is cancelled through
+            // ctx.RequestAborted when the client disconnects and the resulting OperationCanceledException propagates.
+            if not(HttpMethods.IsHead ctx.Request.Method) then
+                let bufferSize = 64 * 1024
+                do!
+                    StreamCopyOperation.CopyToAsync(
+                        input,
+                        ctx.Response.Body,
+                        numberOfBytes,
+                        bufferSize,
+                        ctx.RequestAborted
+                    )
         }
 
     /// <summary>

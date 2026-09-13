@@ -204,6 +204,11 @@ module Default =
             with ex ->
                 let logger = ctx.GetLogger("Oxpecker.Default.ExceptionMiddleware")
                 match ex with
+                | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
+                    // The client disconnected: nothing can be written back and it's not an application error
+                    logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                    if not ctx.Response.HasStarted then
+                        ctx.SetStatusCode StatusCodes.Status499ClientClosedRequest
                 | :? ModelBindException
                 | :? RouteParseException as ex ->
                     logger.LogWarning(ex, "Invalid request {Method} {Path}", ctx.Request.Method, ctx.Request.Path)

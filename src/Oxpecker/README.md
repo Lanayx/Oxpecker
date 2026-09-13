@@ -67,6 +67,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [Writing HTML strings](#writing-html-strings)
       - [Writing HTML views](#writing-html-views)
       - [Writing Multipart](#writing-multipart)
+      - [Cancellation](#cancellation)
     - [Streaming](#streaming)
     - [Redirection](#redirection)
     - [Response compression](#response-compression)
@@ -514,6 +515,8 @@ let configureApp (appBuilder: IApplicationBuilder) =
 ```
 You can use those default implementations as is or as examples for your own custom error handling logic.
 
+`Default.exceptionMiddleware` answers `ModelBindException` and `RouteParseException` with `400`, `AntiforgeryValidationException` with `403` and any other exception with `500`, logging them as warnings or errors. An `OperationCanceledException` raised while `ctx.RequestAborted` is cancelled means that the client disconnected: it is only logged at `Debug` level and, if the response has not started yet, answered with `499 Client Closed Request` (see [Cancellation](#cancellation)).
+
 ## Web Request Processing
 
 Oxpecker comes with a large set of default `HttpContext` extension methods as well as default `EndpointHandler` functions which can be used to build rich web applications.
@@ -785,7 +788,7 @@ Last but not least there is also an `HttpContext` extension method called `BindQ
 
 ### Model Binding
 
-Oxpecker offers out of the box a few default `HttpContext` extension methods and equivalent `EndpointHandler` functions which make it possible to bind the payload or query string of an HTTP request to a custom object.
+Oxpecker offers out of the box a few default `HttpContext` extension methods and equivalent `EndpointHandler` functions which make it possible to bind the payload or query string of an HTTP request to a custom object. `BindJson` and `BindForm` read the request body with `ctx.RequestAborted`, so when the client disconnects they throw an `OperationCanceledException` rather than a `ModelBindException` (see [Cancellation](#cancellation)).
 
 #### Binding JSON
 
@@ -1098,7 +1101,7 @@ let fileUploadHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             let formFeature = ctx.Features.Get<IFormFeature>()
-            let! form = formFeature.ReadFormAsync CancellationToken.None
+            let! form = formFeature.ReadFormAsync ctx.RequestAborted
             return!
                 form.Files
                 |> Seq.fold (fun acc file -> $"{acc}\n{file.FileName}") ""
@@ -1544,7 +1547,7 @@ let progressHandler: EndpointHandler =
                 .Select(fun i (ct: CancellationToken) ->
                     ValueTask<IMultipartPart>(
                         task {
-                            do! Task.Delay(500, ct)
+                            do! Task.Delay(500, ct) // ct is ctx.RequestAborted: the delay ends when the client disconnects
                             return
                                 MultipartPart.Html(
                                     div(id = "progress") { $"Step {i} of 5" },
@@ -1565,7 +1568,7 @@ let csvPart =
     )
 ```
 
-The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `WriteAsync` member writes the whole part to the response `PipeWriter`, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync writer`; the writer is flushed after each part:
+The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `WriteAsync` member receives the response `PipeWriter` and the request's cancellation token (`ctx.RequestAborted`) and writes the whole part, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync(writer, cancellationToken)`; the writer is flushed after each part:
 
 ```fsharp
 open System.IO
@@ -1574,19 +1577,19 @@ open System.Text
 // A custom part streaming a file from disk
 type FilePart(path: string) =
     interface IMultipartPart with
-        member this.WriteAsync writer =
+        member this.WriteAsync(writer, cancellationToken) =
             Encoding.UTF8.GetBytes("Content-Type: application/pdf\r\nContent-ID: attachment\r\n\r\n".AsSpan(), writer)
             |> ignore
             task {
                 use file = File.OpenRead path
-                do! file.CopyToAsync writer
+                do! file.CopyToAsync(writer, cancellationToken)
             }
 
 let attachmentHandler: EndpointHandler =
     fun ctx -> ctx.WriteMultipart [ FilePart "report.pdf" ]
 ```
 
-Any `IAsyncEnumerable<IMultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
+Any `IAsyncEnumerable<IMultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. The stream is enumerated with `ctx.RequestAborted`, so a producer that awaits with the token it receives stops when the client disconnects (see [Cancellation](#cancellation)). For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
 
 Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtype.Mixed` (the default) htmx finishes swapping a part before it reads the next one; with `MultipartSubtype.Parallel` the response is `multipart/parallel` and swaps start as parts arrive, without waiting for each other:
 
@@ -1595,6 +1598,34 @@ ctx.WriteMultipartChunked(parts, MultipartSubtype.Parallel)
 ```
 
 A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part. For the built-in parts, header names must be valid HTTP tokens (letters, digits and ``!#$%&'*+-.^_`|~``, no spaces or colons), header values as well as the content type must not contain control characters such as line breaks, no header line (`Name: value`, including `Content-Type`) may exceed 998 bytes, and `Content-Type` must be given as the content type rather than among the headers; an `ArgumentException` is thrown otherwise.
+
+#### Cancellation
+
+All response writing methods (`WriteBytes`, `WriteText`, `WriteJson`, `WriteJsonChunked`, `WriteHtmlView`, `WriteHtmlViewChunked`, `WriteHtmlChunked`, `WriteMultipart`, `WriteMultipartChunked`, `WriteStream`, `WriteFileStream`) and the corresponding endpoint handlers observe `ctx.RequestAborted`, the token that ASP.NET Core cancels when the client disconnects (or when a [request timeout](https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts) expires). It is passed to every write and flush, to `GetAsyncEnumerator` when a stream of JSON values, HTML elements or multipart parts is written, and to `IMultipartPart.WriteAsync`, so a producer that awaits with the token it receives stops as soon as the client is gone:
+
+```fsharp
+open System.Linq
+open System.Threading
+open System.Threading.Tasks
+
+let streamingJson: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let values =
+            AsyncEnumerable
+                .Range(1, 10)
+                .Select(fun i (ct: CancellationToken) ->
+                    ValueTask<{| Id: int |}>(
+                        task {
+                            do! Task.Delay(500, ct) // ct is ctx.RequestAborted: the delay ends when the client disconnects
+                            return {| Id = i |}
+                        }
+                    ))
+        ctx.WriteJsonChunked values
+```
+
+When the request is aborted the writing method fails with an `OperationCanceledException` (usually its subtype `TaskCanceledException`), which is not swallowed: the enumerator is disposed, nothing more is written and the exception reaches your exception middleware. `Default.exceptionMiddleware` recognises this case, logs it at `Debug` level and, if the response has not started yet, answers with the status code `499 Client Closed Request` (see [Error Handling](#error-handling)); a custom middleware should treat an `OperationCanceledException` the same way while `ctx.RequestAborted.IsCancellationRequested` is `true`.
+
+`BindJson` and `BindForm` read the request body with the same token and throw an `OperationCanceledException` rather than a `ModelBindException` when the client disconnects.
 
 ### Streaming
 
@@ -1661,7 +1692,7 @@ let someHandler : EndpointHandler =
         None // lastModified
 ```
 
-All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`.
+All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`. Streaming stops through `ctx.RequestAborted` when the client disconnects; the resulting `OperationCanceledException` is not swallowed and reaches your exception middleware (see [Cancellation](#cancellation)).
 
 ### Redirection
 
@@ -1813,3 +1844,5 @@ app.Run()
 ## Testing
 
 Integration testing of an Oxpecker application follows the concept of [ASP.NET Core testing](https://learn.microsoft.com/en-us/aspnet/core/test/middleware). You can check out the examples of tests in this repository itself: [Oxpecker.Tests](https://github.com/Lanayx/Oxpecker/tree/develop/tests/Oxpecker.Tests)
+
+To simulate a client disconnect with `TestServer`, send the request with `HttpCompletionOption.ResponseHeadersRead` and dispose the `HttpResponseMessage` while the response is still being streamed: the server-side `ctx.RequestAborted` is cancelled. Cancelling the `HttpClient` token only reaches `ctx.RequestAborted` while the response headers have not been received yet.

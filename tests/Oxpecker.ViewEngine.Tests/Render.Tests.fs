@@ -3,6 +3,8 @@ module Render.Tests
 open System
 open System.IO
 open System.Text
+open System.Threading
+open System.Threading.Tasks
 open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Xunit
@@ -143,7 +145,7 @@ let ``Basic chunked test`` () =
     task {
         let view = html() { div(id = "1") }
         use stream = new MemoryStream()
-        do! Render.toStreamAsync stream view
+        do! Render.toStreamAsync(stream, view)
         stream.Seek(0L, SeekOrigin.Begin) |> ignore
         stream.ToArray()
         |> Encoding.UTF8.GetString
@@ -156,12 +158,52 @@ let ``Render to text writer`` () =
         let view = html() { div(id = "1") }
         let stream = new MemoryStream()
         let textWriter = new StreamWriter(stream, leaveOpen = true)
-        do! Render.toHtmlDocTextWriterAsync textWriter view
+        do! Render.toHtmlDocTextWriterAsync(textWriter, view)
         do! textWriter.DisposeAsync()
         stream.Seek(0L, SeekOrigin.Begin) |> ignore
         stream.ToArray()
         |> Encoding.UTF8.GetString
         |> shouldEqual $"""<!DOCTYPE html>{Environment.NewLine}<html><div id="1"></div></html>"""
+    }
+
+[<Fact>]
+let ``Render.toStreamAsync accepts a cancellation token`` () =
+    task {
+        let view = html() { div(id = "1") }
+        use stream = new MemoryStream()
+        use cts = new CancellationTokenSource()
+        do! Render.toStreamAsync(stream, view, cancellationToken = cts.Token)
+        stream.ToArray()
+        |> Encoding.UTF8.GetString
+        |> shouldEqual """<html><div id="1"></div></html>"""
+    }
+
+[<Fact>]
+let ``Render.toStreamAsync with a cancelled token throws OperationCanceledException and writes nothing`` () =
+    task {
+        let view = html() { div(id = "1") }
+        use stream = new MemoryStream()
+        use cts = new CancellationTokenSource()
+        cts.Cancel()
+        let! _ =
+            Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
+                Render.toStreamAsync(stream, view, cts.Token) :> Task)
+        stream.Length |> shouldEqual 0L
+    }
+
+[<Fact>]
+let ``Render.toHtmlDocTextWriterAsync with a cancelled token throws OperationCanceledException and writes nothing`` () =
+    task {
+        let view = html() { div(id = "1") }
+        let stream = new MemoryStream()
+        let textWriter = new StreamWriter(stream, leaveOpen = true)
+        use cts = new CancellationTokenSource()
+        cts.Cancel()
+        let! _ =
+            Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
+                Render.toHtmlDocTextWriterAsync(textWriter, view, cts.Token) :> Task)
+        do! textWriter.DisposeAsync()
+        stream.Length |> shouldEqual 0L
     }
 
 [<Fact>]
