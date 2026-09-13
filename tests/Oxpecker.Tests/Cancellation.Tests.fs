@@ -97,12 +97,27 @@ type private RecordingPart() =
     member val Token = CancellationToken.None with get, set
 
     interface IMultipartPart with
-        member this.WriteAsync(writer, cancellationToken) =
+        member this.Write(ctx, writer) =
             this.Written <- true
-            this.Token <- cancellationToken
+            this.Token <- ctx.RequestAborted
             Encoding.UTF8.GetBytes("Content-Type: text/plain\r\n\r\npart".AsSpan(), writer)
             |> ignore
             Task.CompletedTask
+
+/// A serializer that records the writer and the token it was asked to serialize a part with
+type private RecordingJsonSerializer() =
+    member val Writer = Unchecked.defaultof<PipeWriter> with get, set
+    member val Token = CancellationToken.None with get, set
+
+    interface IJsonSerializer with
+        member this.Serialize(_, _, _) = failwith "not used"
+
+        member this.SerializePart(_, writer, cancellationToken) =
+            this.Writer <- writer
+            this.Token <- cancellationToken
+            Task.CompletedTask
+
+        member this.Deserialize _ = failwith "not used"
 
 /// An element that records whether it was rendered
 type private RecordingElement() =
@@ -306,14 +321,21 @@ let ``WriteMultipart passes RequestAborted to each part`` () =
     }
 
 [<Fact>]
-let ``JsonPart passes the cancellation token to the serializer`` () =
+let ``JsonPart passes the writer and RequestAborted to the registered serializer`` () =
     task {
-        let part = MultipartPart.Json {| Id = 1 |}
+        let serializer = RecordingJsonSerializer()
+        let ctx =
+            createContext()
+            |> configureServices(fun services -> services.AddSingleton<IJsonSerializer>(serializer) |> ignore)
         use cts = new CancellationTokenSource()
-        cts.Cancel()
+        ctx.RequestAborted <- cts.Token
         let writer = PipeWriter.Create(new MemoryStream())
+        let part = MultipartPart.Json {| Id = 1 |}
 
-        do! shouldBeCancelled(fun () -> part.WriteAsync(writer, cts.Token))
+        do! part.Write(ctx, writer)
+
+        serializer.Writer |> shouldEqual writer
+        serializer.Token |> shouldEqual cts.Token
     }
 
 [<Fact>]
@@ -635,7 +657,7 @@ let private abortingElement (cts: CancellationTokenSource) =
 /// A part that aborts the request while it is being written
 type private AbortingPart(cts: CancellationTokenSource) =
     interface IMultipartPart with
-        member _.WriteAsync(writer, _) =
+        member _.Write(_, writer) =
             cts.Cancel()
             Encoding.UTF8.GetBytes("Content-Type: text/plain\r\n\r\naborted".AsSpan(), writer)
             |> ignore

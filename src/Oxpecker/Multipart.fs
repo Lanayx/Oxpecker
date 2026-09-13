@@ -8,7 +8,6 @@ open System.IO
 open System.IO.Pipelines
 open System.Runtime.CompilerServices
 open System.Text
-open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
@@ -31,13 +30,14 @@ type IMultipartPart =
     /// <para>The built-in parts write a `Content-Type` header line followed by their additional headers. A part without headers starts with
     /// the empty line right away; note that the htmx `hx-multipart` extension expects at least one header line per part.</para>
     /// <para>Text has to be encoded as UTF-8, e.g. with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`; raw bytes can be copied with
-    /// `writer.Write` and a stream with `stream.CopyToAsync(writer, cancellationToken)`.</para>
+    /// `writer.Write` and a stream with `stream.CopyToAsync(writer, ctx.RequestAborted)`.</para>
     /// </summary>
+    /// <param name="ctx">The current http context object, e.g. to resolve services such as the JSON serializer. Its `RequestAborted`
+    /// token is to be passed to every asynchronous write so that the part stops being produced when the client disconnects.
+    /// The part is written through the writer only, not through `ctx.Response`.</param>
     /// <param name="writer">The response writer to write the part to.</param>
-    /// <param name="cancellationToken">The request's cancellation token (`HttpContext.RequestAborted`), to be passed to every
-    /// asynchronous write so that the part stops being produced when the client disconnects.</param>
     /// <returns>Task of writing the part.</returns>
-    abstract member WriteAsync: writer: PipeWriter * cancellationToken: CancellationToken -> Task
+    abstract member Write: ctx: HttpContext * writer: PipeWriter -> Task
 
 /// <summary>
 /// Subtype of the multipart response, i.e. the `multipart/{subtype}` media type.
@@ -122,7 +122,7 @@ type HtmlPart(view: HtmlElement, [<Struct>] ?headers: (string * string) seq) =
     let headers = defaultValueArg headers Seq.empty
 
     interface IMultipartPart with
-        member this.WriteAsync(writer, _) =
+        member this.Write(_, writer) =
             MultipartHeaders.write writer "text/html; charset=utf-8" headers
             Render.toBufferWriter(writer, view)
             Task.CompletedTask
@@ -136,30 +136,27 @@ type TextPart(text: string, [<Struct>] ?headers: (string * string) seq) =
     let headers = defaultValueArg headers Seq.empty
 
     interface IMultipartPart with
-        member this.WriteAsync(writer, _) =
+        member this.Write(_, writer) =
             MultipartHeaders.write writer "text/plain; charset=utf-8" headers
             Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
             Task.CompletedTask
 
 /// <summary>
-/// `application/json; charset=utf-8` part serialized with System.Text.Json and written as UTF-8 JSON.
+/// `application/json; charset=utf-8` part serialized with the <see cref="IJsonSerializer"/> registered in the request's services
+/// and written as UTF-8 JSON.
 /// </summary>
 /// <param name="value">The value to serialize as the part body, its static type determines the serialization contract.</param>
-/// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
 /// <param name="headers">Optional additional part headers as name/value pairs, written after `Content-Type` in the given order.</param>
-type JsonPart<'T>(value: 'T, [<Struct>] ?options: JsonSerializerOptions, [<Struct>] ?headers: (string * string) seq) =
+type JsonPart<'T>(value: 'T, [<Struct>] ?headers: (string * string) seq) =
 
     let headers = defaultValueArg headers Seq.empty
 
     interface IMultipartPart with
-        member this.WriteAsync(writer, cancellationToken) =
+        member this.Write(ctx, writer) =
+            // resolve the serializer before anything is written, so a missing registration fails with an empty part
+            let serializer = ctx.GetJsonSerializer()
             MultipartHeaders.write writer "application/json; charset=utf-8" headers
-            JsonSerializer.SerializeAsync<'T>(
-                writer,
-                value,
-                defaultValueArg options JsonSerializerOptions.Web,
-                cancellationToken
-            )
+            serializer.SerializePart(value, writer, ctx.RequestAborted)
 
 /// <summary>
 /// Part with the given content type written as raw bytes, without any re-encoding.
@@ -170,7 +167,7 @@ type JsonPart<'T>(value: 'T, [<Struct>] ?options: JsonSerializerOptions, [<Struc
 type BytesPart(contentType: string, data: byte array, [<Struct>] ?headers: (string * string) seq) =
 
     interface IMultipartPart with
-        member this.WriteAsync(writer, _) =
+        member this.Write(_, writer) =
             MultipartHeaders.write writer contentType (defaultValueArg headers Seq.empty)
             writer.Write(ReadOnlySpan data)
             Task.CompletedTask
@@ -198,15 +195,13 @@ type MultipartPart =
         TextPart(text, ?headers = headers)
 
     /// <summary>
-    /// Creates an `application/json; charset=utf-8` part by serializing a value with System.Text.Json, see <see cref="JsonPart{T}"/>.
+    /// Creates an `application/json; charset=utf-8` part by serializing a value with the registered <see cref="IJsonSerializer"/>,
+    /// see <see cref="JsonPart{T}"/>.
     /// </summary>
     /// <param name="value">The value to serialize as the part body.</param>
-    /// <param name="options">Optional serializer options, `JsonSerializerOptions.Web` by default.</param>
     /// <param name="headers">Optional additional part headers.</param>
-    static member Json<'T>
-        (value: 'T, [<Struct>] ?options: JsonSerializerOptions, [<Struct>] ?headers: (string * string) seq)
-        : IMultipartPart =
-        JsonPart<'T>(value, ?options = options, ?headers = headers)
+    static member Json<'T>(value: 'T, [<Struct>] ?headers: (string * string) seq) : IMultipartPart =
+        JsonPart<'T>(value, ?headers = headers)
 
     /// <summary>
     /// Creates a part with the given content type from raw bytes, see <see cref="BytesPart"/>.
@@ -248,16 +243,11 @@ module internal MultipartWriter =
     /// Writes one part: the line break ending the previous delimiter line, the part itself (its headers, an empty line
     /// and the body) and the next delimiter `\r\n--{boundary}` (without a trailing line break). The token is checked
     /// first, so no part is written once the request has been aborted, even if the source or a previous part ignored it.
-    let writePartAsync
-        (writer: PipeWriter)
-        (delimiter: byte array)
-        (part: IMultipartPart)
-        (cancellationToken: CancellationToken)
-        =
-        cancellationToken.ThrowIfCancellationRequested()
+    let writePartAsync (ctx: HttpContext) (writer: PipeWriter) (delimiter: byte array) (part: IMultipartPart) =
+        ctx.RequestAborted.ThrowIfCancellationRequested()
         writer.Write(ReadOnlySpan "\r\n"B)
         task {
-            do! part.WriteAsync(writer, cancellationToken)
+            do! part.Write(ctx, writer)
             writer.Write(ReadOnlySpan delimiter)
         }
 
@@ -297,7 +287,7 @@ type MultipartExtensions() =
                 let mutable isEmpty = true
                 for part in parts do
                     isEmpty <- false
-                    do! MultipartWriter.writePartAsync writer delimiter part cancellationToken
+                    do! MultipartWriter.writePartAsync ctx writer delimiter part
                 if isEmpty then
                     MultipartWriter.raiseEmpty()
                 MultipartWriter.writeClosing writer
@@ -353,7 +343,7 @@ type MultipartExtensions() =
                 MultipartWriter.writeOpening writer delimiter
                 let mutable hasNext = hasParts
                 while hasNext do
-                    do! MultipartWriter.writePartAsync writer delimiter enumerator.Current cancellationToken
+                    do! MultipartWriter.writePartAsync ctx writer delimiter enumerator.Current
                     let! _ = writer.FlushAsync(cancellationToken)
                     let! next = enumerator.MoveNextAsync()
                     hasNext <- next

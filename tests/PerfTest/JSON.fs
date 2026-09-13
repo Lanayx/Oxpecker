@@ -111,6 +111,11 @@ module SpanJson =
                             ArrayPool<byte>.Shared.Return(buffer.Array |> Unchecked.nonNull)
                     }
 
+            member this.SerializePart(value, writer, cancellationToken) =
+                JsonSerializer.Generic.Utf8
+                    .SerializeAsync<_>(value, writer.AsStream(leaveOpen = true), cancellationToken)
+                    .AsTask()
+
             member this.Deserialize(ctx) = failwith "Not implemented"
 
     let webApp () =
