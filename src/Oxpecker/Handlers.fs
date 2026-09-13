@@ -198,8 +198,7 @@ module ResponseHandlers =
 
 [<RequireQualifiedAccess>]
 module Default =
-    /// The request-timeouts middleware cancelled the request through its linked token: it answers with its own
-    /// timeout status code (504 by default) once the exception reaches it, so the exception must not be handled here.
+    /// The request was cancelled by the request-timeouts middleware (through its linked token) rather than by the client disconnecting
     let private isRequestTimeout (ctx: HttpContext) =
         match ctx.Features.Get<IHttpRequestTimeoutFeature>() with
         | null -> false
@@ -209,16 +208,23 @@ module Default =
         task {
             try
                 return! next.Invoke(ctx)
-            with ex when not(ex :? OperationCanceledException && isRequestTimeout ctx) ->
+            with ex ->
                 let logger = ctx.GetLogger("Oxpecker.Default.ExceptionMiddleware")
                 match ex with
                 | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
-                    // The client disconnected: nothing can be written back and it's not an application error
-                    logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                    // No body is written in either case: the request token is cancelled, so the write helpers would throw
+                    let statusCode =
+                        if isRequestTimeout ctx then
+                            logger.LogWarning("Request timed out {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                            StatusCodes.Status504GatewayTimeout
+                        else
+                            // The client disconnected, which is not an application error
+                            logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                            StatusCodes.Status499ClientClosedRequest
                     if not ctx.Response.HasStarted then
                         // drop the headers a cancelled write may have set, e.g. Content-Length
                         ctx.Response.Clear()
-                        ctx.SetStatusCode StatusCodes.Status499ClientClosedRequest
+                        ctx.SetStatusCode statusCode
                 | :? ModelBindException
                 | :? RouteParseException as ex ->
                     logger.LogWarning(ex, "Invalid request {Method} {Path}", ctx.Request.Method, ctx.Request.Path)

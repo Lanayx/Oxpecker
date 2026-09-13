@@ -192,6 +192,15 @@ let private shouldHaveLoggedAbortAtDebugOnly (entries: ResizeArray<LogEntry>) =
     |> List.exists(fun e -> e.Level >= LogLevel.Warning)
     |> shouldEqual false
 
+let private shouldHaveLoggedTimeoutAsWarningOnly (entries: ResizeArray<LogEntry>) =
+    let entries = oxpeckerEntries entries
+    entries
+    |> List.exists(fun e -> e.Level = LogLevel.Warning && e.Message.Contains "Request timed out")
+    |> shouldEqual true
+    entries
+    |> List.exists(fun e -> e.Level >= LogLevel.Error || e.Message.Contains "Request aborted")
+    |> shouldEqual false
+
 [<CLIMutable>]
 type Person = { Name: string }
 
@@ -622,7 +631,7 @@ type private ElapsedTimeoutFeature(token: CancellationToken) =
         member _.DisableTimeout() = ()
 
 [<Fact>]
-let ``Default.exceptionMiddleware lets a request timeout cancellation reach the request timeouts middleware`` () =
+let ``Default.exceptionMiddleware answers a request timeout with 504 and logs a warning`` () =
     task {
         let entries = ResizeArray<LogEntry>()
         let ctx = abortedContext() |> withLogging entries
@@ -630,10 +639,11 @@ let ``Default.exceptionMiddleware lets a request timeout cancellation reach the 
         ctx.Features.Set<IHttpRequestTimeoutFeature>(ElapsedTimeoutFeature ctx.RequestAborted)
         let cancelledWrite = RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted)
 
-        do! shouldBeCancelled(fun () -> Default.exceptionMiddleware ctx cancelledWrite)
+        do! Default.exceptionMiddleware ctx cancelledWrite
 
-        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
-        oxpeckerEntries entries |> shouldEqual []
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status504GatewayTimeout
+        readBody ctx |> shouldEqual ""
+        shouldHaveLoggedTimeoutAsWarningOnly entries
     }
 
 // ---------------------------------
@@ -667,7 +677,7 @@ module private WebApp =
                             .Configure(fun app ->
                                 let app = app.UseRouting().Use(observe finished)
                                 // the request timeouts middleware is registered outside Default.exceptionMiddleware,
-                                // so a timeout cancellation has to pass through the latter to be answered with 504
+                                // so the timeout cancellation reaches the latter, which answers it with 504
                                 let app = if useRequestTimeouts then app.UseRequestTimeouts() else app
                                 app.Use(Default.exceptionMiddleware).UseOxpecker(endpoints) |> ignore)
                             .ConfigureServices(fun services ->
@@ -744,7 +754,7 @@ let ``HTTP GET endpoint aborted before the response starts answers 499`` () =
     }
 
 [<Fact>]
-let ``HTTP GET endpoint exceeding its request timeout is answered with 504 by the request timeouts middleware`` () =
+let ``HTTP GET endpoint exceeding its request timeout is answered with 504`` () =
     task {
         // note: the request timeouts middleware does nothing while a debugger is attached
         let entries = ResizeArray<LogEntry>()
@@ -763,5 +773,5 @@ let ``HTTP GET endpoint exceeding its request timeout is answered with 504 by th
 
         response.StatusCode |> shouldEqual HttpStatusCode.GatewayTimeout
         status |> shouldEqual StatusCodes.Status504GatewayTimeout
-        oxpeckerEntries entries |> shouldEqual []
+        shouldHaveLoggedTimeoutAsWarningOnly entries
     }
