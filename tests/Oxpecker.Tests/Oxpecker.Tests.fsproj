@@ -26,6 +26,7 @@
         <Compile Include="Preconditional.Tests.fs" />
         <Compile Include="Streaming.Tests.fs" />
         <Compile Include="Multipart.Tests.fs" />
+        <Compile Include="Cancellation.Tests.fs" />
         <Compile Include="Routing.Tests.fs" />
         <Compile Include="ModelValidation.Tests.fs" />
     </ItemGroup>

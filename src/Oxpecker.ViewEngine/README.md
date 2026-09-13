@@ -192,16 +192,23 @@ Everything outside the hole is rendered once, so every `page` call only appends 
 
 ### Rendering
 
-There are several functions to render `HtmlElement` (after opening Oxpecker.ViewEngine namespace):
+`Render` is a static class with several methods to render `HtmlElement` (after opening Oxpecker.ViewEngine namespace). The synchronous methods take the element as their single argument, so `view |> Render.toString` works; the asynchronous ones take tupled arguments and an optional `cancellationToken` that is passed to the writer's `WriteAsync` and `FlushAsync` (an `OperationCanceledException` is thrown and nothing is written when it is already cancelled):
 
-- **Render.toString** will render to standard .NET UTF16 string
-- **Render.toBytes** will render to UTF8-encoded byte array
-- **Render.toStreamAsync** will asynchronously render to stream in UTF8 encoding
-- **Render.toTextWriterAsync** will asynchronously render to the provided text writer
-- **Render.toHtmlDocBytes** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toHtmlDocString** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toHtmlDocStreamAsync** is the same as **Render.toStreamAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toHtmlDocTextWriterAsync** is the same as **Render.toTextWriterAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toString(view)** will render to standard .NET UTF16 string
+- **Render.toBytes(view)** will render to UTF8-encoded byte array
+- **Render.toBufferWriter(writer, view)** will render as UTF8-encoded bytes into an `IBufferWriter<byte>`, e.g. a `PipeWriter` such as `HttpResponse.BodyWriter`, without allocating an array
+- **Render.toStreamAsync(stream, view, ?cancellationToken)** will asynchronously render to stream in UTF8 encoding
+- **Render.toTextWriterAsync(textWriter, view, ?cancellationToken)** will asynchronously render to the provided text writer
+- **Render.toHtmlDocBytes(view)** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocBufferWriter(writer, view)** is the same as **Render.toBufferWriter**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocString(view)** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocStreamAsync(stream, view, ?cancellationToken)** is the same as **Render.toStreamAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocTextWriterAsync(textWriter, view, ?cancellationToken)** is the same as **Render.toTextWriterAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+
+```fsharp
+let text = view |> Render.toString
+do! Render.toHtmlDocStreamAsync(ctx.Response.Body, view, ctx.RequestAborted)
+```
 
 ### Aria
 

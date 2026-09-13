@@ -246,6 +246,21 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
         try
             return! next.Invoke(ctx)
         with
+        | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
+            // the client disconnected: nothing can be written back and it is not an application error
+            // (with UseRequestTimeouts registered before this handler, check IHttpRequestTimeoutFeature to answer timeouts with 504 like Default.exceptionMiddleware does)
+            ctx.GetLogger().LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+            let writer = ctx.Response.BodyWriter
+            if
+                ctx.Response.HasStarted
+                || not writer.CanGetUnflushedBytes
+                || writer.UnflushedBytes > 0L
+            then
+                // Clear() cannot discard queued pipe data: abort rather than send cancelled output on completion
+                ctx.Abort()
+            else
+                ctx.Response.Clear() // drop the headers a cancelled write may have set
+                ctx.SetStatusCode StatusCodes.Status499ClientClosedRequest
         | :? ModelBindException
         | :? RouteParseException as ex ->
             let logger = ctx.GetLogger()

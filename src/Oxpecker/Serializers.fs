@@ -7,8 +7,10 @@ open System.Threading.Tasks
 open Microsoft.IO
 
 /// <summary>
-/// Interface defining JSON serialization methods.
-/// Use this interface to customize JSON serialization in Oxpecker.
+/// <para>Interface defining JSON serialization methods.
+/// Use this interface to customize JSON serialization in Oxpecker.</para>
+/// <para>Implementations must pass `ctx.RequestAborted` to every asynchronous read or write, so that serialization
+/// stops when the client disconnects, and let the resulting `OperationCanceledException` propagate.</para>
 /// </summary>
 type IJsonSerializer =
     abstract member Serialize<'T> : value: 'T * ctx: HttpContext * chunked: bool -> Task
@@ -32,20 +34,25 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
         (ctx: HttpContext)
         (options: JsonSerializerOptions)
         =
+        ctx.RequestAborted.ThrowIfCancellationRequested()
         JsonSerializer.Serialize(stream, value, options)
         ctx.Response.ContentType <- "application/json; charset=utf-8"
         ctx.Response.Headers.ContentLength <- stream.Length
         stream.Seek(0, SeekOrigin.Begin) |> ignore
         if ctx.Request.Method <> HttpMethods.Head then
-            stream.CopyToAsync(ctx.Response.Body)
+            stream.CopyToAsync(ctx.Response.Body, ctx.RequestAborted)
         else
             Task.CompletedTask
 
     interface IJsonSerializer with
         member this.Serialize(value, ctx, chunked) =
             if chunked then
+                let cancellationToken = ctx.RequestAborted
+                // fail before anything is enumerated or written, also for HEAD, once the request has been aborted:
+                // a stream of values may ignore the token it is given
+                cancellationToken.ThrowIfCancellationRequested()
                 if ctx.Request.Method <> HttpMethods.Head then
-                    ctx.Response.WriteAsJsonAsync(value, options)
+                    ctx.Response.WriteAsJsonAsync(value, options, cancellationToken)
                 else
                     ctx.Response.ContentType <- "application/json; charset=utf-8"
                     Task.CompletedTask
@@ -57,7 +64,7 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
 
         member this.Deserialize(ctx) =
             task {
-                match! ctx.Request.ReadFromJsonAsync(options) with
+                match! ctx.Request.ReadFromJsonAsync(options, ctx.RequestAborted) with
                 | null -> return Unchecked.defaultof<_>
                 | v -> return v
             }

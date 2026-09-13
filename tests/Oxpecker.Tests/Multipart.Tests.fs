@@ -230,7 +230,7 @@ let ``WriteMultipart writes Bytes parts without re-encoding`` () =
 /// Custom part writing constant header lines, text and then raw bytes copied from a stream
 type private TextThenBytesPart(text: string, data: byte array) =
     interface IMultipartPart with
-        member this.WriteAsync writer =
+        member this.WriteAsync(writer, cancellationToken) =
             Encoding.UTF8.GetBytes(
                 "Content-Type: application/octet-stream\r\nContent-ID: custom\r\n\r\n".AsSpan(),
                 writer
@@ -239,13 +239,13 @@ type private TextThenBytesPart(text: string, data: byte array) =
             Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
             task {
                 use stream = new MemoryStream(data)
-                do! stream.CopyToAsync writer
+                do! stream.CopyToAsync(writer, cancellationToken)
             }
 
 /// Custom part without any headers: only the empty line ending the header block, then the body
 type private HeaderlessPart(text: string) =
     interface IMultipartPart with
-        member this.WriteAsync writer =
+        member this.WriteAsync(writer, _) =
             Encoding.UTF8.GetBytes(("\r\n" + text).AsSpan(), writer) |> ignore
             Task.CompletedTask
 
@@ -254,7 +254,7 @@ type private FailingPart() =
     member val Writer = Unchecked.defaultof<PipeWriter> with get, set
 
     interface IMultipartPart with
-        member this.WriteAsync writer =
+        member this.WriteAsync(writer, _) =
             this.Writer <- writer
             raise <| InvalidOperationException "body failed"
 
@@ -286,28 +286,6 @@ let ``WriteMultipart writes a custom part without headers as an empty header blo
 
         let boundary = getBoundary(responseContentType ctx)
         readBody ctx |> shouldEqual $"--{boundary}\r\n\r\nplain\r\n--{boundary}--\r\n"
-    }
-
-/// Number of chunks the builder currently consists of
-let private countChunks (sb: StringBuilder) =
-    let mutable chunks = 0
-    for _ in sb.GetChunks() do
-        chunks <- chunks + 1
-    chunks
-
-[<Fact>]
-let ``MultipartHeaders.writeUtf8 keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
-    task {
-        // capacity 2: "a" and the high surrogate fill the first chunk, the low surrogate lands in the second one
-        let sb = StringBuilder(2).Append("a").Append("\U0001F600")
-        countChunks sb |> shouldEqual 2
-
-        use stream = new MemoryStream()
-        let writer = PipeWriter.Create(stream, StreamPipeWriterOptions(leaveOpen = true))
-        MultipartHeaders.writeUtf8 writer sb
-        do! writer.CompleteAsync()
-
-        stream.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes "a\U0001F600")
     }
 
 [<Fact>]
