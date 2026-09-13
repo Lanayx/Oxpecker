@@ -120,15 +120,14 @@ type Render =
     static member toStreamAsync(stream: Stream, view: #HtmlElement, [<Struct>] ?cancellationToken: CancellationToken) =
         let cancellationToken = defaultValueArg cancellationToken CancellationToken.None
         let sb = StringBuilderPool.Get()
+        // not disposed: the stream is left open and the flush below leaves nothing buffered, whereas disposing
+        // would flush the stream once more without the token, also after a cancellation
         let streamWriter = new StreamWriter(stream, leaveOpen = true)
         task {
             try
                 view.Render sb
                 do! streamWriter.WriteAsync(sb, cancellationToken)
-                do! streamWriter.FlushAsync(cancellationToken)
-                // disposed only once the flush has observed the token: disposing after a cancellation
-                // would flush the characters still buffered without it
-                do! streamWriter.DisposeAsync()
+                return! streamWriter.FlushAsync(cancellationToken)
             finally
                 StringBuilderPool.Return(sb)
         }
@@ -145,15 +144,14 @@ type Render =
         let cancellationToken = defaultValueArg cancellationToken CancellationToken.None
         let sb = StringBuilderPool.Get()
         sb.AppendLine("<!DOCTYPE html>") |> ignore
+        // not disposed: the stream is left open and the flush below leaves nothing buffered, whereas disposing
+        // would flush the stream once more without the token, also after a cancellation
         let streamWriter = new StreamWriter(stream, leaveOpen = true)
         task {
             try
                 view.Render sb
                 do! streamWriter.WriteAsync(sb, cancellationToken)
-                do! streamWriter.FlushAsync(cancellationToken)
-                // disposed only once the flush has observed the token: disposing after a cancellation
-                // would flush the characters still buffered without it
-                do! streamWriter.DisposeAsync()
+                return! streamWriter.FlushAsync(cancellationToken)
             finally
                 StringBuilderPool.Return(sb)
         }
