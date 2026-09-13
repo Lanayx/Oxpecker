@@ -248,6 +248,7 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
         with
         | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
             // the client disconnected: nothing can be written back and it is not an application error
+            // (with UseRequestTimeouts registered before this handler, check IHttpRequestTimeoutFeature first like Default.exceptionMiddleware does)
             ctx.GetLogger().LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
             if not ctx.Response.HasStarted then
                 ctx.Response.Clear() // drop the headers a cancelled write may have set

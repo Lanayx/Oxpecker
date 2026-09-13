@@ -14,6 +14,7 @@ open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Features
+open Microsoft.AspNetCore.Http.Timeouts
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
@@ -614,6 +615,27 @@ let ``Default.exceptionMiddleware treats OperationCanceledException as an error 
         |> shouldEqual true
     }
 
+/// The feature the request-timeouts middleware exposes, with the timeout already elapsed
+type private ElapsedTimeoutFeature(token: CancellationToken) =
+    interface IHttpRequestTimeoutFeature with
+        member _.RequestTimeoutToken = token
+        member _.DisableTimeout() = ()
+
+[<Fact>]
+let ``Default.exceptionMiddleware lets a request timeout cancellation reach the request timeouts middleware`` () =
+    task {
+        let entries = ResizeArray<LogEntry>()
+        let ctx = abortedContext() |> withLogging entries
+        // UseRequestTimeouts replaces RequestAborted with a linked token and exposes the timeout token
+        ctx.Features.Set<IHttpRequestTimeoutFeature>(ElapsedTimeoutFeature ctx.RequestAborted)
+        let cancelledWrite = RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted)
+
+        do! shouldBeCancelled(fun () -> Default.exceptionMiddleware ctx cancelledWrite)
+
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
+        oxpeckerEntries entries |> shouldEqual []
+    }
+
 // ---------------------------------
 // End to end
 // ---------------------------------
@@ -630,7 +652,12 @@ module private WebApp =
         }
         :> Task
 
-    let start (entries: ResizeArray<LogEntry>) (finished: TaskCompletionSource<int>) (endpoints: Endpoint list) =
+    let startWith
+        (useRequestTimeouts: bool)
+        (entries: ResizeArray<LogEntry>)
+        (finished: TaskCompletionSource<int>)
+        (endpoints: Endpoint list)
+        =
         task {
             let host =
                 HostBuilder()
@@ -638,19 +665,22 @@ module private WebApp =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(fun app ->
-                                app
-                                    .UseRouting()
-                                    .Use(observe finished)
-                                    .Use(Default.exceptionMiddleware)
-                                    .UseOxpecker(endpoints)
-                                |> ignore)
+                                let app = app.UseRouting().Use(observe finished)
+                                // the request timeouts middleware is registered outside Default.exceptionMiddleware,
+                                // so a timeout cancellation has to pass through the latter to be answered with 504
+                                let app = if useRequestTimeouts then app.UseRequestTimeouts() else app
+                                app.Use(Default.exceptionMiddleware).UseOxpecker(endpoints) |> ignore)
                             .ConfigureServices(fun services ->
-                                services.AddRouting().AddOxpecker() |> addRecordingLogging entries)
+                                services.AddRouting().AddOxpecker().AddRequestTimeouts()
+                                |> addRecordingLogging entries)
                         |> ignore)
                     .Build()
             do! host.StartAsync()
             return host
         }
+
+    let start entries finished endpoints =
+        startWith false entries finished endpoints
 
 [<Fact>]
 let ``HTTP GET chunked multipart endpoint stops the producer when the client disconnects`` () =
@@ -711,4 +741,27 @@ let ``HTTP GET endpoint aborted before the response starts answers 499`` () =
 
         status |> shouldEqual StatusCodes.Status499ClientClosedRequest
         shouldHaveLoggedAbortAtDebugOnly entries
+    }
+
+[<Fact>]
+let ``HTTP GET endpoint exceeding its request timeout is answered with 504 by the request timeouts middleware`` () =
+    task {
+        // note: the request timeouts middleware does nothing while a debugger is attached
+        let entries = ResizeArray<LogEntry>()
+        let finished = TaskCompletionSource<int>()
+        let slowHandler: EndpointHandler =
+            fun ctx -> Task.Delay(Timeout.Infinite, ctx.RequestAborted)
+        let endpoints = [
+            route "/slow" slowHandler
+            |> configureEndpoint _.WithRequestTimeout(TimeSpan.FromMilliseconds 100.)
+        ]
+        use! host = WebApp.startWith true entries finished endpoints
+        let client = host.GetTestClient()
+
+        let! response = client.GetAsync "/slow"
+        let! status = finished.Task.WaitAsync(TimeSpan.FromSeconds 10.)
+
+        response.StatusCode |> shouldEqual HttpStatusCode.GatewayTimeout
+        status |> shouldEqual StatusCodes.Status504GatewayTimeout
+        oxpeckerEntries entries |> shouldEqual []
     }

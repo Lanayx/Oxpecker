@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Http.Timeouts
 open Oxpecker.ViewEngine
 open Microsoft.Extensions.Logging
 
@@ -197,11 +198,18 @@ module ResponseHandlers =
 
 [<RequireQualifiedAccess>]
 module Default =
+    /// The request-timeouts middleware cancelled the request through its linked token: it answers with its own
+    /// timeout status code (504 by default) once the exception reaches it, so the exception must not be handled here.
+    let private isRequestTimeout (ctx: HttpContext) =
+        match ctx.Features.Get<IHttpRequestTimeoutFeature>() with
+        | null -> false
+        | feature -> feature.RequestTimeoutToken.IsCancellationRequested
+
     let exceptionMiddleware (ctx: HttpContext) (next: RequestDelegate) =
         task {
             try
                 return! next.Invoke(ctx)
-            with ex ->
+            with ex when not(ex :? OperationCanceledException && isRequestTimeout ctx) ->
                 let logger = ctx.GetLogger("Oxpecker.Default.ExceptionMiddleware")
                 match ex with
                 | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
