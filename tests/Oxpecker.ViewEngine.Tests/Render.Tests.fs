@@ -221,23 +221,42 @@ let ``Render.toHtmlDocBufferWriter renders the same bytes as Render.toHtmlDocByt
     Render.toHtmlDocBufferWriter(writer, view)
     writer.WrittenSpan.ToArray() |> shouldEqual(Render.toHtmlDocBytes view)
 
+/// An element rendering `head` padded with 'a' so that its last character ends the current builder chunk, then `rest`
+type private ChunkSplittingElement(head: string, rest: string) =
+    member val Text = "" with get, set
+    member val Chunks = 0 with get, set
+    interface HtmlElement with
+        member this.Render sb =
+            this.Text <- String('a', sb.Capacity - sb.Length - head.Length) + head + rest
+            sb.Append(this.Text) |> ignore
+            for _ in sb.GetChunks() do
+                this.Chunks <- this.Chunks + 1
+
+let private emoji = Char.ConvertFromUtf32 0x1F600
+
 [<Fact>]
 let ``Render.toBufferWriter keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
-    let mutable text = ""
-    let mutable chunks = 0
-    let view =
-        { new HtmlElement with
-            member _.Render sb =
-                // the high surrogate fills the current chunk, so that the low one lands in the next chunk
-                text <- String('a', sb.Capacity - sb.Length - 1) + Char.ConvertFromUtf32 0x1F600
-                sb.Append(text) |> ignore
-                for _ in sb.GetChunks() do
-                    chunks <- chunks + 1
-        }
+    // the high surrogate ends the current chunk, the low one lands in the next chunk
+    let view = ChunkSplittingElement(emoji.Substring(0, 1), emoji.Substring(1))
     let writer = ArrayBufferWriter<byte>()
     Render.toBufferWriter(writer, view)
-    chunks |> shouldEqual 2
-    writer.WrittenSpan.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes text)
+    view.Chunks |> shouldEqual 2
+    writer.WrittenSpan.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes view.Text)
+
+[<Fact>]
+let ``Render.toBytes keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
+    let view = ChunkSplittingElement(emoji.Substring(0, 1), emoji.Substring(1))
+    let bytes = Render.toBytes view
+    view.Chunks |> shouldEqual 2
+    bytes |> shouldEqual(Encoding.UTF8.GetBytes view.Text)
+
+[<Fact>]
+let ``Render.toBytes replaces a lone high surrogate ending a chunk`` () =
+    // the high surrogate ends the current chunk, but the next chunk does not start with a low surrogate
+    let view = ChunkSplittingElement(emoji.Substring(0, 1), "bc")
+    let bytes = Render.toBytes view
+    view.Chunks |> shouldEqual 2
+    bytes |> shouldEqual(Encoding.UTF8.GetBytes view.Text)
 
 /// A stream that cancels the token once the first write has landed, like a client that disconnects while the writer flushes
 type private CancellingStream(cts: CancellationTokenSource) =

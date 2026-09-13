@@ -14,14 +14,36 @@ open Oxpecker.ViewEngine.Tools
 [<AbstractClass; Sealed>]
 type Render =
 
+    /// Copies the content of the builder as UTF-8 into an array of the exact size; like `writeUtf8`, a surrogate pair
+    /// split between two chunks is encoded as one scalar instead of two replacement characters.
     static member private copyStringBuilderToBytes(sb: StringBuilder) : byte[] =
         let mutable total = 0
+        let mutable endsWithHigh = false
         for chunk in sb.GetChunks() do
-            total <- total + Encoding.UTF8.GetByteCount(chunk.Span)
+            let span = chunk.Span
+            if endsWithHigh && span.Length > 0 && Char.IsLowSurrogate(span[0]) then
+                // counted as two 3-byte replacement characters, encoded as one 4-byte scalar
+                total <- total - 2
+            total <- total + Encoding.UTF8.GetByteCount(span)
+            endsWithHigh <- span.Length > 0 && Char.IsHighSurrogate(span[span.Length - 1])
         let bytes = GC.AllocateUninitializedArray<byte>(total)
         let mutable written = 0
+        let mutable pendingHigh = ReadOnlyMemory<char>.Empty
         for chunk in sb.GetChunks() do
-            written <- written + Encoding.UTF8.GetBytes(chunk.Span, bytes.AsSpan(written))
+            let mutable span = chunk.Span
+            if not pendingHigh.IsEmpty then
+                if span.Length > 0 && Char.IsLowSurrogate(span[0]) then
+                    written <- written + Rune(pendingHigh.Span[0], span[0]).EncodeToUtf8(bytes.AsSpan(written))
+                    span <- span.Slice(1)
+                else
+                    written <- written + Encoding.UTF8.GetBytes(pendingHigh.Span, bytes.AsSpan(written))
+                pendingHigh <- ReadOnlyMemory<char>.Empty
+            if span.Length > 0 && Char.IsHighSurrogate(span[span.Length - 1]) then
+                pendingHigh <- chunk.Slice(chunk.Length - 1)
+                span <- span.Slice(0, span.Length - 1)
+            written <- written + Encoding.UTF8.GetBytes(span, bytes.AsSpan(written))
+        if not pendingHigh.IsEmpty then
+            written <- written + Encoding.UTF8.GetBytes(pendingHigh.Span, bytes.AsSpan(written))
         bytes
 
     /// Render HtmlElement to normal UTF16 string

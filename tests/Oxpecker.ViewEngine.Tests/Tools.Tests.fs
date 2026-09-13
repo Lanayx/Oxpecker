@@ -94,3 +94,20 @@ let ``writeUtf8 keeps a surrogate pair that spans two StringBuilder chunks intac
     countChunks sb |> shouldEqual 2
 
     encode sb |> shouldEqual(Encoding.UTF8.GetBytes text)
+
+[<Fact>]
+let ``writeUtf8 replaces a lone high surrogate ending a chunk`` () =
+    // capacity 2: the high surrogate ends the first chunk, but the second one does not start with a low surrogate
+    let text = "a" + (Char.ConvertFromUtf32 0x1F600).Substring(0, 1) + "bc"
+    let sb = StringBuilder(2).Append(text)
+    countChunks sb |> shouldEqual 2
+
+    encode sb |> shouldEqual(Encoding.UTF8.GetBytes text)
+
+[<Fact>]
+let ``writeUtf8 replaces a lone high surrogate ending the builder`` () =
+    let text = "a" + (Char.ConvertFromUtf32 0x1F600).Substring(0, 1)
+    let sb = StringBuilder(2).Append(text)
+    countChunks sb |> shouldEqual 1
+
+    encode sb |> shouldEqual(Encoding.UTF8.GetBytes text)
