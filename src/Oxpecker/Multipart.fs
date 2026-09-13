@@ -246,13 +246,15 @@ module internal MultipartWriter =
         writer.Write(ReadOnlySpan(delimiter, 2, delimiter.Length - 2))
 
     /// Writes one part: the line break ending the previous delimiter line, the part itself (its headers, an empty line
-    /// and the body) and the next delimiter `\r\n--{boundary}` (without a trailing line break).
+    /// and the body) and the next delimiter `\r\n--{boundary}` (without a trailing line break). The token is checked
+    /// first, so no part is written once the request has been aborted, even if the source or a previous part ignored it.
     let writePartAsync
         (writer: PipeWriter)
         (delimiter: byte array)
         (part: IMultipartPart)
         (cancellationToken: CancellationToken)
         =
+        cancellationToken.ThrowIfCancellationRequested()
         writer.Write(ReadOnlySpan "\r\n"B)
         task {
             do! part.WriteAsync(writer, cancellationToken)
@@ -317,7 +319,8 @@ type MultipartExtensions() =
     /// <para>At least one part is required: if the stream completes without producing any, an `ArgumentException` is thrown before anything is written to the response.
     /// For `HEAD` requests only the `Content-Type` header is set and the parts are not enumerated, so this check does not apply.</para>
     /// <para>The stream is enumerated and the parts are written with `ctx.RequestAborted`: when the client disconnects the producer
-    /// receives the cancellation, nothing more is written and an `OperationCanceledException` is thrown.</para>
+    /// receives the cancellation, nothing more is written and an `OperationCanceledException` is thrown. The token is also checked
+    /// before the enumeration and before each part, so nothing is written once the request has been aborted, even if the source or a part ignores it.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="parts">The stream of parts to be sent back to the client.</param>
@@ -329,9 +332,12 @@ type MultipartExtensions() =
         =
         let subtype = defaultValueArg subtype MultipartSubtype.Mixed
         let boundary = MultipartWriter.createBoundary()
+        let cancellationToken = ctx.RequestAborted
+        // fail before anything is enumerated or written, also for HEAD, once the request has been aborted:
+        // the source may ignore the token it is given
+        cancellationToken.ThrowIfCancellationRequested()
         if ctx.Request.Method <> HttpMethods.Head then
             let delimiter = MultipartWriter.delimiter boundary
-            let cancellationToken = ctx.RequestAborted
             task {
                 let enumerator = parts.GetAsyncEnumerator(cancellationToken)
                 use _ = enumerator :> IAsyncDisposable
@@ -353,8 +359,6 @@ type MultipartExtensions() =
             }
             :> Task
         else
-            // the parts are not enumerated for HEAD, but an already aborted request still fails as the writes would
-            ctx.RequestAborted.ThrowIfCancellationRequested()
             ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
             Task.CompletedTask
 

@@ -168,9 +168,6 @@ type StreamingExtensions() =
                         bufferSize,
                         ctx.RequestAborted
                     )
-            else
-                // nothing is written for HEAD, but an already aborted request still fails as the copy would
-                ctx.RequestAborted.ThrowIfCancellationRequested()
         }
 
     /// <summary>
@@ -194,6 +191,9 @@ type StreamingExtensions() =
             lastModified: DateTimeOffset option
         ) =
         task {
+            // fail before the preconditions are evaluated, so that an already aborted request is not answered with
+            // a complete 304, 412 or 416 response or, for HEAD, with a complete empty one
+            ctx.RequestAborted.ThrowIfCancellationRequested()
             match ctx.ValidatePreconditions(eTag, lastModified) with
             | ConditionFailed -> ctx.PreconditionFailedResponse()
             | ResourceNotModified -> ctx.NotModifiedResponse()

@@ -21,6 +21,7 @@ open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
+open Microsoft.Extensions.Primitives
 open Oxpecker
 open Oxpecker.ViewEngine
 open Xunit
@@ -83,16 +84,34 @@ let private throwIfCancelled: int -> CancellationToken -> Task =
         token.ThrowIfCancellationRequested()
         Task.CompletedTask
 
-/// A part that records the token it was written with
+/// Cancels the request when the item number `call` is requested but keeps producing, like a source ignoring the token
+let private cancelSilentlyAt (call: int) (cts: CancellationTokenSource) : int -> CancellationToken -> Task =
+    fun currentCall _ ->
+        if currentCall = call then
+            cts.Cancel()
+        Task.CompletedTask
+
+/// A part that records whether, and with which token, it was written
 type private RecordingPart() =
+    member val Written = false with get, set
     member val Token = CancellationToken.None with get, set
 
     interface IMultipartPart with
         member this.WriteAsync(writer, cancellationToken) =
+            this.Written <- true
             this.Token <- cancellationToken
             Encoding.UTF8.GetBytes("Content-Type: text/plain\r\n\r\npart".AsSpan(), writer)
             |> ignore
             Task.CompletedTask
+
+/// An element that records whether it was rendered
+type private RecordingElement() =
+    member val Rendered = false with get, set
+
+    interface HtmlElement with
+        member this.Render sb =
+            this.Rendered <- true
+            sb.Append "rendered" |> ignore
 
 type private LogEntry = {
     Category: string
@@ -433,6 +452,21 @@ let ``WriteJsonChunked throws OperationCanceledException and writes nothing when
     }
 
 [<Fact>]
+let ``WriteJsonChunked throws OperationCanceledException without enumerating the source when the request is already aborted``
+    ()
+    =
+    task {
+        let ctx = abortedContext() |> withJsonSerializer
+        // a source that ignores the token would otherwise be enumerated before the first write fails
+        let source = AsyncSource<int>([])
+
+        do! shouldBeCancelled(fun () -> ctx.WriteJsonChunked source)
+
+        readBody ctx |> shouldEqual ""
+        source.MoveNextCalls |> shouldEqual 0
+    }
+
+[<Fact>]
 let ``WriteHtmlView throws OperationCanceledException and writes nothing when the request is already aborted`` () =
     task {
         let ctx = abortedContext()
@@ -456,16 +490,18 @@ let ``WriteHtmlViewChunked throws OperationCanceledException and writes nothing 
     }
 
 [<Fact>]
-let ``WriteHtmlChunked throws OperationCanceledException and writes nothing when the request is already aborted`` () =
+let ``WriteHtmlChunked throws OperationCanceledException without enumerating the source when the request is already aborted``
+    ()
+    =
     task {
         let ctx = abortedContext()
-        let source =
-            AsyncSource<HtmlElement>([ div() { "Hello" } :> HtmlElement ], throwIfCancelled)
+        // an empty source that ignores the token would otherwise complete the response
+        let source = AsyncSource<HtmlElement>([])
 
         do! shouldBeCancelled(fun () -> ctx.WriteHtmlChunked source :> Task)
 
         readBody ctx |> shouldEqual ""
-        source.Disposed |> shouldEqual true
+        source.MoveNextCalls |> shouldEqual 0
     }
 
 [<Fact>]
@@ -481,19 +517,19 @@ let ``WriteMultipart throws OperationCanceledException and writes nothing when t
     }
 
 [<Fact>]
-let ``WriteMultipartChunked throws OperationCanceledException and writes nothing when the request is already aborted``
+let ``WriteMultipartChunked throws OperationCanceledException without enumerating the source when the request is already aborted``
     ()
     =
     task {
         let ctx = abortedContext()
-        let source =
-            AsyncSource<IMultipartPart>([ MultipartPart.Text "Hello" ], throwIfCancelled)
+        // an empty source that ignores the token would otherwise fail with the ArgumentException for an empty response
+        let source = AsyncSource<IMultipartPart>([])
 
         do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
 
         readBody ctx |> shouldEqual ""
         responseContentType ctx |> shouldEqual ""
-        source.Disposed |> shouldEqual true
+        source.MoveNextCalls |> shouldEqual 0
     }
 
 [<Fact>]
@@ -555,6 +591,29 @@ let ``WriteStream with HEAD throws OperationCanceledException when the request i
         use stream = new MemoryStream(Encoding.UTF8.GetBytes "Hello")
 
         do! shouldBeCancelled(fun () -> ctx.WriteStream(false, stream, None, None) :> Task)
+    }
+
+[<Fact>]
+let ``WriteStream with a failed precondition throws OperationCanceledException when the request is already aborted``
+    ()
+    =
+    task {
+        let ctx = abortedContext()
+        ctx.Request.Headers.IfMatch <- StringValues "\"other\""
+        use stream = new MemoryStream(Encoding.UTF8.GetBytes "Hello")
+
+        do!
+            shouldBeCancelled(fun () ->
+                ctx.WriteStream(
+                    false,
+                    stream,
+                    Some(Microsoft.Net.Http.Headers.EntityTagHeaderValue "\"current\""),
+                    None
+                )
+                :> Task)
+
+        // the precondition was not evaluated, which would have answered the request with 412
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
     }
 
 // ---------------------------------
@@ -634,6 +693,71 @@ let ``WriteMultipart with HEAD fails with OperationCanceledException when the re
 
         responseContentType ctx |> shouldEqual ""
         ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
+    }
+
+// ---------------------------------
+// Sources and parts that ignore the token they are given
+// ---------------------------------
+
+[<Fact>]
+let ``WriteHtmlChunked does not render an element produced after the request was aborted by a source that ignores the token``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let second = RecordingElement()
+        let source =
+            AsyncSource<HtmlElement>(
+                [ div() { "first" } :> HtmlElement; second :> HtmlElement ],
+                cancelSilentlyAt 2 cts
+            )
+
+        do! shouldBeCancelled(fun () -> ctx.WriteHtmlChunked source :> Task)
+
+        source.MoveNextCalls |> shouldEqual 2
+        source.Disposed |> shouldEqual true
+        second.Rendered |> shouldEqual false
+        readBody ctx |> shouldEqual "<div>first</div>"
+    }
+
+[<Fact>]
+let ``WriteMultipartChunked does not write a part produced after the request was aborted by a source that ignores the token``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let first = RecordingPart()
+        let second = RecordingPart()
+        let source =
+            AsyncSource<IMultipartPart>([ first :> IMultipartPart; second :> IMultipartPart ], cancelSilentlyAt 2 cts)
+
+        do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
+
+        source.MoveNextCalls |> shouldEqual 2
+        source.Disposed |> shouldEqual true
+        first.Written |> shouldEqual true
+        second.Written |> shouldEqual false
+    }
+
+[<Fact>]
+let ``WriteMultipart does not write the remaining parts when the request is aborted while a part is written`` () =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let second = RecordingPart()
+
+        do!
+            shouldBeCancelled(fun () ->
+                ctx.WriteMultipart [ AbortingPart cts :> IMultipartPart; second :> IMultipartPart ] :> Task)
+
+        second.Written |> shouldEqual false
+        readBody ctx |> shouldEqual ""
+        responseContentType ctx |> shouldEqual ""
     }
 
 // ---------------------------------

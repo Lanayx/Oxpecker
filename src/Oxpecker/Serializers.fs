@@ -47,11 +47,13 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
     interface IJsonSerializer with
         member this.Serialize(value, ctx, chunked) =
             if chunked then
+                let cancellationToken = ctx.RequestAborted
+                // fail before anything is enumerated or written, also for HEAD, once the request has been aborted:
+                // a stream of values may ignore the token it is given
+                cancellationToken.ThrowIfCancellationRequested()
                 if ctx.Request.Method <> HttpMethods.Head then
-                    ctx.Response.WriteAsJsonAsync(value, options, ctx.RequestAborted)
+                    ctx.Response.WriteAsJsonAsync(value, options, cancellationToken)
                 else
-                    // nothing is written for HEAD, but an already aborted request still fails as the write would
-                    ctx.RequestAborted.ThrowIfCancellationRequested()
                     ctx.Response.ContentType <- "application/json; charset=utf-8"
                     Task.CompletedTask
             else

@@ -246,12 +246,13 @@ type HttpContextExtensions() =
     /// <returns>Task of writing to the body of the response.</returns>
     [<Extension>]
     static member WriteBytes(ctx: HttpContext, bytes: byte array) =
+        let cancellationToken = ctx.RequestAborted
+        // fail before anything is set or written, also for HEAD, once the request has been aborted
+        cancellationToken.ThrowIfCancellationRequested()
         ctx.Response.ContentLength <- bytes.LongLength
         if ctx.Request.Method <> HttpMethods.Head then
-            ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length, ctx.RequestAborted)
+            ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length, cancellationToken)
         else
-            // nothing is written for HEAD, but an already aborted request still fails as the write would
-            ctx.RequestAborted.ThrowIfCancellationRequested()
             Task.CompletedTask
 
     /// <summary>
@@ -339,7 +340,8 @@ type HttpContextExtensions() =
     /// <summary>
     /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
-    /// <para>Each element is encoded into the response `BodyWriter` and flushed with `ctx.RequestAborted`, which is also passed to `GetAsyncEnumerator`.</para>
+    /// <para>Each element is encoded into the response `BodyWriter` and flushed with `ctx.RequestAborted`, which is also passed to `GetAsyncEnumerator`
+    /// and checked before the enumeration and before each element, so nothing is rendered once the request has been aborted, even if the source ignores the token.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="htmlStream">An `HtmlElement` stream to be send back to the client.</param>
@@ -350,9 +352,13 @@ type HttpContextExtensions() =
         let cancellationToken = ctx.RequestAborted
         let writer = ctx.Response.BodyWriter
         task {
+            // the source may ignore the token it is given: fail before enumerating an already aborted request
+            // and do not render an element produced after the request was aborted
+            cancellationToken.ThrowIfCancellationRequested()
             let enumerator = htmlStream.GetAsyncEnumerator(cancellationToken)
             use _ = enumerator :> IAsyncDisposable
             while! enumerator.MoveNextAsync() do
+                cancellationToken.ThrowIfCancellationRequested()
                 Render.toBufferWriter(writer, enumerator.Current)
                 let! _ = writer.FlushAsync(cancellationToken)
                 ()
