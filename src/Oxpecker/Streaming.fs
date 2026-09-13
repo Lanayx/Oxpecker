@@ -168,6 +168,9 @@ type StreamingExtensions() =
                         bufferSize,
                         ctx.RequestAborted
                     )
+            else
+                // nothing is written for HEAD, but an already aborted request still fails as the copy would
+                ctx.RequestAborted.ThrowIfCancellationRequested()
         }
 
     /// <summary>

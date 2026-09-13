@@ -50,6 +50,8 @@ type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
                 if ctx.Request.Method <> HttpMethods.Head then
                     ctx.Response.WriteAsJsonAsync(value, options, ctx.RequestAborted)
                 else
+                    // nothing is written for HEAD, but an already aborted request still fails as the write would
+                    ctx.RequestAborted.ThrowIfCancellationRequested()
                     ctx.Response.ContentType <- "application/json; charset=utf-8"
                     Task.CompletedTask
             else

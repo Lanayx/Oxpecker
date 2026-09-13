@@ -250,6 +250,8 @@ type HttpContextExtensions() =
         if ctx.Request.Method <> HttpMethods.Head then
             ctx.Response.Body.WriteAsync(bytes, 0, bytes.Length, ctx.RequestAborted)
         else
+            // nothing is written for HEAD, but an already aborted request still fails as the write would
+            ctx.RequestAborted.ThrowIfCancellationRequested()
             Task.CompletedTask
 
     /// <summary>

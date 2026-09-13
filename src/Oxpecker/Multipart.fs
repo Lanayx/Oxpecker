@@ -353,6 +353,8 @@ type MultipartExtensions() =
             }
             :> Task
         else
+            // the parts are not enumerated for HEAD, but an already aborted request still fails as the writes would
+            ctx.RequestAborted.ThrowIfCancellationRequested()
             ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
             Task.CompletedTask
 

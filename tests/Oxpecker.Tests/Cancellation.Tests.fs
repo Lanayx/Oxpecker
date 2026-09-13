@@ -509,6 +509,54 @@ let ``WriteStream throws OperationCanceledException instead of aborting silently
         readBody ctx |> shouldEqual ""
     }
 
+/// A HEAD request that has already been aborted
+let private abortedHeadContext () =
+    let ctx = abortedContext()
+    ctx.Request.Method <- HttpMethods.Head
+    ctx
+
+[<Fact>]
+let ``WriteBytes with HEAD throws OperationCanceledException when the request is already aborted`` () =
+    task {
+        let ctx = abortedHeadContext()
+
+        do! shouldBeCancelled(fun () -> ctx.WriteBytes(Encoding.UTF8.GetBytes "Hello"))
+    }
+
+[<Fact>]
+let ``WriteJsonChunked with HEAD throws OperationCanceledException when the request is already aborted`` () =
+    task {
+        let ctx = abortedHeadContext() |> withJsonSerializer
+
+        do! shouldBeCancelled(fun () -> ctx.WriteJsonChunked {| Hello = "World" |})
+
+        responseContentType ctx |> shouldEqual ""
+    }
+
+[<Fact>]
+let ``WriteMultipartChunked with HEAD throws OperationCanceledException without enumerating the parts when the request is already aborted``
+    ()
+    =
+    task {
+        let ctx = abortedHeadContext()
+        let source =
+            AsyncSource<IMultipartPart>([ MultipartPart.Text "Hello" ], throwIfCancelled)
+
+        do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
+
+        responseContentType ctx |> shouldEqual ""
+        source.MoveNextCalls |> shouldEqual 0
+    }
+
+[<Fact>]
+let ``WriteStream with HEAD throws OperationCanceledException when the request is already aborted`` () =
+    task {
+        let ctx = abortedHeadContext()
+        use stream = new MemoryStream(Encoding.UTF8.GetBytes "Hello")
+
+        do! shouldBeCancelled(fun () -> ctx.WriteStream(false, stream, None, None) :> Task)
+    }
+
 // ---------------------------------
 // Requests aborted while the response is rendered in memory
 // ---------------------------------
