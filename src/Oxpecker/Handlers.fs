@@ -221,7 +221,11 @@ module Default =
                             // The client disconnected, which is not an application error
                             logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
                             StatusCodes.Status499ClientClosedRequest
-                    if not ctx.Response.HasStarted then
+                    if ctx.Response.HasStarted then
+                        // The status code can no longer be replaced, so the connection is closed instead: a client that is
+                        // still connected (request timeout) must not take the truncated body for a complete response
+                        ctx.Abort()
+                    else
                         // drop the headers a cancelled write may have set, e.g. Content-Length
                         ctx.Response.Clear()
                         ctx.SetStatusCode statusCode

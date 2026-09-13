@@ -120,6 +120,15 @@ type private StartedResponseFeature() =
     inherit HttpResponseFeature()
     override _.HasStarted = true
 
+/// Lifetime feature recording whether the application aborted the connection
+type private RecordingLifetimeFeature(token: CancellationToken) =
+    member val Aborted = false with get, set
+    interface IHttpRequestLifetimeFeature with
+        member _.RequestAborted
+            with get () = token
+            and set (_: CancellationToken) = ()
+        member this.Abort() = this.Aborted <- true
+
 // ---------------------------------
 // Helpers
 // ---------------------------------
@@ -159,6 +168,12 @@ let private addRecordingLogging (entries: ResizeArray<LogEntry>) (services: ISer
 
 let private withLogging (entries: ResizeArray<LogEntry>) (ctx: HttpContext) =
     ctx |> configureServices(addRecordingLogging entries)
+
+/// Replaces the lifetime feature, so that a `ctx.Abort()` call can be observed
+let private recordAbort (ctx: HttpContext) =
+    let lifetime = RecordingLifetimeFeature ctx.RequestAborted
+    ctx.Features.Set<IHttpRequestLifetimeFeature> lifetime
+    lifetime
 
 let private readBody (ctx: HttpContext) =
     ctx.Response.Body.Seek(0, SeekOrigin.Begin) |> ignore
@@ -576,6 +591,7 @@ let ``Default.exceptionMiddleware answers an aborted request with 499 and logs a
     task {
         let entries = ResizeArray<LogEntry>()
         let ctx = abortedContext() |> withLogging entries
+        let lifetime = recordAbort ctx
         // a write that set its headers before observing the cancellation, like WriteText does
         let cancelledWrite =
             RequestDelegate(fun ctx ->
@@ -589,21 +605,25 @@ let ``Default.exceptionMiddleware answers an aborted request with 499 and logs a
         readBody ctx |> shouldEqual ""
         responseContentType ctx |> shouldEqual ""
         ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
+        lifetime.Aborted |> shouldEqual false
         shouldHaveLoggedAbortAtDebugOnly entries
     }
 
 [<Fact>]
-let ``Default.exceptionMiddleware keeps the status code of an already started response when the request is aborted``
+let ``Default.exceptionMiddleware aborts the connection of an already started response when the request is aborted``
     ()
     =
     task {
         let entries = ResizeArray<LogEntry>()
         let ctx = abortedContext() |> withLogging entries
         ctx.Features.Set<IHttpResponseFeature>(StartedResponseFeature())
+        let lifetime = recordAbort ctx
 
         do! Default.exceptionMiddleware ctx (RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted))
 
+        // the status code can no longer be replaced, so the connection is closed instead
         ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
+        lifetime.Aborted |> shouldEqual true
         shouldHaveLoggedAbortAtDebugOnly entries
     }
 
@@ -637,12 +657,31 @@ let ``Default.exceptionMiddleware answers a request timeout with 504 and logs a 
         let ctx = abortedContext() |> withLogging entries
         // UseRequestTimeouts replaces RequestAborted with a linked token and exposes the timeout token
         ctx.Features.Set<IHttpRequestTimeoutFeature>(ElapsedTimeoutFeature ctx.RequestAborted)
+        let lifetime = recordAbort ctx
         let cancelledWrite = RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted)
 
         do! Default.exceptionMiddleware ctx cancelledWrite
 
         ctx.Response.StatusCode |> shouldEqual StatusCodes.Status504GatewayTimeout
         readBody ctx |> shouldEqual ""
+        lifetime.Aborted |> shouldEqual false
+        shouldHaveLoggedTimeoutAsWarningOnly entries
+    }
+
+[<Fact>]
+let ``Default.exceptionMiddleware aborts the connection of an already started response on a request timeout`` () =
+    task {
+        let entries = ResizeArray<LogEntry>()
+        let ctx = abortedContext() |> withLogging entries
+        ctx.Features.Set<IHttpResponseFeature>(StartedResponseFeature())
+        ctx.Features.Set<IHttpRequestTimeoutFeature>(ElapsedTimeoutFeature ctx.RequestAborted)
+        let lifetime = recordAbort ctx
+
+        do! Default.exceptionMiddleware ctx (RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted))
+
+        // the client is still connected: closing the connection keeps it from taking the truncated body for a complete one
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
+        lifetime.Aborted |> shouldEqual true
         shouldHaveLoggedTimeoutAsWarningOnly entries
     }
 
@@ -721,7 +760,7 @@ let ``HTTP GET chunked multipart endpoint stops the producer when the client dis
         source.Token.IsCancellationRequested |> shouldEqual true
         source.MoveNextCalls |> shouldEqual 2
         source.Disposed |> shouldEqual true
-        // the response had already started, so the status code stays
+        // the response had already started, so the status code stays (and the already closed connection is aborted)
         status |> shouldEqual StatusCodes.Status200OK
         shouldHaveLoggedAbortAtDebugOnly entries
     }
@@ -773,5 +812,40 @@ let ``HTTP GET endpoint exceeding its request timeout is answered with 504`` () 
 
         response.StatusCode |> shouldEqual HttpStatusCode.GatewayTimeout
         status |> shouldEqual StatusCodes.Status504GatewayTimeout
+        shouldHaveLoggedTimeoutAsWarningOnly entries
+    }
+
+[<Fact>]
+let ``HTTP GET chunked multipart endpoint exceeding its request timeout after the response started is aborted`` () =
+    task {
+        // note: the request timeouts middleware does nothing while a debugger is attached
+        let entries = ResizeArray<LogEntry>()
+        let finished = TaskCompletionSource<int>()
+        let source =
+            AsyncSource<IMultipartPart>(
+                [ MultipartPart.Text "first"; MultipartPart.Text "second" ],
+                fun call token ->
+                    if call = 2 then
+                        Task.Delay(Timeout.Infinite, token).WaitAsync(TimeSpan.FromSeconds 10.)
+                    else
+                        Task.CompletedTask
+            )
+        let endpoints = [
+            route "/chunked" (multipartChunked source)
+            |> configureEndpoint _.WithRequestTimeout(TimeSpan.FromMilliseconds 100.)
+        ]
+        use! host = WebApp.startWith true entries finished endpoints
+        let client = host.GetTestClient()
+
+        use! response = client.GetAsync("/chunked", HttpCompletionOption.ResponseHeadersRead)
+        response.StatusCode |> shouldEqual HttpStatusCode.OK
+        // the connection is aborted, so the truncated body is not received as a complete response
+        let! _ = Assert.ThrowsAsync<HttpRequestException>(fun () -> response.Content.ReadAsStringAsync() :> Task)
+        let! status = finished.Task.WaitAsync(TimeSpan.FromSeconds 10.)
+
+        source.Token.IsCancellationRequested |> shouldEqual true
+        source.MoveNextCalls |> shouldEqual 2
+        source.Disposed |> shouldEqual true
+        status |> shouldEqual StatusCodes.Status200OK
         shouldHaveLoggedTimeoutAsWarningOnly entries
     }

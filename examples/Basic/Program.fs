@@ -250,7 +250,10 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
             // the client disconnected: nothing can be written back and it is not an application error
             // (with UseRequestTimeouts registered before this handler, check IHttpRequestTimeoutFeature to answer timeouts with 504 like Default.exceptionMiddleware does)
             ctx.GetLogger().LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
-            if not ctx.Response.HasStarted then
+            if ctx.Response.HasStarted then
+                // the status code can no longer be replaced: close the connection rather than complete a truncated body
+                ctx.Abort()
+            else
                 ctx.Response.Clear() // drop the headers a cancelled write may have set
                 ctx.SetStatusCode StatusCodes.Status499ClientClosedRequest
         | :? ModelBindException
