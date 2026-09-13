@@ -1,6 +1,7 @@
 module Render.Tests
 
 open System
+open System.Buffers
 open System.IO
 open System.Text
 open System.Threading
@@ -205,6 +206,70 @@ let ``Render.toHtmlDocTextWriterAsync with a cancelled token throws OperationCan
         do! textWriter.DisposeAsync()
         stream.Length |> shouldEqual 0L
     }
+
+[<Fact>]
+let ``Render.toBufferWriter renders the same bytes as Render.toBytes`` () =
+    let view = html() { div(id = "1") { "Hello" } }
+    let writer = ArrayBufferWriter<byte>()
+    Render.toBufferWriter(writer, view)
+    writer.WrittenSpan.ToArray() |> shouldEqual(Render.toBytes view)
+
+[<Fact>]
+let ``Render.toHtmlDocBufferWriter renders the same bytes as Render.toHtmlDocBytes`` () =
+    let view = html() { div(id = "1") { "Hello" } }
+    let writer = ArrayBufferWriter<byte>()
+    Render.toHtmlDocBufferWriter(writer, view)
+    writer.WrittenSpan.ToArray() |> shouldEqual(Render.toHtmlDocBytes view)
+
+[<Fact>]
+let ``Render.toBufferWriter keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
+    let mutable text = ""
+    let mutable chunks = 0
+    let view =
+        { new HtmlElement with
+            member _.Render sb =
+                // the high surrogate fills the current chunk, so that the low one lands in the next chunk
+                text <- String('a', sb.Capacity - sb.Length - 1) + Char.ConvertFromUtf32 0x1F600
+                sb.Append(text) |> ignore
+                for _ in sb.GetChunks() do
+                    chunks <- chunks + 1
+        }
+    let writer = ArrayBufferWriter<byte>()
+    Render.toBufferWriter(writer, view)
+    chunks |> shouldEqual 2
+    writer.WrittenSpan.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes text)
+
+/// A stream that cancels the token once the first write has landed, like a client that disconnects while the writer flushes
+type private CancellingStream(cts: CancellationTokenSource) =
+    inherit MemoryStream()
+    override _.WriteAsync(buffer: ReadOnlyMemory<byte>, _: CancellationToken) =
+        let result = base.WriteAsync(buffer, CancellationToken.None)
+        cts.Cancel()
+        result
+
+/// Asserts that a render cancelled during the write fails without flushing the characters buffered after the cancellation
+let private shouldNotFlushAfterCancellation (render: Stream -> HtmlElement -> CancellationToken -> Task) =
+    task {
+        // longer than the 1024 characters a StreamWriter buffers, so that the first flush happens during the write
+        let view = div() { String('a', 2000) } :> HtmlElement
+        use cts = new CancellationTokenSource()
+        use stream = new CancellingStream(cts)
+
+        let! _ = Assert.ThrowsAnyAsync<OperationCanceledException>(fun () -> render stream view cts.Token)
+
+        // only the buffer that was being written when the token got cancelled reached the stream
+        Assert.InRange(stream.Length, 1L, int64 (Render.toBytes view).Length - 1L)
+    }
+
+[<Fact>]
+let ``Render.toStreamAsync does not flush the buffered characters when the token is cancelled during the write`` () =
+    shouldNotFlushAfterCancellation(fun stream view ct -> Render.toStreamAsync(stream, view, ct))
+
+[<Fact>]
+let ``Render.toHtmlDocStreamAsync does not flush the buffered characters when the token is cancelled during the write``
+    ()
+    =
+    shouldNotFlushAfterCancellation(fun stream view ct -> Render.toHtmlDocStreamAsync(stream, view, ct))
 
 [<Fact>]
 let ``Prerender renders the same as the original element`` () =

@@ -521,6 +521,35 @@ let ``WriteHtmlView with HEAD fails with OperationCanceledException when the req
     }
 
 [<Fact>]
+let ``WriteHtmlViewChunked fails with OperationCanceledException and writes nothing when the request is aborted while rendering``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+
+        do! shouldBeCancelled(fun () -> ctx.WriteHtmlViewChunked(abortingElement cts) :> Task)
+
+        readBody ctx |> shouldEqual ""
+    }
+
+[<Fact>]
+let ``WriteHtmlChunked does not flush an element rendered after the request was aborted`` () =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let source =
+            AsyncSource<HtmlElement>([ div() { "first" } :> HtmlElement; abortingElement cts ])
+
+        do! shouldBeCancelled(fun () -> ctx.WriteHtmlChunked source :> Task)
+
+        source.Disposed |> shouldEqual true
+        readBody ctx |> shouldEqual "<div>first</div>"
+    }
+
+[<Fact>]
 let ``WriteMultipart with HEAD fails with OperationCanceledException when the request is aborted while a part is written``
     ()
     =

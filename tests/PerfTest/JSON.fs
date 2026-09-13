@@ -95,16 +95,20 @@ module SpanJson =
                 ctx.Response.ContentType <- "application/json; charset=utf-8"
                 if chunked then
                     if ctx.Request.Method <> HttpMethods.Head then
-                        JsonSerializer.Generic.Utf8.SerializeAsync<_>(value, ctx.Response.Body).AsTask()
+                        JsonSerializer.Generic.Utf8
+                            .SerializeAsync<_>(value, ctx.Response.Body, ctx.RequestAborted)
+                            .AsTask()
                     else
                         Task.CompletedTask
                 else
                     task {
                         let buffer = JsonSerializer.Generic.Utf8.SerializeToArrayPool<_>(value)
-                        ctx.Response.Headers.ContentLength <- buffer.Count
-                        if ctx.Request.Method <> HttpMethods.Head then
-                            do! ctx.Response.Body.WriteAsync(buffer)
-                        ArrayPool<byte>.Shared.Return(buffer.Array |> Unchecked.nonNull)
+                        try
+                            ctx.Response.Headers.ContentLength <- buffer.Count
+                            if ctx.Request.Method <> HttpMethods.Head then
+                                do! ctx.Response.Body.WriteAsync(buffer, ctx.RequestAborted)
+                        finally
+                            ArrayPool<byte>.Shared.Return(buffer.Array |> Unchecked.nonNull)
                     }
 
             member this.Deserialize(ctx) = failwith "Not implemented"

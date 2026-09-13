@@ -134,12 +134,7 @@ type HtmlPart(view: HtmlElement, [<Struct>] ?headers: (string * string) seq) =
     interface IMultipartPart with
         member this.WriteAsync(writer, _) =
             MultipartHeaders.write writer "text/html; charset=utf-8" headers
-            let sb = StringBuilderPool.Get()
-            try
-                view.Render sb
-                MultipartHeaders.writeUtf8 writer sb
-            finally
-                StringBuilderPool.Return sb
+            Render.toBufferWriter(writer, view)
             Task.CompletedTask
 
 /// <summary>

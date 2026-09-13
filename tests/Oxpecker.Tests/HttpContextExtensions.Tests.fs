@@ -235,6 +235,29 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
             $"""<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1 id="header">Hello world</h1></body></html>"""
     }
 
+[<Fact>]
+let ``WriteHtmlViewChunked should add the html document to the context`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+        let htmlDoc =
+            html() {
+                head()
+                body() { h1(id = "header") { "Hello world" } }
+            }
+        do! ctx.WriteHtmlViewChunked(htmlDoc)
+
+        ctx.Response.Body.Seek(0, SeekOrigin.Begin) |> ignore
+        use reader = new StreamReader(ctx.Response.Body)
+        let result = reader.ReadToEnd()
+
+        result
+        |> shouldEqual
+            $"""<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1 id="header">Hello world</h1></body></html>"""
+        ctx.Response.ContentType |> shouldEqual "text/html; charset=utf-8"
+        ctx.Response.ContentLength |> shouldEqual(Nullable())
+    }
+
 // ---------------------------------------------------------------------------
 // TryGet* extensions: StringValues conversion behaviour.
 //

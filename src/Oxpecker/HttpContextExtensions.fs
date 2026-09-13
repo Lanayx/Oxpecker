@@ -11,7 +11,6 @@ open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Extensions
-open Microsoft.AspNetCore.WebUtilities
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
@@ -338,6 +337,7 @@ type HttpContextExtensions() =
     /// <summary>
     /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
+    /// <para>Each element is encoded into the response `BodyWriter` and flushed with `ctx.RequestAborted`, which is also passed to `GetAsyncEnumerator`.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="htmlStream">An `HtmlElement` stream to be send back to the client.</param>
@@ -346,18 +346,20 @@ type HttpContextExtensions() =
     static member WriteHtmlChunked(ctx: HttpContext, htmlStream: #IAsyncEnumerable<#HtmlElement>) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
         let cancellationToken = ctx.RequestAborted
-        let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
+        let writer = ctx.Response.BodyWriter
         task {
-            use _ = textWriter :> IAsyncDisposable
             let enumerator = htmlStream.GetAsyncEnumerator(cancellationToken)
             use _ = enumerator :> IAsyncDisposable
             while! enumerator.MoveNextAsync() do
-                do! Render.toTextWriterAsync(textWriter, enumerator.Current, cancellationToken)
+                Render.toBufferWriter(writer, enumerator.Current)
+                let! _ = writer.FlushAsync(cancellationToken)
+                ()
         }
 
     /// <summary>
     /// <para>Serializes an HTML element object and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
+    /// <para>The document is encoded into the response `BodyWriter` and flushed with `ctx.RequestAborted`; nothing is rendered when the request is already aborted.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="htmlElement">An `HtmlElement` object to be send back to the client.</param>
@@ -365,10 +367,13 @@ type HttpContextExtensions() =
     [<Extension>]
     static member WriteHtmlViewChunked(ctx: HttpContext, htmlElement: #HtmlElement) =
         ctx.Response.ContentType <- "text/html; charset=utf-8"
-        let textWriter = new HttpResponseStreamWriter(ctx.Response.Body, Encoding.UTF8)
+        let cancellationToken = ctx.RequestAborted
+        let writer = ctx.Response.BodyWriter
         task {
-            use _ = textWriter :> IAsyncDisposable
-            return! Render.toHtmlDocTextWriterAsync(textWriter, htmlElement, ctx.RequestAborted)
+            cancellationToken.ThrowIfCancellationRequested()
+            Render.toHtmlDocBufferWriter(writer, htmlElement)
+            let! _ = writer.FlushAsync(cancellationToken)
+            ()
         }
 
     /// <summary>
