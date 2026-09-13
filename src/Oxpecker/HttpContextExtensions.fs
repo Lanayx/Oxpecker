@@ -341,7 +341,8 @@ type HttpContextExtensions() =
     /// <para>Serializes a stream of HTML elements and writes the output to the body of the HTTP response using chunked transfer encoding.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the Transfer-Encoding header to chunked.</para>
     /// <para>Each element is encoded into the response `BodyWriter` and flushed with `ctx.RequestAborted`, which is also passed to `GetAsyncEnumerator`
-    /// and checked before the enumeration and before each element, so nothing is rendered once the request has been aborted, even if the source ignores the token.</para>
+    /// and checked before the enumeration and after every `MoveNextAsync`, so nothing is rendered and the response is not completed
+    /// once the request has been aborted, even if the source ignores the token.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="htmlStream">An `HtmlElement` stream to be send back to the client.</param>
@@ -352,8 +353,9 @@ type HttpContextExtensions() =
         let cancellationToken = ctx.RequestAborted
         let writer = ctx.Response.BodyWriter
         task {
-            // the source may ignore the token it is given: fail before enumerating an already aborted request
-            // and do not render an element produced after the request was aborted
+            // the source may ignore the token it is given: fail before enumerating an already aborted request and
+            // after every MoveNextAsync, so that once the request has been aborted no element is rendered and the
+            // response is not completed either
             cancellationToken.ThrowIfCancellationRequested()
             let enumerator = htmlStream.GetAsyncEnumerator(cancellationToken)
             use _ = enumerator :> IAsyncDisposable
@@ -362,6 +364,7 @@ type HttpContextExtensions() =
                 Render.toBufferWriter(writer, enumerator.Current)
                 let! _ = writer.FlushAsync(cancellationToken)
                 ()
+            cancellationToken.ThrowIfCancellationRequested()
         }
 
     /// <summary>

@@ -760,6 +760,78 @@ let ``WriteMultipart does not write the remaining parts when the request is abor
         responseContentType ctx |> shouldEqual ""
     }
 
+[<Fact>]
+let ``WriteHtmlChunked fails with OperationCanceledException when a source that ignores the token completes after the request was aborted``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        // the second call cancels the request and then reports the end of the stream instead of failing
+        let source =
+            AsyncSource<HtmlElement>([ div() { "first" } :> HtmlElement ], cancelSilentlyAt 2 cts)
+
+        do! shouldBeCancelled(fun () -> ctx.WriteHtmlChunked source :> Task)
+
+        source.MoveNextCalls |> shouldEqual 2
+        source.Disposed |> shouldEqual true
+        readBody ctx |> shouldEqual "<div>first</div>"
+    }
+
+[<Fact>]
+let ``WriteJsonChunked fails with OperationCanceledException when a source that ignores the token completes after the request was aborted``
+    ()
+    =
+    task {
+        let ctx = createContext() |> withJsonSerializer
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let source = AsyncSource<int>([ 1 ], cancelSilentlyAt 2 cts)
+
+        // the closing bracket is flushed with the token
+        do! shouldBeCancelled(fun () -> ctx.WriteJsonChunked source)
+
+        source.MoveNextCalls |> shouldEqual 2
+    }
+
+[<Fact>]
+let ``WriteMultipartChunked fails with OperationCanceledException when a source that ignores the token completes after the request was aborted``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let source =
+            AsyncSource<IMultipartPart>([ MultipartPart.Text "first" ], cancelSilentlyAt 2 cts)
+
+        // the closing delimiter is flushed with the token
+        do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
+
+        source.MoveNextCalls |> shouldEqual 2
+        source.Disposed |> shouldEqual true
+        (readBody ctx).EndsWith("--\r\n") |> shouldEqual false
+    }
+
+[<Fact>]
+let ``WriteMultipartChunked fails with OperationCanceledException instead of ArgumentException when a source that ignores the token completes empty after the request was aborted``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        // the first call cancels the request and then reports an empty stream
+        let source = AsyncSource<IMultipartPart>([], cancelSilentlyAt 1 cts)
+
+        do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
+
+        source.MoveNextCalls |> shouldEqual 1
+        source.Disposed |> shouldEqual true
+        responseContentType ctx |> shouldEqual ""
+    }
+
 // ---------------------------------
 // Model binding
 // ---------------------------------

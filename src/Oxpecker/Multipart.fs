@@ -320,7 +320,8 @@ type MultipartExtensions() =
     /// For `HEAD` requests only the `Content-Type` header is set and the parts are not enumerated, so this check does not apply.</para>
     /// <para>The stream is enumerated and the parts are written with `ctx.RequestAborted`: when the client disconnects the producer
     /// receives the cancellation, nothing more is written and an `OperationCanceledException` is thrown. The token is also checked
-    /// before the enumeration and before each part, so nothing is written once the request has been aborted, even if the source or a part ignores it.</para>
+    /// before the enumeration, after the first `MoveNextAsync` and before each part, so nothing is written once the request has been aborted,
+    /// even if the source or a part ignores it, and a source completing empty after the abort fails with the cancellation rather than as an empty response.</para>
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="parts">The stream of parts to be sent back to the client.</param>
@@ -342,6 +343,9 @@ type MultipartExtensions() =
                 let enumerator = parts.GetAsyncEnumerator(cancellationToken)
                 use _ = enumerator :> IAsyncDisposable
                 let! hasParts = enumerator.MoveNextAsync()
+                // a source that ignores the token may complete empty after the abort:
+                // fail with the cancellation rather than as an empty response
+                cancellationToken.ThrowIfCancellationRequested()
                 if not hasParts then
                     MultipartWriter.raiseEmpty()
                 ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
