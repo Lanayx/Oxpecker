@@ -247,7 +247,7 @@ let ``WriteMultipart writes Bytes parts without re-encoding`` () =
 /// Custom part writing constant header lines, text and then raw bytes copied from a stream
 type private TextThenBytesPart(text: string, data: byte array) =
     interface IMultipartPart with
-        member this.WriteAsync(ctx, writer) =
+        member this.Write(ctx, writer) =
             Encoding.UTF8.GetBytes(
                 "Content-Type: application/octet-stream\r\nContent-ID: custom\r\n\r\n".AsSpan(),
                 writer
@@ -262,7 +262,7 @@ type private TextThenBytesPart(text: string, data: byte array) =
 /// Custom part without any headers: only the empty line ending the header block, then the body
 type private HeaderlessPart(text: string) =
     interface IMultipartPart with
-        member this.WriteAsync(_, writer) =
+        member this.Write(_, writer) =
             Encoding.UTF8.GetBytes(("\r\n" + text).AsSpan(), writer) |> ignore
             Task.CompletedTask
 
@@ -271,7 +271,7 @@ type private FailingPart() =
     member val Writer = Unchecked.defaultof<PipeWriter> with get, set
 
     interface IMultipartPart with
-        member this.WriteAsync(_, writer) =
+        member this.Write(_, writer) =
             this.Writer <- writer
             raise <| InvalidOperationException "body failed"
 

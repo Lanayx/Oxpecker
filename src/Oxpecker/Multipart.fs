@@ -37,7 +37,7 @@ type IMultipartPart =
     /// The part is written through the writer only, not through `ctx.Response`.</param>
     /// <param name="writer">The response writer to write the part to.</param>
     /// <returns>Task of writing the part.</returns>
-    abstract member WriteAsync: ctx: HttpContext * writer: PipeWriter -> Task
+    abstract member Write: ctx: HttpContext * writer: PipeWriter -> Task
 
 /// <summary>
 /// Subtype of the multipart response, i.e. the `multipart/{subtype}` media type.
@@ -122,7 +122,7 @@ type HtmlPart(view: HtmlElement, [<Struct>] ?headers: (string * string) seq) =
     let headers = defaultValueArg headers Seq.empty
 
     interface IMultipartPart with
-        member this.WriteAsync(_, writer) =
+        member this.Write(_, writer) =
             MultipartHeaders.write writer "text/html; charset=utf-8" headers
             Render.toBufferWriter(writer, view)
             Task.CompletedTask
@@ -136,7 +136,7 @@ type TextPart(text: string, [<Struct>] ?headers: (string * string) seq) =
     let headers = defaultValueArg headers Seq.empty
 
     interface IMultipartPart with
-        member this.WriteAsync(_, writer) =
+        member this.Write(_, writer) =
             MultipartHeaders.write writer "text/plain; charset=utf-8" headers
             Encoding.UTF8.GetBytes(text.AsSpan(), writer) |> ignore
             Task.CompletedTask
@@ -152,7 +152,7 @@ type JsonPart<'T>(value: 'T, [<Struct>] ?headers: (string * string) seq) =
     let headers = defaultValueArg headers Seq.empty
 
     interface IMultipartPart with
-        member this.WriteAsync(ctx, writer) =
+        member this.Write(ctx, writer) =
             // resolve the serializer before anything is written, so a missing registration fails with an empty part
             let serializer = ctx.GetJsonSerializer()
             MultipartHeaders.write writer "application/json; charset=utf-8" headers
@@ -167,7 +167,7 @@ type JsonPart<'T>(value: 'T, [<Struct>] ?headers: (string * string) seq) =
 type BytesPart(contentType: string, data: byte array, [<Struct>] ?headers: (string * string) seq) =
 
     interface IMultipartPart with
-        member this.WriteAsync(_, writer) =
+        member this.Write(_, writer) =
             MultipartHeaders.write writer contentType (defaultValueArg headers Seq.empty)
             writer.Write(ReadOnlySpan data)
             Task.CompletedTask
@@ -247,7 +247,7 @@ module internal MultipartWriter =
         ctx.RequestAborted.ThrowIfCancellationRequested()
         writer.Write(ReadOnlySpan "\r\n"B)
         task {
-            do! part.WriteAsync(ctx, writer)
+            do! part.Write(ctx, writer)
             writer.Write(ReadOnlySpan delimiter)
         }
 

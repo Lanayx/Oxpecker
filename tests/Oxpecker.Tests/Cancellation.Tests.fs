@@ -97,7 +97,7 @@ type private RecordingPart() =
     member val Token = CancellationToken.None with get, set
 
     interface IMultipartPart with
-        member this.WriteAsync(ctx, writer) =
+        member this.Write(ctx, writer) =
             this.Written <- true
             this.Token <- ctx.RequestAborted
             Encoding.UTF8.GetBytes("Content-Type: text/plain\r\n\r\npart".AsSpan(), writer)
@@ -332,7 +332,7 @@ let ``JsonPart passes the writer and RequestAborted to the registered serializer
         let writer = PipeWriter.Create(new MemoryStream())
         let part = MultipartPart.Json {| Id = 1 |}
 
-        do! part.WriteAsync(ctx, writer)
+        do! part.Write(ctx, writer)
 
         serializer.Writer |> shouldEqual writer
         serializer.Token |> shouldEqual cts.Token
@@ -657,7 +657,7 @@ let private abortingElement (cts: CancellationTokenSource) =
 /// A part that aborts the request while it is being written
 type private AbortingPart(cts: CancellationTokenSource) =
     interface IMultipartPart with
-        member _.WriteAsync(_, writer) =
+        member _.Write(_, writer) =
             cts.Cancel()
             Encoding.UTF8.GetBytes("Content-Type: text/plain\r\n\r\naborted".AsSpan(), writer)
             |> ignore

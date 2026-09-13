@@ -1550,7 +1550,7 @@ let csvPart =
     )
 ```
 
-The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `WriteAsync` member receives the `HttpContext` (to resolve services, and for the request's cancellation token `ctx.RequestAborted`) and the response `PipeWriter` and writes the whole part, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync(writer, ctx.RequestAborted)`; the writer is flushed after each part:
+The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `Write` member receives the `HttpContext` (to resolve services, and for the request's cancellation token `ctx.RequestAborted`) and the response `PipeWriter` and writes the whole part, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync(writer, ctx.RequestAborted)`; the writer is flushed after each part:
 
 ```fsharp
 open System.IO
@@ -1559,7 +1559,7 @@ open System.Text
 // A custom part streaming a file from disk
 type FilePart(path: string) =
     interface IMultipartPart with
-        member this.WriteAsync(ctx, writer) =
+        member this.Write(ctx, writer) =
             Encoding.UTF8.GetBytes("Content-Type: application/pdf\r\nContent-ID: attachment\r\n\r\n".AsSpan(), writer)
             |> ignore
             task {
