@@ -64,7 +64,6 @@ An in depth functional reference to all of Oxpecker's features.
       - [Writing Text](#writing-text)
       - [Writing JSON](#writing-json)
       - [Writing IResult](#writing-iresult)
-      - [Writing HTML strings](#writing-html-strings)
       - [Writing HTML views](#writing-html-views)
       - [Writing Multipart](#writing-multipart)
       - [Cancellation](#cancellation)
@@ -1409,25 +1408,6 @@ The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also
 let myHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.Write <| TypedResults.Ok johnDoe
-```
-
-#### Writing HTML Strings
-
-The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing text](#writing-text) except that they set the `Content-Type` header to `text/html`:
-
-```fsharp
-let someHandler (dataObj: obj) : EndpointHandler =
-    fun (ctx: HttpContext) ->
-        task {
-            // Do stuff
-            return! ctx.WriteHtmlString "<html><head></head><body>Hello World</body></html>"
-        }
-
-// or...
-
-let someHandler (dataObj: obj) : EndpointHandler =
-    // Do stuff
-    htmlString "<html><head></head><body>Hello World</body></html>"
 ```
 
 #### Writing HTML Views

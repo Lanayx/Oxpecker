@@ -270,18 +270,6 @@ module Routers =
     let addMetadata (metadata: obj) =
         configureEndpoint _.WithMetadata(metadata)
 
-    [<Obsolete "Will be removed in next major version. Use addFilter instead.">]
-    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) = addFilter beforeHandler endpoint
-
-    [<Obsolete "Will be removed in next major version.">]
-    let rec applyAfter (afterHandler: EndpointHandler) (endpoint: Endpoint) =
-        match endpoint with
-        | SimpleEndpoint(verb, template, handler, configure) ->
-            SimpleEndpoint(verb, template, handler >=> afterHandler, configure)
-        | NestedEndpoint(template, endpoints, configure) ->
-            NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, configure)
-        | MultiEndpoint(endpoints, configure) -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints, configure)
-
 type EndpointRouteBuilderExtensions() =
 
     static member private GetConfigureEndpoint(configure: ConfigureEndpoint, addAntiforgery: bool) =

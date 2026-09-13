@@ -111,17 +111,6 @@ module ResponseHandlers =
         fun (ctx: HttpContext) -> ctx.WriteJsonChunked(value)
 
     /// <summary>
-    /// Writes an HTML string to the body of the HTTP response.
-    /// It also sets the HTTP header Content-Type to text/html and sets the Content-Length header accordingly.
-    /// </summary>
-    /// <param name="html">The HTML string to be sent back to the client.</param>
-    /// <param name="ctx">HttpContext</param>
-    /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    [<Obsolete "Will be removed in next major version. Use htmlView instead.">]
-    let htmlString (html: string) : EndpointHandler =
-        fun (ctx: HttpContext) -> ctx.WriteHtmlString html
-
-    /// <summary>
     /// <para>Compiles an `HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
     /// </summary>
