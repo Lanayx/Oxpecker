@@ -221,9 +221,14 @@ module Default =
                             // The client disconnected, which is not an application error
                             logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
                             StatusCodes.Status499ClientClosedRequest
-                    if ctx.Response.HasStarted then
-                        // The status code can no longer be replaced, so the connection is closed instead: a client that is
-                        // still connected (request timeout) must not take the truncated body for a complete response
+                    let writer = ctx.Response.BodyWriter
+                    if
+                        ctx.Response.HasStarted
+                        || not writer.CanGetUnflushedBytes
+                        || writer.UnflushedBytes > 0L
+                    then
+                        // Clear() cannot discard queued pipe data. Abort unless it is safe to complete an empty response,
+                        // so a still-connected client cannot receive cancelled output or a completed truncated body.
                         ctx.Abort()
                     else
                         // drop the headers a cancelled write may have set, e.g. Content-Length

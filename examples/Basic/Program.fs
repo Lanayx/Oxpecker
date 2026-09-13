@@ -250,8 +250,13 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
             // the client disconnected: nothing can be written back and it is not an application error
             // (with UseRequestTimeouts registered before this handler, check IHttpRequestTimeoutFeature to answer timeouts with 504 like Default.exceptionMiddleware does)
             ctx.GetLogger().LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
-            if ctx.Response.HasStarted then
-                // the status code can no longer be replaced: close the connection rather than complete a truncated body
+            let writer = ctx.Response.BodyWriter
+            if
+                ctx.Response.HasStarted
+                || not writer.CanGetUnflushedBytes
+                || writer.UnflushedBytes > 0L
+            then
+                // Clear() cannot discard queued pipe data: abort rather than send cancelled output on completion
                 ctx.Abort()
             else
                 ctx.Response.Clear() // drop the headers a cancelled write may have set

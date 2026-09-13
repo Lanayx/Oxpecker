@@ -12,6 +12,8 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Hosting.Server
+open Microsoft.AspNetCore.Hosting.Server.Features
 open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Http.Features
 open Microsoft.AspNetCore.Http.Timeouts
@@ -128,6 +130,27 @@ type private RecordingLifetimeFeature(token: CancellationToken) =
             with get () = token
             and set (_: CancellationToken) = ()
         member this.Abort() = this.Aborted <- true
+
+/// A wrapper that does not support inspecting unflushed bytes.
+type private UntrackedPipeWriter(inner: PipeWriter) =
+    inherit PipeWriter()
+    override _.Advance count = inner.Advance count
+    override _.GetMemory sizeHint = inner.GetMemory sizeHint
+    override _.GetSpan sizeHint = inner.GetSpan sizeHint
+    override _.CancelPendingFlush() = inner.CancelPendingFlush()
+    override _.Complete ex = inner.Complete ex
+    override _.FlushAsync token = inner.FlushAsync token
+
+type private UntrackedResponseBodyFeature(inner: IHttpResponseBodyFeature) =
+    let writer = UntrackedPipeWriter inner.Writer
+    interface IHttpResponseBodyFeature with
+        member _.Stream = inner.Stream
+        member _.Writer = writer
+        member _.DisableBuffering() = inner.DisableBuffering()
+        member _.StartAsync token = inner.StartAsync token
+        member _.SendFileAsync(path, offset, count, token) =
+            inner.SendFileAsync(path, offset, count, token)
+        member _.CompleteAsync() = inner.CompleteAsync()
 
 // ---------------------------------
 // Helpers
@@ -714,6 +737,55 @@ let ``Default.exceptionMiddleware aborts the connection of an already started re
         shouldHaveLoggedTimeoutAsWarningOnly entries
     }
 
+[<Theory>]
+[<InlineData(false, true)>]
+[<InlineData(true, true)>]
+[<InlineData(false, false)>]
+[<InlineData(true, false)>]
+let ``Default.exceptionMiddleware aborts an unstarted response with cancelled HTML queued in its writer``
+    (isTimeout: bool, canTrackUnflushedBytes: bool)
+    =
+    task {
+        let entries = ResizeArray<LogEntry>()
+        let ctx = createContext() |> withLogging entries
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+        let lifetime = recordAbort ctx
+        if isTimeout then
+            ctx.Features.Set<IHttpRequestTimeoutFeature>(ElapsedTimeoutFeature cts.Token)
+        let writer = ctx.Response.BodyWriter
+        if not canTrackUnflushedBytes then
+            let feature = ctx.Features.Get<IHttpResponseBodyFeature>() |> Unchecked.nonNull
+            ctx.Features.Set<IHttpResponseBodyFeature>(UntrackedResponseBodyFeature feature)
+
+        do! Default.exceptionMiddleware ctx (RequestDelegate(fun ctx -> ctx.WriteHtmlViewChunked(abortingElement cts)))
+
+        ctx.Response.HasStarted |> shouldEqual false
+        (writer.UnflushedBytes > 0L) |> shouldEqual true
+        lifetime.Aborted |> shouldEqual true
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
+        readBody ctx |> shouldEqual ""
+        if isTimeout then
+            shouldHaveLoggedTimeoutAsWarningOnly entries
+        else
+            shouldHaveLoggedAbortAtDebugOnly entries
+    }
+
+[<Fact>]
+let ``Default.exceptionMiddleware aborts when the writer cannot report whether output is queued`` () =
+    task {
+        let entries = ResizeArray<LogEntry>()
+        let ctx = abortedContext() |> withLogging entries
+        let lifetime = recordAbort ctx
+        let feature = ctx.Features.Get<IHttpResponseBodyFeature>() |> Unchecked.nonNull
+        ctx.Features.Set<IHttpResponseBodyFeature>(UntrackedResponseBodyFeature feature)
+
+        do! Default.exceptionMiddleware ctx (RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted))
+
+        lifetime.Aborted |> shouldEqual true
+        shouldHaveLoggedAbortAtDebugOnly entries
+    }
+
 // ---------------------------------
 // End to end
 // ---------------------------------
@@ -730,7 +802,8 @@ module private WebApp =
         }
         :> Task
 
-    let startWith
+    let startWithServer
+        (configureServer: IWebHostBuilder -> IWebHostBuilder)
         (useRequestTimeouts: bool)
         (entries: ResizeArray<LogEntry>)
         (finished: TaskCompletionSource<int>)
@@ -740,8 +813,7 @@ module private WebApp =
             let host =
                 HostBuilder()
                     .ConfigureWebHost(fun webHostBuilder ->
-                        webHostBuilder
-                            .UseTestServer()
+                        (configureServer webHostBuilder)
                             .Configure(fun app ->
                                 let app = app.UseRouting().Use(observe finished)
                                 // the request timeouts middleware is registered outside Default.exceptionMiddleware,
@@ -756,6 +828,9 @@ module private WebApp =
             do! host.StartAsync()
             return host
         }
+
+    let startWith useRequestTimeouts entries finished endpoints =
+        startWithServer _.UseTestServer() useRequestTimeouts entries finished endpoints
 
     let start entries finished endpoints =
         startWith false entries finished endpoints
@@ -875,6 +950,61 @@ let ``HTTP GET chunked multipart endpoint exceeding its request timeout after th
         source.Token.IsCancellationRequested |> shouldEqual true
         source.MoveNextCalls |> shouldEqual 2
         source.Disposed |> shouldEqual true
+        status |> shouldEqual StatusCodes.Status200OK
+        shouldHaveLoggedTimeoutAsWarningOnly entries
+    }
+
+[<Fact>]
+let ``Kestrel aborts instead of sending queued HTML when a request times out during rendering`` () =
+    task {
+        let entries = ResizeArray<LogEntry>()
+        let finished = TaskCompletionSource<int>()
+        let buffered =
+            TaskCompletionSource<bool * int64>(TaskCreationOptions.RunContinuationsAsynchronously)
+        let slowHandler: EndpointHandler =
+            fun ctx ->
+                let view =
+                    { new HtmlElement with
+                        member _.Render sb =
+                            ctx.RequestAborted.WaitHandle.WaitOne(TimeSpan.FromSeconds 10.)
+                            |> shouldEqual true
+                            sb.Append "cancelled HTML" |> ignore
+                    }
+                task {
+                    try
+                        do! ctx.WriteHtmlViewChunked view
+                    finally
+                        buffered.TrySetResult(ctx.Response.HasStarted, ctx.Response.BodyWriter.UnflushedBytes)
+                        |> ignore
+                }
+        let endpoints = [
+            route "/slow" slowHandler
+            |> configureEndpoint _.WithRequestTimeout(TimeSpan.FromSeconds 1.)
+        ]
+        use! host =
+            WebApp.startWithServer
+                (fun builder -> builder.UseKestrel().UseUrls("http://127.0.0.1:0"))
+                true
+                entries
+                finished
+                endpoints
+        let addresses =
+            host.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()
+            |> Unchecked.nonNull
+        use client =
+            new HttpClient(BaseAddress = Uri(Seq.exactlyOne addresses.Addresses), Timeout = TimeSpan.FromSeconds 10.)
+
+        let! _ =
+            Assert.ThrowsAsync<HttpRequestException>(fun () ->
+                task {
+                    use! response = client.GetAsync "/slow"
+                    ()
+                })
+        let! hasStarted, unflushedBytes = buffered.Task.WaitAsync(TimeSpan.FromSeconds 10.)
+        let! status = finished.Task.WaitAsync(TimeSpan.FromSeconds 10.)
+
+        hasStarted |> shouldEqual false
+        (unflushedBytes > 0L) |> shouldEqual true
         status |> shouldEqual StatusCodes.Status200OK
         shouldHaveLoggedTimeoutAsWarningOnly entries
     }
