@@ -51,16 +51,6 @@ type MultipartSubtype =
 
 module internal MultipartHeaders =
 
-    /// Encodes the content of the builder as UTF-8 into the writer chunk by chunk; the stateful encoder
-    /// keeps a surrogate pair intact even when it spans two chunks.
-    let writeUtf8 (writer: PipeWriter) (sb: StringBuilder) =
-        let encoder = Encoding.UTF8.GetEncoder()
-        let mutable bytesUsed = 0L
-        let mutable completed = false
-        for chunk in sb.GetChunks() do
-            encoder.Convert(chunk.Span, writer, false, &bytesUsed, &completed)
-        encoder.Convert(ReadOnlySpan<char>.Empty, writer, true, &bytesUsed, &completed)
-
     /// Characters allowed in an HTTP token (RFC 9110 section 5.6.2), i.e. in a header name.
     let private tokenChars =
         SearchValues.Create("!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".AsSpan())

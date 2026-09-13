@@ -8,6 +8,32 @@ open Microsoft.Extensions.ObjectPool
 let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
 
 /// <summary>
+/// Encodes the content of the builder as UTF-8 into the writer, e.g. a `PipeWriter`, chunk by chunk.
+/// </summary>
+/// <remarks>
+/// Each chunk is encoded in one go without allocating; only a chunk ending with a high surrogate, whose pair may
+/// continue in the next chunk, falls back to a stateful encoder.
+/// </remarks>
+/// <param name="writer">The buffer writer to encode into; it is not flushed.</param>
+/// <param name="sb">The builder whose content is encoded.</param>
+let writeUtf8 (writer: #IBufferWriter<byte>) (sb: StringBuilder) =
+    let mutable needsEncoder = false
+    for chunk in sb.GetChunks() do
+        let span = chunk.Span
+        if span.Length > 0 && Char.IsHighSurrogate(span[span.Length - 1]) then
+            needsEncoder <- true
+    if needsEncoder then
+        let encoder = Encoding.UTF8.GetEncoder()
+        let mutable bytesUsed = 0L
+        let mutable completed = false
+        for chunk in sb.GetChunks() do
+            encoder.Convert(chunk.Span, writer, false, &bytesUsed, &completed)
+        encoder.Convert(ReadOnlySpan<char>.Empty, writer, true, &bytesUsed, &completed)
+    else
+        for chunk in sb.GetChunks() do
+            Encoding.UTF8.GetBytes(chunk.Span, writer) |> ignore
+
+/// <summary>
 /// Checks if an object is not null.
 /// </summary>
 /// <param name="x">The object to validate against `null`.</param>

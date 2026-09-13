@@ -24,16 +24,6 @@ type Render =
             written <- written + Encoding.UTF8.GetBytes(chunk.Span, bytes.AsSpan(written))
         bytes
 
-    /// Encodes the content of the builder as UTF-8 into the writer chunk by chunk; the stateful encoder
-    /// keeps a surrogate pair intact even when it spans two chunks.
-    static member private copyStringBuilderToBufferWriter(sb: StringBuilder, writer: IBufferWriter<byte>) =
-        let encoder = Encoding.UTF8.GetEncoder()
-        let mutable bytesUsed = 0L
-        let mutable completed = false
-        for chunk in sb.GetChunks() do
-            encoder.Convert(chunk.Span, writer, false, &bytesUsed, &completed)
-        encoder.Convert(ReadOnlySpan<char>.Empty, writer, true, &bytesUsed, &completed)
-
     /// Render HtmlElement to normal UTF16 string
     static member toString(view: #HtmlElement) =
         let sb = StringBuilderPool.Get()
@@ -81,7 +71,7 @@ type Render =
         let sb = StringBuilderPool.Get()
         try
             view.Render sb
-            Render.copyStringBuilderToBufferWriter(sb, writer)
+            writeUtf8 writer sb
         finally
             StringBuilderPool.Return(sb)
 
@@ -95,7 +85,7 @@ type Render =
         sb.AppendLine("<!DOCTYPE html>") |> ignore
         try
             view.Render sb
-            Render.copyStringBuilderToBufferWriter(sb, writer)
+            writeUtf8 writer sb
         finally
             StringBuilderPool.Return(sb)
 

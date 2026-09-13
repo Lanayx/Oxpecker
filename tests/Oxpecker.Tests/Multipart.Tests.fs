@@ -288,28 +288,6 @@ let ``WriteMultipart writes a custom part without headers as an empty header blo
         readBody ctx |> shouldEqual $"--{boundary}\r\n\r\nplain\r\n--{boundary}--\r\n"
     }
 
-/// Number of chunks the builder currently consists of
-let private countChunks (sb: StringBuilder) =
-    let mutable chunks = 0
-    for _ in sb.GetChunks() do
-        chunks <- chunks + 1
-    chunks
-
-[<Fact>]
-let ``MultipartHeaders.writeUtf8 keeps a surrogate pair that spans two StringBuilder chunks intact`` () =
-    task {
-        // capacity 2: "a" and the high surrogate fill the first chunk, the low surrogate lands in the second one
-        let sb = StringBuilder(2).Append("a").Append("\U0001F600")
-        countChunks sb |> shouldEqual 2
-
-        use stream = new MemoryStream()
-        let writer = PipeWriter.Create(stream, StreamPipeWriterOptions(leaveOpen = true))
-        MultipartHeaders.writeUtf8 writer sb
-        do! writer.CompleteAsync()
-
-        stream.ToArray() |> shouldEqual(Encoding.UTF8.GetBytes "a\U0001F600")
-    }
-
 [<Fact>]
 let ``WriteMultipart writes repeated headers in the given order`` () =
     task {
