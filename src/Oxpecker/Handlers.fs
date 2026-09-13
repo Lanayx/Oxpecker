@@ -208,6 +208,8 @@ module Default =
                     // The client disconnected: nothing can be written back and it's not an application error
                     logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
                     if not ctx.Response.HasStarted then
+                        // drop the headers a cancelled write may have set, e.g. Content-Length
+                        ctx.Response.Clear()
                         ctx.SetStatusCode StatusCodes.Status499ClientClosedRequest
                 | :? ModelBindException
                 | :? RouteParseException as ex ->

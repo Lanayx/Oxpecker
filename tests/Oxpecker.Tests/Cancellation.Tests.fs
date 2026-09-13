@@ -566,11 +566,19 @@ let ``Default.exceptionMiddleware answers an aborted request with 499 and logs a
     task {
         let entries = ResizeArray<LogEntry>()
         let ctx = abortedContext() |> withLogging entries
+        // a write that set its headers before observing the cancellation, like WriteText does
+        let cancelledWrite =
+            RequestDelegate(fun ctx ->
+                ctx.Response.ContentType <- "text/plain; charset=utf-8"
+                ctx.Response.ContentLength <- 5L
+                Task.FromCanceled ctx.RequestAborted)
 
-        do! Default.exceptionMiddleware ctx (RequestDelegate(fun _ -> Task.FromCanceled ctx.RequestAborted))
+        do! Default.exceptionMiddleware ctx cancelledWrite
 
         ctx.Response.StatusCode |> shouldEqual StatusCodes.Status499ClientClosedRequest
         readBody ctx |> shouldEqual ""
+        responseContentType ctx |> shouldEqual ""
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
         shouldHaveLoggedAbortAtDebugOnly entries
     }
 
