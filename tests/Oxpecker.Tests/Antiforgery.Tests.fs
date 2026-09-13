@@ -79,8 +79,8 @@ let ``Request fails when antiforgery token is missing`` () =
 [<Fact>]
 let ``QUERY request is not validated against antiforgery token`` () =
     task {
-        // ASP.NET Core antiforgery middleware only validates POST, PUT and PATCH requests,
-        // so form binding on a QUERY endpoint does not require a token
+        // QUERY is defined as a safe and idempotent method (like GET), so CSRF protection
+        // doesn't apply to it by design and form binding on a QUERY endpoint does not require a token
         let endpoints = [
             QUERY [
                 route "/action" (fun ctx ->
