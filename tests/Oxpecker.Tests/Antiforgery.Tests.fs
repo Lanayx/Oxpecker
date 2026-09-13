@@ -77,6 +77,30 @@ let ``Request fails when antiforgery token is missing`` () =
     }
 
 [<Fact>]
+let ``QUERY request is not validated against antiforgery token`` () =
+    task {
+        // ASP.NET Core antiforgery middleware only validates POST, PUT and PATCH requests,
+        // so form binding on a QUERY endpoint does not require a token
+        let endpoints = [
+            QUERY [
+                route "/action" (fun ctx ->
+                    task {
+                        let! msg = ctx.BindForm<{| Message: string |}>()
+                        return! ctx.WriteText msg.Message
+                    })
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        use request = new HttpRequestMessage(HttpMethod "QUERY", "/action")
+        request.Content <- new FormUrlEncodedContent([ KeyValuePair("Message", "Hi") ])
+        let! result = client.SendAsync request
+        let! text = result.Content.ReadAsStringAsync()
+        text |> shouldEqual "Hi"
+    }
+
+[<Fact>]
 let ``Server returns 403 with default error handler and antiforgery token is missing`` () =
     task {
         let endpoints = [

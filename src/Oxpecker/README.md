@@ -565,6 +565,7 @@ Oxpecker exposes a set of functions which can filter a request based on the requ
 - `POST`
 - `PUT`
 - `PATCH`
+- `QUERY`
 - `DELETE`
 - `HEAD`
 - `OPTIONS`
@@ -1199,7 +1200,7 @@ let configureServices (services: IServiceCollection) =
         .AddOxpecker()
     |> ignore
 ```
-Once it's done, all your POST, PUT and PATCH endpoints will be validated against CSRF token, but an actual antiforgery exception (in case of failed validation) will only happen when doing [form binding](#binding-forms).
+Once it's done, all your POST, PUT and PATCH endpoints will be validated against CSRF token, but an actual antiforgery exception (in case of failed validation) will only happen when doing [form binding](#binding-forms). Note that ASP.NET Core antiforgery middleware only validates POST, PUT and PATCH requests, so QUERY endpoints (which can also carry a form body) are not validated.
 
 _If you don't like the default behavior, instead of adding built-in ASP.NET Core AntiForgery middleware, you can write custom [EndpointMiddleware](#endpointmiddleware), that will call `antiforgery.ValidateRequestAsync`, and place it in the desired stage of the pipeline._
 
