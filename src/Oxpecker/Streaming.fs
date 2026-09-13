@@ -132,7 +132,6 @@ type StreamingExtensions() =
     [<Extension>]
     static member internal WriteStreamToBody(ctx: HttpContext, stream: Stream, rangeBoundary: RangeBoundary option) =
         task {
-            use input = stream
             let numberOfBytes =
                 match rangeBoundary with
                 | Some range ->
@@ -147,13 +146,13 @@ type StreamingExtensions() =
                     ctx.SetStatusCode StatusCodes.Status206PartialContent
 
                     // Forward to start position of streaming
-                    input.Seek(range.Start, SeekOrigin.Begin) |> ignore
+                    stream.Seek(range.Start, SeekOrigin.Begin) |> ignore
 
                     Nullable<int64>(range.Length)
                 | None ->
                     // Only set HTTP Content-Length if the stream can be seeked
                     if stream.CanSeek then
-                        ctx.SetHttpHeader(HeaderNames.ContentLength, string input.Length)
+                        ctx.SetHttpHeader(HeaderNames.ContentLength, string stream.Length)
                     Nullable()
 
             // If the HTTP request was not HEAD then write to the body. The copy is cancelled through
@@ -162,7 +161,7 @@ type StreamingExtensions() =
                 let bufferSize = 64 * 1024
                 do!
                     StreamCopyOperation.CopyToAsync(
-                        input,
+                        stream,
                         ctx.Response.Body,
                         numberOfBytes,
                         bufferSize,
@@ -177,7 +176,7 @@ type StreamingExtensions() =
     /// </summary>
     /// <param name="ctx">The current http context object.</param>
     /// <param name="enableRangeProcessing">If enabled then the handler will respect the Range and If-Range HTTP headers of the request as well as set all necessary HTTP headers in the response to enable HTTP range processing.</param>
-    /// <param name="stream">The stream to be send to the client.</param>
+    /// <param name="stream">The stream to be send to the client. It is disposed on every path, also when a precondition fails, the range is invalid, an error occurs or the request is aborted.</param>
     /// <param name="eTag">An optional entity tag which identifies the exact version of the data.</param>
     /// <param name="lastModified">An optional parameter denoting the last modified date time of the data.</param>
     /// <returns>Task of Some HttpContext after writing to the body of the response.</returns>
@@ -191,6 +190,9 @@ type StreamingExtensions() =
             lastModified: DateTimeOffset option
         ) =
         task {
+            // the stream is owned by this method and disposed on every path, also on a cancellation and on the
+            // conditional and range responses that do not write it
+            use stream = stream
             // fail before the preconditions are evaluated, so that an already aborted request is not answered with
             // a complete 304, 412 or 416 response or, for HEAD, with a complete empty one
             ctx.RequestAborted.ThrowIfCancellationRequested()
@@ -264,7 +266,7 @@ type StreamingExtensions() =
 /// The handler will respect any valid HTTP pre-conditions (e.g. If-Match, If-Modified-Since, etc.) and return the most appropriate response. If the optional parameters eTag and/or lastModified have been set, then it will also set the ETag and/or Last-Modified HTTP headers in the response.
 /// </summary>
 /// <param name="enableRangeProcessing">enableRangeProcessing: If enabled then the handler will respect the Range and If-Range HTTP headers of the request as well as set all necessary HTTP headers in the response to enable HTTP range processing.</param>
-/// <param name="stream">The stream to be send to the client.</param>
+/// <param name="stream">The stream to be send to the client. It is disposed on every path, also when a precondition fails, the range is invalid, an error occurs or the request is aborted.</param>
 /// <param name="eTag">An optional entity tag which identifies the exact version of the data.</param>
 /// <param name="lastModified">An optional parameter denoting the last modified date time of the file.</param>
 /// <param name="ctx"></param>

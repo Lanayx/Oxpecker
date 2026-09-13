@@ -543,6 +543,7 @@ let ``WriteStream throws OperationCanceledException instead of aborting silently
         do! shouldBeCancelled(fun () -> ctx.WriteStream(false, stream, None, None) :> Task)
 
         readBody ctx |> shouldEqual ""
+        stream.CanRead |> shouldEqual false // the stream was disposed
     }
 
 /// A HEAD request that has already been aborted
@@ -591,6 +592,8 @@ let ``WriteStream with HEAD throws OperationCanceledException when the request i
         use stream = new MemoryStream(Encoding.UTF8.GetBytes "Hello")
 
         do! shouldBeCancelled(fun () -> ctx.WriteStream(false, stream, None, None) :> Task)
+
+        stream.CanRead |> shouldEqual false // the stream was disposed
     }
 
 [<Fact>]
@@ -614,6 +617,7 @@ let ``WriteStream with a failed precondition throws OperationCanceledException w
 
         // the precondition was not evaluated, which would have answered the request with 412
         ctx.Response.StatusCode |> shouldEqual StatusCodes.Status200OK
+        stream.CanRead |> shouldEqual false // the stream was disposed
     }
 
 // ---------------------------------

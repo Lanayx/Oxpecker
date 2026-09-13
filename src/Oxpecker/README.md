@@ -1631,7 +1631,7 @@ When the request is aborted the writing method fails with an `OperationCanceledE
 
 Sometimes a large file or block of data has to be send to a client and in order to avoid loading the entire data into memory a Oxpecker web application can use streaming to send a response in a more efficient way.
 
-The `WriteStream` extension method and the `streamData` endpoint handler can be used to stream an object of type `Stream` to a client.
+The `WriteStream` extension method and the `streamData` endpoint handler can be used to stream an object of type `Stream` to a client. They take ownership of the stream and dispose it on every path, also when a precondition fails, the range is invalid, an error occurs or the request is aborted.
 
 Both functions accept the following parameters:
 
