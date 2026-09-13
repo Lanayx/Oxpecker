@@ -462,6 +462,56 @@ let ``WriteStream throws OperationCanceledException instead of aborting silently
     }
 
 // ---------------------------------
+// Requests aborted while the response is rendered in memory
+// ---------------------------------
+
+/// An element that aborts the request while it is being rendered
+let private abortingElement (cts: CancellationTokenSource) =
+    { new HtmlElement with
+        member _.Render sb =
+            cts.Cancel()
+            sb.Append "aborted" |> ignore
+    }
+
+/// A part that aborts the request while it is being written
+type private AbortingPart(cts: CancellationTokenSource) =
+    interface IMultipartPart with
+        member _.WriteAsync(writer, _) =
+            cts.Cancel()
+            Encoding.UTF8.GetBytes("Content-Type: text/plain\r\n\r\naborted".AsSpan(), writer)
+            |> ignore
+            Task.CompletedTask
+
+[<Fact>]
+let ``WriteHtmlView with HEAD fails with OperationCanceledException when the request is aborted while rendering`` () =
+    task {
+        let ctx = createContext()
+        ctx.Request.Method <- HttpMethods.Head
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+
+        do! shouldBeCancelled(fun () -> ctx.WriteHtmlView(abortingElement cts))
+
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
+    }
+
+[<Fact>]
+let ``WriteMultipart with HEAD fails with OperationCanceledException when the request is aborted while a part is written``
+    ()
+    =
+    task {
+        let ctx = createContext()
+        ctx.Request.Method <- HttpMethods.Head
+        use cts = new CancellationTokenSource()
+        ctx.RequestAborted <- cts.Token
+
+        do! shouldBeCancelled(fun () -> ctx.WriteMultipart [ AbortingPart cts ] :> Task)
+
+        responseContentType ctx |> shouldEqual ""
+        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
+    }
+
+// ---------------------------------
 // Model binding
 // ---------------------------------
 

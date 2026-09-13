@@ -318,7 +318,7 @@ type HttpContextExtensions() =
         if ctx.Request.Method <> HttpMethods.Head then
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView)
+                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView, cancellationToken)
                     ctx.Response.ContentLength <- memoryStream.Length
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
                     return! memoryStream.CopyToAsync(ctx.Response.Body, cancellationToken)
@@ -329,7 +329,7 @@ type HttpContextExtensions() =
         else
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView)
+                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView, cancellationToken)
                     ctx.Response.ContentLength <- memoryStream.Length
                 finally
                     memoryStream.Dispose()

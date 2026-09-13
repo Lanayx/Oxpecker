@@ -314,8 +314,7 @@ type MultipartExtensions() =
                 if isEmpty then
                     MultipartWriter.raiseEmpty()
                 MultipartWriter.writeClosing writer
-                // the writer flushes into memory, so no token is needed here
-                let! _ = writer.FlushAsync()
+                let! _ = writer.FlushAsync(cancellationToken)
                 ctx.Response.ContentType <- MultipartWriter.contentType subtype boundary
                 ctx.Response.ContentLength <- memoryStream.Length
                 if ctx.Request.Method <> HttpMethods.Head then
