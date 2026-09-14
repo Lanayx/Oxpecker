@@ -1085,3 +1085,116 @@ let ``Nullable reference fields of union cases are documented as nullable`` () =
 }"""
         resultString.ReplaceLineEndings() |> shouldEqual expected
     }
+
+[<JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")>]
+type Vehicle =
+    | [<JsonPropertyName("bike")>] Bicycle
+    | [<JsonPropertyName("auto")>] Car of seats: int
+    | Truck of load: float
+
+[<Fact>]
+let ``Custom discriminator name and case name overrides are respected`` () =
+    task {
+        let endpoints = [ GET [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, Vehicle> ] ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vehicle"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Vehicle": {
+        "oneOf": [
+          {
+            "const": "bike",
+            "type": "string"
+          },
+          {
+            "required": [
+              "kind",
+              "seats"
+            ],
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "auto",
+                "type": "string"
+              },
+              "seats": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          },
+          {
+            "required": [
+              "kind",
+              "load"
+            ],
+            "type": "object",
+            "properties": {
+              "kind": {
+                "const": "truck",
+                "type": "string"
+              },
+              "load": {
+                "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "double"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
