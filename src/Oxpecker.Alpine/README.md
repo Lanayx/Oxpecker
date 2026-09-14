@@ -44,7 +44,8 @@ After opening the `Oxpecker.Alpine` namespace you'll get access to the Alpine di
 | `xFor`        | `x-for`             |                                                                       |
 | `xIf`         | `x-if`              |                                                                       |
 | `xTransition` | `x-transition`      | Valueless; optional `modifiers` overload.                             |
-| `xTransitionOn` | `x-transition:<phase>` | Phase-specific transition. Optional `modifiers` overload.        |
+| `xTransitionOn` | `x-transition:<stage>` | Valueless stage-specific transition with `modifiers`.            |
+| `xTransitionClassesOn` | `x-transition:<stage>` | Stage-specific transition carrying a CSS class list.      |
 | `xRef`        | `x-ref`             |                                                                       |
 | `xId`         | `x-id`              |                                                                       |
 | `xCloak`      | `x-cloak`           | Boolean — only renders when `true`.                                   |
@@ -79,7 +80,20 @@ input().xModel("age", XModelModifier.number + XModelModifier.debounceMs 500)
 div().xTransition(XTransitionModifier.durationMs 500) { ... }
 
 // Renders x-transition:enter.duration.300ms
-div().xTransitionOn("enter", XTransitionModifier.durationMs 300) { ... }
+div().xTransitionOn(XTransitionStage.enter, XTransitionModifier.durationMs 300) { ... }
+```
+
+Alpine's other transition form applies CSS classes per stage instead of modifiers, which is what you need for effects the modifiers don't cover (e.g. a translate). Use `xTransitionClassesOn` for it:
+
+```fsharp
+// Renders x-transition:enter="transition ease-out duration-200"
+//         x-transition:enter-start="opacity-0 translate-y-1.5"
+//         x-transition:enter-end="opacity-100 translate-y-0"
+div()
+    .xShow("open")
+    .xTransitionClassesOn(XTransitionStage.enter, "transition ease-out duration-200")
+    .xTransitionClassesOn(XTransitionStage.enterStart, "opacity-0 translate-y-1.5")
+    .xTransitionClassesOn(XTransitionStage.enterEnd, "opacity-100 translate-y-0") { ... }
 ```
 
 The following helper modules expose the most common Alpine modifier names as constants and helper functions. Each value already includes the leading `.` and can be concatenated with `+`:
@@ -91,6 +105,7 @@ The following helper modules expose the most common Alpine modifier names as con
 | `XOnKey`              | `shift`, `enter`, `space`, `ctrl`, `cmd`, `meta`, `alt`, `up`, `down`, `left`, `right`, `escape`, `tab`, `capsLock`, `equal`, `period`, `comma`, `slash` |
 | `XModelModifier`      | `number`, `boolean`, `lazy'`, `change`, `blur`, `enter`, `fill`, `debounce`, `debounceMs n`, `throttle`, `throttleMs n` |
 | `XTransitionModifier` | `durationMs n`, `delayMs n`, `opacity`, `scale n`, `scaleOrigin "top"`   |
+| `XTransitionStage`    | `enter`, `enterStart`, `enterEnd`, `leave`, `leaveStart`, `leaveEnd` (stage names for `xTransitionClassesOn`, no leading `.`) |
 
 Custom modifier strings are also accepted; just remember to include the leading `.`:
 

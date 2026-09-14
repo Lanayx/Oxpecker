@@ -405,8 +405,8 @@ module internal rec AST =
             | _ ->
                 match range with
                 | Some range ->
-                    failwith $"`let` binding inside HTML CE can't be converted to JSX:line {range.start.line}"
-                | None -> failwith $"`let` binding inside HTML CE can't be converted to JSX"
+                    failwith $"`let` binding inside HtmlElement can't be converted to JSX:line {range.start.line}"
+                | None -> failwith $"`let` binding inside HtmlElement can't be converted to JSX"
         | _ -> currentList
 
     let listItemType =
@@ -489,8 +489,25 @@ module internal rec AST =
             range = range
         )
 
+    let (|ExplicitLetBinding|_|) =
+        function
+        | Let({
+                  IsCompilerGenerated = false
+                  Range = range
+              },
+              (TagNoChildrenWithProps _ | CallTagNoChildrenWithHandler _ | TagWithChildren _ | LibraryTagImport _),
+              _) ->
+            let linePostfix =
+                match range with
+                | Some range -> $":line {range.start.line}"
+                | None -> ""
+            $"`let` binding to HtmlElement can't be converted to JSX, please move it to a separate `[<SolidComponent>]` binding{linePostfix}"
+            |> Some
+        | _ -> None
+
     let transform (expr: Expr) =
         match expr with
+        | ExplicitLetBinding failText -> failwith failText
         | TagNoChildrenWithProps tagInfo
         | Let(IdentElement, TagNoChildrenWithProps tagInfo, _)
         | CallTagNoChildrenWithHandler tagInfo

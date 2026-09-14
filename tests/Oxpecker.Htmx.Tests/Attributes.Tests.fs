@@ -37,6 +37,12 @@ let ``hxDelete renders hx-delete`` () =
     |> Render.toString
     |> shouldEqual """<button hx-delete="/item/1">Delete</button>"""
 
+[<Fact>]
+let ``hxQuery renders hx-query`` () =
+    button().hxQuery("/search") { "Search" }
+    |> Render.toString
+    |> shouldEqual """<button hx-query="/search">Search</button>"""
+
 // ─── Core inheritable attributes ───
 
 [<Fact>]
@@ -230,10 +236,28 @@ let ``hxIgnore false does not render`` () =
     |> shouldEqual """<div>Not ignored</div>"""
 
 [<Fact>]
-let ``hxOptimistic renders hx-optimistic`` () =
-    button().hxPost("/save").hxOptimistic("#template-id") { "Save" }
+let ``hxMorphSkip true renders hx-morph-skip`` () =
+    div().hxMorphSkip(true) { "widget" }
     |> Render.toString
-    |> shouldEqual """<button hx-post="/save" hx-optimistic="#template-id">Save</button>"""
+    |> shouldEqual """<div hx-morph-skip>widget</div>"""
+
+[<Fact>]
+let ``hxMorphSkip false does not render`` () =
+    div().hxMorphSkip(false) { "widget" }
+    |> Render.toString
+    |> shouldEqual """<div>widget</div>"""
+
+[<Fact>]
+let ``hxMorphSkipChildren true renders hx-morph-skip-children`` () =
+    div().hxMorphSkipChildren(true) { "widget" }
+    |> Render.toString
+    |> shouldEqual """<div hx-morph-skip-children>widget</div>"""
+
+[<Fact>]
+let ``hxMorphSkipChildren false does not render`` () =
+    div().hxMorphSkipChildren(false) { "widget" }
+    |> Render.toString
+    |> shouldEqual """<div>widget</div>"""
 
 // ─── Inheritance modifiers ───
 

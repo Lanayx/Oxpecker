@@ -106,8 +106,85 @@ module Builder =
         interface HtmlElement with
             member this.Render sb = this.Render sb
 
+    /// Node with a prerendered prefix and suffix around its children
+    type PrerenderedNode(prefix: string, suffix: string) =
+        let mutable children: CustomQueue<HtmlElement> = Unchecked.defaultof<_>
+        member this.Children = children.AsEnumerable()
+        member this.AddChild(element: HtmlElement) = children.Enqueue(element)
+        member this.Render(sb: StringBuilder) =
+            sb.Append(prefix) |> ignore
+            RenderHelpers.renderChildren sb children
+            sb.Append(suffix) |> ignore
+        interface HtmlContainer with
+            member this.Render sb = this.Render sb
+            member this.AddChild element = this.AddChild element
+
+    /// Placeholder that records where the dynamic part of a template begins
+    type internal HoleMarker() =
+        let mutable buffer: StringBuilder | null = null
+        let mutable position = -1
+        let mutable count = 0
+        member this.Position = position
+        /// Forgets renders that happened while the template was being built
+        member this.Reset() =
+            buffer <- null
+            position <- -1
+            count <- 0
+        /// True only when the hole was rendered exactly once, into this very buffer
+        member this.WasRenderedOnceInto(sb: StringBuilder) =
+            count = 1 && obj.ReferenceEquals(buffer, sb)
+        member this.Render(sb: StringBuilder) =
+            buffer <- sb
+            position <- sb.Length
+            count <- count + 1
+        interface HtmlElement with
+            member this.Render sb = this.Render sb
+
     /// Create text node that will NOT be HTML-escaped
     let inline raw text = RawTextNode text
+
+    /// <summary>
+    /// Renders an element together with all its children into a static HTML snapshot.
+    /// Use it to render static parts of a view once, instead of re-rendering them on every request.
+    /// </summary>
+    /// <remarks>
+    /// The snapshot is taken eagerly, at the moment of the call. Children or attributes added
+    /// to the original element afterwards will not be reflected in the returned node.
+    /// </remarks>
+    let prerender (view: #HtmlElement) =
+        let sb = StringBuilderPool.Get()
+        try
+            view.Render sb
+            RawTextNode(sb.ToString())
+        finally
+            StringBuilderPool.Return(sb)
+
+    /// <summary>
+    /// Renders the static part of a template with a hole in it once, and returns a factory
+    /// creating nodes that fill the hole. Use it for layouts, where only a small part of the
+    /// markup changes between renders.
+    /// </summary>
+    /// <param name="template">
+    /// Function that receives the hole and places it inside the markup. It has to use the hole exactly once.
+    /// </param>
+    /// <remarks>
+    /// The static part is rendered eagerly, at the moment of the call, exactly like <c>prerender</c> does.
+    /// </remarks>
+    let prerenderAround (template: HtmlElement -> #HtmlElement) =
+        let hole = HoleMarker()
+        let view = template hole
+        let sb = StringBuilderPool.Get()
+        let prefix, suffix =
+            try
+                // the template may have rendered the hole into a buffer of its own while being built
+                hole.Reset()
+                view.Render sb
+                if not(hole.WasRenderedOnceInto sb) then
+                    invalidArg (nameof template) "Template has to render the provided hole exactly once"
+                sb.ToString(0, hole.Position), sb.ToString(hole.Position, sb.Length - hole.Position)
+            finally
+                StringBuilderPool.Return(sb)
+        fun () -> PrerenderedNode(prefix, suffix)
 
     type HtmlContainerFun = HtmlContainer -> unit
 

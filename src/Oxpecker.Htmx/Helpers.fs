@@ -19,7 +19,7 @@ module HxModifier =
 /// Builders for extended selectors.
 /// See https://four.htmx.org/docs/features/extended-selectors
 /// Each helper returns the htmx selector string ready to pass into selector-typed attributes
-/// such as `hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`, `hxOptimistic`.
+/// such as `hxTarget`, `hxSelect`, `hxSelectOob`, `hxIndicator`, `hxInclude`, `hxDisable`.
 [<RequireQualifiedAccess>]
 module HxSelector =
     /// `this` — the element itself.
@@ -112,9 +112,9 @@ module HxSwapModifier =
     /// `swapMs` — adds delay before swap, in milliseconds.
     let inline swapMs value = $" swap:%i{value}ms"
     /// `settle` — adds delay between the swap and the settle phase.
-    let inline settle value = $"settle:%s{value}"
+    let inline settle value = $" settle:%s{value}"
     /// `settleMs` — adds delay between the swap and the settle phase, in milliseconds.
-    let inline settleMs value = $"settle:%i{value}ms"
+    let inline settleMs value = $" settle:%i{value}ms"
     /// `ignoreTitle` — prevents htmx from updating the document title based on the response.
     let inline ignoreTitle value = $" ignoreTitle:%b{value}"
     /// `scroll` — auto-scroll to swapped content.
@@ -129,6 +129,10 @@ module HxSwapModifier =
     let inline target value = $" target:%s{value}"
     /// `strip` — controls whether the outer element of the response content is removed before swapping.
     let inline strip value = $" strip:%b{value}"
+    /// `swapEmpty` — controls whether the main swap still runs when the response is empty after
+    /// out-of-band and partial content has been removed. Defaults to `false` when the response
+    /// contained partials.
+    let inline swapEmpty value = $" swapEmpty:%b{value}"
 
 /// Synthetic event names for `hxTrigger`, beyond the standard DOM events.
 [<RequireQualifiedAccess>]

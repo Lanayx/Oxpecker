@@ -22,6 +22,34 @@ module XTransitionModifier =
     /// Adds `x-transition.scale.origin.XXX` for a scale transition origin of XXX (e.g. `"top"`).
     let inline scaleOrigin origin = $".scale.origin.%s{origin}"
 
+/// Transition stages.
+[<RequireQualifiedAccess>]
+module XTransitionStage =
+
+    /// Applied during the entire entering phase.
+    [<Literal>]
+    let enter = "enter"
+
+    /// Added before element is inserted, removed one frame after element is inserted.
+    [<Literal>]
+    let enterStart = "enter-start"
+
+    /// Added one frame after element is inserted (at the same time enter-start is removed), removed when transition/animation finishes.
+    [<Literal>]
+    let enterEnd = "enter-end"
+
+    /// Applied during the entire leaving phase.
+    [<Literal>]
+    let leave = "leave"
+
+    /// Added immediately when a leaving transition is triggered, removed after one frame.
+    [<Literal>]
+    let leaveStart = "leave-start"
+
+    /// Added one frame after a leaving transition is triggered (at the same time leave-start is removed), removed when the transition/animation finishes.
+    [<Literal>]
+    let leaveEnd = "leave-end"
+
 /// Frequently used modifiers for x-model.
 /// Each constant includes the leading `.` and is appended verbatim after the attribute name.
 [<RequireQualifiedAccess>]

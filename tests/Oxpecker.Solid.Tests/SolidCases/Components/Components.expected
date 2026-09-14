@@ -1,10 +1,9 @@
 
-import { some } from "./fable_modules/fable-library-js.5.0.0/Option.js";
 import { createSignal } from "solid-js";
 
 export function Component(getText) {
     return <h1 onClick={(_arg) => {
-            console.log(some(getText()));
+            console.log(getText());
         }}>
         {getText()}
     </h1>;

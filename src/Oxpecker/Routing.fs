@@ -20,6 +20,7 @@ module RoutingTypes =
         | POST
         | PUT
         | PATCH
+        | QUERY
         | DELETE
         | HEAD
         | OPTIONS
@@ -32,6 +33,7 @@ module RoutingTypes =
             | POST -> "POST"
             | PUT -> "PUT"
             | PATCH -> "PATCH"
+            | QUERY -> "QUERY"
             | DELETE -> "DELETE"
             | HEAD -> "HEAD"
             | OPTIONS -> "OPTIONS"
@@ -237,6 +239,7 @@ module Routers =
     let POST: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ POST ])
     let PUT: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ PUT ])
     let PATCH: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ PATCH ])
+    let QUERY: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ QUERY ])
     let DELETE: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ DELETE ])
     let HEAD: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ HEAD ])
     let OPTIONS: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ OPTIONS ])
@@ -266,18 +269,6 @@ module Routers =
 
     let addMetadata (metadata: obj) =
         configureEndpoint _.WithMetadata(metadata)
-
-    [<Obsolete "Will be removed in next major version. Use addFilter instead.">]
-    let inline applyBefore (beforeHandler: 'T) (endpoint: Endpoint) = addFilter beforeHandler endpoint
-
-    [<Obsolete "Will be removed in next major version.">]
-    let rec applyAfter (afterHandler: EndpointHandler) (endpoint: Endpoint) =
-        match endpoint with
-        | SimpleEndpoint(verb, template, handler, configure) ->
-            SimpleEndpoint(verb, template, handler >=> afterHandler, configure)
-        | NestedEndpoint(template, endpoints, configure) ->
-            NestedEndpoint(template, Seq.map (applyAfter afterHandler) endpoints, configure)
-        | MultiEndpoint(endpoints, configure) -> MultiEndpoint(Seq.map (applyAfter afterHandler) endpoints, configure)
 
 type EndpointRouteBuilderExtensions() =
 

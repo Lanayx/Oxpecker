@@ -38,9 +38,12 @@ module HxRequestHeader =
     /// `HX-PTag` — polling tag sent back to the server by the `hx-ptag` extension.
     [<Literal>]
     let PTag = "HX-PTag"
-    /// `HX-Request-ID` — unique request/response correlation id sent by the `hx-ws` extension in the message headers (echoed back by the server).
+    /// `HX-Prompt` — the user's answer to the `hx-prompt` dialog, sent URI-encoded by the `hx-prompt` extension (decode it with `Uri.UnescapeDataString`).
     [<Literal>]
-    let RequestId = "HX-Request-ID"
+    let Prompt = "HX-Prompt"
+    /// `HX-Last-Part-ID` — the `HX-Part-ID` of the last completed part, sent by the `hx-multipart` extension when reconnecting so the server can resume the stream.
+    [<Literal>]
+    let LastPartId = "HX-Last-Part-ID"
 
 [<RequireQualifiedAccess>]
 module HxResponseHeader =
@@ -78,6 +81,6 @@ module HxResponseHeader =
     /// `HX-PTag` — polling tag stored by the `hx-ptag` extension and echoed on the next request.
     [<Literal>]
     let PTag = "HX-PTag"
-    /// `HX-Request-ID` — the request/response correlation id echoed back by the server so the `hx-ws` extension can route the response to the originating element.
+    /// `HX-Part-ID` — per-part identifier set on a `multipart/mixed` part by the server, remembered by the `hx-multipart` extension and sent back as `HX-Last-Part-ID` on reconnect.
     [<Literal>]
-    let RequestId = "HX-Request-ID"
+    let PartId = "HX-Part-ID"

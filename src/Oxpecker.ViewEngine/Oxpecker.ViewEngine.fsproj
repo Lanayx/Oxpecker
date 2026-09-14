@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>2.0.1</Version>
-        <PackageVersion>2.0.1</PackageVersion>
-        <PackageReleaseNotes>Included documentation file in the package</PackageReleaseNotes>
+        <Version>3.0.0</Version>
+        <PackageVersion>3.0.0</PackageVersion>
+        <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="10.0.100" />

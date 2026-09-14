@@ -1,8 +1,11 @@
 ﻿module Oxpecker.Tests.Json
 
 open System
+open System.Buffers
 open System.IO
+open System.IO.Pipelines
 open System.Text.Json
+open System.Threading
 open Microsoft.AspNetCore.Http
 open Microsoft.Net.Http.Headers
 open Oxpecker
@@ -143,4 +146,51 @@ let ``Test default deserializer with nullables`` () =
             Age = Nullable()
             Title = null
         |}
+    }
+
+[<Fact>]
+let ``Test part serializer`` () =
+    task {
+        let serializer: IJsonSerializer = SystemTextJsonSerializer()
+        use stream = new MemoryStream()
+        let writer = PipeWriter.Create(stream, StreamPipeWriterOptions(leaveOpen = true))
+        let value = {| Name = "Oxpecker" |}
+        do! serializer.SerializePart(value, writer, CancellationToken.None)
+        // the writer is still usable afterwards, i.e. the serializer has not completed it
+        writer.Write(ReadOnlySpan "!"B)
+        let! _ = writer.FlushAsync()
+        writer.Complete()
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader = new StreamReader(stream)
+        let json = streamReader.ReadToEnd()
+        json |> shouldEqual """{"name":"Oxpecker"}!"""
+    }
+
+[<Fact>]
+let ``Test part serializer with custom options`` () =
+    task {
+        let options = JsonSerializerOptions(PropertyNamingPolicy = null) // Pascal case
+        let serializer: IJsonSerializer = SystemTextJsonSerializer(options)
+        use stream = new MemoryStream()
+        let writer = PipeWriter.Create(stream, StreamPipeWriterOptions(leaveOpen = true))
+        let value = {| Name = "Oxpecker" |}
+        do! serializer.SerializePart(value, writer, CancellationToken.None)
+        writer.Complete()
+        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        use streamReader = new StreamReader(stream)
+        let json = streamReader.ReadToEnd()
+        json |> shouldEqual """{"Name":"Oxpecker"}"""
+    }
+
+[<Fact>]
+let ``Test part serializer with cancelled token`` () =
+    task {
+        let serializer: IJsonSerializer = SystemTextJsonSerializer()
+        use cts = new CancellationTokenSource()
+        cts.Cancel()
+        let writer = PipeWriter.Create(new MemoryStream())
+        let! _ =
+            Assert.ThrowsAnyAsync<OperationCanceledException>(fun () ->
+                serializer.SerializePart({| Name = "Oxpecker" |}, writer, cts.Token))
+        ()
     }

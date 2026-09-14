@@ -20,6 +20,20 @@ let ``hxSseClose renders hx-sse:close`` () =
     |> Render.toString
     |> shouldEqual """<div hx-sse:connect="/stream" hx-sse:close="done">content</div>"""
 
+// ─── hx-multipart ───
+
+[<Fact>]
+let ``hxMultipartConnect renders hx-multipart:connect`` () =
+    div().hxMultipartConnect("/events") { "Waiting..." }
+    |> Render.toString
+    |> shouldEqual """<div hx-multipart:connect="/events">Waiting...</div>"""
+
+[<Fact>]
+let ``hxMultipartClose renders hx-multipart:close`` () =
+    div().hxMultipartConnect("/events").hxMultipartClose("done") { "content" }
+    |> Render.toString
+    |> shouldEqual """<div hx-multipart:connect="/events" hx-multipart:close="done">content</div>"""
+
 // ─── hx-ws ───
 
 [<Fact>]
@@ -45,6 +59,34 @@ let ``hxWsSend with url renders hx-ws:send=url`` () =
     button().hxWsSend("/notifications") { "Send" }
     |> Render.toString
     |> shouldEqual """<button hx-ws:send="/notifications">Send</button>"""
+
+// ─── hx-prompt ───
+
+[<Fact>]
+let ``hxPrompt renders hx-prompt`` () =
+    button().hxDelete("/item/1").hxPrompt("Reason?") { "Delete" }
+    |> Render.toString
+    |> shouldEqual """<button hx-delete="/item/1" hx-prompt="Reason?">Delete</button>"""
+
+[<Fact>]
+let ``hxPrompt with inherited modifier renders hx-prompt:inherited`` () =
+    body().hxPrompt("Reason?", HxModifier.inherited) { "content" }
+    |> Render.toString
+    |> shouldEqual """<body hx-prompt:inherited="Reason?">content</body>"""
+
+// ─── hx-pending ───
+
+[<Fact>]
+let ``hxPending renders hx-pending`` () =
+    form().hxPost("/message").hxPending("#sending") { "form" }
+    |> Render.toString
+    |> shouldEqual """<form hx-post="/message" hx-pending="#sending">form</form>"""
+
+[<Fact>]
+let ``hxPending with inherited modifier renders hx-pending:inherited`` () =
+    body().hxPending("#sending", HxModifier.inherited) { "content" }
+    |> Render.toString
+    |> shouldEqual """<body hx-pending:inherited="#sending">content</body>"""
 
 // ─── hx-head ───
 
@@ -126,6 +168,24 @@ let ``hxLive renders hx-live`` () =
     |> Render.toString
     |> shouldEqual """<output hx-live="this.textContent = &#39;hello&#39;"></output>"""
 
+[<Fact>]
+let ``hxLiveBind renders hx-live:{name}`` () =
+    button().hxLiveBind("disabled", "!q('#name').value") { "Save" }
+    |> Render.toString
+    |> shouldEqual """<button hx-live:disabled="!q(&#39;#name&#39;).value">Save</button>"""
+
+[<Fact>]
+let ``hxLiveBind with HxLiveBinding.text renders hx-live:text`` () =
+    span().hxLiveBind(HxLiveBinding.text, "q('#count').value")
+    |> Render.toString
+    |> shouldEqual """<span hx-live:text="q(&#39;#count&#39;).value"></span>"""
+
+[<Fact>]
+let ``hxLiveBind with HxLiveBinding.toggleClass renders hx-live:.name`` () =
+    div().hxLiveBind(HxLiveBinding.toggleClass "active", "q('#tab').value === 'a'") { "tab" }
+    |> Render.toString
+    |> shouldEqual """<div hx-live:.active="q(&#39;#tab&#39;).value === &#39;a&#39;">tab</div>"""
+
 // ─── hx-download / hx-upsert swap helpers ───
 
 [<Fact>]
@@ -174,10 +234,11 @@ let ``null hxSseConnect does not render attribute`` () =
 let ``extension request headers expose correct names`` () =
     HxRequestHeader.Preloaded |> shouldEqual "HX-Preloaded"
     HxRequestHeader.PTag |> shouldEqual "HX-PTag"
-    HxRequestHeader.RequestId |> shouldEqual "HX-Request-ID"
+    HxRequestHeader.Prompt |> shouldEqual "HX-Prompt"
+    HxRequestHeader.LastPartId |> shouldEqual "HX-Last-Part-ID"
 
 [<Fact>]
 let ``extension response headers expose correct names`` () =
     HxResponseHeader.Download |> shouldEqual "HX-Download"
     HxResponseHeader.PTag |> shouldEqual "HX-PTag"
-    HxResponseHeader.RequestId |> shouldEqual "HX-Request-ID"
+    HxResponseHeader.PartId |> shouldEqual "HX-Part-ID"

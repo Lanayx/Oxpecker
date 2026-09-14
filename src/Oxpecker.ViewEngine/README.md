@@ -44,6 +44,7 @@ let mainView (model: Person) =
 - [Attributes](#attributes)
 - [Event handlers](#event-handlers)
 - [Html escaping](#html-escaping)
+- [Prerendering](#prerendering)
 - [Rendering](#rendering)
 - [ARIA](#aria)
 - [Fragments](#fragments)
@@ -63,7 +64,7 @@ let mainView (model: Person) =
         abstract member AddChild: HtmlElement -> unit
     ...
 ```
-There are 5 types of HTML elements available: `RegularNode`, `VoidNode` (only attributes), `FragmentNode` (only children), `RegularTextNode`(escaped text), `RawTextNode`(unescaped text).
+There are 7 types of HTML elements available: `RegularNode`, `VoidNode` (only attributes), `FragmentNode` (only children), `RegularTextNode`(escaped text), `RawTextNode`(unescaped text), `IntNode`(integer), `PrerenderedNode`(prerendered markup around children).
 
 All HTML tags inherit from `RegularNode` or `VoidNode` and you can easily create your own tag:
 
@@ -140,18 +141,74 @@ div(){
 }
 ```
 
+### Prerendering
+
+Views are object trees that are walked (and their text and attributes escaped) on every render. When a part of your view is static, `prerender` lets you pay that cost once: it renders an element **together with all its children** into a snapshot that is appended as a plain string on every subsequent render.
+
+```fsharp
+// rendered once, when the module is initialized
+let pageHeader =
+    prerender(
+        header() {
+            h1() { "My site" }
+            nav() { a(href = "/") { "Home" } }
+        }
+    )
+
+let page (model: Model) =
+    html() {
+        body() {
+            pageHeader // appended as a plain string on every request
+            main() { model.Content }
+        }
+    }
+```
+
+`prerender` returns a `RawTextNode` holding already-escaped HTML, so the snapshot is not escaped again when embedded.
+
+Note that the snapshot is taken **eagerly**, at the moment of the call: children or attributes added to the original element afterwards won't be reflected in the returned node.
+
+When only a small part of the markup changes between renders, `prerenderAround` lets you prerender everything around it. It takes a function that places the provided _hole_ inside your markup, renders the static part once, and gives you back a factory that is used like any other tag:
+
+```fsharp
+let layout =
+    prerenderAround(fun content ->
+        html() {
+            body() {
+                header() { h1() { "My site" } }
+                main() { content }
+                footer() { "(c) 2026" }
+            }
+        })
+
+let page (model: Model) =
+    layout() {
+        h2() { model.Title }
+        p() { model.Text }
+    }
+```
+
+Everything outside the hole is rendered once, so every `page` call only appends two prerendered strings around its own children. The hole has to be used exactly once, otherwise `prerenderAround` raises an `ArgumentException`.
+
 ### Rendering
 
-There are several functions to render `HtmlElement` (after opening Oxpecker.ViewEngine namespace):
+`Render` is a static class with several methods to render `HtmlElement` (after opening Oxpecker.ViewEngine namespace). The synchronous methods take the element as their single argument, so `view |> Render.toString` works; the asynchronous ones take tupled arguments and an optional `cancellationToken` that is passed to the writer's `WriteAsync` and `FlushAsync` (an `OperationCanceledException` is thrown and nothing is written when it is already cancelled):
 
-- **Render.toString** will render to standard .NET UTF16 string
-- **Render.toBytes** will render to UTF8-encoded byte array
-- **Render.toStreamAsync** will asynchronously render to stream in UTF8 encoding
-- **Render.toTextWriterAsync** will asynchronously render to the provided text writer
-- **Render.toHtmlDocBytes** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toHtmlDocString** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toHtmlDocStreamAsync** is the same as **Render.toStreamAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
-- **Render.toHtmlDocTextWriterAsync** is the same as **Render.toTextWriterAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toString(view)** will render to standard .NET UTF16 string
+- **Render.toBytes(view)** will render to UTF8-encoded byte array
+- **Render.toBufferWriter(writer, view)** will render as UTF8-encoded bytes into an `IBufferWriter<byte>`, e.g. a `PipeWriter` such as `HttpResponse.BodyWriter`, without allocating an array
+- **Render.toStreamAsync(stream, view, ?cancellationToken)** will asynchronously render to stream in UTF8 encoding
+- **Render.toTextWriterAsync(textWriter, view, ?cancellationToken)** will asynchronously render to the provided text writer
+- **Render.toHtmlDocBytes(view)** is the same as **Render.toBytes**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocBufferWriter(writer, view)** is the same as **Render.toBufferWriter**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocString(view)** is the same as **Render.toString**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocStreamAsync(stream, view, ?cancellationToken)** is the same as **Render.toStreamAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+- **Render.toHtmlDocTextWriterAsync(textWriter, view, ?cancellationToken)** is the same as **Render.toTextWriterAsync**, but will also prepend `"<!DOCTYPE html>"` to the HTML document
+
+```fsharp
+let text = view |> Render.toString
+do! Render.toHtmlDocStreamAsync(ctx.Response.Body, view, ctx.RequestAborted)
+```
 
 ### Aria
 

@@ -1,5 +1,7 @@
 open System
+open System.Linq
 open System.Text.Json.Serialization
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
@@ -12,7 +14,6 @@ open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Oxpecker.OpenApi
 open Oxpecker.Htmx
-open FSharp.Control
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
@@ -111,38 +112,52 @@ let closedHandler: EndpointHandler =
             Task.CompletedTask
 
 
+// Chunked JSON: one array element is produced every 500 ms
 let streamingJson: EndpointHandler =
     fun (ctx: HttpContext) ->
         let values =
-            taskSeq {
-                for i in 1..10 do
-                    do! Task.Delay(500)
-                    yield {| Id = i; Name = $"Name {i}" |}
-            }
+            AsyncEnumerable
+                .Range(1, 10)
+                .Select(fun i (ct: CancellationToken) ->
+                    ValueTask<{| Id: int; Name: string |}>(
+                        task {
+                            do! Task.Delay(500, ct)
+                            return {| Id = i; Name = $"Name {i}" |}
+                        }
+                    ))
         jsonChunked values ctx
 
+// The page loads htmx 4 with the hx-multipart extension; the h2 requests /streamHtml2 on load
+// and appends every multipart part it receives, so the text appears character by character
 let streamingHtml1: EndpointHandler =
     fun (ctx: HttpContext) ->
         let html =
             html() {
-                head() { script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta4") }
+                head() {
+                    script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0/dist/htmx.min.js")
+                    script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0/dist/ext/hx-multipart.min.js")
+                }
                 body(style = "width: 800px; margin: 0 auto") {
                     h1(style = "text-align: center; color: blue") { "HTML Streaming example" }
-                    h2().hxGet("/streamHtml2").hxTarget(HxSelector.this').hxTrigger("load")
+                    h2().hxGet("/streamHtml2").hxTarget(HxSelector.this').hxSwap(HxSwapMethod.append).hxTrigger("load")
                 }
             }
         htmlView html ctx
 
-
+// Streamed multipart/mixed response: every character is sent as a separate part every 20 ms
 let streamingHtml2: EndpointHandler =
     fun (ctx: HttpContext) ->
-        let values =
-            taskSeq {
-                for ch in "Hello world using Oxpecker streaming!" do
-                    do! Task.Delay(20)
-                    ch |> string |> raw
-            }
-        htmlChunked values ctx
+        let parts =
+            "Hello world using Oxpecker streaming!"
+                .ToAsyncEnumerable()
+                .Select(fun ch (ct: CancellationToken) ->
+                    ValueTask<IMultipartPart>(
+                        task {
+                            do! Task.Delay(20, ct)
+                            return MultipartPart.Html(raw(string ch))
+                        }
+                    ))
+        multipartChunked parts ctx
 
 let CLOSED = addFilter closedHandler
 let MY_HEADER endpoint =
@@ -238,6 +253,21 @@ let errorHandler (ctx: HttpContext) (next: RequestDelegate) =
         try
             return! next.Invoke(ctx)
         with
+        | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
+            // the client disconnected: nothing can be written back and it is not an application error
+            // (with UseRequestTimeouts registered before this handler, check IHttpRequestTimeoutFeature to answer timeouts with 504 like Default.exceptionMiddleware does)
+            ctx.GetLogger().LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+            let writer = ctx.Response.BodyWriter
+            if
+                ctx.Response.HasStarted
+                || not writer.CanGetUnflushedBytes
+                || writer.UnflushedBytes > 0L
+            then
+                // Clear() cannot discard queued pipe data: abort rather than send cancelled output on completion
+                ctx.Abort()
+            else
+                ctx.Response.Clear() // drop the headers a cancelled write may have set
+                ctx.SetStatusCode StatusCodes.Status499ClientClosedRequest
         | :? ModelBindException
         | :? RouteParseException as ex ->
             let logger = ctx.GetLogger()

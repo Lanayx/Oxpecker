@@ -83,5 +83,6 @@ let ``HxResponseHeader.Reselect equals HX-Reselect`` () =
 
 // ─── Removed headers should not exist ───
 // These are compile-time guarantees: HxRequestHeader.Trigger, HxRequestHeader.TriggerName,
-// HxRequestHeader.Prompt, HxResponseHeader.TriggerAfterSettle, HxResponseHeader.TriggerAfterSwap
-// are no longer defined. Any code referencing them will fail to compile.
+// HxRequestHeader.RequestId, HxResponseHeader.RequestId, HxResponseHeader.TriggerAfterSettle,
+// HxResponseHeader.TriggerAfterSwap are no longer defined.
+// Any code referencing them will fail to compile.

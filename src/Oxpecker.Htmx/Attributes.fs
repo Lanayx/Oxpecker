@@ -27,6 +27,11 @@ type HtmxVerbExtensions =
     [<Extension>]
     static member hxDelete(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-delete", url)
 
+    /// Issues a QUERY to the specified URL. QUERY is a safe, idempotent method (like GET) that
+    /// sends its content in the request body (like POST).
+    [<Extension>]
+    static member hxQuery(this: #HtmlTag, [<StringSyntax("Uri")>] url: string | null) = this.attr("hx-query", url)
+
 
 /// Event handler attribute.
 type HtmxEventExtensions =
@@ -255,10 +260,19 @@ type HtmxAdditionalExtensions =
     [<Extension>]
     static member hxIgnore(this: #HtmlTag, value: bool) = this.bool("hx-ignore", value)
 
-    /// Show optimistic content during request (template id, e.g. `#my-template`).
+    /// Leaves an element untouched during a morph swap: neither its attributes nor its children
+    /// are morphed. Useful for third party widgets, web components and elements holding
+    /// client-side state or animations. Renders `hx-morph-skip` (boolean attribute) when true.
+    /// Applies to morph swaps only.
     [<Extension>]
-    static member hxOptimistic(this: #HtmlTag, [<StringSyntax("css")>] value: string | null) =
-        this.attr("hx-optimistic", value)
+    static member hxMorphSkip(this: #HtmlTag, value: bool) = this.bool("hx-morph-skip", value)
+
+    /// Morphs the attributes of an element during a morph swap, but leaves its children untouched.
+    /// Renders `hx-morph-skip-children` (boolean attribute) when true.
+    /// Applies to morph swaps only.
+    [<Extension>]
+    static member hxMorphSkipChildren(this: #HtmlTag, value: bool) =
+        this.bool("hx-morph-skip-children", value)
 
     /// Handle responses differently by status code (`hx-status:CODE`).
     /// `code` is an exact code (e.g. "404"), single-digit wildcard (e.g. "50x"),

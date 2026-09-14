@@ -2,6 +2,7 @@
 
 open System
 open System.Net
+open System.Net.Http
 open System.Net.Http.Json
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Http
@@ -105,6 +106,42 @@ let ``Mixed GET and POST routes are not allowed`` () =
         do!
             task { return! WebApp.webAppOneRoute endpoint }
             |> shouldFailTaskWithMessage "Http verbs intersect at '/abc'"
+    }
+
+[<Fact>]
+let ``route: QUERY "/search" returns "foo"`` () =
+    task {
+        let endpoints = [
+            QUERY [
+                route "/search" (fun ctx ->
+                    task {
+                        let! query = ctx.BindJson<{| Filter: string |}>()
+                        return! ctx.WriteText query.Filter
+                    })
+            ]
+        ]
+        use! server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.GetTestClient()
+
+        use request = new HttpRequestMessage(HttpMethod "QUERY", "/search")
+        request.Content <- JsonContent.Create({| Filter = "foo" |})
+        let! result = client.SendAsync request
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        resultString |> shouldEqual "foo"
+    }
+
+[<Fact>]
+let ``route: GET "/search" on QUERY route returns 405 "Method Not Allowed"`` () =
+    task {
+        let endpoints = [ QUERY [ route "/search" <| text "foo" ] ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/search")
+
+        result.StatusCode |> shouldEqual HttpStatusCode.MethodNotAllowed
     }
 
 // ---------------------------------

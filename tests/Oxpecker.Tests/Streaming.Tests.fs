@@ -1,14 +1,18 @@
 ﻿module Oxpecker.Tests.Streaming
 
 open System
+open System.IO
 open System.Net
 open System.Net.Http
 open System.Net.Http.Headers
+open System.Text
 open Microsoft.AspNetCore.Hosting
+open Microsoft.AspNetCore.Http
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.Extensions.Primitives
 open Xunit
 open Oxpecker
 open FsUnit.Light
@@ -309,4 +313,39 @@ let ``HTTP GET with multiple ranges and with range processing enabled`` () =
         let! content = response.Content.ReadAsByteArrayAsync()
         content
         |> shouldEqual [| 48uy; 49uy; 50uy; 51uy; 52uy; 53uy; 54uy; 55uy; 56uy; 57uy; 97uy; 98uy; 99uy; 100uy; 101uy; 102uy; 103uy; 104uy; 105uy; 106uy; 107uy; 108uy; 109uy; 110uy; 111uy; 112uy; 113uy; 114uy; 115uy; 116uy; 117uy; 118uy; 119uy; 120uy; 121uy; 122uy; 65uy; 66uy; 67uy; 68uy; 69uy; 70uy; 71uy; 72uy; 73uy; 74uy; 75uy; 76uy; 77uy; 78uy; 79uy; 80uy; 81uy; 82uy; 83uy; 84uy; 85uy; 86uy; 87uy; 88uy; 89uy; 90uy |]
+    }
+
+// ---------------------------------
+// Stream ownership
+// ---------------------------------
+
+let private createContext () =
+    let ctx = DefaultHttpContext()
+    ctx.Response.Body <- new MemoryStream()
+    ctx
+
+[<Fact>]
+let ``WriteStream disposes the stream when a precondition fails`` () =
+    task {
+        let ctx = createContext()
+        ctx.Request.Headers.IfMatch <- StringValues "\"other\""
+        use stream = new MemoryStream(Encoding.UTF8.GetBytes "Hello")
+
+        do! ctx.WriteStream(false, stream, Some(Microsoft.Net.Http.Headers.EntityTagHeaderValue "\"current\""), None)
+
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status412PreconditionFailed
+        stream.CanRead |> shouldEqual false
+    }
+
+[<Fact>]
+let ``WriteStream disposes the stream when the range is invalid`` () =
+    task {
+        let ctx = createContext()
+        ctx.Request.Headers.Range <- StringValues "bytes=100-200"
+        use stream = new MemoryStream(Encoding.UTF8.GetBytes "Hello")
+
+        do! ctx.WriteStream(true, stream, None, None)
+
+        ctx.Response.StatusCode |> shouldEqual StatusCodes.Status416RangeNotSatisfiable
+        stream.CanRead |> shouldEqual false
     }

@@ -6,6 +6,7 @@ open System.Collections.Generic
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Antiforgery
 open Microsoft.AspNetCore.Http
+open Microsoft.AspNetCore.Http.Timeouts
 open Oxpecker.ViewEngine
 open Microsoft.Extensions.Logging
 
@@ -110,17 +111,6 @@ module ResponseHandlers =
         fun (ctx: HttpContext) -> ctx.WriteJsonChunked(value)
 
     /// <summary>
-    /// Writes an HTML string to the body of the HTTP response.
-    /// It also sets the HTTP header Content-Type to text/html and sets the Content-Length header accordingly.
-    /// </summary>
-    /// <param name="html">The HTML string to be sent back to the client.</param>
-    /// <param name="ctx">HttpContext</param>
-    /// <returns>An Oxpecker <see cref="EndpointHandler" /> function which can be composed into a bigger web application.</returns>
-    [<Obsolete "Will be removed in next major version. Use htmlView instead.">]
-    let htmlString (html: string) : EndpointHandler =
-        fun (ctx: HttpContext) -> ctx.WriteHtmlString html
-
-    /// <summary>
     /// <para>Compiles an `HtmlElement` object to a HTML view and writes the output to the body of the HTTP response.</para>
     /// <para>It also sets the HTTP header `Content-Type` to `text/html` and sets the `Content-Length` header accordingly.</para>
     /// </summary>
@@ -197,6 +187,12 @@ module ResponseHandlers =
 
 [<RequireQualifiedAccess>]
 module Default =
+    /// The request was cancelled by the request-timeouts middleware (through its linked token) rather than by the client disconnecting
+    let private isRequestTimeout (ctx: HttpContext) =
+        match ctx.Features.Get<IHttpRequestTimeoutFeature>() with
+        | null -> false
+        | feature -> feature.RequestTimeoutToken.IsCancellationRequested
+
     let exceptionMiddleware (ctx: HttpContext) (next: RequestDelegate) =
         task {
             try
@@ -204,6 +200,29 @@ module Default =
             with ex ->
                 let logger = ctx.GetLogger("Oxpecker.Default.ExceptionMiddleware")
                 match ex with
+                | :? OperationCanceledException when ctx.RequestAborted.IsCancellationRequested ->
+                    // No body is written in either case: the request token is cancelled, so the write helpers would throw
+                    let statusCode =
+                        if isRequestTimeout ctx then
+                            logger.LogWarning("Request timed out {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                            StatusCodes.Status504GatewayTimeout
+                        else
+                            // The client disconnected, which is not an application error
+                            logger.LogDebug("Request aborted {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
+                            StatusCodes.Status499ClientClosedRequest
+                    let writer = ctx.Response.BodyWriter
+                    if
+                        ctx.Response.HasStarted
+                        || not writer.CanGetUnflushedBytes
+                        || writer.UnflushedBytes > 0L
+                    then
+                        // Clear() cannot discard queued pipe data. Abort unless it is safe to complete an empty response,
+                        // so a still-connected client cannot receive cancelled output or a completed truncated body.
+                        ctx.Abort()
+                    else
+                        // drop the headers a cancelled write may have set, e.g. Content-Length
+                        ctx.Response.Clear()
+                        ctx.SetStatusCode statusCode
                 | :? ModelBindException
                 | :? RouteParseException as ex ->
                     logger.LogWarning(ex, "Invalid request {Method} {Path}", ctx.Request.Method, ctx.Request.Path)
