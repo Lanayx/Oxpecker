@@ -995,3 +995,93 @@ let ``Disallowed unmapped members forbid additional properties on union objects`
 }"""
         resultString.ReplaceLineEndings() |> shouldEqual expected
     }
+
+type NullableUnion =
+    | Named of name: (string | null)
+    | Anon
+
+[<Fact>]
+let ``Nullable reference fields of union cases are documented as nullable`` () =
+    task {
+        let endpoints = [
+            GET [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, NullableUnion> ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NullableUnion"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "NullableUnion": {
+        "oneOf": [
+          {
+            "required": [
+              "$type",
+              "name"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "named",
+                "type": "string"
+              },
+              "name": {
+                "type": [
+                  "null",
+                  "string"
+                ]
+              }
+            }
+          },
+          {
+            "const": "anon",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }

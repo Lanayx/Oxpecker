@@ -110,11 +110,23 @@ module private Helpers =
             set
         | set -> set
 
-    /// Schema for a union case field, unwrapping option/voption fields into nullable schemas.
-    let getFieldSchema (ctx: OpenApiSchemaTransformerContext) (fieldType: Type) (ct: CancellationToken) =
+    /// Nullable reference annotation (e.g. string | null) on a union case field, read the same
+    /// way JsonSchemaExporter reads it for record properties.
+    let isNullableReference (field: PropertyInfo) =
+        not field.PropertyType.IsValueType
+        && NullabilityInfoContext().Create(field).ReadState = NullabilityState.Nullable
+
+    /// Schema for a union case field: option/voption fields and nullable reference fields
+    /// become nullable schemas.
+    let getFieldSchema (ctx: OpenApiSchemaTransformerContext) (field: PropertyInfo) (ct: CancellationToken) =
         task {
-            match fieldType with
-            | FSharpOptionKind innerType ->
+            let nullableInnerType =
+                match field.PropertyType with
+                | FSharpOptionKind innerType -> Some innerType
+                | fieldType when isNullableReference field -> Some fieldType
+                | _ -> None
+            match nullableInnerType with
+            | Some innerType ->
                 let! innerSchema = ctx.GetOrCreateSchemaAsync(innerType, null, ct)
                 match tryGetRefSchema innerSchema with
                 | None ->
@@ -125,8 +137,8 @@ module private Helpers =
                     items.Add nullSchema
                     items.Add innerSchema
                     return OpenApiSchema(OneOf = items) :> IOpenApiSchema
-            | _ ->
-                let! schema = ctx.GetOrCreateSchemaAsync(fieldType, null, ct)
+            | None ->
+                let! schema = ctx.GetOrCreateSchemaAsync(field.PropertyType, null, ct)
                 return schema :> IOpenApiSchema
         }
 
@@ -224,7 +236,7 @@ module private Helpers =
                         required.Add discriminatorPropertyName |> ignore
                         for field in fields do
                             let fieldName = getFieldName ctx field
-                            let! fieldSchema = getFieldSchema ctx field.PropertyType ct
+                            let! fieldSchema = getFieldSchema ctx field ct
                             properties[fieldName] <- fieldSchema
                             required.Add fieldName |> ignore
                         branches.Add(
@@ -288,7 +300,8 @@ type FSharpOptionSchemaTransformer() =
 /// System.Text.Json serialization format introduced in .NET 11:
 /// fieldless cases are serialized as JSON strings, cases with fields as JSON objects
 /// with a type discriminator property ("$type" by default, customizable via
-/// JsonPolymorphicAttribute) and named field properties.
+/// JsonPolymorphicAttribute) and named field properties. The nullary case of a union
+/// marked UseNullAsTrueValue is the exception: it is serialized as JSON null, not a string.
 type FSharpUnionSchemaTransformer() =
     interface IOpenApiSchemaTransformer with
         member _.TransformAsync
