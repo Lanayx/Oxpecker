@@ -73,6 +73,36 @@ module WebApp =
             return host
         }
 
+    let webAppInline (endpoints: Endpoint seq) =
+        task {
+            let host =
+                HostBuilder()
+                    .ConfigureWebHost(fun webHostBuilder ->
+                        webHostBuilder
+                            .UseTestServer()
+                            .Configure(fun app ->
+                                app
+                                    .UseRouting()
+                                    .UseEndpoints(fun builder ->
+                                        builder.MapOxpeckerEndpoints(endpoints)
+                                        builder.MapOpenApi() |> ignore)
+                                |> ignore)
+                            .ConfigureServices(fun services ->
+                                services
+                                    .AddRouting()
+                                    .AddOpenApi(fun o ->
+                                        o
+                                            .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
+                                            .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
+                                        |> ignore
+                                        o.CreateSchemaReferenceId <- fun _ -> null)
+                                |> ignore)
+                        |> ignore)
+                    .Build()
+            do! host.StartAsync()
+            return host
+        }
+
 type Request1 = { Name: int voption }
 type Response1 = { Valid: bool option }
 
@@ -1187,6 +1217,452 @@ let ``Custom discriminator name and case name overrides are respected`` () =
             }
           }
         ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+type NullableFields = {
+    A: Maybe
+    B: Maybe option
+    C: Color option
+}
+type NullableUnionFields = Fields of m: Maybe option * n: (Color | null) * c: Color option
+type Request8 = {
+    Record: NullableFields
+    Union: NullableUnionFields
+}
+
+[<Fact>]
+let ``Null-represented unions are not wrapped in a nullable oneOf`` () =
+    task {
+        let endpoints = [ POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request8, unit> ] ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request8"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Color": {
+        "enum": [
+          "red",
+          "green",
+          "blue"
+        ],
+        "type": "string"
+      },
+      "Maybe": {
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "required": [
+              "$type",
+              "value"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "just",
+                "type": "string"
+              },
+              "value": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          }
+        ]
+      },
+      "NullableFields": {
+        "required": [
+          "a",
+          "b",
+          "c"
+        ],
+        "type": "object",
+        "properties": {
+          "a": {
+            "$ref": "#/components/schemas/Maybe"
+          },
+          "b": {
+            "$ref": "#/components/schemas/Maybe"
+          },
+          "c": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Color"
+              }
+            ]
+          }
+        }
+      },
+      "NullableUnionFields": {
+        "required": [
+          "$type",
+          "m",
+          "n",
+          "c"
+        ],
+        "type": "object",
+        "properties": {
+          "$type": {
+            "const": "fields",
+            "type": "string"
+          },
+          "m": {
+            "$ref": "#/components/schemas/Maybe"
+          },
+          "n": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Color"
+              }
+            ]
+          },
+          "c": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Color"
+              }
+            ]
+          }
+        }
+      },
+      "Request8": {
+        "required": [
+          "record",
+          "union"
+        ],
+        "type": "object",
+        "properties": {
+          "record": {
+            "$ref": "#/components/schemas/NullableFields"
+          },
+          "union": {
+            "$ref": "#/components/schemas/NullableUnionFields"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+type Toggle =
+    | Off
+    | On of level: int
+
+type InlineFields = {
+    D: Color option
+    T: Toggle option
+    M: Maybe option
+}
+type InlineUnionFields = Inline of d: Color option * t: Toggle option * m: Maybe option
+type Request9 = {
+    Record: InlineFields
+    Union: InlineUnionFields
+}
+
+[<Fact>]
+let ``Inline optional enums and composite schemas are wrapped in a nullable oneOf`` () =
+    task {
+        let endpoints = [ POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request9, unit> ] ]
+        use! server = WebApp.webAppInline endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "record",
+                  "union"
+                ],
+                "type": "object",
+                "properties": {
+                  "record": {
+                    "required": [
+                      "d",
+                      "t",
+                      "m"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "d": {
+                        "oneOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "enum": [
+                              "red",
+                              "green",
+                              "blue"
+                            ],
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "t": {
+                        "oneOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "oneOf": [
+                              {
+                                "const": "off",
+                                "type": "string"
+                              },
+                              {
+                                "required": [
+                                  "$type",
+                                  "level"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                  "$type": {
+                                    "const": "on",
+                                    "type": "string"
+                                  },
+                                  "level": {
+                                    "pattern": "^-?(?:0|[1-9]\\d*)$",
+                                    "type": [
+                                      "integer",
+                                      "string"
+                                    ],
+                                    "format": "int32"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "m": {
+                        "oneOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "required": [
+                              "$type",
+                              "value"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "$type": {
+                                "const": "just",
+                                "type": "string"
+                              },
+                              "value": {
+                                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                                "type": [
+                                  "integer",
+                                  "string"
+                                ],
+                                "format": "int32"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "union": {
+                    "required": [
+                      "$type",
+                      "d",
+                      "t",
+                      "m"
+                    ],
+                    "type": "object",
+                    "properties": {
+                      "$type": {
+                        "const": "inline",
+                        "type": "string"
+                      },
+                      "d": {
+                        "oneOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "enum": [
+                              "red",
+                              "green",
+                              "blue"
+                            ],
+                            "type": "string"
+                          }
+                        ]
+                      },
+                      "t": {
+                        "oneOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "oneOf": [
+                              {
+                                "const": "off",
+                                "type": "string"
+                              },
+                              {
+                                "required": [
+                                  "$type",
+                                  "level"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                  "$type": {
+                                    "const": "on",
+                                    "type": "string"
+                                  },
+                                  "level": {
+                                    "pattern": "^-?(?:0|[1-9]\\d*)$",
+                                    "type": [
+                                      "integer",
+                                      "string"
+                                    ],
+                                    "format": "int32"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "m": {
+                        "oneOf": [
+                          {
+                            "type": "null"
+                          },
+                          {
+                            "required": [
+                              "$type",
+                              "value"
+                            ],
+                            "type": "object",
+                            "properties": {
+                              "$type": {
+                                "const": "just",
+                                "type": "string"
+                              },
+                              "value": {
+                                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                                "type": [
+                                  "integer",
+                                  "string"
+                                ],
+                                "format": "int32"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     }
   },

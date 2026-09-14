@@ -110,6 +110,82 @@ module private Helpers =
             set
         | set -> set
 
+    /// The schema pipeline marks nullable properties with this metadata key and wraps them in
+    /// oneOf [null, schema] when it resolves references.
+    let private nullablePropertyKey = "x-is-nullable-property"
+
+    /// Marks schemas already shaped by the union transformer, or wrapped around such a schema,
+    /// so that a second visit through the property recursion of the schema pipeline (single-case
+    /// unions expose their fields as properties of the union type) leaves them intact.
+    let private transformedKey = "x-fsharp-union-schema"
+
+    let private getMetadata (schema: OpenApiSchema) =
+        match schema.Metadata with
+        | null ->
+            let dict = Dictionary<string, obj>() :> IDictionary<string, obj>
+            schema.Metadata <- dict
+            dict
+        | m -> m
+
+    let markTransformed (schema: OpenApiSchema) =
+        (getMetadata schema)[transformedKey] <- (true :> obj)
+
+    let isTransformed (schema: OpenApiSchema) =
+        match schema.Metadata with
+        | null -> false
+        | m -> m.ContainsKey transformedKey
+
+    let clearNullableProperty (schema: OpenApiSchema) =
+        match schema.Metadata with
+        | null -> ()
+        | m -> m.Remove nullablePropertyKey |> ignore
+
+    /// Unions marked UseNullAsTrueValue (exactly one nullary case, like option) represent that
+    /// case as CLR null, which System.Text.Json writes and reads as JSON null instead of the case name.
+    let usesNullAsTrueValue (unionType: Type) =
+        match unionType.GetCustomAttribute<CompilationRepresentationAttribute>() with
+        | null -> false
+        | attr -> attr.Flags.HasFlag CompilationRepresentationFlags.UseNullAsTrueValue
+
+    let private hasNullType (schema: IOpenApiSchema) =
+        schema.Type.HasValue && schema.Type.Value.HasFlag JsonSchemaType.Null
+
+    let private hasNullBranch (branches: IList<IOpenApiSchema> | null) =
+        match branches with
+        | null -> false
+        | branches -> branches |> Seq.exists hasNullType
+
+    /// True when the schema already accepts JSON null.
+    let admitsNull (schema: OpenApiSchema) =
+        hasNullType schema || hasNullBranch schema.OneOf || hasNullBranch schema.AnyOf
+
+    /// Enum, const and composed schemas cannot be made nullable by adding null to their type.
+    let isComposite (schema: OpenApiSchema) =
+        not(isNull schema.Enum)
+        || not(isNull schema.Const)
+        || not(isNull schema.OneOf)
+        || not(isNull schema.AnyOf)
+        || not(isNull schema.AllOf)
+
+    /// Makes the schema of innerType accept JSON null, the way System.Text.Json serializes None
+    /// and null: simple inline schemas get null added to their type, references and composite
+    /// schemas are wrapped in oneOf [null, schema]. A schema that already admits null (such as a
+    /// UseNullAsTrueValue union) is returned as it is, since wrapping it would make both oneOf
+    /// alternatives match null and reject it.
+    let makeNullable (innerType: Type) (schema: OpenApiSchema) : IOpenApiSchema =
+        if admitsNull schema || usesNullAsTrueValue innerType then
+            schema
+        elif (tryGetRefSchema schema).IsSome || isComposite schema then
+            let items = ResizeArray<IOpenApiSchema>()
+            items.Add nullSchema
+            items.Add schema
+            let wrapper = OpenApiSchema(OneOf = items)
+            markTransformed wrapper
+            wrapper
+        else
+            schema.Type <- unionWithNull schema.Type
+            schema
+
     /// Nullable reference annotation (e.g. string | null) on a union case field, read the same
     /// way JsonSchemaExporter reads it for record properties.
     let isNullableReference (field: PropertyInfo) =
@@ -128,15 +204,7 @@ module private Helpers =
             match nullableInnerType with
             | Some innerType ->
                 let! innerSchema = ctx.GetOrCreateSchemaAsync(innerType, null, ct)
-                match tryGetRefSchema innerSchema with
-                | None ->
-                    innerSchema.Type <- unionWithNull innerSchema.Type
-                    return innerSchema :> IOpenApiSchema
-                | Some _ ->
-                    let items = ResizeArray<IOpenApiSchema>()
-                    items.Add nullSchema
-                    items.Add innerSchema
-                    return OpenApiSchema(OneOf = items) :> IOpenApiSchema
+                return makeNullable innerType innerSchema
             | None ->
                 let! schema = ctx.GetOrCreateSchemaAsync(field.PropertyType, null, ct)
                 return schema :> IOpenApiSchema
@@ -161,13 +229,6 @@ module private Helpers =
         match field.GetCustomAttribute<JsonPropertyNameAttribute>() with
         | null -> convertName ctx field.Name
         | attr -> attr.Name
-
-    /// Unions marked UseNullAsTrueValue (exactly one nullary case, like option) represent that
-    /// case as CLR null, which System.Text.Json writes and reads as JSON null instead of the case name.
-    let usesNullAsTrueValue (unionType: Type) =
-        match unionType.GetCustomAttribute<CompilationRepresentationAttribute>() with
-        | null -> false
-        | attr -> attr.Flags.HasFlag CompilationRepresentationFlags.UseNullAsTrueValue
 
     /// Whether object branches may carry unknown properties: the runtime converter rejects them
     /// under JsonUnmappedMemberHandling.Disallow (type attribute, then serializer options),
@@ -277,21 +338,10 @@ type FSharpOptionSchemaTransformer() =
                         | props ->
                             let propSchema = props[key]
                             let! innerSchema = ctx.GetOrCreateSchemaAsync(innerType, null, ct)
-                            // If it's a reference (complex type), use oneOf [null, $ref].
-                            // If it's inline (simple type), just add null to the type.
-                            let newSchema =
-                                match Helpers.tryGetRefSchema innerSchema with
-                                | None ->
-                                    propSchema |> Helpers.copyMetadata innerSchema "" true
-                                    innerSchema.Type <- Helpers.unionWithNull innerSchema.Type
-                                    innerSchema
-                                | Some refSchema ->
-                                    propSchema |> Helpers.copyMetadata innerSchema refSchema false
-                                    let items = ResizeArray<IOpenApiSchema>()
-                                    items.Add(Helpers.nullSchema)
-                                    items.Add(innerSchema)
-                                    OpenApiSchema(OneOf = items)
-                            props[key] <- newSchema
+                            match Helpers.tryGetRefSchema innerSchema with
+                            | None -> propSchema |> Helpers.copyMetadata innerSchema "" true
+                            | Some refSchema -> propSchema |> Helpers.copyMetadata innerSchema refSchema false
+                            props[key] <- Helpers.makeNullable innerType innerSchema
                 | _ -> ()
             }
             :> Task
@@ -309,13 +359,22 @@ type FSharpUnionSchemaTransformer() =
             : Task =
             task {
                 let unionType = ctx.JsonTypeInfo.Type
-                if Helpers.isUnionSerializedBySTJ ctx.JsonTypeInfo then
+                if
+                    Helpers.isUnionSerializedBySTJ ctx.JsonTypeInfo
+                    && not(Helpers.isTransformed schema)
+                then
                     let inFlightUnions = Helpers.getInFlightUnions()
                     // For recursive unions, a nested occurrence of the type keeps its original
                     // schema, which the schema pipeline resolves into a component reference.
                     if inFlightUnions.Add unionType then
                         try
                             do! Helpers.transformUnionSchema schema ctx ct
+                            Helpers.markTransformed schema
+                            // The schema pipeline wraps nullable properties in oneOf [null, schema] when it
+                            // resolves references. A union whose nullary case is null already admits null,
+                            // so such a wrapper would make both alternatives match null and reject it.
+                            if Helpers.usesNullAsTrueValue unionType then
+                                Helpers.clearNullableProperty schema
                         finally
                             inFlightUnions.Remove unionType |> ignore
             }
