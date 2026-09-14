@@ -756,3 +756,242 @@ let ``Unions with a custom converter keep the default schema`` () =
 }"""
         resultString.ReplaceLineEndings() |> shouldEqual expected
     }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
+type Maybe =
+    | Nothing
+    | Just of value: int
+
+[<Fact>]
+let ``Nullary case of a UseNullAsTrueValue union is documented as null`` () =
+    task {
+        let endpoints = [ GET [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, Maybe> ] ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Maybe"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Maybe": {
+        "oneOf": [
+          {
+            "type": "null"
+          },
+          {
+            "required": [
+              "$type",
+              "value"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "just",
+                "type": "string"
+              },
+              "value": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)>]
+type StrictUnion =
+    | Empty
+    | Filled of x: int
+
+[<JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)>]
+type StrictSingle = Only of y: int
+
+type Request7 = {
+    Union: StrictUnion
+    Single: StrictSingle
+}
+
+[<Fact>]
+let ``Disallowed unmapped members forbid additional properties on union objects`` () =
+    task {
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request7, StrictSingle> ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request7"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrictSingle"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Request7": {
+        "required": [
+          "union",
+          "single"
+        ],
+        "type": "object",
+        "properties": {
+          "union": {
+            "$ref": "#/components/schemas/StrictUnion"
+          },
+          "single": {
+            "$ref": "#/components/schemas/StrictSingle"
+          }
+        }
+      },
+      "StrictSingle": {
+        "required": [
+          "$type",
+          "y"
+        ],
+        "type": "object",
+        "properties": {
+          "$type": {
+            "const": "only",
+            "type": "string"
+          },
+          "y": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StrictUnion": {
+        "oneOf": [
+          {
+            "const": "empty",
+            "type": "string"
+          },
+          {
+            "required": [
+              "$type",
+              "x"
+            ],
+            "type": "object",
+            "properties": {
+              "$type": {
+                "const": "filled",
+                "type": "string"
+              },
+              "x": {
+                "pattern": "^-?(?:0|[1-9]\\d*)$",
+                "type": [
+                  "integer",
+                  "string"
+                ],
+                "format": "int32"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }

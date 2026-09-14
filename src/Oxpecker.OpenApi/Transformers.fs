@@ -150,6 +150,24 @@ module private Helpers =
         | null -> convertName ctx field.Name
         | attr -> attr.Name
 
+    /// Unions marked UseNullAsTrueValue (exactly one nullary case, like option) represent that
+    /// case as CLR null, which System.Text.Json writes and reads as JSON null instead of the case name.
+    let usesNullAsTrueValue (unionType: Type) =
+        match unionType.GetCustomAttribute<CompilationRepresentationAttribute>() with
+        | null -> false
+        | attr -> attr.Flags.HasFlag CompilationRepresentationFlags.UseNullAsTrueValue
+
+    /// Whether object branches may carry unknown properties: the runtime converter rejects them
+    /// under JsonUnmappedMemberHandling.Disallow (type attribute, then serializer options),
+    /// which JsonSchemaExporter documents for records with additionalProperties: false.
+    let allowsAdditionalProperties (typeInfo: JsonTypeInfo) =
+        let handling =
+            if typeInfo.UnmappedMemberHandling.HasValue then
+                typeInfo.UnmappedMemberHandling.Value
+            else
+                typeInfo.Options.UnmappedMemberHandling
+        handling <> JsonUnmappedMemberHandling.Disallow
+
     let transformUnionSchema
         (schema: OpenApiSchema)
         (ctx: OpenApiSchemaTransformerContext)
@@ -167,6 +185,8 @@ module private Helpers =
             let casesWithFields =
                 FSharpType.GetUnionCases unionType
                 |> Array.map(fun case -> case, case.GetFields())
+            let nullAsTrueValue = usesNullAsTrueValue unionType
+            let additionalPropertiesAllowed = allowsAdditionalProperties ctx.JsonTypeInfo
 
             // Reset whatever the default exporter produced from the compiler-generated
             // union members (Tag, IsCase properties etc.) before applying the union shape.
@@ -174,6 +194,7 @@ module private Helpers =
             schema.Properties <- null
             schema.Required <- null
             schema.Enum <- null
+            schema.AdditionalPropertiesAllowed <- true
 
             if casesWithFields |> Array.forall(fun (_, fields) -> fields.Length = 0) then
                 // Enum-like union: every case is serialized as a plain string.
@@ -186,8 +207,14 @@ module private Helpers =
                 let branches = ResizeArray<IOpenApiSchema>()
                 for case, fields in casesWithFields do
                     if fields.Length = 0 then
-                        // Fieldless case is serialized as a plain string: a const branch per case.
-                        branches.Add(OpenApiSchema(Type = Nullable JsonSchemaType.String, Const = getCaseName ctx case))
+                        if nullAsTrueValue then
+                            // The only nullary case of a UseNullAsTrueValue union is serialized as JSON null.
+                            branches.Add(OpenApiSchema(Type = Nullable JsonSchemaType.Null))
+                        else
+                            // Fieldless case is serialized as a plain string: a const branch per case.
+                            branches.Add(
+                                OpenApiSchema(Type = Nullable JsonSchemaType.String, Const = getCaseName ctx case)
+                            )
                     else
                         // Case with fields is serialized as an object with a type discriminator property.
                         let properties = Dictionary<string, IOpenApiSchema>()
@@ -204,7 +231,8 @@ module private Helpers =
                             OpenApiSchema(
                                 Type = Nullable JsonSchemaType.Object,
                                 Properties = properties,
-                                Required = required
+                                Required = required,
+                                AdditionalPropertiesAllowed = additionalPropertiesAllowed
                             )
                         )
 
@@ -216,6 +244,7 @@ module private Helpers =
                         schema.Type <- branch.Type
                         schema.Properties <- branch.Properties
                         schema.Required <- branch.Required
+                        schema.AdditionalPropertiesAllowed <- branch.AdditionalPropertiesAllowed
                     | _ -> ()
                 | many -> schema.OneOf <- many
         }
