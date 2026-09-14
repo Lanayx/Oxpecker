@@ -80,21 +80,23 @@ module private Helpers =
                             dstMeta[k] <- v
                     | _ -> ()
 
+    /// Generic type definition of the built-in System.Text.Json converter (.NET 11+) that
+    /// serializes F# unions in the format this transformer describes. The converter is internal,
+    /// so it is identified by its defining assembly and exact generic type definition.
+    let private stjUnionConverterName =
+        "System.Text.Json.Serialization.Converters.FSharpUnionConverter`1"
+
     /// True when the type is an F# union serialized by the built-in System.Text.Json
-    /// FSharpUnionConverter (.NET 11+): a union that is not one of the specially-handled
-    /// FSharp.Core types (option, voption, list). The converter check keeps the transformer
-    /// inert on custom converters (e.g. FSharp.SystemTextJson) and older runtimes.
+    /// FSharpUnionConverter. Matching the exact runtime converter keeps the transformer inert
+    /// on custom converters (e.g. FSharp.SystemTextJson, or a user converter whose name merely
+    /// starts with FSharpUnionConverter), on the specially-handled FSharp.Core types
+    /// (option, voption and list have their own converters) and on older runtimes.
     let isUnionSerializedBySTJ (typeInfo: JsonTypeInfo) =
-        let t = typeInfo.Type
-        FSharpType.IsUnion t
-        && not(
-            t.IsGenericType
-            && (let gtd = t.GetGenericTypeDefinition()
-                gtd = typedefof<option<_>>
-                || gtd = typedefof<ValueOption<_>>
-                || gtd = typedefof<list<_>>)
-        )
-        && typeInfo.Converter.GetType().Name.StartsWith("FSharpUnionConverter", StringComparison.Ordinal)
+        let converterType = typeInfo.Converter.GetType()
+        FSharpType.IsUnion typeInfo.Type
+        && converterType.IsGenericType
+        && converterType.Assembly = typeof<JsonConverter>.Assembly
+        && converterType.GetGenericTypeDefinition().FullName = stjUnionConverterName
 
     /// Tracks union types currently being transformed on this async flow,
     /// so that recursive unions don't cause infinite recursion.
@@ -138,10 +140,9 @@ module private Helpers =
             | :? JsonPropertyNameAttribute as attr -> Some attr.Name
             | _ -> None)
         |> Option.defaultWith(fun () -> convertName ctx case.Name)
-    let getFieldName ctx (field: PropertyInfo) =
-        match field.GetCustomAttribute<JsonPropertyNameAttribute>() with
-        | null -> convertName ctx field.Name
-        | attr -> attr.Name
+    // F# does not allow attributes on union case fields, so unlike case names, field names
+    // can only be affected by the naming policy (the same input the runtime converter uses).
+    let getFieldName ctx (field: PropertyInfo) = convertName ctx field.Name
 
     let transformUnionSchema
         (schema: OpenApiSchema)

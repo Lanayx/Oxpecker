@@ -4,6 +4,8 @@ open System
 open System.ComponentModel
 open System.ComponentModel.DataAnnotations
 open System.Net
+open System.Text.Json
+open System.Text.Json.Serialization
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
@@ -668,6 +670,82 @@ let ``Additional configuration works fine`` () =
         },
         "description": "Inner type description"
       }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<JsonConverter(typeof<FSharpUnionConverterCustom>)>]
+type CustomUnion =
+    | Alpha
+    | Beta of value: int
+
+// A user converter whose name shares the prefix of the runtime System.Text.Json union converter
+and FSharpUnionConverterCustom() =
+    inherit JsonConverter<CustomUnion>()
+    override _.Read(_, _, _) = Alpha
+    override _.Write(writer, value, _) =
+        writer.WriteStringValue(
+            match value with
+            | Alpha -> "alpha"
+            | Beta v -> $"beta:{v}"
+        )
+
+[<Fact>]
+let ``Unions with a custom converter keep the default schema`` () =
+    task {
+        let endpoints = [
+            GET [ route "/" <| text "Hello World" |> addOpenApiSimple<unit, CustomUnion> ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomUnion"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CustomUnion": { }
     }
   },
   "tags": [

@@ -65,7 +65,7 @@ let configureServices (services: IServiceCollection) =
         .AddOxpecker()
         .AddOpenApi(fun o ->
             o
-                // support for Option<_> and ValueOption<_> (ASP.NET Core 10+)
+                // support for Option<_> and ValueOption<_>
                 .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
                 // support for discriminated unions (ASP.NET Core 11+)
                 .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
