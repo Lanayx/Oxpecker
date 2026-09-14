@@ -140,9 +140,15 @@ module private Helpers =
             | :? JsonPropertyNameAttribute as attr -> Some attr.Name
             | _ -> None)
         |> Option.defaultWith(fun () -> convertName ctx case.Name)
-    // F# does not allow attributes on union case fields, so unlike case names, field names
-    // can only be affected by the naming policy (the same input the runtime converter uses).
-    let getFieldName ctx (field: PropertyInfo) = convertName ctx field.Name
+    /// Field names follow the runtime converter's precedence: JsonPropertyNameAttribute, then
+    /// PropertyNamingPolicy, then the raw name. F# cannot attach attributes to union case fields yet
+    /// (fsharp/fslang-suggestions#684), so the attribute branch only matters once the language
+    /// allows it. The same applies to the JsonConverter and JsonNumberHandling attributes the
+    /// converter honours per field, which this transformer does not reflect in field schemas.
+    let getFieldName ctx (field: PropertyInfo) =
+        match field.GetCustomAttribute<JsonPropertyNameAttribute>() with
+        | null -> convertName ctx field.Name
+        | attr -> attr.Name
 
     let transformUnionSchema
         (schema: OpenApiSchema)
