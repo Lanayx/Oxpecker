@@ -8,6 +8,36 @@ open Microsoft.Extensions.ObjectPool
 let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
 
 /// <summary>
+/// Encodes the content of the builder as UTF-8 into the writer, e.g. a `PipeWriter`, chunk by chunk.
+/// </summary>
+/// <remarks>
+/// Each chunk is encoded in one go, without allocating. A high surrogate ending a chunk is held back and encoded
+/// together with the low surrogate starting the next chunk, so that a pair split between two chunks stays intact.
+/// </remarks>
+/// <param name="writer">The buffer writer to encode into; it is not flushed.</param>
+/// <param name="sb">The builder whose content is encoded.</param>
+let writeUtf8 (writer: #IBufferWriter<byte>) (sb: StringBuilder) =
+    let mutable pendingHigh = ReadOnlyMemory<char>.Empty
+    for chunk in sb.GetChunks() do
+        let mutable span = chunk.Span
+        if not pendingHigh.IsEmpty then
+            if span.Length > 0 && Char.IsLowSurrogate(span[0]) then
+                let written = Rune(pendingHigh.Span[0], span[0]).EncodeToUtf8(writer.GetSpan(4))
+                writer.Advance(written)
+                span <- span.Slice(1)
+            else
+                // a lone high surrogate becomes the replacement character, as in any other encoding call
+                Encoding.UTF8.GetBytes(pendingHigh.Span, writer) |> ignore
+            pendingHigh <- ReadOnlyMemory<char>.Empty
+        if span.Length > 0 && Char.IsHighSurrogate(span[span.Length - 1]) then
+            pendingHigh <- chunk.Slice(chunk.Length - 1)
+            span <- span.Slice(0, span.Length - 1)
+        if span.Length > 0 then
+            Encoding.UTF8.GetBytes(span, writer) |> ignore
+    if not pendingHigh.IsEmpty then
+        Encoding.UTF8.GetBytes(pendingHigh.Span, writer) |> ignore
+
+/// <summary>
 /// Checks if an object is not null.
 /// </summary>
 /// <param name="x">The object to validate against `null`.</param>

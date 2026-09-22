@@ -217,6 +217,8 @@ Available helpers:
 - HxResponseHeader.PTag (`hx-ptag` extension)
 - HxResponseHeader.PartId (`hx-multipart` extension)
 
+To produce `hx-multipart` responses on the server, use the `WriteMultipart` / `WriteMultipartChunked` extension methods (or the `multipart` / `multipartChunked` handlers) from the Oxpecker package. Part headers take the same constants, e.g. `MultipartPart.Html(view, headers = [ HxResponseHeader.Retarget, "#status" ])`. See [Writing Multipart](https://lanayx.github.io/Oxpecker/src/Oxpecker/#writing-multipart).
+
 ## Migration from Oxpecker.Htmx 2.x
 
 ### Removed attributes (no htmx 4 equivalent)

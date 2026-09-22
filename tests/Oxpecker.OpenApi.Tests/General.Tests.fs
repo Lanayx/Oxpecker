@@ -61,14 +61,14 @@ let ``addOpenApi works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -157,14 +157,14 @@ let ``addOpenApiSimple works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -254,14 +254,14 @@ let ``addOpenApiSimple with unit request works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -323,14 +323,14 @@ let ``addOpenApiSimple with unit response works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -403,14 +403,14 @@ let ``nested objects work fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -485,14 +485,14 @@ let ``Path parameter works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {
@@ -570,14 +570,14 @@ let ``Additional configuration works fine`` () =
         result.StatusCode |> shouldEqual HttpStatusCode.OK
         let expected =
             """{
-  "openapi": "3.1.1",
+  "openapi": "3.2.0",
   "info": {
     "title": "Oxpecker.OpenApi.Tests | v1",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "http://localhost/"
+      "url": "http://localhost"
     }
   ],
   "paths": {

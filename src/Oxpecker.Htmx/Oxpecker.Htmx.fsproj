@@ -27,7 +27,7 @@
         <PackageReleaseNotes>Aligned with htmx 4.0.0</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Oxpecker.ViewEngine" Version="2.1.0" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="3.0.0-beta-1" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

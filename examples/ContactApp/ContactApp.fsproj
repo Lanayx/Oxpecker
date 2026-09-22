@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <EnableDefaultContentItems>false</EnableDefaultContentItems>
         <IsPackable>false</IsPackable>
         <Nullable>enable</Nullable>
@@ -30,8 +30,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Oxpecker" Version="2.1.1" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="2.1.0" />
+        <PackageReference Include="Oxpecker" Version="3.0.0-beta-1" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="3.0.0-beta-1" />
         <PackageReference Include="Oxpecker.Htmx" Version="4.0.0" />
     </ItemGroup>
 

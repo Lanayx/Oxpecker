@@ -64,8 +64,9 @@ An in depth functional reference to all of Oxpecker's features.
       - [Writing Text](#writing-text)
       - [Writing JSON](#writing-json)
       - [Writing IResult](#writing-iresult)
-      - [Writing HTML strings](#writing-html-strings)
       - [Writing HTML views](#writing-html-views)
+      - [Writing Multipart](#writing-multipart)
+      - [Cancellation](#cancellation)
     - [Streaming](#streaming)
     - [Redirection](#redirection)
     - [Response compression](#response-compression)
@@ -513,6 +514,8 @@ let configureApp (appBuilder: IApplicationBuilder) =
 ```
 You can use those default implementations as is or as examples for your own custom error handling logic.
 
+`Default.exceptionMiddleware` answers `ModelBindException` and `RouteParseException` with `400`, `AntiforgeryValidationException` with `403` and any other exception with `500`, logging them as warnings or errors. An `OperationCanceledException` raised while `ctx.RequestAborted` is cancelled means that the client disconnected: it is only logged at `Debug` level and, if the response has not started and its `BodyWriter` reports no unflushed bytes, answered with `499 Client Closed Request` (see [Cancellation](#cancellation)). If the cancellation was triggered by ASP.NET Core's [request timeouts](https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts) middleware instead, it is logged as a warning and answered with `504 Gateway Timeout` under the same conditions. No body is written in either case, since the request token is already cancelled. If the response has already started, has queued output, or its writer cannot report unflushed bytes, the middleware aborts the connection instead (`ctx.Abort()`): a client that is still connected, as after a request timeout, then sees a failed transfer rather than cancelled output or a well-formed but truncated body. `Response.Clear()` does not discard bytes queued in `BodyWriter`, even when `HasStarted` is false. To let a custom timeout status code or response configured on the timeout policy take effect, register `Default.exceptionMiddleware` before `UseRequestTimeouts`, so that the timeouts middleware handles the timeout itself.
+
 ## Web Request Processing
 
 Oxpecker comes with a large set of default `HttpContext` extension methods as well as default `EndpointHandler` functions which can be used to build rich web applications.
@@ -564,6 +567,7 @@ Oxpecker exposes a set of functions which can filter a request based on the requ
 - `POST`
 - `PUT`
 - `PATCH`
+- `QUERY`
 - `DELETE`
 - `HEAD`
 - `OPTIONS`
@@ -783,7 +787,7 @@ Last but not least there is also an `HttpContext` extension method called `BindQ
 
 ### Model Binding
 
-Oxpecker offers out of the box a few default `HttpContext` extension methods and equivalent `EndpointHandler` functions which make it possible to bind the payload or query string of an HTTP request to a custom object.
+Oxpecker offers out of the box a few default `HttpContext` extension methods and equivalent `EndpointHandler` functions which make it possible to bind the payload or query string of an HTTP request to a custom object. `BindJson` and `BindForm` read the request body with `ctx.RequestAborted`, so when the client disconnects they throw an `OperationCanceledException` rather than a `ModelBindException` (see [Cancellation](#cancellation)).
 
 #### Binding JSON
 
@@ -1096,7 +1100,7 @@ let fileUploadHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         task {
             let formFeature = ctx.Features.Get<IFormFeature>()
-            let! form = formFeature.ReadFormAsync CancellationToken.None
+            let! form = formFeature.ReadFormAsync ctx.RequestAborted
             return!
                 form.Files
                 |> Seq.fold (fun acc file -> $"{acc}\n{file.FileName}") ""
@@ -1198,7 +1202,7 @@ let configureServices (services: IServiceCollection) =
         .AddOxpecker()
     |> ignore
 ```
-Once it's done, all your POST, PUT and PATCH endpoints will be validated against CSRF token, but an actual antiforgery exception (in case of failed validation) will only happen when doing [form binding](#binding-forms).
+Once it's done, all your POST, PUT and PATCH endpoints will be validated against CSRF token, but an actual antiforgery exception (in case of failed validation) will only happen when doing [form binding](#binding-forms). Note that QUERY endpoints are not validated even though QUERY requests can carry a body. This is by design of the QUERY method itself: it is defined as safe and idempotent, just like GET, so CSRF protection doesn't apply to it.
 
 _If you don't like the default behavior, instead of adding built-in ASP.NET Core AntiForgery middleware, you can write custom [EndpointMiddleware](#endpointmiddleware), that will call `antiforgery.ValidateRequestAsync`, and place it in the desired stage of the pipeline._
 
@@ -1379,6 +1383,8 @@ let configureServices (services : IServiceCollection) =
             SystemTextJsonSerializer(specificOptions)) |> ignore
 ```
 
+`IJsonSerializer` has three members: `Serialize(value, ctx, chunked)` writes a value as the response body and sets the `Content-Type` header (and `Content-Length`, unless chunked), `Deserialize(ctx)` reads a value from the request body, and `SerializePart(value, writer, cancellationToken)` writes a value as UTF-8 JSON to a `PipeWriter` without touching the response headers. The latter is used by `MultipartPart.Json`, so the JSON parts of a [multipart response](#writing-multipart) follow the registered serializer as well. An implementation of `SerializePart` must not complete the writer (a serializer that needs a `Stream` can use `writer.AsStream(leaveOpen = true)`) and does not have to flush it, but it has to pass the token to every asynchronous write, just like `ctx.RequestAborted` in the other two members.
+
 #### Writing IResult
 
 If you like what ASP.NET Core IResult offers, you might be pleased to know that Oxpecker supports it as well. You can simplify returning responses together with status codes using `Microsoft.AspNetCore.Http.TypedResults`:
@@ -1404,25 +1410,6 @@ The `%` operator is used to convert `IResult` to `EndpointHandler`. You can also
 let myHandler : EndpointHandler =
     fun (ctx: HttpContext) ->
         ctx.Write <| TypedResults.Ok johnDoe
-```
-
-#### Writing HTML Strings
-
-The `WriteHtmlString (html: string)` extension method and the `htmlString (html: string)` endpoint handler are both equivalent to [writing text](#writing-text) except that they set the `Content-Type` header to `text/html`:
-
-```fsharp
-let someHandler (dataObj: obj) : EndpointHandler =
-    fun (ctx: HttpContext) ->
-        task {
-            // Do stuff
-            return! ctx.WriteHtmlString "<html><head></head><body>Hello World</body></html>"
-        }
-
-// or...
-
-let someHandler (dataObj: obj) : EndpointHandler =
-    // Do stuff
-    htmlString "<html><head></head><body>Hello World</body></html>"
 ```
 
 #### Writing HTML Views
@@ -1498,11 +1485,135 @@ let myHtmlView (htmlView: MyHtmlElement) : EndpointHandler =
     fun (ctx: HttpContext) -> ctx.WriteMyHtmlView htmlView
 ```
 
+#### Writing Multipart
+
+The `WriteMultipart` and `WriteMultipartChunked` extension methods (and the `multipart` / `multipartChunked` handlers) write a `multipart/mixed` response in which every part has its own headers and body. This is the format consumed by the htmx 4 [hx-multipart](https://four.htmx.org/extensions/hx-multipart) extension: each part is swapped into the page as soon as it arrives, and part headers such as `HX-Retarget`, `HX-Reswap` or `HX-Trigger` override the request's swap settings for that part only. The wire format matches the [multipart-response](https://github.com/scriptogre/multipart-response) reference implementation.
+
+Parts are created with the `MultipartPart` factory members (or directly through the `HtmlPart`, `TextPart`, `JsonPart` and `BytesPart` constructors):
+
+- `MultipartPart.Html(view)` — an `HtmlElement`, sent as `text/html; charset=utf-8`
+- `MultipartPart.Text(text)` — a string, sent as `text/plain; charset=utf-8`
+- `MultipartPart.Json(value)` — a value serialized with the registered `IJsonSerializer` (see [Writing JSON](#writing-json): `System.Text.Json` with web defaults unless another serializer or other options are registered), sent as `application/json; charset=utf-8`
+- `MultipartPart.Bytes(contentType, data)` — raw bytes with the given content type
+
+Every factory and constructor accepts an optional `headers` sequence of name/value pairs, which is stored as is (no copy) and written after `Content-Type` in the given order. The header constants from `Oxpecker.Htmx` can be used for htmx headers. Text with another content type, e.g. CSV, is sent as a `Bytes` part or with a custom part as shown below.
+
+```fsharp
+open System.Linq
+open System.Text
+open System.Threading
+open System.Threading.Tasks
+open Oxpecker.Htmx
+
+let statusView = div(id = "status") { "Report ready" }
+let reportLink = li() { a(href = "/reports/42") { "Quarterly report" } }
+
+// Buffered: all parts are rendered in memory and the Content-Length header is set
+let reportHandler: EndpointHandler =
+    multipart [
+        MultipartPart.Html(statusView, headers = [ HxResponseHeader.Retarget, "#status" ])
+        MultipartPart.Html(
+            reportLink,
+            headers = [ HxResponseHeader.Retarget, "#reports"; HxResponseHeader.Reswap, HxSwapMethod.append ]
+        )
+        MultipartPart.Json({| ReportId = 42; Status = "done" |}, headers = [ "Content-ID", "result" ])
+    ]
+
+// Streamed: each part is flushed to the client as soon as it is produced (chunked transfer encoding).
+// The parts are produced with System.Linq.AsyncEnumerable, which ships with .NET 10.
+let progressHandler: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let steps =
+            AsyncEnumerable
+                .Range(1, 5)
+                .Select(fun i (ct: CancellationToken) ->
+                    ValueTask<IMultipartPart>(
+                        task {
+                            do! Task.Delay(500, ct) // ct is ctx.RequestAborted: the delay ends when the client disconnects
+                            return
+                                MultipartPart.Html(
+                                    div(id = "progress") { $"Step {i} of 5" },
+                                    headers = [ HxResponseHeader.Retarget, "#progress" ]
+                                )
+                        }
+                    ))
+        let parts =
+            steps.Append(MultipartPart.Text("done", headers = [ HxResponseHeader.Trigger, "done" ]))
+        ctx.WriteMultipartChunked parts
+
+// Text with another content type is sent as raw bytes
+let csvPart =
+    MultipartPart.Bytes(
+        "text/csv; charset=utf-8",
+        Encoding.UTF8.GetBytes "id,name",
+        headers = [ HxResponseHeader.PartId, "row-1" ]
+    )
+```
+
+The built-in part types (`HtmlPart`, `TextPart`, `JsonPart<'T>`, `BytesPart`) implement the `IMultipartPart` interface, and so can any other content: its single `Write` member receives the `HttpContext` (to resolve services, and for the request's cancellation token `ctx.RequestAborted`) and the response `PipeWriter` and writes the whole part, i.e. the header lines (each ending with `\r\n`), an empty line and the body, while the delimiters around the part are written by the framework. A part may also start with the empty line only, but note that htmx expects at least one header line per part, and header values must not contain line breaks. Text is encoded with `Encoding.UTF8.GetBytes(text.AsSpan(), writer)`, raw bytes are copied with `writer.Write` and a stream with `stream.CopyToAsync(writer, ctx.RequestAborted)`; the writer is flushed after each part:
+
+```fsharp
+open System.IO
+open System.Text
+
+// A custom part streaming a file from disk
+type FilePart(path: string) =
+    interface IMultipartPart with
+        member this.Write(ctx, writer) =
+            Encoding.UTF8.GetBytes("Content-Type: application/pdf\r\nContent-ID: attachment\r\n\r\n".AsSpan(), writer)
+            |> ignore
+            task {
+                use file = File.OpenRead path
+                do! file.CopyToAsync(writer, ctx.RequestAborted)
+            }
+
+let attachmentHandler: EndpointHandler =
+    fun ctx -> ctx.WriteMultipart [ FilePart "report.pdf" ]
+```
+
+Any `IAsyncEnumerable<IMultipartPart>` works as the source of a streamed response, e.g. a `System.Threading.Channels` reader or a hand-written enumerator. The stream is enumerated with `ctx.RequestAborted`, so a producer that awaits with the token it receives stops when the client disconnects (see [Cancellation](#cancellation)). For `HEAD` requests the parts are not enumerated at all, only the `Content-Type` header is set.
+
+Both methods take an optional `MultipartSubtype` argument. With `MultipartSubtype.Mixed` (the default) htmx finishes swapping a part before it reads the next one; with `MultipartSubtype.Parallel` the response is `multipart/parallel` and swaps start as parts arrive, without waiting for each other:
+
+```fsharp
+ctx.WriteMultipartChunked(parts, MultipartSubtype.Parallel)
+```
+
+A fresh boundary (`multipart-` followed by 32 hex characters) is generated for every response, so part bodies are not scanned for boundary collisions. A response must contain at least one part. For the built-in parts, header names must be valid HTTP tokens (letters, digits and ``!#$%&'*+-.^_`|~``, no spaces or colons), header values as well as the content type must not contain control characters such as line breaks, no header line (`Name: value`, including `Content-Type`) may exceed 998 bytes, and `Content-Type` must be given as the content type rather than among the headers; an `ArgumentException` is thrown otherwise.
+
+#### Cancellation
+
+All response writing methods (`WriteBytes`, `WriteText`, `WriteJson`, `WriteJsonChunked`, `WriteHtmlView`, `WriteHtmlViewChunked`, `WriteHtmlChunked`, `WriteMultipart`, `WriteMultipartChunked`, `WriteStream`, `WriteFileStream`) and the corresponding endpoint handlers observe `ctx.RequestAborted`, the token that ASP.NET Core cancels when the client disconnects (or when a [request timeout](https://learn.microsoft.com/en-us/aspnet/core/performance/timeouts) expires). It is passed to every write and flush, to `GetAsyncEnumerator` when a stream of JSON values, HTML elements or multipart parts is written, and a multipart part receives the `HttpContext` whose `RequestAborted` it passes to its own writes, so a producer that awaits with the token it receives stops as soon as the client is gone:
+
+```fsharp
+open System.Linq
+open System.Threading
+open System.Threading.Tasks
+
+let streamingJson: EndpointHandler =
+    fun (ctx: HttpContext) ->
+        let values =
+            AsyncEnumerable
+                .Range(1, 10)
+                .Select(fun i (ct: CancellationToken) ->
+                    ValueTask<{| Id: int |}>(
+                        task {
+                            do! Task.Delay(500, ct) // ct is ctx.RequestAborted: the delay ends when the client disconnects
+                            return {| Id = i |}
+                        }
+                    ))
+        ctx.WriteJsonChunked values
+```
+
+When the request is aborted the writing method fails with an `OperationCanceledException` (usually its subtype `TaskCanceledException`), which is not swallowed: the enumerator is disposed, nothing more is written and the exception reaches your exception middleware. Every method also checks the token before it starts, so a request that has already been aborted fails before anything is enumerated, rendered or written, also for a `HEAD` request or when a source or part ignores the token it is given, and the chunked methods check it again after every `MoveNextAsync` and before each element or part, so a source that ignores the token neither renders anything nor completes the response once the request has been aborted. `Default.exceptionMiddleware` recognises this case, logs it at `Debug` level and, if the response has not started and its `BodyWriter` reports no unflushed bytes, answers with the status code `499 Client Closed Request`, otherwise it aborts the connection so that queued output is not sent and a truncated body is not completed as a successful response (see [Error Handling](#error-handling)); a custom middleware should treat an `OperationCanceledException` the same way while `ctx.RequestAborted.IsCancellationRequested` is `true`. A request cancelled by the request-timeouts middleware is answered with `504 Gateway Timeout` instead when an empty response can be completed safely; the `IHttpRequestTimeoutFeature` exposed by that middleware, whose `RequestTimeoutToken` fires on a timeout, tells the two cases apart.
+
+`BindJson` and `BindForm` read the request body with the same token and throw an `OperationCanceledException` rather than a `ModelBindException` when the client disconnects.
+
 ### Streaming
 
 Sometimes a large file or block of data has to be send to a client and in order to avoid loading the entire data into memory a Oxpecker web application can use streaming to send a response in a more efficient way.
 
-The `WriteStream` extension method and the `streamData` endpoint handler can be used to stream an object of type `Stream` to a client.
+The `WriteStream` extension method and the `streamData` endpoint handler can be used to stream an object of type `Stream` to a client. They take ownership of the stream and dispose it on every path, also when a precondition fails, the range is invalid, an error occurs or the request is aborted.
 
 Both functions accept the following parameters:
 
@@ -1563,7 +1674,7 @@ let someHandler : EndpointHandler =
         None // lastModified
 ```
 
-All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`.
+All streaming functions in Oxpecker will also validate conditional HTTP headers, including the `If-Range` HTTP header if `enableRangeProcessing` has been set to `true`. Streaming stops through `ctx.RequestAborted` when the client disconnects; the resulting `OperationCanceledException` is not swallowed and reaches your exception middleware (see [Cancellation](#cancellation)).
 
 ### Redirection
 
@@ -1715,3 +1826,5 @@ app.Run()
 ## Testing
 
 Integration testing of an Oxpecker application follows the concept of [ASP.NET Core testing](https://learn.microsoft.com/en-us/aspnet/core/test/middleware). You can check out the examples of tests in this repository itself: [Oxpecker.Tests](https://github.com/Lanayx/Oxpecker/tree/main/tests/Oxpecker.Tests)
+
+To simulate a client disconnect with `TestServer`, send the request with `HttpCompletionOption.ResponseHeadersRead` and dispose the `HttpResponseMessage` while the response is still being streamed: the server-side `ctx.RequestAborted` is cancelled. Cancelling the `HttpClient` token only reaches `ctx.RequestAborted` while the response headers have not been received yet.

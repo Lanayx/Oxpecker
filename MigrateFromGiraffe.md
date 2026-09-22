@@ -79,7 +79,7 @@ type MyExtensions() =
 | `WriteJsonChunkedAsync`            | `WriteJsonChunked`  |
 | `WriteXmlAsync`                    | _removed_    |
 | `WriteHtmlFileAsync`               | _removed_    |
-| `WriteHtmlStringAsync`             | `WriteHtmlString` |
+| `WriteHtmlStringAsync`             | _removed_    |
 | `WriteHtmlViewAsync `              | `WriteHtmlView` |
 | `BindJsonAsync`                    | `BindJson`   |
 | `BindXmlAsync`                     | _removed_    |

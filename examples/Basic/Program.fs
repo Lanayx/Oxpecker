@@ -1,5 +1,7 @@
 open System
+open System.Linq
 open System.Text.Json.Serialization
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.AspNetCore.Authorization
 open Microsoft.AspNetCore.Builder
@@ -12,7 +14,6 @@ open Oxpecker.ViewEngine
 open Oxpecker.ViewEngine.Aria
 open Oxpecker.OpenApi
 open Oxpecker.Htmx
-open FSharp.Control
 open type Microsoft.AspNetCore.Http.TypedResults
 
 type RequiresAuditAttribute() =
@@ -37,6 +38,13 @@ let handler3 (a: string) (b: string) (c: string) (d: int) : EndpointHandler =
 
 
 type MyModel = { Name: string; Age: int }
+
+type MyDu =
+    | Name1
+    | Name2
+    | Name3 of string
+    | Age of int
+
 [<CLIMutable>]
 type MyModelWithOption = {
     Name: string option
@@ -104,38 +112,52 @@ let closedHandler: EndpointHandler =
             Task.CompletedTask
 
 
+// Chunked JSON: one array element is produced every 500 ms
 let streamingJson: EndpointHandler =
     fun (ctx: HttpContext) ->
         let values =
-            taskSeq {
-                for i in 1..10 do
-                    do! Task.Delay(500)
-                    yield {| Id = i; Name = $"Name {i}" |}
-            }
+            AsyncEnumerable
+                .Range(1, 10)
+                .Select(fun i (ct: CancellationToken) ->
+                    ValueTask<{| Id: int; Name: string |}>(
+                        task {
+                            do! Task.Delay(500, ct)
+                            return {| Id = i; Name = $"Name {i}" |}
+                        }
+                    ))
         jsonChunked values ctx
 
+// The page loads htmx 4 with the hx-multipart extension; the h2 requests /streamHtml2 on load
+// and appends every multipart part it receives, so the text appears character by character
 let streamingHtml1: EndpointHandler =
     fun (ctx: HttpContext) ->
         let html =
             html() {
-                head() { script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0") }
+                head() {
+                    script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0/dist/htmx.min.js")
+                    script(src = "https://cdn.jsdelivr.net/npm/htmx.org@4.0.0/dist/ext/hx-multipart.min.js")
+                }
                 body(style = "width: 800px; margin: 0 auto") {
                     h1(style = "text-align: center; color: blue") { "HTML Streaming example" }
-                    h2().hxGet("/streamHtml2").hxTarget(HxSelector.this').hxTrigger("load")
+                    h2().hxGet("/streamHtml2").hxTarget(HxSelector.this').hxSwap(HxSwapMethod.append).hxTrigger("load")
                 }
             }
         htmlView html ctx
 
-
+// Streamed multipart/mixed response: every character is sent as a separate part every 20 ms
 let streamingHtml2: EndpointHandler =
     fun (ctx: HttpContext) ->
-        let values =
-            taskSeq {
-                for ch in "Hello world using Oxpecker streaming!" do
-                    do! Task.Delay(20)
-                    ch |> string |> raw
-            }
-        htmlChunked values ctx
+        let parts =
+            "Hello world using Oxpecker streaming!"
+                .ToAsyncEnumerable()
+                .Select(fun ch (ct: CancellationToken) ->
+                    ValueTask<IMultipartPart>(
+                        task {
+                            do! Task.Delay(20, ct)
+                            return MultipartPart.Html(raw(string ch))
+                        }
+                    ))
+        multipartChunked parts ctx
 
 let CLOSED = addFilter closedHandler
 let MY_HEADER endpoint =
@@ -155,9 +177,9 @@ let endpoints = [
         route "/" <| text "Hello World"
         route "/iresult" <| %Ok {| Text = "Hello World" |}
         route "/ibadResult" <| %BadRequest()
-        routef "/text/{%s}" text
-        |> configureEndpoint _.WithName("GetText")
-        |> addOpenApiSimple<unit, string>
+        routef "/json/{%s}" (MyDu.Name3 >> json)
+        |> configureEndpoint _.WithName("GetJson")
+        |> addOpenApiSimple<unit, MyDu>
         routef "/{%s}/{%s}/{%s}/{%i:min(15)}" handler3
         route "/x" (bindQuery handler4)
         routef "/xx/{%s}" (setHeaderMw "foo" "xx" >>=> bindQuery << handler6)
@@ -252,7 +274,11 @@ let configureServices (services: IServiceCollection) =
     services
         .AddRouting()
         .AddOxpecker()
-        .AddOpenApi(fun o -> o.AddSchemaTransformer<FSharpOptionSchemaTransformer>() |> ignore)
+        .AddOpenApi(fun o ->
+            o
+                .AddSchemaTransformer<FSharpOptionSchemaTransformer>()
+                .AddSchemaTransformer<FSharpUnionSchemaTransformer>()
+            |> ignore)
     |> ignore
 
 

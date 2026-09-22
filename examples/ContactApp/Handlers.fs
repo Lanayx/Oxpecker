@@ -99,7 +99,7 @@ let deleteContact id: EndpointHandler =
         }
 
 let deleteContacts (ctx: HttpContext) =
-    match ctx.TryGetFormValues "selected_contact_ids" with
+    match ctx.TryGetQueryValues "selected_contact_ids" with
     | Some ids ->
         for id in ids do
             id |> int |> ContactService.delete |> ignore
