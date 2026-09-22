@@ -45,7 +45,7 @@ let ``HTMLEncoding.encodeCharsInto and WebUtility.HtmlEncode are exactly the sam
           <tr><td>12</td><td>フレームワークのベンチマーク</td></tr>
           </table></body></html>"""
 
-    let encodedFortunes = WebUtility.HtmlEncode unencodedFortunes |> nonNull
+    let encodedFortunes = WebUtility.HtmlEncode unencodedFortunes
     let sb = StringBuilder()
     CustomWebUtility.htmlEncode unencodedFortunes sb
 

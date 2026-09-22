@@ -23,9 +23,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>3.0.0</Version>
-        <PackageVersion>3.0.0</PackageVersion>
-        <PackageReleaseNotes>Added FSharpUnionSchemaTransformer for F# discriminated union schemas (.NET 11 System.Text.Json union serialization format)</PackageReleaseNotes>
+        <Version>3.0.0-beta-1</Version>
+        <PackageVersion>3.0.0-beta-1</PackageVersion>
+        <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="11.0.0-rc.1.26425.128" />
