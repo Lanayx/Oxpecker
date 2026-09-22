@@ -855,6 +855,8 @@ The underlying JSON serializer can be configured as a dependency during applicat
 
 The `BindForm<'T>` extension method binds form data to an object of type `'T`:
 
+With the default model binder, an empty form body creates a model with default field values (such as `0`, `false`, `None`, or `null`). A supported form `Content-Type` is still required; missing or unsupported content types throw `ModelBindException`.
+
 ```fsharp
 [<CLIMutable>]
 type Car = {
@@ -928,6 +930,8 @@ let configureServices (services : IServiceCollection) =
 #### Binding Query Strings
 
 The `BindQuery<'T>` extension method binds query string parameters to an object of type `'T`:
+
+With the default model binder, an absent or empty query string creates a model with default field values (such as `0`, `false`, `None`, or `null`). No query-count check is needed before calling `BindQuery`.
 
 Collections accept the same repeated and indexed key formats as form binding.
 
