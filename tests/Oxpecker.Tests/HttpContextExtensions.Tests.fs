@@ -24,13 +24,33 @@ type ScalarCollectionModel = {
     Flags: bool seq
 }
 
-let private createFormContext (body: string) =
+type EmptyInputModel = {
+    Id: Guid
+    Count: int
+    Enabled: bool
+    Name: string | null
+    Search: string option
+}
+
+let private emptyInputModel = {
+    Id = Guid.Empty
+    Count = 0
+    Enabled = false
+    Name = null
+    Search = None
+}
+
+let private createContext () =
     let ctx = DefaultHttpContext()
-    ctx.Request.Body <- new MemoryStream(Encoding.UTF8.GetBytes body)
-    ctx.Request.ContentType <- "application/x-www-form-urlencoded"
     let services = ServiceCollection()
     services.AddSingleton<IModelBinder>(ModelBinder()) |> ignore
     ctx.RequestServices <- services.BuildServiceProvider()
+    ctx
+
+let private createFormContext (body: string) =
+    let ctx = createContext()
+    ctx.Request.Body <- new MemoryStream(Encoding.UTF8.GetBytes body)
+    ctx.Request.ContentType <- "application/x-www-form-urlencoded"
     ctx
 
 [<Fact>]
@@ -134,15 +154,60 @@ let ``BindForm binds first value for duplicated collection index`` () =
 
 [<Fact>]
 let ``BindQuery binds indexed string collections`` () =
-    let ctx = DefaultHttpContext()
-    let services = ServiceCollection()
-    services.AddSingleton<IModelBinder>(ModelBinder()) |> ignore
-    ctx.RequestServices <- services.BuildServiceProvider()
+    let ctx = createContext()
     ctx.Request.Query <- QueryCollection(QueryHelpers.ParseQuery "?Tags[0]=dotnet&Tags[1]=mvc&Tags[2]=api")
 
     let result = ctx.BindQuery<StringCollectionModel>()
 
     result.Tags |> shouldEqual [ "dotnet"; "mvc"; "api" ]
+
+[<Theory>]
+[<InlineData("")>]
+[<InlineData("?")>]
+[<InlineData("?unrelated=value")>]
+let ``BindQuery binds defaults without matching query parameters`` (queryString: string) =
+    let ctx = createContext()
+    ctx.Request.QueryString <- QueryString(queryString)
+
+    let result = ctx.BindQuery<EmptyInputModel>()
+    let collection = ctx.BindQuery<EmptyInputModel array>()
+
+    result |> shouldEqual emptyInputModel
+    collection |> shouldEqual [||]
+
+[<Theory>]
+[<InlineData("application/x-www-form-urlencoded", true)>]
+[<InlineData("application/x-www-form-urlencoded", false)>]
+[<InlineData("multipart/form-data; boundary=test", true)>]
+let ``BindForm binds defaults from an empty body`` (contentType: string, hasContentLength: bool) =
+    task {
+        let ctx = createFormContext ""
+        ctx.Request.ContentType <- contentType
+        if hasContentLength then
+            ctx.Request.ContentLength <- Nullable 0L
+
+        let! result = ctx.BindForm<EmptyInputModel>()
+        let! collection = ctx.BindForm<EmptyInputModel array>()
+
+        result |> shouldEqual emptyInputModel
+        collection |> shouldEqual [||]
+    }
+
+[<Theory>]
+[<InlineData(null)>]
+[<InlineData("text/plain")>]
+let ``BindForm rejects an empty body without a form content type`` (contentType: string | null) =
+    task {
+        let ctx = createFormContext ""
+        ctx.Request.ContentType <- contentType
+        ctx.Request.ContentLength <- Nullable 0L
+
+        let! ex =
+            Assert.ThrowsAsync<ModelBindException>(fun () ->
+                ctx.BindForm<EmptyInputModel>() :> System.Threading.Tasks.Task)
+
+        Assert.IsType<InvalidOperationException>(ex.InnerException) |> ignore
+    }
 
 [<Fact>]
 let ``WriteText with HTTP GET should return text in body`` () =

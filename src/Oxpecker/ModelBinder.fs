@@ -567,8 +567,13 @@ module private DictionaryLikeCollectionHelper =
         let param = Expression.Parameter(typeof<'T>)
         let storeProp = Expression.Property(param, "Store")
         let getStoreExpr = Expression.Lambda<_>(storeProp, param)
-        let getStore: Func<'T, Dictionary<string, StringValues>> = getStoreExpr.Compile()
-        fun collection -> getStore.Invoke(collection)
+        let getStore: Func<'T, Dictionary<string, StringValues> | null> =
+            getStoreExpr.Compile()
+        fun collection ->
+            match getStore.Invoke(collection) with
+            // ASP.NET Core's shared empty collections have no backing dictionary.
+            | null -> Dictionary<string, StringValues>()
+            | dictionary -> dictionary
 
     let formCollectionDict = getUnderlyingDict<FormCollection>
     let queryCollectionDict = getUnderlyingDict<QueryCollection>
