@@ -180,6 +180,15 @@ render (MyRouter, document.getElementById "root")
 ```
 _You still need to add a separate reference to @solidjs/router in your package.json._
 
+`useMatch` returns an accessor of `PathMatch option`, not a boolean. Call the accessor and use `Option.isSome` to check for a match, or inspect the matched `path` and `params`.
+
+`usePreloadRoute` returns a callable preloader. Inside a router component, use `preload.Invoke(url)` with default settings or pass `PreloadData` to control data preloading:
+```fsharp
+let preload = usePreloadRoute()
+preload.Invoke("/about")
+preload.Invoke("/about", PreloadData(false))
+```
+
 ### Meta
 
 [Meta](https://docs.solidjs.com/solid-meta) namespace is `Oxpecker.Solid.Meta`. It contains elements to be rendered in the application's `<head>` section:

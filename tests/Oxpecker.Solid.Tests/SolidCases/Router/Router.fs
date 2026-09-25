@@ -16,9 +16,18 @@ let Root (props: RootProps) : HtmlElement =
 [<SolidComponent>]
 let App3 () : HtmlElement =
     let navigator = useNavigate()
-    createEffect(fun _ -> navigator.Invoke("/def/inner"))
+    let preload = usePreloadRoute()
+    createEffect(fun _ ->
+        preload.Invoke("/def/inner")
+        preload.Invoke("/def/inner", PreloadData(true))
+        preload.Invoke("/def/inner", PreloadData(false))
+        navigator.Invoke("/def/inner"))
 
     h1() { "Hello world 3" }
+
+let MatchInfo () : unit -> (string * obj) option =
+    let matched = useMatch(fun () -> "/users/:id")
+    fun () -> matched() |> Option.map (fun value -> value.path, value.``params``)
 
 [<SolidComponent>]
 let Test1 () =

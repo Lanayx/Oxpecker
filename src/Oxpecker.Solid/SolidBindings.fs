@@ -810,7 +810,7 @@ module Bindings =
         static member inline Item(this: SolidStorePath<'T, 'Value array>, index: int) =
             SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| index |])
 
-        /// Selects the first store array entry matching a predicate.
+        /// Selects every store array entry matching a predicate for subsequent updates.
         [<Extension; Erase>]
         static member inline Find(this: SolidStorePath<'T, 'Value array>, predicate: 'Value -> bool) =
             SolidStorePath<'T, 'Value>(this.Setter, Array.append this.Path [| predicate |])

@@ -223,6 +223,12 @@ module Bindings =
         /// Whether route data should be preloaded.
         member val preloadData: bool = jsNative with get, set
 
+    /// Function for preloading a route URL before navigation.
+    type RoutePreloader =
+        /// Preloads the route at the URL, optionally controlling whether its data is preloaded.
+        [<Emit("$0($1...)")>]
+        abstract member Invoke: url: string * ?options: PreloadData -> unit
+
     [<Erase>]
     type Extensions =
         /// Completes the router computation expression and returns its builder.
@@ -299,9 +305,9 @@ type Bindings =
     [<ImportMember("@solidjs/router")>]
     static member useIsRouting() : (unit -> bool) = jsNative
 
-    /// Returns an accessor indicating whether a path pattern matches the current location.
+    /// Returns an accessor containing the matched path and parameters, or None when the pattern does not match.
     [<ImportMember("@solidjs/router")>]
-    static member useMatch(fn: unit -> string, ?matchFilters: obj) : (unit -> bool) = jsNative
+    static member useMatch(fn: unit -> string, ?matchFilters: obj) : (unit -> PathMatch option) = jsNative
 
     /// Returns parameters for the currently matched route.
     [<ImportMember("@solidjs/router")>]
@@ -315,9 +321,9 @@ type Bindings =
     [<ImportMember("@solidjs/router")>]
     static member useCurrentMatches() : unit -> RouteMatch[] = jsNative
 
-    /// Returns a function for preloading a route before navigation.
+    /// Returns a callable that preloads a route URL, with optional data-preloading settings.
     [<ImportMember("@solidjs/router")>]
-    static member usePreloadRoute() : (string -> PreloadData) -> unit = jsNative
+    static member usePreloadRoute() : RoutePreloader = jsNative
 
     /// Returns reactive search parameters and a setter.
     [<ImportMember("@solidjs/router")>]
