@@ -911,7 +911,7 @@ module Svg =
         [<Erase>]
         member _.type'
             with set (_: string) = ()
-        /// Semicolon-separated values used by an animation or filter primitive.
+        /// Numeric parameters for the selected color matrix operation; `matrix` requires 20 whitespace- or comma-separated numbers.
         [<Erase>]
         member _.values
             with set (_: string) = ()
@@ -1276,7 +1276,7 @@ module Svg =
         interface RegularNode
         interface FilterPrimitiveElementSVGAttributes
         interface SingleInputFilterSVGAttributes
-        /// Filter compositing operation such as `over`, `in`, `out`, `atop`, `xor`, or `arithmetic`.
+        /// Morphology operation: `erode` or `dilate`.
         [<Erase>]
         member _.operator
             with set (_: string) = ()
@@ -1983,11 +1983,11 @@ module Svg =
         [<Erase>]
         member _.preserveAspectRatio
             with set (_: string) = ()
-        /// Horizontal marker reference point aligned to the vertex.
+        /// Horizontal reference point used to position instances of the symbol.
         [<Erase>]
         member _.refX
             with set (_: string) = ()
-        /// Vertical marker reference point aligned to the vertex.
+        /// Vertical reference point used to position instances of the symbol.
         [<Erase>]
         member _.refY
             with set (_: string) = ()
@@ -2028,7 +2028,7 @@ module Svg =
         [<Erase>]
         member _.dy
             with set (_: string) = ()
-        /// Rotation angle or `auto`/`auto-reverse` for motion animation.
+        /// List of rotation angles applied to successive glyphs.
         [<Erase>]
         member _.rotate
             with set (_: string) = ()
@@ -2110,7 +2110,7 @@ module Svg =
         [<Erase>]
         member _.dy
             with set (_: string) = ()
-        /// Rotation angle or `auto`/`auto-reverse` for motion animation.
+        /// List of rotation angles applied to successive glyphs.
         [<Erase>]
         member _.rotate
             with set (_: string) = ()

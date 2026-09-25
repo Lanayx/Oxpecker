@@ -50,7 +50,7 @@ module Aria =
         /// Text that provides an accessible description of the element.
         member this.ariaDescription
             with set (value: string | null) = this.attr("aria-description", value) |> ignore
-        /// ID of an element that provides more detailed information about this element.
+        /// Space-separated IDs of elements that provide more detailed information about this element.
         member this.ariaDetails
             with set (value: string | null) = this.attr("aria-details", value) |> ignore
         /// Whether the element is perceivable but unavailable for interaction; this does not disable behavior by itself.
@@ -80,7 +80,7 @@ module Aria =
         /// Accessible name provided as plain text.
         member this.ariaLabel
             with set (value: string | null) = this.attr("aria-label", value) |> ignore
-        /// Space-separated IDs of elements that provide this element?s accessible name.
+        /// Space-separated IDs of elements that provide this element's accessible name.
         member this.ariaLabelledBy
             with set (value: string | null) = this.attr("aria-labelledby", value) |> ignore
         /// Hierarchical level, such as for a heading or tree item; use a positive integer.

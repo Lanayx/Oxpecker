@@ -67,7 +67,7 @@ module Aria =
         [<Erase>]
         member this.ariaDescription
             with set (_: string) = ()
-        /// ID of an element that provides more detailed information about this element.
+        /// Space-separated IDs of elements that provide more detailed information about this element.
         [<Erase>]
         member this.ariaDetails
             with set (_: string) = ()

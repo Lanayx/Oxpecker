@@ -97,7 +97,7 @@ module Bindings =
 
     /// Route pattern and metadata used by the router.
     type RouteDescription =
-        /// Unique history key for this location.
+        /// Identity key used to preserve matching route instances across navigation.
         abstract member key: obj with get, set
         /// Original route path pattern before normalization.
         abstract member originalPath: string with get, set

@@ -412,7 +412,7 @@ module Tags =
         /// Destination resource type for a preload link, such as `script`, `style`, `image`, or `font`.
         member this.as'
             with set (value: string | null) = this.attr("as", value) |> ignore
-        /// Image slot sizes used with a responsive srcset.
+        /// Icon dimensions for a link such as `rel="icon"`; use `any` for a scalable icon.
         member this.sizes
             with set (value: string | null) = this.attr("sizes", value) |> ignore
         /// CORS mode: `anonymous`, `use-credentials`, or an empty string for anonymous mode.
@@ -533,7 +533,7 @@ module Tags =
         /// Height in CSS pixels.
         member this.height
             with set (value: int) = this.attr("height", string value) |> ignore
-        /// Alternative text; use an empty string for decorative images.
+        /// Accessible label for an image submit button (`type="image"`).
         member this.alt
             with set (value: string | null) = this.attr("alt", value) |> ignore
         /// Initial checked state of a checkbox or radio input.
@@ -728,7 +728,7 @@ module Tags =
     /// A caption for a form control.
     type label() =
         inherit RegularNode("label")
-        /// Id of the associated element or elements.
+        /// ID of the single labelable form control associated with this label.
         member this.for'
             with set (value: string | null) = this.attr("for", value) |> ignore
 
@@ -1067,7 +1067,7 @@ module Tags =
         /// Destination URL.
         member this.href
             with set (value: string | null) = this.attr("href", value) |> ignore
-        /// Alternative text; use an empty string for decorative images.
+        /// Accessible name describing this image-map link when `href` is present.
         member this.alt
             with set (value: string | null) = this.attr("alt", value) |> ignore
         /// Suggests downloading the resource; a string may specify the filename.

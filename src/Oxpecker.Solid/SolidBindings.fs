@@ -583,7 +583,7 @@ module Bindings =
     [<Erase>]
     type Index<'T>() =
         interface HtmlElement
-        /// Items to render as a list; each item is passed to the row function with its index accessor.
+        /// Items to render by position; the row function receives an item accessor and a fixed integer index.
         [<Erase>]
         member this.each
             with set (value: 'T[]) = ()

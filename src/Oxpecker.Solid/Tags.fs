@@ -540,7 +540,7 @@ module Tags =
         [<Erase>]
         member this.as'
             with set (_: string) = ()
-        /// Image slot sizes used with a responsive srcset.
+        /// Icon dimensions for a link such as `rel="icon"`; use `any` for a scalable icon.
         [<Erase>]
         member this.sizes
             with set (_: string) = ()
@@ -556,7 +556,7 @@ module Tags =
         [<Erase>]
         member this.referrerpolicy
             with set (_: string) = ()
-        /// Disables the control and excludes it from form submission.
+        /// Disables a linked stylesheet when set to true.
         [<Erase>]
         member this.disabled
             with set (_: bool) = ()
@@ -590,7 +590,7 @@ module Tags =
     [<Erase>]
     type meta() =
         interface VoidNode
-        /// Element name, used for form submission or script access as applicable.
+        /// Identifies the kind of metadata provided, such as `description` or `author`.
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -699,7 +699,7 @@ module Tags =
         [<Erase>]
         member this.height
             with set (_: int) = ()
-        /// Alternative text; use an empty string for decorative images.
+        /// Accessible label for an image submit button (`type="image"`).
         [<Erase>]
         member this.alt
             with set (_: string) = ()
@@ -748,7 +748,7 @@ module Tags =
     [<Erase>]
     type output() =
         interface RegularNode
-        /// Id of the associated element or elements, commonly used by labels.
+        /// Space-separated IDs of controls that contributed to the calculated result.
         [<Erase>]
         member this.for'
             with set (_: string) = ()
@@ -955,7 +955,7 @@ module Tags =
     [<Erase>]
     type label() =
         interface RegularNode
-        /// Id of the associated element or elements, commonly used by labels.
+        /// ID of the single labelable form control associated with this label.
         [<Erase>]
         member this.for'
             with set (_: string) = ()
@@ -981,7 +981,7 @@ module Tags =
         [<Erase>]
         member this.src
             with set (_: string) = ()
-        /// Element name, used for form submission or script access as applicable.
+        /// Name of the nested browsing context, usable as a link or form target.
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -1179,7 +1179,7 @@ module Tags =
     [<Erase>]
     type param() =
         interface VoidNode
-        /// Element name, used for form submission or script access as applicable.
+        /// Name of the parameter passed to the embedded object.
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -1372,7 +1372,7 @@ module Tags =
     [<Erase>]
     type map() =
         interface RegularNode
-        /// Element name, used for form submission or script access as applicable.
+        /// Name of the image map referenced by an image `usemap` attribute.
         [<Erase>]
         member this.name
             with set (_: string) = ()
@@ -1392,7 +1392,7 @@ module Tags =
         [<Erase>]
         member this.href
             with set (_: string) = ()
-        /// Alternative text; use an empty string for decorative images.
+        /// Accessible name describing this image-map link when `href` is present.
         [<Erase>]
         member this.alt
             with set (_: string) = ()
