@@ -92,22 +92,23 @@ type private AsyncParts(parts: IMultipartPart list, onMoveNext: unit -> unit) =
         member this.GetAsyncEnumerator _ =
             let mutable remaining = parts
             let mutable current = Unchecked.defaultof<IMultipartPart>
-            { new IAsyncEnumerator<IMultipartPart> with
-                member this.Current = current
-                member this.MoveNextAsync() =
-                    ValueTask<bool>(
-                        task {
-                            do! Task.Yield()
-                            onMoveNext()
-                            match remaining with
-                            | [] -> return false
-                            | part :: rest ->
-                                current <- part
-                                remaining <- rest
-                                return true
-                        }
-                    )
-                member this.DisposeAsync() = ValueTask()
+            {
+                new IAsyncEnumerator<IMultipartPart> with
+                    member this.Current = current
+                    member this.MoveNextAsync() =
+                        ValueTask<bool>(
+                            task {
+                                do! Task.Yield()
+                                onMoveNext()
+                                match remaining with
+                                | [] -> return false
+                                | part :: rest ->
+                                    current <- part
+                                    remaining <- rest
+                                    return true
+                            }
+                        )
+                    member this.DisposeAsync() = ValueTask()
             }
 
 let private statusView = div(id = "status") { "Online" }
@@ -309,8 +310,7 @@ let ``WriteMultipart writes a custom part without headers as an empty header blo
 let ``WriteMultipart writes repeated headers in the given order`` () =
     task {
         let ctx = createContext()
-        let part =
-            MultipartPart.Text("done", headers = [ "HX-Trigger", "first"; "hx-trigger", "second" ])
+        let part = MultipartPart.Text("done", headers = [ "HX-Trigger", "first"; "hx-trigger", "second" ])
 
         do! ctx.WriteMultipart [ part ]
 
@@ -521,8 +521,7 @@ let ``WriteMultipartChunked with HTTP HEAD sets Content-Type but writes no body`
         let ctx = createContext()
         ctx.Request.Method <- "HEAD"
         let enumerated = ref false
-        let parts =
-            AsyncParts([ MultipartPart.Text "done" ], (fun () -> enumerated.Value <- true))
+        let parts = AsyncParts([ MultipartPart.Text "done" ], (fun () -> enumerated.Value <- true))
 
         do! ctx.WriteMultipartChunked parts
 
@@ -560,10 +559,8 @@ let ``WriteMultipartChunked flushes each part including its delimiter before req
         do! ctx.WriteMultipartChunked parts
 
         let boundary = getBoundary(responseContentType ctx)
-        let firstPart =
-            $"--{boundary}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nfirst\r\n--{boundary}"
-        let secondPart =
-            $"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nsecond\r\n--{boundary}"
+        let firstPart = $"--{boundary}\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nfirst\r\n--{boundary}"
+        let secondPart = $"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nsecond\r\n--{boundary}"
         List.ofSeq snapshots |> shouldEqual [ ""; firstPart; firstPart + secondPart ]
         readBody ctx |> shouldEqual(firstPart + secondPart + "--\r\n")
     }

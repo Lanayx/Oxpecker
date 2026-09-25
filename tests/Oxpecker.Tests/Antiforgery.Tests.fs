@@ -43,7 +43,8 @@ module WebApp =
                         webHostBuilder
                             .UseTestServer()
                             .Configure(
-                                _.UseRouting()
+                                _
+                                    .UseRouting()
                                     .UseAntiforgery()
                                     .Use(Default.exceptionMiddleware)
                                     .UseOxpecker(endpoints)
