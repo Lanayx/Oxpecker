@@ -1289,7 +1289,7 @@ module Tags =
     [<Erase>]
     type fieldset() =
         interface RegularNode
-        /// Disables the control and excludes it from form submission.
+        /// Disables descendant form controls except those inside the first legend; disabled controls are not submitted.
         [<Erase>]
         member this.disabled
             with set (_: bool) = ()

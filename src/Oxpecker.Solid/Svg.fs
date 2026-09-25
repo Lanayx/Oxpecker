@@ -1129,7 +1129,7 @@ module Svg =
         [<Erase>]
         member _.exponent
             with set (_: string) = ()
-        /// Position or distance offset, depending on the SVG element.
+        /// Additive constant for the `gamma` component transfer function.
         [<Erase>]
         member _.offset
             with set (_: string) = ()
@@ -1162,7 +1162,7 @@ module Svg =
         [<Erase>]
         member _.exponent
             with set (_: string) = ()
-        /// Position or distance offset, depending on the SVG element.
+        /// Additive constant for the `gamma` component transfer function.
         [<Erase>]
         member _.offset
             with set (_: string) = ()
@@ -1195,7 +1195,7 @@ module Svg =
         [<Erase>]
         member _.exponent
             with set (_: string) = ()
-        /// Position or distance offset, depending on the SVG element.
+        /// Additive constant for the `gamma` component transfer function.
         [<Erase>]
         member _.offset
             with set (_: string) = ()
@@ -1228,7 +1228,7 @@ module Svg =
         [<Erase>]
         member _.exponent
             with set (_: string) = ()
-        /// Position or distance offset, depending on the SVG element.
+        /// Additive constant for the `gamma` component transfer function.
         [<Erase>]
         member _.offset
             with set (_: string) = ()

@@ -134,7 +134,7 @@ module Aria =
         /// Human-readable alternative to the numeric row index when needed.
         member this.ariaRowIndexText
             with set (value: string | null) = this.attr("aria-rowindextext", value) |> ignore
-        /// Number of rows occupied by this cell in a table or grid; use a positive integer.
+        /// Number of rows occupied by this cell; use a positive integer, or `0` to span all remaining rows in the row group.
         member this.ariaRowSpan
             with set (value: int) = this.attr("aria-rowspan", string value) |> ignore
         /// Whether this selectable item is currently selected.

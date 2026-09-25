@@ -989,7 +989,7 @@ module Tags =
     /// Groups related form controls.
     type fieldset() =
         inherit RegularNode("fieldset")
-        /// Disables the control and excludes it from form submission.
+        /// Disables descendant form controls except those inside the first legend; disabled controls are not submitted.
         member this.disabled
             with set (value: bool) = this.bool("disabled", value) |> ignore
         /// Id of the form associated with this control.

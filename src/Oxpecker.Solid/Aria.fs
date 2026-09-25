@@ -179,7 +179,7 @@ module Aria =
         [<Erase>]
         member this.ariaRowIndexText
             with set (_: string) = ()
-        /// Number of rows occupied by this cell in a table or grid; use a positive integer.
+        /// Number of rows occupied by this cell; use a positive integer, or `0` to span all remaining rows in the row group.
         [<Erase>]
         member this.ariaRowSpan
             with set (_: int) = ()

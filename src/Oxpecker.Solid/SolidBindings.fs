@@ -685,7 +685,7 @@ module Bindings =
     [<Erase>]
     type ErrorBoundary() =
         interface HtmlContainer
-        /// Content rendered when a condition is false or an async boundary has no primary content.
+        /// Fallback rendered after a descendant throws; receives the error and a reset callback.
         [<Erase>]
         member this.fallback
             with set (value: ErrorBoundary.Fallback) = ()
