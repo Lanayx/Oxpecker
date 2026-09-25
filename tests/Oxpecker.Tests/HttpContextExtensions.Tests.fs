@@ -82,8 +82,7 @@ let ``TryGetRequestHeader during HTTP GET request with returns correct result`` 
 let ``TryGetQueryStringValue during HTTP GET request with query string returns correct result`` () =
     let ctx = DefaultHttpContext()
     ctx.TryGetQueryValue "BirthDate" |> shouldEqual None
-    let queryStr =
-        "?Name=John%20Doe&IsVip=true&BirthDate=1990-04-20&Balance=150000.5&LoyaltyPoints=137"
+    let queryStr = "?Name=John%20Doe&IsVip=true&BirthDate=1990-04-20&Balance=150000.5&LoyaltyPoints=137"
     let query = QueryHelpers.ParseQuery queryStr
     ctx.Request.Query <- QueryCollection(query)
 
@@ -131,8 +130,7 @@ let ``BindForm binds repeated and indexed string collections`` () =
 [<Fact>]
 let ``BindForm binds indexed scalar collections`` () =
     task {
-        let ctx =
-            createFormContext "Counts[0]=1&Counts[1]=2&Ratios[0]=1.5&Ratios[1]=2.25&Flags[0]=true&Flags[1]=false"
+        let ctx = createFormContext "Counts[0]=1&Counts[1]=2&Ratios[0]=1.5&Ratios[1]=2.25&Flags[0]=true&Flags[1]=false"
 
         let! result = ctx.BindForm<ScalarCollectionModel>()
 

@@ -278,8 +278,7 @@ type MultipartExtensions() =
         let delimiter = MultipartWriter.delimiter boundary
         let cancellationToken = ctx.RequestAborted
         let memoryStream = recyclableMemoryStreamManager.Value.GetStream()
-        let writer =
-            PipeWriter.Create(memoryStream, StreamPipeWriterOptions(leaveOpen = true))
+        let writer = PipeWriter.Create(memoryStream, StreamPipeWriterOptions(leaveOpen = true))
         task {
             try
                 cancellationToken.ThrowIfCancellationRequested()

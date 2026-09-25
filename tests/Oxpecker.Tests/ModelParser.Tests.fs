@@ -50,8 +50,7 @@ type PointsModel = { Points: Point[] }
 
 [<Fact>]
 let ``parseModel<Model2> returns empty array for null SearchTerms`` () =
-    let modelData =
-        [ "SearchTerms", StringValues Unchecked.defaultof<string> ] |> toComplexData
+    let modelData = [ "SearchTerms", StringValues Unchecked.defaultof<string> ] |> toComplexData
     let expected = { SearchTerms = [||] }
     let result = defaultParseModel<Model2> modelData
     result |> shouldEqual expected
@@ -97,8 +96,7 @@ let ``parseModel<Model2> handles single-element string array`` () =
 
 [<Fact>]
 let ``parseModel<Model2> handles multi-element string array`` () =
-    let modelData =
-        [ "SearchTerms", StringValues [| "a"; "abc"; "abcdef" |] ] |> toComplexData
+    let modelData = [ "SearchTerms", StringValues [| "a"; "abc"; "abcdef" |] ] |> toComplexData
     let expected = {
         SearchTerms = [| "a"; "abc"; "abcdef" |]
     }
@@ -683,16 +681,14 @@ let ``defaultParseModel<BookType> parses an out-of-range numeric value '100'`` (
 [<Fact>]
 let ``defaultParseModel<BookType> fails to parse null value`` () =
     let data = Unchecked.defaultof<string> |> StringValues |> SimpleData
-    let expected =
-        "Could not parse value '<null>' to type 'Oxpecker.Tests.ModelParser+BookType'."
+    let expected = "Could not parse value '<null>' to type 'Oxpecker.Tests.ModelParser+BookType'."
     let result () =
         defaultParseModel<BookType> data |> ignore
     result |> shouldFailWithMessage<NotParsedException> expected
 
 [<Fact>]
 let ``defaultParseModel<ResizeArray<BookType>> parses a collection of enum values`` () =
-    let data =
-        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
+    let data = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
     let expected =
         ResizeArray [
             BookType.EBook
@@ -706,8 +702,7 @@ let ``defaultParseModel<ResizeArray<BookType>> parses a collection of enum value
 
 [<Fact>]
 let ``defaultParseModel<BookType list> parses a list of enum values`` () =
-    let data =
-        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
+    let data = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
     let expected = [
         BookType.EBook
         BookType.Hardcover
@@ -720,8 +715,7 @@ let ``defaultParseModel<BookType list> parses a list of enum values`` () =
 
 [<Fact>]
 let ``defaultParseModel<BookType seq> parses a sequence of enum values`` () =
-    let data =
-        [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
+    let data = [| "3"; "Hardcover"; "Paperback"; "100"; "0" |] |> StringValues |> SimpleData
     let expected =
         seq {
             BookType.EBook

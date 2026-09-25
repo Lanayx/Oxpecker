@@ -52,8 +52,7 @@ let ``Basic test to bytes`` () =
 [<Fact>]
 let ``Optional attribute`` () =
     let value = true
-    let result =
-        div(id = if value then null else "abc") { div(id = if value then "myid" else null) { br() } }
+    let result = div(id = if value then null else "abc") { div(id = if value then "myid" else null) { br() } }
     result
     |> Render.toString
     |> shouldEqual """<div><div id="myid"><br></div></div>"""
@@ -61,8 +60,7 @@ let ``Optional attribute`` () =
 
 [<Fact>]
 let ``Data attribute`` () =
-    let result =
-        div().attr("data-my-value", "sdf").attr("data-my-value2", "abc") { "Some text" }
+    let result = div().attr("data-my-value", "sdf").attr("data-my-value2", "abc") { "Some text" }
     result
     |> Render.toString
     |> shouldEqual """<div data-my-value="sdf" data-my-value2="abc">Some text</div>"""
@@ -129,8 +127,7 @@ let ``Double render works`` () =
 
 [<Fact>]
 let ``Boolean attribute method`` () =
-    let result =
-        button().bool("required", true).bool("disabled", true).bool("novalidate", false) { "Test" }
+    let result = button().bool("required", true).bool("disabled", true).bool("novalidate", false) { "Test" }
     result
     |> Render.toString
     |> shouldEqual """<button required disabled>Test</button>"""

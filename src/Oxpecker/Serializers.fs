@@ -43,8 +43,7 @@ type IJsonSerializer =
 /// which plugs into this serializer.
 /// </summary>
 type SystemTextJsonSerializer(?options: JsonSerializerOptions) =
-    let options =
-        defaultArg options <| JsonSerializerOptions(JsonSerializerDefaults.Web)
+    let options = defaultArg options <| JsonSerializerOptions(JsonSerializerDefaults.Web)
 
     let serializeToStreamWithLength
         value

@@ -47,25 +47,26 @@ type private AsyncSource<'T>(items: 'T list, beforeMoveNext: int -> Cancellation
             this.Token <- token
             let mutable remaining = items
             let mutable current = Unchecked.defaultof<'T>
-            { new IAsyncEnumerator<'T> with
-                member _.Current = current
-                member _.MoveNextAsync() =
-                    ValueTask<bool>(
-                        task {
-                            do! Task.Yield()
-                            this.MoveNextCalls <- this.MoveNextCalls + 1
-                            do! beforeMoveNext this.MoveNextCalls token
-                            match remaining with
-                            | [] -> return false
-                            | item :: rest ->
-                                current <- item
-                                remaining <- rest
-                                return true
-                        }
-                    )
-                member _.DisposeAsync() =
-                    this.Disposed <- true
-                    ValueTask()
+            {
+                new IAsyncEnumerator<'T> with
+                    member _.Current = current
+                    member _.MoveNextAsync() =
+                        ValueTask<bool>(
+                            task {
+                                do! Task.Yield()
+                                this.MoveNextCalls <- this.MoveNextCalls + 1
+                                do! beforeMoveNext this.MoveNextCalls token
+                                match remaining with
+                                | [] -> return false
+                                | item :: rest ->
+                                    current <- item
+                                    remaining <- rest
+                                    return true
+                            }
+                        )
+                    member _.DisposeAsync() =
+                        this.Disposed <- true
+                        ValueTask()
             }
 
 /// Cancels the request when the item number `call` is requested and then waits with the enumeration token, so a
@@ -287,8 +288,7 @@ let ``WriteMultipartChunked passes RequestAborted to the enumerator and to each 
         use cts = new CancellationTokenSource()
         ctx.RequestAborted <- cts.Token
         let parts = [ RecordingPart(); RecordingPart() ]
-        let source =
-            AsyncSource<IMultipartPart>(parts |> List.map(fun part -> part :> IMultipartPart))
+        let source = AsyncSource<IMultipartPart>(parts |> List.map(fun part -> part :> IMultipartPart))
 
         do! ctx.WriteMultipartChunked source
 
@@ -344,8 +344,7 @@ let ``WriteHtmlChunked passes RequestAborted to the enumerator and disposes it``
         let ctx = createContext()
         use cts = new CancellationTokenSource()
         ctx.RequestAborted <- cts.Token
-        let source =
-            AsyncSource<HtmlElement>([ div() { "a" } :> HtmlElement; div() { "b" } :> HtmlElement ])
+        let source = AsyncSource<HtmlElement>([ div() { "a" } :> HtmlElement; div() { "b" } :> HtmlElement ])
 
         do! ctx.WriteHtmlChunked source
 
@@ -598,8 +597,7 @@ let ``WriteMultipartChunked with HEAD throws OperationCanceledException without 
     =
     task {
         let ctx = abortedHeadContext()
-        let source =
-            AsyncSource<IMultipartPart>([ MultipartPart.Text "Hello" ], throwIfCancelled)
+        let source = AsyncSource<IMultipartPart>([ MultipartPart.Text "Hello" ], throwIfCancelled)
 
         do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
 
@@ -647,12 +645,12 @@ let ``WriteStream with a failed precondition throws OperationCanceledException w
 // ---------------------------------
 
 /// An element that aborts the request while it is being rendered
-let private abortingElement (cts: CancellationTokenSource) =
-    { new HtmlElement with
+let private abortingElement (cts: CancellationTokenSource) = {
+    new HtmlElement with
         member _.Render sb =
             cts.Cancel()
             sb.Append "aborted" |> ignore
-    }
+}
 
 /// A part that aborts the request while it is being written
 type private AbortingPart(cts: CancellationTokenSource) =
@@ -696,8 +694,7 @@ let ``WriteHtmlChunked does not flush an element rendered after the request was 
         let ctx = createContext()
         use cts = new CancellationTokenSource()
         ctx.RequestAborted <- cts.Token
-        let source =
-            AsyncSource<HtmlElement>([ div() { "first" } :> HtmlElement; abortingElement cts ])
+        let source = AsyncSource<HtmlElement>([ div() { "first" } :> HtmlElement; abortingElement cts ])
 
         do! shouldBeCancelled(fun () -> ctx.WriteHtmlChunked source :> Task)
 
@@ -795,8 +792,7 @@ let ``WriteHtmlChunked fails with OperationCanceledException when a source that 
         use cts = new CancellationTokenSource()
         ctx.RequestAborted <- cts.Token
         // the second call cancels the request and then reports the end of the stream instead of failing
-        let source =
-            AsyncSource<HtmlElement>([ div() { "first" } :> HtmlElement ], cancelSilentlyAt 2 cts)
+        let source = AsyncSource<HtmlElement>([ div() { "first" } :> HtmlElement ], cancelSilentlyAt 2 cts)
 
         do! shouldBeCancelled(fun () -> ctx.WriteHtmlChunked source :> Task)
 
@@ -829,8 +825,7 @@ let ``WriteMultipartChunked fails with OperationCanceledException when a source 
         let ctx = createContext()
         use cts = new CancellationTokenSource()
         ctx.RequestAborted <- cts.Token
-        let source =
-            AsyncSource<IMultipartPart>([ MultipartPart.Text "first" ], cancelSilentlyAt 2 cts)
+        let source = AsyncSource<IMultipartPart>([ MultipartPart.Text "first" ], cancelSilentlyAt 2 cts)
 
         // the closing delimiter is flushed with the token
         do! shouldBeCancelled(fun () -> ctx.WriteMultipartChunked source)
@@ -1172,8 +1167,7 @@ let ``HTTP GET endpoint exceeding its request timeout is answered with 504`` () 
         // note: the request timeouts middleware does nothing while a debugger is attached
         let entries = ResizeArray<LogEntry>()
         let finished = TaskCompletionSource<int>()
-        let slowHandler: EndpointHandler =
-            fun ctx -> Task.Delay(Timeout.Infinite, ctx.RequestAborted)
+        let slowHandler: EndpointHandler = fun ctx -> Task.Delay(Timeout.Infinite, ctx.RequestAborted)
         let endpoints = [
             route "/slow" slowHandler
             |> configureEndpoint _.WithRequestTimeout(TimeSpan.FromMilliseconds 100.)
@@ -1229,17 +1223,16 @@ let ``Kestrel aborts instead of sending queued HTML when a request times out dur
     task {
         let entries = ResizeArray<LogEntry>()
         let finished = TaskCompletionSource<int>()
-        let buffered =
-            TaskCompletionSource<bool * int64>(TaskCreationOptions.RunContinuationsAsynchronously)
+        let buffered = TaskCompletionSource<bool * int64>(TaskCreationOptions.RunContinuationsAsynchronously)
         let slowHandler: EndpointHandler =
             fun ctx ->
-                let view =
-                    { new HtmlElement with
+                let view = {
+                    new HtmlElement with
                         member _.Render sb =
                             ctx.RequestAborted.WaitHandle.WaitOne(TimeSpan.FromSeconds 10.)
                             |> shouldEqual true
                             sb.Append "cancelled HTML" |> ignore
-                    }
+                }
                 task {
                     try
                         do! ctx.WriteHtmlViewChunked view

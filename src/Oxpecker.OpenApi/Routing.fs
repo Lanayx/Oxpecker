@@ -26,8 +26,7 @@ module Routing =
         | _ -> OpenApiSchema(Type = JsonSchemaType.String)
 
     let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) : Endpoint =
-        let template, mappings, requestDelegate =
-            RoutingInternal.routefInner path routeHandler
+        let template, mappings, requestDelegate = RoutingInternal.routefInner path routeHandler
         let configureEndpoint =
             fun (endpoint: IEndpointConventionBuilder) ->
                 endpoint.AddOpenApiOperationTransformer(fun operation context ct ->
