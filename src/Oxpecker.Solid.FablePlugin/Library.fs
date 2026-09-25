@@ -409,10 +409,8 @@ module internal rec AST =
                 | None -> failwith $"`let` binding inside HtmlElement can't be converted to JSX"
         | _ -> currentList
 
-    let listItemType =
-        Type.Tuple(genericArgs = [ Type.String; Type.Any ], isStruct = false)
-    let emptyList =
-        Value(kind = NewList(headAndTail = None, typ = listItemType), range = None)
+    let listItemType = Type.Tuple(genericArgs = [ Type.String; Type.Any ], isStruct = false)
+    let emptyList = Value(kind = NewList(headAndTail = None, typ = listItemType), range = None)
 
     let convertExprListToExpr (exprs: Expr list) =
         (emptyList, exprs)

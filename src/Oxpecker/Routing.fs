@@ -188,8 +188,7 @@ module RoutingInternal =
         let handlerType = handler.GetType()
         let handlerMethod = handlerType.GetMethods()[0]
         let parameters = handlerMethod.GetParameters()
-        let template, mappings =
-            RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
+        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
         let ctxInParameterList =
             if parameters.Length = mappings.Length + 1 then true
             elif parameters.Length = mappings.Length then false
@@ -220,7 +219,7 @@ module Routers =
 
     let rec applyHttpVerbsToEndpoints (verbs: HttpVerbs) (endpoints: Endpoint seq) : Endpoint =
         endpoints
-        |> Seq.map (function
+        |> Seq.map(function
             | SimpleEndpoint(oldVerbs, routeTemplate, handler, configure) ->
                 if oldVerbs = HttpVerbs.Any || oldVerbs = verbs then
                     SimpleEndpoint(verbs, routeTemplate, handler, configure)
@@ -232,8 +231,7 @@ module Routers =
                 MultiEndpoint(endpoints |> Seq.map(applyHttpVerbsToEndpoint verbs), configure))
         |> (fun endpoints -> MultiEndpoint(endpoints, id))
 
-    let GET_HEAD: Endpoint seq -> Endpoint =
-        applyHttpVerbsToEndpoints(Verbs [ GET; HEAD ])
+    let GET_HEAD: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ GET; HEAD ])
 
     let GET: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ GET ])
     let POST: Endpoint seq -> Endpoint = applyHttpVerbsToEndpoints(Verbs [ POST ])
@@ -327,8 +325,7 @@ type EndpointRouteBuilderExtensions() =
             addAntiforgery: bool
         ) =
         let groupBuilder = builder.MapGroup(parentTemplate)
-        let groupConfigure =
-            EndpointRouteBuilderExtensions.GetConfigureEndpoint(parentConfigure, addAntiforgery)
+        let groupConfigure = EndpointRouteBuilderExtensions.GetConfigureEndpoint(parentConfigure, addAntiforgery)
         groupBuilder |> groupConfigure |> ignore
         for endpoint in endpoints do
             match endpoint with

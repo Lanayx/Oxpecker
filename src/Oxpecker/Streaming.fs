@@ -135,8 +135,7 @@ type StreamingExtensions() =
             let numberOfBytes =
                 match rangeBoundary with
                 | Some range ->
-                    let contentRange =
-                        $"%s{ctx.RangeUnit()} %i{range.Start}-%i{range.End}/%i{stream.Length}"
+                    let contentRange = $"%s{ctx.RangeUnit()} %i{range.Start}-%i{range.End}/%i{stream.Length}"
 
                     // Set additional HTTP headers for range response
                     ctx.SetHttpHeader(HeaderNames.ContentRange, contentRange)

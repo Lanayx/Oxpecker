@@ -95,8 +95,7 @@ let handler9 (test1: string) (test2: string) (a: MyModel) (b: MyModel) : Endpoin
                 Test = test1 + test2
         |}
 
-let handler10: EndpointHandler =
-    fun (ctx: HttpContext) -> ctx.WriteText(string DateTime.Now)
+let handler10: EndpointHandler = fun (ctx: HttpContext) -> ctx.WriteText(string DateTime.Now)
 
 let handler11: EndpointHandler =
     fun (ctx: HttpContext) ->

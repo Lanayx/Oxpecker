@@ -20,9 +20,9 @@
         <Authors>Vladimir Shchur and contributors</Authors>
         <Copyright>Copyright (c) Vladimir Shchur 2024</Copyright>
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <Version>1.0.0</Version>
-        <PackageVersion>1.0.0</PackageVersion>
-        <PackageReleaseNotes>Fable 5 support</PackageReleaseNotes>
+        <Version>1.1.0</Version>
+        <PackageVersion>1.1.0</PackageVersion>
+        <PackageReleaseNotes>Expanded API documentation. Source-incompatible corrections to useMatch, usePreloadRoute, startTransition, and the void wbr element.</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>

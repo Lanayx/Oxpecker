@@ -68,25 +68,25 @@ module private DictionaryPool =
     type private DictionaryPool<'Key, 'Value when 'Key: not null and 'Key: equality>() as that =
         inherit
             DefaultObjectPool<PooledDictionary<'Key, 'Value>>(
-                { new IPooledObjectPolicy<_> with
-                    member _.Create() =
-                        { new PooledDictionary<_, _>() with
-                            member this.Dispose() = that.Return(this)
+                {
+                    new IPooledObjectPolicy<_> with
+                        member _.Create() = {
+                            new PooledDictionary<_, _>() with
+                                member this.Dispose() = that.Return(this)
                         }
-                    member _.Return(dict) =
-                        if dict.Count > maximumRetainedCount then
-                            false
-                        else
-                            dict.Clear()
-                            true
+                        member _.Return(dict) =
+                            if dict.Count > maximumRetainedCount then
+                                false
+                            else
+                                dict.Clear()
+                                true
                 },
                 maximumRetained
             )
 
     let get = DictionaryPool<string, StringValues>().Get
     let getIndexedValues = DictionaryPool<int, StringValues>().Get
-    let getIndexed =
-        DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
+    let getIndexed = DictionaryPool<int, struct (int * PooledDictionary<string, StringValues>)>().Get
 
 [<AutoOpen>]
 module internal TypeShapeImpl =
@@ -398,23 +398,24 @@ module internal ModelParser =
     and private createMemberParser (ctx: TypeGenerationContext) (options: ModelBinderOptions) : MemberParser<'T> =
         fun shape ->
             shape.Accept
-                { new IMemberVisitor<_, _> with
-                    member _.Visit<'Member>(memberShape) =
-                        let parser = getOrCacheParser<'Member> ctx options
-                        MemberSetter(fun state instance ->
-                            match state with
-                            | ComplexData(ExactMatch memberShape.Label options.CaseInsensitiveMatching rawValues) ->
-                                let rawData = SimpleData rawValues
-                                let memberValue = parser rawData
-                                memberShape.SetByRef(&instance, memberValue)
-                            | ComplexData(PrefixMatch memberShape.Label options.CaseInsensitiveMatching (offset,
-                                                                                                         matchedData)) ->
-                                use matchedData = matchedData
-                                if matchedData.Count > 0 then
-                                    let rawData = ComplexData { Offset = offset; Data = matchedData }
+                {
+                    new IMemberVisitor<_, _> with
+                        member _.Visit<'Member>(memberShape) =
+                            let parser = getOrCacheParser<'Member> ctx options
+                            MemberSetter(fun state instance ->
+                                match state with
+                                | ComplexData(ExactMatch memberShape.Label options.CaseInsensitiveMatching rawValues) ->
+                                    let rawData = SimpleData rawValues
                                     let memberValue = parser rawData
                                     memberShape.SetByRef(&instance, memberValue)
-                            | _ -> ())
+                                | ComplexData(PrefixMatch memberShape.Label options.CaseInsensitiveMatching (offset,
+                                                                                                             matchedData)) ->
+                                    use matchedData = matchedData
+                                    if matchedData.Count > 0 then
+                                        let rawData = ComplexData { Offset = offset; Data = matchedData }
+                                        let memberValue = parser rawData
+                                        memberShape.SetByRef(&instance, memberValue)
+                                | _ -> ())
                 }
 
     and private createParser<'T> (ctx: TypeGenerationContext) (options: ModelBinderOptions) : Parser<'T> =
@@ -429,92 +430,100 @@ module internal ModelParser =
 
         | Shape.Parsable shape ->
             shape.Accept
-                { new IParsableVisitor<_> with
-                    member _.Visit<'t when 't :> IParsable<'t>>() =
-                        let parser = getOrCacheParser<string | null> ctx options
-                        fun state ->
-                            try
-                                let rawValue = parser state
-                                match 't.TryParse(rawValue, options.CultureInfo) with
-                                | true, value -> value
-                                | false, _ -> notParsed state
-                            with _ ->
-                                notParsed state
-                        |> wrap
+                {
+                    new IParsableVisitor<_> with
+                        member _.Visit<'t when 't :> IParsable<'t>>() =
+                            let parser = getOrCacheParser<string | null> ctx options
+                            fun state ->
+                                try
+                                    let rawValue = parser state
+                                    match 't.TryParse(rawValue, options.CultureInfo) with
+                                    | true, value -> value
+                                    | false, _ -> notParsed state
+                                with _ ->
+                                    notParsed state
+                            |> wrap
                 }
 
         | Shape.Enum shape ->
             shape.Accept
-                { new IEnumVisitor<_> with
-                    member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
-                        let parser = getOrCacheParser<string | null> ctx options
-                        fun state ->
-                            try
-                                let rawValue = parser state
-                                match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
-                                | true, value -> value
-                                | false, _ -> notParsed state
-                            with _ ->
-                                notParsed state
-                        |> wrap
+                {
+                    new IEnumVisitor<_> with
+                        member _.Visit<'t, 'u when Enum<'t, 'u>>() = // 'T = enum 't: 'u
+                            let parser = getOrCacheParser<string | null> ctx options
+                            fun state ->
+                                try
+                                    let rawValue = parser state
+                                    match Enum.TryParse<'t>(rawValue, ignoreCase = true) with
+                                    | true, value -> value
+                                    | false, _ -> notParsed state
+                                with _ ->
+                                    notParsed state
+                            |> wrap
                 }
 
         | Shape.Nullable shape ->
             shape.Accept
-                { new INullableVisitor<_> with
-                    member _.Visit<'t when Nullable<'t>>() = // 'T = Nullable<'t>
-                        let parser = getOrCacheParser<'t> ctx options
-                        function
-                        | SimpleData(RawValue Null) -> Nullable()
-                        | state -> parser state |> Nullable
-                        |> wrap
+                {
+                    new INullableVisitor<_> with
+                        member _.Visit<'t when Nullable<'t>>() = // 'T = Nullable<'t>
+                            let parser = getOrCacheParser<'t> ctx options
+                            function
+                            | SimpleData(RawValue Null) -> Nullable()
+                            | state -> parser state |> Nullable
+                            |> wrap
                 }
 
         | Shape.FSharpOption shape ->
             shape.Element.Accept
-                { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = 't option
-                        let parser = getOrCacheParser<'t> ctx options
-                        function
-                        | SimpleData(RawValue Null) -> None
-                        | state -> parser state |> Some
-                        |> wrap
+                {
+                    new ITypeVisitor<_> with
+                        member _.Visit<'t>() = // 'T = 't option
+                            let parser = getOrCacheParser<'t> ctx options
+                            function
+                            | SimpleData(RawValue Null) -> None
+                            | state -> parser state |> Some
+                            |> wrap
                 }
 
         | Shape.FSharpList shape ->
             shape.Element.Accept
-                { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = 't list
-                        let parser = getOrCacheParser<'t seq> ctx options
-                        fun state -> parser state |> Seq.toList
-                        |> wrap
+                {
+                    new ITypeVisitor<_> with
+                        member _.Visit<'t>() = // 'T = 't list
+                            let parser = getOrCacheParser<'t seq> ctx options
+                            fun state -> parser state |> Seq.toList
+                            |> wrap
                 }
 
         | Shape.Array shape when shape.Rank = 1 ->
             shape.Element.Accept
-                { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = 't array
-                        let parser = getOrCacheParser<'t seq> ctx options
-                        fun state -> parser state |> Seq.toArray
-                        |> wrap
+                {
+                    new ITypeVisitor<_> with
+                        member _.Visit<'t>() = // 'T = 't array
+                            let parser = getOrCacheParser<'t seq> ctx options
+                            fun state -> parser state |> Seq.toArray
+                            |> wrap
                 }
 
         | Shape.ResizeArray shape ->
             shape.Element.Accept
-                { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = ResizeArray<'t>
-                        let parser = getOrCacheParser<'t seq> ctx options
-                        fun state -> parser state |> ResizeArray
-                        |> wrap
+                {
+                    new ITypeVisitor<_> with
+                        member _.Visit<'t>() = // 'T = ResizeArray<'t>
+                            let parser = getOrCacheParser<'t seq> ctx options
+                            fun state -> parser state |> ResizeArray
+                            |> wrap
                 }
 
         | Shape.Enumerable shape ->
             shape.Element.Accept
-                { new ITypeVisitor<_> with
-                    member _.Visit<'t>() = // 'T = 't seq
-                        if Type.(<>)(typeof<'T>, typeof<'t seq>) then
-                            unsupported typeof<'T>
-                        createEnumerableParser<'t> ctx options |> wrap
+                {
+                    new ITypeVisitor<_> with
+                        member _.Visit<'t>() = // 'T = 't seq
+                            if Type.(<>)(typeof<'T>, typeof<'t seq>) then
+                                unsupported typeof<'T>
+                            createEnumerableParser<'t> ctx options |> wrap
                 }
 
         | Shape.FSharpUnion(:? ShapeFSharpUnion<'T> as shape) ->
@@ -567,8 +576,7 @@ module private DictionaryLikeCollectionHelper =
         let param = Expression.Parameter(typeof<'T>)
         let storeProp = Expression.Property(param, "Store")
         let getStoreExpr = Expression.Lambda<_>(storeProp, param)
-        let getStore: Func<'T, Dictionary<string, StringValues> | null> =
-            getStoreExpr.Compile()
+        let getStore: Func<'T, Dictionary<string, StringValues> | null> = getStoreExpr.Compile()
         fun collection ->
             match getStore.Invoke(collection) with
             // ASP.NET Core's shared empty collections have no backing dictionary.

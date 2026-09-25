@@ -1,5 +1,5 @@
 
-import { Route, Router, useNavigate, A } from "@solidjs/router";
+import { Route, Router, useMatch, usePreloadRoute, useNavigate, A } from "@solidjs/router";
 import { lazy, createEffect } from "solid-js";
 import { App1 } from "./App1.jsx";
 import { App2 } from "./App2.jsx";
@@ -18,12 +18,29 @@ export function Root(props) {
 
 export function App3() {
     const navigator = useNavigate();
+    const preload = usePreloadRoute();
     createEffect(() => {
+        preload("/def/inner");
+        preload("/def/inner", ({
+            preloadData: true,
+        }));
+        preload("/def/inner", ({
+            preloadData: false,
+        }));
         navigator("/def/inner");
     });
     return <h1>
         Hello world 3
     </h1>;
+}
+
+export function MatchInfo() {
+    const matched = useMatch(() => "/users/:id");
+    return () => {
+        let value;
+        const option_1 = matched();
+        return (option_1 != null) ? ((value = option_1, [value.path, value.params])) : undefined;
+    };
 }
 
 export function Test1() {

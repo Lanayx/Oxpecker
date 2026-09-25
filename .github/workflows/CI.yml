@@ -33,7 +33,7 @@ jobs:
         run: dotnet tool restore
 
       - name: Lint
-        run: dotnet fantomas -r --check .
+        run: dotnet fantomas check .
 
   build:
     runs-on: ubuntu-24.04

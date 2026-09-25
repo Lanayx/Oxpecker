@@ -162,6 +162,14 @@ setStore // store setter
 
 Again, just as in the original implementation in `Fable.Solid`, resource is a special object, so instead of JS `resource()` call, you'll need to use `resource.current` in F#.
 
+### Migrating to 1.1.0
+
+This release corrects several bindings with source-incompatible changes:
+
+- Call `startTransition(fn)` directly; it returns a completion promise, not another function.
+- `useMatch` returns an accessor of `PathMatch option`; use `Option.isSome` when a boolean is needed.
+- Call the result of `usePreloadRoute` with `.Invoke(url)` or `.Invoke(url, PreloadData(true))`.
+- `wbr` is a void element: use `wbr()` without children.
 
 ### Router
 
@@ -179,6 +187,15 @@ let MyRouter () =
 render (MyRouter, document.getElementById "root")
 ```
 _You still need to add a separate reference to @solidjs/router in your package.json._
+
+`useMatch` returns an accessor of `PathMatch option`, not a boolean. Call the accessor and use `Option.isSome` to check for a match, or inspect the matched `path` and `params`.
+
+`usePreloadRoute` returns a callable preloader. Inside a router component, use `preload.Invoke(url)` with default settings or pass `PreloadData` to control data preloading:
+```fsharp
+let preload = usePreloadRoute()
+preload.Invoke("/about")
+preload.Invoke("/about", PreloadData(false))
+```
 
 ### Meta
 

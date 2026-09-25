@@ -37,8 +37,7 @@ module private Helpers =
     /// Union an existing JsonSchemaType with `null` (OpenAPI 3.1), and also drives `nullable: true` for 3.0.
     let unionWithNull (t: Nullable<JsonSchemaType>) : Nullable<JsonSchemaType> =
         if t.HasValue then
-            let combined =
-                LanguagePrimitives.EnumOfValue((int t.Value) ||| (int JsonSchemaType.Null))
+            let combined = LanguagePrimitives.EnumOfValue((int t.Value) ||| (int JsonSchemaType.Null))
             Nullable<JsonSchemaType>(combined)
         else
             // Leave as null; writer will omit 'type'.
@@ -83,8 +82,7 @@ module private Helpers =
     /// Generic type definition of the built-in System.Text.Json converter (.NET 11+) that
     /// serializes F# unions in the format this transformer describes. The converter is internal,
     /// so it is identified by its defining assembly and exact generic type definition.
-    let private stjUnionConverterName =
-        "System.Text.Json.Serialization.Converters.FSharpUnionConverter`1"
+    let private stjUnionConverterName = "System.Text.Json.Serialization.Converters.FSharpUnionConverter`1"
 
     /// True when the type is an F# union serialized by the built-in System.Text.Json
     /// FSharpUnionConverter. Matching the exact runtime converter keeps the transformer inert
@@ -216,7 +214,7 @@ module private Helpers =
         | policy -> policy.ConvertName name
     let getCaseName ctx (case: UnionCaseInfo) =
         case.GetCustomAttributes typeof<JsonPropertyNameAttribute>
-        |> Array.tryPick (function
+        |> Array.tryPick(function
             | :? JsonPropertyNameAttribute as attr -> Some attr.Name
             | _ -> None)
         |> Option.defaultWith(fun () -> convertName ctx case.Name)
