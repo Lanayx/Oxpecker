@@ -1508,4 +1508,4 @@ module Tags =
     /// An optional line-break opportunity within text.
     [<Erase>]
     type wbr() =
-        interface RegularNode
+        interface VoidNode

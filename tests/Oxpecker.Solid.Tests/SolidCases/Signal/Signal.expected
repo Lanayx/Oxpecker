@@ -1,5 +1,9 @@
 
-import { createSignal } from "solid-js";
+import { createSignal, startTransition } from "solid-js";
+
+export function Transition(update) {
+    return startTransition(update);
+}
 
 export function Test() {
     const patternInput = createSignal(0);
@@ -10,6 +14,7 @@ export function Test() {
         </p>
         <p>
             Count2 is 
+            <wbr />
             {count()}
         </p>
         <button class="button"

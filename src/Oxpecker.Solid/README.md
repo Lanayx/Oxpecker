@@ -162,6 +162,14 @@ setStore // store setter
 
 Again, just as in the original implementation in `Fable.Solid`, resource is a special object, so instead of JS `resource()` call, you'll need to use `resource.current` in F#.
 
+### Migrating to 1.1.0
+
+This release corrects several bindings with source-incompatible changes:
+
+- Call `startTransition(fn)` directly; it returns a completion promise, not another function.
+- `useMatch` returns an accessor of `PathMatch option`; use `Option.isSome` when a boolean is needed.
+- Call the result of `usePreloadRoute` with `.Invoke(url)` or `.Invoke(url, PreloadData(true))`.
+- `wbr` is a void element: use `wbr()` without children.
 
 ### Router
 

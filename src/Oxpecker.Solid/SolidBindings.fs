@@ -912,7 +912,7 @@ type Bindings =
 
     /// Schedules reactive updates as a transition and returns a promise for completion.
     [<ImportMember("solid-js")>]
-    static member startTransition() : ((unit -> unit) -> JS.Promise<unit>) = jsNative
+    static member startTransition(fn: unit -> unit) : JS.Promise<unit> = jsNative
 
     /// Evaluates a function without tracking signals it reads as dependencies.
     [<ImportMember("solid-js")>]
