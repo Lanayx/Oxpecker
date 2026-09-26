@@ -15,6 +15,7 @@
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Oxpecker.Alpine/Oxpecker.Alpine.fsproj" />
+    <Project Path="src/Oxpecker.Datastar/Oxpecker.Datastar.fsproj" />
     <Project Path="src/Oxpecker.Htmx/Oxpecker.Htmx.fsproj" />
     <Project Path="src/Oxpecker.OpenApi/Oxpecker.OpenApi.fsproj" />
     <Project Path="src/Oxpecker.ViewEngine/Oxpecker.ViewEngine.fsproj" />
@@ -22,6 +23,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Oxpecker.Alpine.Tests/Oxpecker.Alpine.Tests.fsproj" />
+    <Project Path="tests/Oxpecker.Datastar.Tests/Oxpecker.Datastar.Tests.fsproj" />
     <Project Path="tests/Oxpecker.Htmx.Tests/Oxpecker.Htmx.Tests.fsproj" />
     <Project Path="tests/Oxpecker.OpenApi.Tests/Oxpecker.OpenApi.Tests.fsproj" />
     <Project Path="tests/Oxpecker.Tests/Oxpecker.Tests.fsproj" />

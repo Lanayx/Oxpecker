@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <WarningsAsErrors>3239;0025;3261</WarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Nullable>enable</Nullable>
+    <PackageId>Oxpecker.Datastar</PackageId>
+    <Title>Oxpecker.Datastar</Title>
+    <RootNamespace>Oxpecker.Datastar</RootNamespace>
+    <AssemblyName>Oxpecker.Datastar</AssemblyName>
+    <Company>F# community</Company>
+    <Description>Datastar attribute support for Oxpecker.ViewEngine</Description>
+    <RepositoryUrl>https://github.com/Lanayx/Oxpecker</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker.Datastar</PackageProjectUrl>
+    <PackageIcon>oxpecker-128.png</PackageIcon>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>Oxpecker;ViewEngine;F#;FSharp;DSL;Html;Web;Datastar</PackageTags>
+    <Authors>Vladimir Shchur and contributors</Authors>
+    <Copyright>Copyright (c) Vladimir Shchur 2026</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Version>0.1.0-beta.1</Version>
+    <PackageVersion>0.1.0-beta.1</PackageVersion>
+    <PackageReleaseNotes>Initial release of Datastar attributes for Oxpecker.ViewEngine</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+    <Compile Include="Helpers.fs" />
+    <Compile Include="Attributes.fs" />
+    <Compile Include="Pro.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Oxpecker.ViewEngine\Oxpecker.ViewEngine.fsproj" />
+  </ItemGroup>
+
+</Project>

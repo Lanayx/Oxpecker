@@ -23,6 +23,7 @@ The server-side core of Oxpecker is a refined version of the acclaimed [Giraffe]
 
 *   Native [ASP.NET Core Endpoint routing](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/routing) integration
 *   Fast ViewEngine with a convenient DSL for HTML
+*   Datastar attribute support
 *   OpenAPI integration
 *   HTMX integration
 *   Strongly typed route parameters
@@ -68,6 +69,7 @@ Medium posts from the creator:
 *   [Oxpecker.ViewEngine](https://lanayx.github.io/Oxpecker/src/Oxpecker.ViewEngine/)
 *   [Oxpecker.Alpine](https://lanayx.github.io/Oxpecker/src/Oxpecker.Alpine/)
 *   [Oxpecker.Htmx](https://lanayx.github.io/Oxpecker/src/Oxpecker.Htmx/)
+*   [Oxpecker.Datastar](src/Oxpecker.Datastar/README.md)
 *   [Oxpecker.OpenApi](https://lanayx.github.io/Oxpecker/src/Oxpecker.OpenApi/)
 *   [Oxpecker.Solid](https://lanayx.github.io/Oxpecker/src/Oxpecker.Solid/)
 *   [Migrating from Giraffe](https://lanayx.github.io/Oxpecker/MigrateFromGiraffe)
