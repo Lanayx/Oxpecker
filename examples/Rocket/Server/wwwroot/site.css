@@ -1,0 +1,10 @@
+:root { font-family: system-ui, sans-serif; color: #24313d; background: #f5f7fa; }
+body { margin: 0; padding: 2rem 1rem; }
+main { max-width: 48rem; margin: auto; }
+section { background: white; padding: 1.5rem; margin-block: 1.5rem; border-radius: .75rem; }
+button { padding: .6rem 1rem; cursor: pointer; }
+ox-counter { display: block; margin-block: 1rem; }
+.counter { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.counter output { min-width: 2ch; text-align: center; font-size: 1.5rem; }
+.counter p { margin: 0; }
+#greeting { margin-top: 1rem; }

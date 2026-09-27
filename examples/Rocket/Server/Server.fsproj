@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="Program.fs" />
+        <ProjectReference Include="../../../src/Oxpecker/Oxpecker.fsproj" />
+        <ProjectReference Include="../../../src/Oxpecker.Datastar/Oxpecker.Datastar.fsproj" />
+    </ItemGroup>
+    <Target Name="CompileRocketClient" BeforeTargets="AssignTargetPaths" Condition="'$(DesignTimeBuild)' != 'true'">
+        <Exec Command="dotnet tool restore" WorkingDirectory="$(MSBuildProjectDirectory)" />
+        <Exec Command="dotnet fable ../Client --outDir wwwroot/dist --extension .js" WorkingDirectory="$(MSBuildProjectDirectory)" />
+        <!-- Include files generated after project evaluation, including on the first build. -->
+        <ItemGroup>
+            <Content Remove="wwwroot/dist/**/*" />
+            <Content Include="wwwroot/dist/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
+</Project>

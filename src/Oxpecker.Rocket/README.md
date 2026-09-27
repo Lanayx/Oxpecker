@@ -27,6 +27,9 @@ builder pool remain server-only.
 
 ## Component authoring
 
+See the [runnable counter and backend Datastar example](../../examples/Rocket/README.md)
+for a complete application with two independent counters and server HTML patching.
+
 ```fsharp
 open Fable.Core.JsInterop
 open Oxpecker.ViewEngine
