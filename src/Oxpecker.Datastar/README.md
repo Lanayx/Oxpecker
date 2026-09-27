@@ -12,7 +12,7 @@ head() {
 
 If the page uses Rocket components, load `datastar-rocket.js` instead; that bundle already includes Datastar. This package does not choose a script URL or bundle version for your application.
 
-Each Datastar attribute is exposed as a fluent extension method on `HtmlTag`, so attributes chain directly onto a tag with zero allocation overhead. The `{ children }` builder syntax still works at the end of the chain:
+Each Datastar attribute is exposed as a fluent extension method on `HtmlTag`, so attributes chain directly onto a tag. The `{ children }` builder syntax still works at the end of the chain:
 
 ```fsharp
 open Oxpecker.ViewEngine
