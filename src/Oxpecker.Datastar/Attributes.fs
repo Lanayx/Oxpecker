@@ -49,6 +49,10 @@ type DatastarSignalExtensions =
     [<Extension>]
     static member dataRef(this: #HtmlTag, name: string) = this.bool ($"data-ref:%s{name}", true)
 
+    /// Creates a signal that references the element using the value form. Renders `data-ref="{name}"`.
+    [<Extension>]
+    static member dataRefValue(this: #HtmlTag, name: string | null) = this.attr ("data-ref", name)
+
     /// Creates a reference signal with modifiers. Renders `data-ref:{name}{modifiers}`.
     [<Extension>]
     static member dataRef(this: #HtmlTag, name: string, modifiers: string) =
@@ -59,6 +63,10 @@ type DatastarSignalExtensions =
     static member dataIndicator(this: #HtmlTag, name: string) =
         this.bool ($"data-indicator:%s{name}", true)
 
+    /// Creates an indicator signal using the value form. Renders `data-indicator="{name}"`.
+    [<Extension>]
+    static member dataIndicatorValue(this: #HtmlTag, name: string | null) = this.attr ("data-indicator", name)
+
     /// Creates an indicator signal with modifiers. Renders `data-indicator:{name}{modifiers}`.
     [<Extension>]
     static member dataIndicator(this: #HtmlTag, name: string, modifiers: string) =
@@ -67,6 +75,10 @@ type DatastarSignalExtensions =
     /// Two-way binds an element to a signal. Renders `data-bind:{name}`.
     [<Extension>]
     static member dataBind(this: #HtmlTag, name: string) = this.bool ($"data-bind:%s{name}", true)
+
+    /// Two-way binds an element to a signal using the value form. Renders `data-bind="{name}"`.
+    [<Extension>]
+    static member dataBindValue(this: #HtmlTag, name: string | null) = this.attr ("data-bind", name)
 
     /// Two-way binds an element to a signal with modifiers. Renders `data-bind:{name}{modifiers}`.
     /// Common modifiers are `DsCase.*`, `DsModifier.bindProp` and `DsModifier.bindEvent`.

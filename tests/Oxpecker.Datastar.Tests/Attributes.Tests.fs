@@ -22,6 +22,12 @@ let ``signal binding and event modifiers render on the attribute name`` () =
     |> shouldEqual """<input data-bind:query__case.kebab__event.input.change data-on:input__debounce.500ms="search()">"""
 
 [<Fact>]
+let ``signal name value forms render on the attribute value`` () =
+    div().dataBindValue("query").dataIndicatorValue("fetching").dataRefValue("element") { "content" }
+    |> Render.toString
+    |> shouldEqual """<div data-bind="query" data-indicator="fetching" data-ref="element">content</div>"""
+
+[<Fact>]
 let ``false boolean attributes are omitted`` () =
     div().dataIgnore(false).dataIgnoreMorph(true) { "content" }
     |> Render.toString

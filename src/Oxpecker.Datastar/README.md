@@ -43,9 +43,9 @@ After opening the `Oxpecker.Datastar` namespace you'll get access to the Datasta
 |---|---|---|
 | `dataSignals` | `data-signals` | Value form (object/JSON) and key form (`data-signals:<name>`) with optional modifiers. |
 | `dataComputed` | `data-computed` | Value form and key form (`data-computed:<name>`) with optional modifiers. |
-| `dataRef` | `data-ref:<name>` | Valueless key form with optional modifiers. |
-| `dataIndicator` | `data-indicator:<name>` | Valueless key form with optional modifiers. |
-| `dataBind` | `data-bind:<name>` | Valueless key form with optional modifiers. |
+| `dataRef` / `dataRefValue` | `data-ref:<name>` / `data-ref` | Valueless key form with optional modifiers, or value form. |
+| `dataIndicator` / `dataIndicatorValue` | `data-indicator:<name>` / `data-indicator` | Valueless key form with optional modifiers, or value form. |
+| `dataBind` / `dataBindValue` | `data-bind:<name>` / `data-bind` | Valueless key form with optional modifiers, or value form. |
 | `dataAttr` | `data-attr` | Value form (object) and key form (`data-attr:<name>`). |
 | `dataStyle` | `data-style` | Value form (object) and key form (`data-style:<property>`). |
 | `dataClass` | `data-class` | Value form (object) and key form (`data-class:<name>`) with optional modifiers. |
@@ -92,6 +92,11 @@ button().dataIndicator("fetching")
 
 // Renders data-ref:foo
 div().dataRef("foo")
+
+// Value forms render the signal name as an attribute value
+input().dataBindValue("query")
+button().dataIndicatorValue("fetching")
+div().dataRefValue("foo")
 ```
 
 ### Modifiers
