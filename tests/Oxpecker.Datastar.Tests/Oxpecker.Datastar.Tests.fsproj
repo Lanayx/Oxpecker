@@ -8,7 +8,9 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="Helpers.Tests.fs" />
         <Compile Include="Attributes.Tests.fs" />
+        <Compile Include="Pro.Tests.fs" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="FsUnit.Light.xUnit" Version="1.1.0" />
