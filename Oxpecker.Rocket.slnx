@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Oxpecker.Rocket/Oxpecker.Rocket.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Oxpecker.Rocket.Parity.Tests/Oxpecker.Rocket.Parity.Tests.fsproj" />
+    <Project Path="tests/Oxpecker.Rocket.Fable.Tests/Oxpecker.Rocket.Fable.Tests.fsproj" />
+  </Folder>
+</Solution>
