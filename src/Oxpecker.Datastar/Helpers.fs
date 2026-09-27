@@ -129,8 +129,8 @@ module DsModifier =
     /// `__duration.{time}.leading` — execute the first interval immediately.
     let inline durationLeading time = $"__duration.%s{time}.leading"
 
-    /// `__threshold.{n}` — visibility threshold for `data-on-intersect`, e.g. `"0.5"`.
-    let inline threshold value = $"__threshold.%s{value}"
+    /// `__threshold.{n}` — integer visibility threshold percentage for `data-on-intersect`, e.g. `50` for 50%.
+    let inline threshold percent = $"__threshold.%i{percent}"
 
     /// `__prop.{name}` — bind to a specific property instead of the default binding (for `data-bind`).
     let inline bindProp name = $"__prop.%s{name}"

@@ -118,6 +118,9 @@ div().dataInit("$count = 1", DsModifier.delayMs 500)
 
 // Renders data-on-intersect__once__full="$seen = true"
 div().dataOnIntersect("$seen = true", DsModifier.once + DsModifier.full)
+
+// Renders data-on-intersect__threshold.50="$seen = true" (50% visible)
+div().dataOnIntersect("$seen = true", DsModifier.threshold 50)
 ```
 
 ### Boolean attributes

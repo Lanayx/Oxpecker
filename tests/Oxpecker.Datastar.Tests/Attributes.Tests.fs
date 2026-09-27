@@ -101,6 +101,8 @@ let ``event attributes render every supported form`` () =
             div().dataOnIntersect("$seen = true") { }, """<div data-on-intersect="$seen = true"></div>"""
             div().dataOnIntersect("$seen = true", DsModifier.full) { },
             """<div data-on-intersect__full="$seen = true"></div>"""
+            div().dataOnIntersect("$seen = true", DsModifier.threshold 50) { },
+            """<div data-on-intersect__threshold.50="$seen = true"></div>"""
             div().dataOnInterval("$count++") { }, """<div data-on-interval="$count++"></div>"""
             div().dataOnInterval("$count++", DsModifier.durationMs 500) { },
             """<div data-on-interval__duration.500ms="$count++"></div>"""

@@ -55,7 +55,9 @@ let ``parameterised modifiers have the documented spellings`` () =
             DsModifier.duration "1s", "__duration.1s"
             DsModifier.durationMs 500, "__duration.500ms"
             DsModifier.durationLeading "1s", "__duration.1s.leading"
-            DsModifier.threshold "0.5", "__threshold.0.5"
+            DsModifier.threshold 0, "__threshold.0"
+            DsModifier.threshold 50, "__threshold.50"
+            DsModifier.threshold 100, "__threshold.100"
             DsModifier.bindProp "checked", "__prop.checked"
             DsModifier.bindEvent "input.change", "__event.input.change"
         ],
