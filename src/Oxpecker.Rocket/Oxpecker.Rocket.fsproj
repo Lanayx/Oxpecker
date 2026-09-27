@@ -19,6 +19,8 @@
         <Compile Include="../Oxpecker.Datastar/Helpers.fs" Link="Helpers.fs" />
         <Compile Include="../Oxpecker.Datastar/Attributes.fs" Link="Attributes.fs" />
         <Compile Include="../Oxpecker.Datastar/Pro.fs" Link="Pro.fs" />
+        <Compile Include="Rocket.fs" />
+        <Compile Include="Directives.fs" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="10.0.100" />

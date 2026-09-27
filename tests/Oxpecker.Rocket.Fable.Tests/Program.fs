@@ -13,4 +13,5 @@ let main _ =
     if not failures.IsEmpty then
         failwith(String.concat "\n" failures)
     printfn "Passed %i shared rendering cases in JavaScript." cases.Length
+    Rocket.BindingTests.run()
     0
