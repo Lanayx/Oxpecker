@@ -22,8 +22,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0</Version>
-        <PackageVersion>4.0.0</PackageVersion>
+        <Version>4.1.0</Version>
+        <PackageVersion>4.1.0</PackageVersion>
         <PackageReleaseNotes>Aligned with htmx 4.0.0</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
@@ -31,6 +31,7 @@
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Helpers.fs" />
         <Compile Include="Attributes.fs" />
+        <Compile Include="Tags.fs" />
         <Compile Include="Extensions.fs" />
         <Compile Include="Headers.fs" />
     </ItemGroup>
