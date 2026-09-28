@@ -24,7 +24,7 @@
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
         <Version>4.1.0</Version>
         <PackageVersion>4.1.0</PackageVersion>
-        <PackageReleaseNotes>Aligned with htmx 4.0.0</PackageReleaseNotes>
+        <PackageReleaseNotes>hx-partial tag support</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />
