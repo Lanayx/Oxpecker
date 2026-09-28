@@ -186,6 +186,20 @@ Available helpers:
 - Values: `this'`, `body`, `document`, `window`, `host`, `nextSibling`, `previousSibling`
 - Functions: `closest`, `find`, `findAll`, `next`, `previous`, `global'`
 
+### Server side — Partial responses
+
+Use the [`hxPartial`](https://four.htmx.org/reference/tags/hx-partial) tag (renders `<hx-partial>`) to update several elements with one response. Each partial swaps its children into its own target: set it with `hxTarget` (any selector, including `HxSelector` helpers, resolved relative to the triggering element), or use `id` as a shorthand for `#id`. `hxSwap` sets the swap strategy and defaults to `innerHTML`. Partials swap after the main content, in document order.
+
+```fsharp
+let newMessage (message: string) (count: int) =
+    Fragment() {
+        hxPartial().hxTarget("#messages").hxSwap(HxSwapMethod.append) { div() { message } }
+        hxPartial(id="count") { span() { count } }
+    }
+```
+
+A response made only of partials leaves the main target untouched. To clear it instead, add `HxSwapModifier.swapEmpty true` to the triggering element's `hxSwap`.
+
 ### Server side — Request headers
 
 - HxRequestHeader.Request

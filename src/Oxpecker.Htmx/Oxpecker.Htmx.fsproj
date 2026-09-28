@@ -22,9 +22,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>4.0.0</Version>
-        <PackageVersion>4.0.0</PackageVersion>
-        <PackageReleaseNotes>Aligned with htmx 4.0.0</PackageReleaseNotes>
+        <Version>4.1.0</Version>
+        <PackageVersion>4.1.0</PackageVersion>
+        <PackageReleaseNotes>hx-partial tag support</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Oxpecker.ViewEngine" Version="3.0.0-beta-2" />
@@ -34,6 +34,7 @@
         <None Include="README.md" Pack="true" PackagePath="\" />
         <Compile Include="Helpers.fs" />
         <Compile Include="Attributes.fs" />
+        <Compile Include="Tags.fs" />
         <Compile Include="Extensions.fs" />
         <Compile Include="Headers.fs" />
     </ItemGroup>
