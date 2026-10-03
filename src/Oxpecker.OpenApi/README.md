@@ -148,6 +148,16 @@ type OpenApiConfig (?requestBody : RequestBody,
 Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code.
 `configureOperation` parameter is a function that allows you to do very low-level modifications the `OpenApiOperation` object.
 
+`addOpenApi` and `addOpenApiSimple` can also be applied to a group of endpoints (`subRoute`, `subRoutef`, `routeGroup` or HTTP verb groups) to describe all of its endpoints. Group and endpoint configurations are combined, so you can, for example, describe a common error response once for the whole group:
+
+```fsharp
+subRoute "/api" [
+    route "/a" handlerA |> addOpenApiSimple<unit, ResponseA>
+    route "/b" handlerB |> addOpenApiSimple<unit, ResponseB>
+]
+|> addOpenApi(OpenApiConfig(responseBodies = [ ResponseBody(typeof<Error>, statusCode = 400) ]))
+```
+
 ### addOpenApiSimple
 
 This method is a shortcut for simple cases. It accepts two generic type parameters - request and response, so the schema can be inferred from them.

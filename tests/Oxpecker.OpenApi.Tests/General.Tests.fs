@@ -653,25 +653,24 @@ let ``subRoutef path parameters work fine`` () =
 let ``Path parameters don't replace other parameters with the same name`` () =
     task {
         // group transformer runs before the routef one
-        let addQueryParameter (builder: IEndpointConventionBuilder) =
-            builder.AddOpenApiOperationTransformer(fun operation _ _ ->
-                let parameter =
-                    OpenApiParameter(
-                        Name = "postId",
-                        In = ParameterLocation.Query,
-                        Schema = OpenApiSchema(Type = JsonSchemaType.String)
-                    )
-                match operation.Parameters with
-                | null -> operation.Parameters <- ResizeArray [ parameter :> IOpenApiParameter ]
-                | parameters -> parameters.Add parameter
-                Task.CompletedTask)
+        let addQueryParameter (operation: OpenApiOperation) _ _ =
+            let parameter =
+                OpenApiParameter(
+                    Name = "postId",
+                    In = ParameterLocation.Query,
+                    Schema = OpenApiSchema(Type = JsonSchemaType.String)
+                )
+            match operation.Parameters with
+            | null -> operation.Parameters <- ResizeArray [ parameter :> IOpenApiParameter ]
+            | parameters -> parameters.Add parameter
+            Task.CompletedTask
         let endpoints = [
             GET [
                 subRoutef "/users/{%i}" (fun userId -> [
                     routef "/posts/{%i}" (fun postId -> text $"Post {userId} {postId}")
                     |> addOpenApiSimple<unit, string>
                 ])
-                |> configureEndpoint addQueryParameter
+                |> addOpenApi(OpenApiConfig(configureOperation = addQueryParameter))
             ]
         ]
         use! server = WebApp.webApp endpoints
@@ -830,6 +829,178 @@ let ``Additional configuration works fine`` () =
           }
         },
         "description": "Type description"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<Fact>]
+let ``addOpenApi on group and endpoint works fine`` () =
+    task {
+        let endpoints = [
+            GET [
+                subRoute "/api" [
+                    route "/a" <| text "a" |> addOpenApiSimple<unit, string>
+                    route "/b" <| text "b"
+                ]
+                |> addOpenApi(OpenApiConfig(responseBodies = [ ResponseBody(typeof<Response1>, statusCode = 400) ]))
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/api/a": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response1"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/b": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response1"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Response1": {
+        "required": [
+          "valid"
+        ],
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<Fact>]
+let ``addOpenApi applied twice to endpoint works fine`` () =
+    task {
+        let endpoints = [
+            GET [
+                route "/" <| text "Hello World"
+                |> addOpenApiSimple<unit, string>
+                |> addOpenApi(
+                    OpenApiConfig(
+                        configureOperation =
+                            fun operation _ _ ->
+                                operation.Description <- "Endpoint description"
+                                Task.CompletedTask
+                    )
+                )
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "description": "Endpoint description",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
       }
     }
   },

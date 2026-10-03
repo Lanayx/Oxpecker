@@ -46,7 +46,10 @@ module Configuration =
         ) =
 
         member this.Build(builder: IEndpointConventionBuilder) =
-            builder.WithMetadata(fakeFuncMethod) |> ignore
+            // Group and endpoint can both be configured, while OpenAPI expects a single MethodInfo in metadata
+            builder.Add(fun endpointBuilder ->
+                if not(endpointBuilder.Metadata |> Seq.exists(fun metadata -> metadata :? MethodInfo)) then
+                    endpointBuilder.Metadata.Add fakeFuncMethod)
             requestBody
             |> Option.iter(fun accepts -> builder.WithMetadata(accepts.ToAttribute()) |> ignore)
             responseBodies
