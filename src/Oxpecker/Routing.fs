@@ -1,6 +1,7 @@
 namespace Oxpecker
 
 open System
+open System.Collections.Concurrent
 open System.Reflection
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
@@ -57,7 +58,7 @@ module RouteTemplateBuilder =
     // partially decode a route argument, which
     // means that a given route argument would get
     // entirely URL decoded except for '%2F' (/).
-    // Hence decoding %2F must happen separately as
+    // Hence, decoding %2F must happen separately as
     // part of the string parsing function.
     //
     // For more information please check:
@@ -184,20 +185,205 @@ module RoutingInternal =
             :?> FSharpFunc<HttpContext, Task>
             <| ctx
 
-    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) =
-        let handlerType = handler.GetType()
-        let handlerMethod = handlerType.GetMethods()[0]
-        let parameters = handlerMethod.GetParameters()
-        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
-        let ctxInParameterList =
-            if parameters.Length = mappings.Length + 1 then true
-            elif parameters.Length = mappings.Length then false
-            else failwith <| "Unsupported routef handler: " + path.Value
-        let invoker = MethodInvoker.Create(handlerMethod)
-        let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx invoker handler mappings ctxInParameterList
+    [<NoEquality; NoComparison>]
+    type private RoutefInfo = {
+        Template: RouteTemplate
+        Mappings: (string * char * string option) array
+        Parameters: ParameterInfo array
+        Invoker: MethodInvoker
+    }
 
-        template, mappings, requestDelegate
+    // Holds only data derived from the handler type and the format string, never handler instances,
+    // so routef endpoints rebuilt on every request (inside subRoutef) don't repeat reflection
+    let private routefInfoCache = ConcurrentDictionary<struct (Type * string), RoutefInfo>()
+
+    let private createRoutefInfo =
+        Func<struct (Type * string), RoutefInfo>(fun (struct (handlerType, path)) ->
+            let handlerMethod = handlerType.GetMethods()[0]
+            let parameters = handlerMethod.GetParameters()
+            if parameters.Length < RouteTemplateBuilder.placeholderPattern.Count(path) then
+                failwith $"Handler has fewer parameters than route placeholders: %s{path}"
+            let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path parameters
+            {
+                Template = template
+                Mappings = mappings
+                Parameters = parameters
+                Invoker = MethodInvoker.Create(handlerMethod)
+            })
+
+    let private getRoutefInfo (path: string) (handlerType: Type) =
+        routefInfoCache.GetOrAdd(struct (handlerType, path), createRoutefInfo)
+
+    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) =
+        let info = getRoutefInfo path.Value (handler.GetType())
+        let ctxInParameterList =
+            if info.Parameters.Length = info.Mappings.Length + 1 then
+                true
+            elif info.Parameters.Length = info.Mappings.Length then
+                false
+            else
+                failwith <| "Unsupported routef handler: " + path.Value
+        let requestDelegate =
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx info.Invoker handler info.Mappings ctxInParameterList
+
+        info.Template, info.Mappings, requestDelegate
+
+    // Argument for the startup call of a subRoutef factory. Real path segments are never empty, hence non-empty string
+    let private placeholderArg (parameter: ParameterInfo) =
+        let parameterType = parameter.ParameterType
+        if parameterType = typeof<string> || parameterType = typeof<obj> then
+            box "placeholder"
+        elif parameterType.IsValueType then
+            Activator.CreateInstance parameterType
+        else
+            null
+
+    let private invokeFactory (ctx: HttpContext) (info: RoutefInfo) (factory: obj) =
+        let routeData = ctx.GetRouteData()
+        let mappings = info.Mappings
+        match mappings.Length with
+        | 1 -> info.Invoker.Invoke(factory, getArgByIndex routeData mappings 0)
+        | 2 ->
+            let arg1 = getArgByIndex routeData mappings 0
+            let arg2 = getArgByIndex routeData mappings 1
+            info.Invoker.Invoke(factory, arg1, arg2)
+        | 3 ->
+            let arg1 = getArgByIndex routeData mappings 0
+            let arg2 = getArgByIndex routeData mappings 1
+            let arg3 = getArgByIndex routeData mappings 2
+            info.Invoker.Invoke(factory, arg1, arg2, arg3)
+        | _ -> info.Invoker.Invoke(factory, Span(Array.init mappings.Length (getArgByIndex routeData mappings)))
+        |> nonNull
+        :?> Endpoint seq
+
+    // Structure, templates and HTTP verbs of the endpoints returned by subRoutef factory at startup
+    [<NoEquality; NoComparison>]
+    type private EndpointShape =
+        | SimpleShape of HttpVerbs * RouteTemplate
+        | NestedShape of RouteTemplate * EndpointShape array
+        | MultiShape of EndpointShape array
+
+    // Verbs are usually the same instance, since GET, POST, etc. are partially applied functions
+    let private isSameVerbs (verbs: HttpVerbs) (expectedVerbs: HttpVerbs) =
+        match verbs, expectedVerbs with
+        | Any, Any -> true
+        | Verbs verbs, Verbs expectedVerbs ->
+            obj.ReferenceEquals(verbs, expectedVerbs)
+            || Linq.Enumerable.SequenceEqual(verbs, expectedVerbs)
+        | _ -> false
+
+    // Snapshot of the endpoints tree, so that it can be traversed several times even if built from single-use sequences
+    let rec private materializeEndpoints (endpoints: Endpoint seq) : Endpoint seq =
+        endpoints
+        |> Seq.map(function
+            | NestedEndpoint(template, children, configure) ->
+                NestedEndpoint(template, materializeEndpoints children, configure)
+            | MultiEndpoint(children, configure) -> MultiEndpoint(materializeEndpoints children, configure)
+            | endpoint -> endpoint)
+        |> Seq.toArray
+        :> Endpoint seq
+
+    let rec private getShapes (endpoints: Endpoint seq) =
+        endpoints
+        |> Seq.map(function
+            | SimpleEndpoint(verbs, template, _, _) -> SimpleShape(verbs, template)
+            | NestedEndpoint(template, children, _) -> NestedShape(template, getShapes children)
+            | MultiEndpoint(children, _) -> MultiShape(getShapes children))
+        |> Seq.toArray
+
+    // Checks that all endpoints have the same structure and templates as at startup and returns the handler at indexPath
+    // (depth is -1 for endpoints outside of indexPath, which are only checked)
+    let rec private tryFindHandler
+        (shapes: EndpointShape array)
+        (indexPath: int array)
+        (depth: int)
+        (endpoints: Endpoint seq)
+        : struct (bool * EndpointHandler voption) =
+        use enumerator = endpoints.GetEnumerator()
+        let mutable index = 0
+        let mutable isValid = true
+        let mutable handler = ValueNone
+        while isValid && enumerator.MoveNext() do
+            if index < shapes.Length then
+                let isOnPath = depth >= 0 && index = indexPath[depth]
+                let childDepth = if isOnPath then depth + 1 else -1
+                match enumerator.Current, shapes[index] with
+                | SimpleEndpoint(verbs, template, endpointHandler, _), SimpleShape(expectedVerbs, expected) when
+                    template = expected && isSameVerbs verbs expectedVerbs
+                    ->
+                    if isOnPath then
+                        handler <- ValueSome endpointHandler
+                | NestedEndpoint(template, children, _), NestedShape(expected, childShapes) when template = expected ->
+                    let struct (isChildValid, childHandler) = tryFindHandler childShapes indexPath childDepth children
+                    isValid <- isChildValid
+                    if isOnPath then
+                        handler <- childHandler
+                | MultiEndpoint(children, _), MultiShape childShapes ->
+                    let struct (isChildValid, childHandler) = tryFindHandler childShapes indexPath childDepth children
+                    isValid <- isChildValid
+                    if isOnPath then
+                        handler <- childHandler
+                | _ -> isValid <- false
+            else
+                isValid <- false
+            index <- index + 1
+        struct (isValid && index = shapes.Length, handler)
+
+    // Keeps the structure, templates, verbs and configuration of the endpoints, but replaces handlers with resolvers
+    let rec private wrapEndpoints
+        (resolve: int array -> EndpointHandler)
+        (indexPath: int list)
+        (endpoints: Endpoint seq)
+        : Endpoint seq =
+        endpoints
+        |> Seq.mapi(fun index endpoint ->
+            let indexPath = index :: indexPath
+            match endpoint with
+            | SimpleEndpoint(verbs, template, _, configure) ->
+                SimpleEndpoint(verbs, template, resolve(indexPath |> List.rev |> List.toArray), configure)
+            | NestedEndpoint(template, children, configure) ->
+                NestedEndpoint(template, wrapEndpoints resolve indexPath children, configure)
+            | MultiEndpoint(children, configure) -> MultiEndpoint(wrapEndpoints resolve indexPath children, configure))
+        |> Seq.toArray
+        :> Endpoint seq
+
+    let private subRoutefFromFactory (path: string) (factory: obj) =
+        let info = getRoutefInfo path (factory.GetType())
+        if info.Parameters.Length <> info.Mappings.Length then
+            failwith <| "Unsupported subRoutef endpoints factory: " + path
+        if info.Template.Contains("{*") then
+            failwith <| "Catch-all parameters are not supported in subRoutef: " + path
+        let startupEndpoints =
+            try
+                info.Invoker.Invoke(factory, Span(Array.map placeholderArg info.Parameters))
+                |> nonNull
+                :?> Endpoint seq
+                |> materializeEndpoints
+            with ex ->
+                raise
+                <| InvalidOperationException(
+                    $"subRoutef '%s{path}': endpoints factory failed when called with placeholder arguments at startup. It should only construct endpoints.",
+                    ex
+                )
+        let shapes = getShapes startupEndpoints
+        let resolve (indexPath: int array) : EndpointHandler =
+            fun ctx ->
+                match invokeFactory ctx info factory |> tryFindHandler shapes indexPath 0 with
+                | struct (true, ValueSome handler) -> handler ctx
+                | _ ->
+                    raise
+                    <| InvalidOperationException(
+                        $"subRoutef '%s{path}': endpoints factory returned different endpoints than at startup. Number, order, nesting, templates and HTTP verbs of endpoints must not depend on route values."
+                    )
+        info.Template, info.Mappings, wrapEndpoints resolve [] startupEndpoints
+
+    let subRoutefInner<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
+        (path: PrintfFormat<'T, unit, unit, 'Endpoints>)
+        (endpointsFactory: 'T)
+        =
+        match box endpointsFactory with
+        | :? (Endpoint seq) as endpoints -> path.Value, [||], endpoints
+        | factory -> subRoutefFromFactory path.Value (nonNull factory)
 
 
 [<AutoOpen>]
@@ -249,10 +435,13 @@ module Routers =
 
     let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) : Endpoint =
         let template, _, requestDelegate = routefInner path handler
-
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
+
+    let subRoutef (path: PrintfFormat<'T, unit, unit, #seq<Endpoint>>) (endpointsFactory: 'T) : Endpoint =
+        let template, _, endpoints = subRoutefInner path endpointsFactory
+        NestedEndpoint(template, endpoints, id)
 
     let routeGroup (endpoints: Endpoint seq) : Endpoint = MultiEndpoint(endpoints, id)
 

@@ -195,6 +195,18 @@ let webApp = [
 ]
 ```
 
+### subRoutef function
+
+The same rules as for [routef](#routef-function) apply to the format string. The function returns a sequence of endpoints (e.g. a list) instead of `HttpHandler` (see [subRoutef](https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker#subroutef) for limitations):
+
+```fsharp
+// Giraffe
+subRoutef "/users/%i" (fun userId -> choose [ route "/profile" >=> profileHandler userId ])
+
+// Oxpecker
+subRoutef "/users/{%i}" (fun userId -> [ route "/profile" (profileHandler userId) ])
+```
+
 ### Dropped functions
 
 - `routeCi` (EndpointRouting has case-insensitive routing by default)
@@ -206,7 +218,6 @@ let webApp = [
 - `routeStartsWith`
 - `routeStartsWithCi`
 - `subRouteCi`
-- `subRoutef` (use subRoute + `TryGetRouteValue` extension method)
 - `routePorts`
 
 ### Setup

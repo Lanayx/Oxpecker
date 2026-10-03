@@ -1,6 +1,6 @@
 namespace Oxpecker.OpenApi
 
-open System.Reflection
+open System
 open System.Threading.Tasks
 open Microsoft.OpenApi
 
@@ -25,26 +25,51 @@ module Routing =
             | _ -> OpenApiSchema(Type = JsonSchemaType.String)
         | _ -> OpenApiSchema(Type = JsonSchemaType.String)
 
+    // Replaces only path parameters with the same names, so that subRoutef (group) and routef (endpoint) parameters are combined
+    let private addPathParameters
+        (mappings: (string * char * string option) array)
+        (builder: IEndpointConventionBuilder)
+        =
+        builder.AddOpenApiOperationTransformer(fun operation context ct ->
+            let parameters = ResizeArray<IOpenApiParameter>()
+            match operation.Parameters with
+            | null -> ()
+            | existing ->
+                for parameter in existing do
+                    let isReplaced =
+                        parameter.In = Nullable ParameterLocation.Path
+                        && mappings
+                           |> Array.exists(fun (name, _, _) -> String.Equals(name, parameter.Name))
+                    if not isReplaced then
+                        parameters.Add parameter
+            for name, format, modifier in mappings do
+                parameters.Add(
+                    OpenApiParameter(
+                        Name = name,
+                        In = ParameterLocation.Path,
+                        Required = true,
+                        Style = ParameterStyle.Simple,
+                        Schema = getSchema format modifier
+                    )
+                )
+            operation.Parameters <- parameters
+            Task.CompletedTask)
+
     let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (routeHandler: 'T) : Endpoint =
         let template, mappings, requestDelegate = RoutingInternal.routefInner path routeHandler
+        SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, addPathParameters mappings)
+
+    let subRoutef<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
+        (path: PrintfFormat<'T, unit, unit, 'Endpoints>)
+        (endpointsFactory: 'T)
+        : Endpoint =
+        let template, mappings, endpoints = RoutingInternal.subRoutefInner path endpointsFactory
         let configureEndpoint =
-            fun (endpoint: IEndpointConventionBuilder) ->
-                endpoint.AddOpenApiOperationTransformer(fun operation context ct ->
-                    operation.Parameters <-
-                        ResizeArray(
-                            mappings
-                            |> Array.map(fun (name, format, modifier) ->
-                                OpenApiParameter(
-                                    Name = name,
-                                    In = ParameterLocation.Path,
-                                    Required = true,
-                                    Style = ParameterStyle.Simple,
-                                    Schema = getSchema format modifier
-                                )
-                                :> IOpenApiParameter)
-                        )
-                    Task.CompletedTask)
-        SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, configureEndpoint)
+            if mappings.Length = 0 then
+                id
+            else
+                addPathParameters mappings
+        NestedEndpoint(template, endpoints, configureEndpoint)
 
     let addOpenApi (config: OpenApiConfig) = configureEndpoint config.Build
 
