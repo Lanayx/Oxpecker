@@ -896,19 +896,24 @@ let ``subRoutef: endpoints depending on parameter values fail`` () =
                 route "/profile" <| text $"Profile {userId}"
                 route(if userId = 0 then "/zero" else "/other") <| text "other"
             ])
+            subRoutef "/verbs/{%i}" (fun userId ->
+                if userId = 0 then
+                    [ GET [ route "/profile" <| text "get" ] ]
+                else
+                    [ POST [ route "/profile" <| text "post" ] ])
         ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
         let! profile = client.GetStringAsync("/added/0/profile")
         profile |> shouldEqual "Profile 0"
-        for path in [ "/removed"; "/added"; "/addedNested"; "/changed" ] do
+        for path in [ "/removed"; "/added"; "/addedNested"; "/changed"; "/verbs" ] do
             let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> client.GetAsync(path + "/5/profile"))
             ex.Message
             |> shouldEqual(
                 "subRoutef '"
                 + path
-                + "/{%i}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
+                + "/{%i}': endpoints factory returned different endpoints than at startup. Number, order, nesting, templates and HTTP verbs of endpoints must not depend on route values."
             )
     }
 

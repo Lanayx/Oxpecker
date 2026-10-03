@@ -256,12 +256,21 @@ module RoutingInternal =
         |> nonNull
         :?> Endpoint seq
 
-    // Structure and templates of the endpoints returned by subRoutef factory at startup
+    // Structure, templates and HTTP verbs of the endpoints returned by subRoutef factory at startup
     [<NoEquality; NoComparison>]
     type private EndpointShape =
-        | SimpleShape of RouteTemplate
+        | SimpleShape of HttpVerbs * RouteTemplate
         | NestedShape of RouteTemplate * EndpointShape array
         | MultiShape of EndpointShape array
+
+    // Verbs are usually the same instance, since GET, POST, etc. are partially applied functions
+    let private isSameVerbs (verbs: HttpVerbs) (expectedVerbs: HttpVerbs) =
+        match verbs, expectedVerbs with
+        | Any, Any -> true
+        | Verbs verbs, Verbs expectedVerbs ->
+            obj.ReferenceEquals(verbs, expectedVerbs)
+            || Linq.Enumerable.SequenceEqual(verbs, expectedVerbs)
+        | _ -> false
 
     // Snapshot of the endpoints tree, so that it can be traversed several times even if built from single-use sequences
     let rec private materializeEndpoints (endpoints: Endpoint seq) : Endpoint seq =
@@ -277,7 +286,7 @@ module RoutingInternal =
     let rec private getShapes (endpoints: Endpoint seq) =
         endpoints
         |> Seq.map(function
-            | SimpleEndpoint(_, template, _, _) -> SimpleShape template
+            | SimpleEndpoint(verbs, template, _, _) -> SimpleShape(verbs, template)
             | NestedEndpoint(template, children, _) -> NestedShape(template, getShapes children)
             | MultiEndpoint(children, _) -> MultiShape(getShapes children))
         |> Seq.toArray
@@ -299,7 +308,9 @@ module RoutingInternal =
                 let isOnPath = depth >= 0 && index = indexPath[depth]
                 let childDepth = if isOnPath then depth + 1 else -1
                 match enumerator.Current, shapes[index] with
-                | SimpleEndpoint(_, template, endpointHandler, _), SimpleShape expected when template = expected ->
+                | SimpleEndpoint(verbs, template, endpointHandler, _), SimpleShape(expectedVerbs, expected) when
+                    template = expected && isSameVerbs verbs expectedVerbs
+                    ->
                     if isOnPath then
                         handler <- ValueSome endpointHandler
                 | NestedEndpoint(template, children, _), NestedShape(expected, childShapes) when template = expected ->
@@ -362,7 +373,7 @@ module RoutingInternal =
                 | _ ->
                     raise
                     <| InvalidOperationException(
-                        $"subRoutef '%s{path}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
+                        $"subRoutef '%s{path}': endpoints factory returned different endpoints than at startup. Number, order, nesting, templates and HTTP verbs of endpoints must not depend on route values."
                     )
         info.Template, info.Mappings, wrapEndpoints resolve [] startupEndpoints
 

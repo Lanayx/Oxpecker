@@ -746,7 +746,7 @@ In this example `profileHandler` gets `42` as `userId` for the URL `http[s]://yo
 
 Since endpoints have to be registered at startup, while parameter values are known only per request, the function is called at startup with placeholder values (to get the endpoints structure and configuration) and then on every request with real values (to get the handler). The function of a `subRoutef` nested in another `subRoutef` is called several times per request, since rebuilding the outer endpoints calls it with placeholder values again. Hence:
 
-- Number, order, nesting and templates of the returned endpoints must not depend on the parameter values; this is checked on every request and an exception is thrown otherwise. Endpoint configuration (`configureEndpoint`, `addMetadata`, etc.) is taken from the startup call, so it must not depend on them either.
+- Number, order, nesting, templates and HTTP verbs of the returned endpoints must not depend on the parameter values; this is checked on every request and an exception is thrown otherwise. Endpoint configuration (`configureEndpoint`, `addMetadata`, etc.) is taken from the startup call, so it must not depend on them either.
 - The function must only construct endpoints: keep it cheap and free of side effects, since it can run several times per request.
 - Route parameter names are taken from the function parameter names, so they must be unique across the whole route (including nested `routef` and `subRoutef` parameters).
 
