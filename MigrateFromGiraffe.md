@@ -197,7 +197,7 @@ let webApp = [
 
 ### subRoutef function
 
-The same rules as for [routef](#routef-function) apply to the format string. The function returns a list of endpoints instead of `HttpHandler` (see [subRoutef](https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker#subroutef) for limitations):
+The same rules as for [routef](#routef-function) apply to the format string. The function returns a sequence of endpoints (e.g. a list) instead of `HttpHandler` (see [subRoutef](https://github.com/Lanayx/Oxpecker/tree/develop/src/Oxpecker#subroutef) for limitations):
 
 ```fsharp
 // Giraffe

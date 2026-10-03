@@ -730,7 +730,7 @@ In this example the final URL to retrieve "Bar 2" would be `http[s]://your-domai
 
 #### subRoutef
 
-It's a combination of `subRoute` and `routef`: route parameters of the parent route are parsed and passed to a function that returns child endpoints, so they are available to every child handler:
+It's a combination of `subRoute` and `routef`: route parameters of the parent route are parsed and passed to a function that returns child endpoints (any `Endpoint seq`: list, array or `seq { }`), so they are available to every child handler:
 
 ```fsharp
 let webApp = [

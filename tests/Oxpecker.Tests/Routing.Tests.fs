@@ -779,6 +779,36 @@ let ``subRoutef: module function, piped lambda and no parameters`` () =
         test |> shouldEqual "test"
     }
 
+let private orgEndpoints (org: string) : Endpoint seq =
+    seq { route "/info" <| text $"Org {org}" }
+
+[<Fact>]
+let ``subRoutef: seq, array and module function returning seq`` () =
+    task {
+        let endpoints = [
+            subRoutef "/orgs/{%s}" orgEndpoints
+            subRoutef "/items/{%i}" (fun item ->
+                seq {
+                    route "/a" <| text $"a{item}"
+                    route "/b" <| text $"b{item}"
+                })
+            subRoutef "/tags/{%s}" (fun tag -> [| route "/info" <| text $"Tag {tag}" |])
+            subRoutef "/api" (seq { route "/test" <| text "test" })
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! org = client.GetStringAsync("/orgs/acme/info")
+        let! itemB = client.GetStringAsync("/items/4/b")
+        let! tag = client.GetStringAsync("/tags/fsharp/info")
+        let! test = client.GetStringAsync("/api/test")
+
+        org |> shouldEqual "Org acme"
+        itemB |> shouldEqual "b4"
+        tag |> shouldEqual "Tag fsharp"
+        test |> shouldEqual "test"
+    }
+
 [<Fact>]
 let ``subRoutef: invalid parameter value returns 400`` () =
     task {

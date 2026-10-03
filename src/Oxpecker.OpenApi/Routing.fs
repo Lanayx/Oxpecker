@@ -1,7 +1,6 @@
 namespace Oxpecker.OpenApi
 
 open System
-open System.Reflection
 open System.Threading.Tasks
 open Microsoft.OpenApi
 
@@ -59,7 +58,10 @@ module Routing =
         let template, mappings, requestDelegate = RoutingInternal.routefInner path routeHandler
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, addPathParameters mappings)
 
-    let subRoutef (path: PrintfFormat<'T, unit, unit, Endpoint list>) (endpointsFactory: 'T) : Endpoint =
+    let subRoutef<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
+        (path: PrintfFormat<'T, unit, unit, 'Endpoints>)
+        (endpointsFactory: 'T)
+        : Endpoint =
         let template, mappings, endpoints = RoutingInternal.subRoutefInner path endpointsFactory
         let configureEndpoint =
             if mappings.Length = 0 then

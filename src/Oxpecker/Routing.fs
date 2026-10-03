@@ -58,7 +58,7 @@ module RouteTemplateBuilder =
     // partially decode a route argument, which
     // means that a given route argument would get
     // entirely URL decoded except for '%2F' (/).
-    // Hence decoding %2F must happen separately as
+    // Hence, decoding %2F must happen separately as
     // part of the string parsing function.
     //
     // For more information please check:
@@ -328,9 +328,12 @@ module RoutingInternal =
                     )
         info.Template, info.Mappings, wrapEndpoints resolve [] [] startupEndpoints
 
-    let subRoutefInner (path: PrintfFormat<'T, unit, unit, Endpoint list>) (endpointsFactory: 'T) =
+    let subRoutefInner<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
+        (path: PrintfFormat<'T, unit, unit, 'Endpoints>)
+        (endpointsFactory: 'T)
+        =
         match box endpointsFactory with
-        | :? (Endpoint list) as endpoints -> path.Value, [||], (endpoints :> Endpoint seq)
+        | :? (Endpoint seq) as endpoints -> path.Value, [||], endpoints
         | factory -> subRoutefFromFactory path.Value (nonNull factory)
 
 
@@ -388,7 +391,10 @@ module Routers =
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
 
-    let subRoutef (path: PrintfFormat<'T, unit, unit, Endpoint list>) (endpointsFactory: 'T) : Endpoint =
+    let subRoutef<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
+        (path: PrintfFormat<'T, unit, unit, 'Endpoints>)
+        (endpointsFactory: 'T)
+        : Endpoint =
         let template, _, endpoints = subRoutefInner path endpointsFactory
 
         NestedEndpoint(template, endpoints, id)
