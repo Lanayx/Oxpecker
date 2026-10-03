@@ -536,6 +536,117 @@ let ``Path parameter works fine`` () =
         resultString.ReplaceLineEndings() |> shouldEqual expected
     }
 
+[<Fact>]
+let ``subRoutef path parameters work fine`` () =
+    task {
+        let endpoints = [
+            GET [
+                subRoutef "/users/{%i}" (fun userId -> [
+                    route "/profile" <| text $"Profile {userId}" |> addOpenApiSimple<unit, string>
+                    routef "/posts/{%O:guid}" (fun (postId: System.Guid) -> text $"Post {userId} {postId}")
+                    |> addOpenApiSimple<unit, string>
+                ])
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/users/{userId}/profile": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}/posts/{postId}": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
 [<Description("Type description")>]
 type Response3 = {
     [<Description("Field description")>]

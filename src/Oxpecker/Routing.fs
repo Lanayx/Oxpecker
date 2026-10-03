@@ -1,6 +1,7 @@
 namespace Oxpecker
 
 open System
+open System.Collections.Concurrent
 open System.Reflection
 open System.Runtime.CompilerServices
 open System.Text.RegularExpressions
@@ -184,20 +185,153 @@ module RoutingInternal =
             :?> FSharpFunc<HttpContext, Task>
             <| ctx
 
-    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) =
-        let handlerType = handler.GetType()
-        let handlerMethod = handlerType.GetMethods()[0]
-        let parameters = handlerMethod.GetParameters()
-        let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path.Value parameters
-        let ctxInParameterList =
-            if parameters.Length = mappings.Length + 1 then true
-            elif parameters.Length = mappings.Length then false
-            else failwith <| "Unsupported routef handler: " + path.Value
-        let invoker = MethodInvoker.Create(handlerMethod)
-        let requestDelegate =
-            fun (ctx: HttpContext) -> invokeHandler<'T> ctx invoker handler mappings ctxInParameterList
+    [<NoEquality; NoComparison>]
+    type private RoutefInfo = {
+        Template: RouteTemplate
+        Mappings: (string * char * string option) array
+        Parameters: ParameterInfo array
+        Invoker: MethodInvoker
+    }
 
-        template, mappings, requestDelegate
+    // Holds only data derived from the handler type and the format string, never handler instances,
+    // so routef endpoints rebuilt on every request (inside subRoutef) don't repeat reflection
+    let private routefInfoCache = ConcurrentDictionary<struct (Type * string), RoutefInfo>()
+
+    let private createRoutefInfo =
+        Func<struct (Type * string), RoutefInfo>(fun (struct (handlerType, path)) ->
+            let handlerMethod = handlerType.GetMethods()[0]
+            let parameters = handlerMethod.GetParameters()
+            if parameters.Length < RouteTemplateBuilder.placeholderPattern.Count(path) then
+                failwith $"Handler has fewer parameters than route placeholders: %s{path}"
+            let template, mappings = RouteTemplateBuilder.convertToRouteTemplate path parameters
+            {
+                Template = template
+                Mappings = mappings
+                Parameters = parameters
+                Invoker = MethodInvoker.Create(handlerMethod)
+            })
+
+    let private getRoutefInfo (path: string) (handlerType: Type) =
+        routefInfoCache.GetOrAdd(struct (handlerType, path), createRoutefInfo)
+
+    let routefInner (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) =
+        let info = getRoutefInfo path.Value (handler.GetType())
+        let ctxInParameterList =
+            if info.Parameters.Length = info.Mappings.Length + 1 then
+                true
+            elif info.Parameters.Length = info.Mappings.Length then
+                false
+            else
+                failwith <| "Unsupported routef handler: " + path.Value
+        let requestDelegate =
+            fun (ctx: HttpContext) -> invokeHandler<'T> ctx info.Invoker handler info.Mappings ctxInParameterList
+
+        info.Template, info.Mappings, requestDelegate
+
+    // Argument for the startup call of a subRoutef factory. Real path segments are never empty, hence non-empty string
+    let private placeholderArg (parameter: ParameterInfo) =
+        let parameterType = parameter.ParameterType
+        if parameterType = typeof<string> || parameterType = typeof<obj> then
+            box "placeholder"
+        elif parameterType.IsValueType then
+            Activator.CreateInstance parameterType
+        else
+            null
+
+    let private invokeFactory (ctx: HttpContext) (info: RoutefInfo) (factory: obj) =
+        let routeData = ctx.GetRouteData()
+        let mappings = info.Mappings
+        match mappings.Length with
+        | 1 -> info.Invoker.Invoke(factory, getArgByIndex routeData mappings 0)
+        | 2 ->
+            let arg1 = getArgByIndex routeData mappings 0
+            let arg2 = getArgByIndex routeData mappings 1
+            info.Invoker.Invoke(factory, arg1, arg2)
+        | 3 ->
+            let arg1 = getArgByIndex routeData mappings 0
+            let arg2 = getArgByIndex routeData mappings 1
+            let arg3 = getArgByIndex routeData mappings 2
+            info.Invoker.Invoke(factory, arg1, arg2, arg3)
+        | _ -> info.Invoker.Invoke(factory, Span(Array.init mappings.Length (getArgByIndex routeData mappings)))
+        |> nonNull
+        :?> Endpoint seq
+
+    // Finds the handler at indexPath, checking that every node on the way has the same kind and template as at startup
+    // (templates[depth] is ValueNone for MultiEndpoint)
+    let rec private tryFindHandler
+        (indexPath: int array)
+        (templates: RouteTemplate voption array)
+        (depth: int)
+        (endpoints: Endpoint seq)
+        =
+        let isLeaf = depth = indexPath.Length - 1
+        match Seq.tryItem indexPath[depth] endpoints, templates[depth] with
+        | Some(SimpleEndpoint(_, template, handler, _)), ValueSome expected when isLeaf && template = expected ->
+            ValueSome handler
+        | Some(NestedEndpoint(template, children, _)), ValueSome expected when not isLeaf && template = expected ->
+            tryFindHandler indexPath templates (depth + 1) children
+        | Some(MultiEndpoint(children, _)), ValueNone when not isLeaf ->
+            tryFindHandler indexPath templates (depth + 1) children
+        | _ -> ValueNone
+
+    // Keeps the structure, templates, verbs and configuration of the endpoints, but replaces handlers with resolvers
+    let rec private wrapEndpoints
+        (resolve: int array -> RouteTemplate voption array -> EndpointHandler)
+        (indexPath: int list)
+        (templates: RouteTemplate voption list)
+        (endpoints: Endpoint seq)
+        : Endpoint seq =
+        endpoints
+        |> Seq.mapi(fun index endpoint ->
+            let indexPath = index :: indexPath
+            match endpoint with
+            | SimpleEndpoint(verbs, template, _, configure) ->
+                let templates = ValueSome template :: templates
+                let handler = resolve (indexPath |> List.rev |> List.toArray) (templates |> List.rev |> List.toArray)
+                SimpleEndpoint(verbs, template, handler, configure)
+            | NestedEndpoint(template, children, configure) ->
+                NestedEndpoint(
+                    template,
+                    wrapEndpoints resolve indexPath (ValueSome template :: templates) children,
+                    configure
+                )
+            | MultiEndpoint(children, configure) ->
+                MultiEndpoint(wrapEndpoints resolve indexPath (ValueNone :: templates) children, configure))
+        |> Seq.toArray
+        :> Endpoint seq
+
+    let private subRoutefFromFactory (path: string) (factory: obj) =
+        let info = getRoutefInfo path (factory.GetType())
+        if info.Parameters.Length <> info.Mappings.Length then
+            failwith <| "Unsupported subRoutef endpoints factory: " + path
+        if info.Template.Contains("{*") then
+            failwith <| "Catch-all parameters are not supported in subRoutef: " + path
+        let startupEndpoints =
+            try
+                info.Invoker.Invoke(factory, Span(Array.map placeholderArg info.Parameters))
+                |> nonNull
+                :?> Endpoint seq
+            with ex ->
+                raise
+                <| InvalidOperationException(
+                    $"subRoutef '%s{path}': endpoints factory failed when called with placeholder arguments at startup. It should only construct endpoints.",
+                    ex
+                )
+        let resolve (indexPath: int array) (templates: RouteTemplate voption array) : EndpointHandler =
+            fun ctx ->
+                match invokeFactory ctx info factory |> tryFindHandler indexPath templates 0 with
+                | ValueSome handler -> handler ctx
+                | ValueNone ->
+                    raise
+                    <| InvalidOperationException(
+                        $"subRoutef '%s{path}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
+                    )
+        info.Template, info.Mappings, wrapEndpoints resolve [] [] startupEndpoints
+
+    let subRoutefInner (path: PrintfFormat<'T, unit, unit, Endpoint list>) (endpointsFactory: 'T) =
+        match box endpointsFactory with
+        | :? (Endpoint list) as endpoints -> path.Value, [||], (endpoints :> Endpoint seq)
+        | factory -> subRoutefFromFactory path.Value (nonNull factory)
 
 
 [<AutoOpen>]
@@ -253,6 +387,11 @@ module Routers =
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
+
+    let subRoutef (path: PrintfFormat<'T, unit, unit, Endpoint list>) (endpointsFactory: 'T) : Endpoint =
+        let template, _, endpoints = subRoutefInner path endpointsFactory
+
+        NestedEndpoint(template, endpoints, id)
 
     let routeGroup (endpoints: Endpoint seq) : Endpoint = MultiEndpoint(endpoints, id)
 

@@ -607,6 +607,255 @@ let ``subRoute: configureEndpoint inside subRoute`` () =
     }
 
 // ---------------------------------
+// subRoutef Tests
+// ---------------------------------
+
+[<Fact>]
+let ``subRoutef generates route correctly`` () =
+    let endpoint = subRoutef "/foo/{%s}/{%i}/{%O:guid}" (fun x y (z: Guid) -> [ route "/" (text $"Hello {x}{y}{z}") ])
+
+    match endpoint with
+    | NestedEndpoint(route, _, _) -> route |> shouldEqual "/foo/{x}/{y}/{z:guid}"
+    | _ -> failwith "Expected NestedEndpoint"
+
+[<Fact>]
+let ``subRoutef: route inside subRoutef receives typed parameter`` () =
+    task {
+        let endpoints = [
+            GET [
+                route "/users" <| text "users"
+                subRoutef "/users/{%i}" (fun userId -> [
+                    route "" <| text $"User {userId + 1}"
+                    route "/profile" <| text $"Profile {userId}"
+                ])
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! users = client.GetStringAsync("/users")
+        let! user = client.GetStringAsync("/users/42")
+        let! profile1 = client.GetStringAsync("/users/42/profile")
+        let! profile2 = client.GetStringAsync("/users/7/profile")
+
+        users |> shouldEqual "users"
+        user |> shouldEqual "User 43"
+        profile1 |> shouldEqual "Profile 42"
+        profile2 |> shouldEqual "Profile 7"
+    }
+
+[<Fact>]
+let ``subRoutef: multiple parameters and routef inside subRoutef`` () =
+    task {
+        let endpoints = [
+            GET [
+                subRoutef "/orgs/{%s}/users/{%i}" (fun org userId -> [
+                    route "/info" <| text $"{org}:{userId}"
+                    routef "/posts/{%i}/{%O:guid}" (fun postId (commentId: Guid) ->
+                        text $"{org}:{userId}:{postId}:{commentId}")
+                ])
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+        let guid = Guid.NewGuid()
+
+        let! info = client.GetStringAsync("/orgs/acme/users/5/info")
+        let! post = client.GetStringAsync($"/orgs/acme/users/5/posts/12/{guid}")
+
+        info |> shouldEqual "acme:5"
+        post |> shouldEqual $"acme:5:12:{guid}"
+    }
+
+[<Fact>]
+let ``subRoutef: HTTP verbs and groups inside and outside subRoutef`` () =
+    task {
+        let endpoints = [
+            GET [
+                subRoutef "/users/{%i}" (fun userId -> [
+                    route "/a" <| text $"a{userId}"
+                    routeGroup [ route "/b" <| text $"b{userId}" ]
+                    subRoute "/c" [ route "/d" <| text $"d{userId}" ]
+                ])
+            ]
+            subRoutef "/items/{%s}" (fun item -> [
+                GET [ route "" <| text $"get {item}" ]
+                POST [ route "" <| text $"post {item}" ]
+            ])
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! a = client.GetStringAsync("/users/1/a")
+        let! b = client.GetStringAsync("/users/2/b")
+        let! d = client.GetStringAsync("/users/3/c/d")
+        let! postA = client.PostAsync("/users/1/a", null)
+        let! getItem = client.GetStringAsync("/items/x")
+        let! postItem = client.PostAsync("/items/y", null)
+        let! postItemString = postItem.Content.ReadAsStringAsync()
+
+        a |> shouldEqual "a1"
+        b |> shouldEqual "b2"
+        d |> shouldEqual "d3"
+        postA.StatusCode |> shouldEqual HttpStatusCode.MethodNotAllowed
+        getItem |> shouldEqual "get x"
+        postItemString |> shouldEqual "post y"
+    }
+
+[<Fact>]
+let ``subRoutef: addFilter and addMetadata inside and outside subRoutef`` () =
+    task {
+        let values = ResizeArray<string>()
+        let filter (value: string) : EndpointHandler =
+            fun ctx ->
+                values.Add value
+                Task.CompletedTask
+        let endpoints = [
+            GET [
+                subRoutef "/users/{%i}" (fun userId -> [
+                    route "/profile" (fun ctx ->
+                        ctx.GetEndpoint()
+                        |> Unchecked.nonNull
+                        |> _.Metadata
+                        |> _.GetRequiredMetadata<string>()
+                        |> values.Add
+                        ctx.WriteText $"Profile {userId}")
+                    |> addMetadata "metadata"
+                    |> addFilter(filter $"inner {userId}")
+                ])
+                |> addFilter(filter "outer")
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! profile = client.GetStringAsync("/users/5/profile")
+
+        profile |> shouldEqual "Profile 5"
+        values.ToArray() |> shouldEqual [| "outer"; "inner 5"; "metadata" |]
+    }
+
+[<Fact>]
+let ``subRoutef: nested subRoutef`` () =
+    task {
+        let endpoints = [
+            subRoutef "/orgs/{%s}" (fun org -> [
+                route "" <| text $"Org {org}"
+                subRoutef "/users/{%i}" (fun userId -> [ route "/info" <| text $"{org}:{userId}" ])
+            ])
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! org = client.GetStringAsync("/orgs/acme")
+        let! info1 = client.GetStringAsync("/orgs/acme/users/9/info")
+        let! info2 = client.GetStringAsync("/orgs/other/users/1/info")
+
+        org |> shouldEqual "Org acme"
+        info1 |> shouldEqual "acme:9"
+        info2 |> shouldEqual "other:1"
+    }
+
+let private userEndpoints (userId: int) = [ route "/profile" <| text $"Profile {userId}" ]
+
+[<Fact>]
+let ``subRoutef: module function, piped lambda and no parameters`` () =
+    task {
+        let endpoints = [
+            subRoutef "/users/{%i}" userEndpoints
+            (fun name -> [ route "/hello" <| text $"Hello {name}" ])
+            |> subRoutef "/names/{%s}"
+            subRoutef "/api" [ route "/test" <| text "test" ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! profile = client.GetStringAsync("/users/3/profile")
+        let! hello = client.GetStringAsync("/names/John/hello")
+        let! test = client.GetStringAsync("/api/test")
+
+        profile |> shouldEqual "Profile 3"
+        hello |> shouldEqual "Hello John"
+        test |> shouldEqual "test"
+    }
+
+[<Fact>]
+let ``subRoutef: invalid parameter value returns 400`` () =
+    task {
+        let endpoints = [ subRoutef "/users/{%i}" userEndpoints ]
+        use! server = WebApp.webAppWithDefaultErrorHandler endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/users/abc/profile")
+
+        result.StatusCode |> shouldEqual HttpStatusCode.BadRequest
+    }
+
+[<Fact>]
+let ``subRoutef: exceptions from factory and handlers are not wrapped`` () =
+    task {
+        let endpoints = [
+            subRoutef "/users/{%i}" (fun userId ->
+                if userId < 0 then
+                    raise <| NotSupportedException "factory"
+                else
+                    [
+                        route "/a" (fun _ -> raise <| NotSupportedException "route")
+                        routef "/b/{%i}" (fun (_: int) (_: HttpContext) -> raise <| NotSupportedException "routef")
+                    ])
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        do! client.GetAsync("/users/-1/a") |> shouldFailTask<NotSupportedException>
+        do! client.GetAsync("/users/1/a") |> shouldFailTask<NotSupportedException>
+        do! client.GetAsync("/users/1/b/2") |> shouldFailTask<NotSupportedException>
+    }
+
+[<Fact>]
+let ``subRoutef: endpoints depending on parameter values fail`` () =
+    task {
+        let endpoints = [
+            subRoutef "/users/{%i}" (fun userId -> [
+                if userId = 0 then
+                    route "/zero" <| text "zero"
+                route "/profile" <| text $"Profile {userId}"
+            ])
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> client.GetAsync("/users/5/profile"))
+
+        ex.Message
+        |> shouldEqual
+            "subRoutef '/users/{%i}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
+    }
+
+[<Fact>]
+let ``subRoutef: invalid definitions fail immediately`` () =
+    let catchAll = Assert.Throws<Exception>(fun () -> subRoutef "/files/{**%s}" (fun (_: string) -> []) |> ignore)
+    let fewerParameters =
+        Assert.Throws<Exception>(fun () ->
+            subRoutef "/{%s}/{%i}" (fun (a: string) ->
+                Console.Write a
+                fun (_: int) -> [])
+            |> ignore)
+    let factoryFailure =
+        Assert.Throws<InvalidOperationException>(fun () ->
+            subRoutef "/users/{%i}" (fun userId -> if userId = 0 then failwith "boom" else [])
+            |> ignore)
+
+    catchAll.Message
+    |> shouldEqual "Catch-all parameters are not supported in subRoutef: /files/{**%s}"
+    fewerParameters.Message
+    |> shouldEqual "Handler has fewer parameters than route placeholders: /{%s}/{%i}"
+    factoryFailure.InnerException
+    |> Unchecked.nonNull
+    |> _.Message
+    |> shouldEqual "boom"
+
+// ---------------------------------
 // routeGroup Tests
 // ---------------------------------
 

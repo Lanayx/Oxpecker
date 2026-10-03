@@ -43,6 +43,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [route](#route)
       - [routef](#routef)
       - [subRoute](#subroute)
+      - [subRoutef](#subroutef)
       - [addMetadata](#addmetadata)
       - [configureEndpoint](#configureendpoint)
       - [Catch-all route](#catch-all-route)
@@ -726,6 +727,28 @@ let webApp =
 ```
 
 In this example the final URL to retrieve "Bar 2" would be `http[s]://your-domain.com/api/v2/bar`.
+
+#### subRoutef
+
+It's a combination of `subRoute` and `routef`: route parameters of the parent route are parsed and passed to a function that returns child endpoints, so they are available to every child handler:
+
+```fsharp
+let webApp = [
+    subRoutef "/users/{%i}" (fun userId -> [
+        route "/profile" (profileHandler userId)
+        routef "/posts/{%O:guid}" (fun postId -> postHandler userId postId)
+        GET [ route "/settings" (settingsHandler userId) ]
+    ])
+]
+```
+
+In this example `profileHandler` gets `42` as `userId` for the URL `http[s]://your-domain.com/users/42/profile`. The format string supports the same format chars and route constraints as `routef`.
+
+Since endpoints have to be registered at startup, while parameter values are known only per request, the function is called once at startup with placeholder values (to get the endpoints structure and configuration) and then once per request with real values (to get the handler). Hence:
+
+- Number, order, nesting and templates of the returned endpoints must not depend on the parameter values; an exception is thrown otherwise. Endpoint configuration (`configureEndpoint`, `addMetadata`, etc.) is taken from the startup call, so it must not depend on them either.
+- The function must only construct endpoints: keep it cheap and free of side effects, since it runs on every request.
+- Route parameter names are taken from the function parameter names, so they must be unique across the whole route (including nested `routef` and `subRoutef` parameters).
 
 #### addMetadata
 
