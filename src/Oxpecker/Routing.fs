@@ -263,6 +263,17 @@ module RoutingInternal =
         | NestedShape of RouteTemplate * EndpointShape array
         | MultiShape of EndpointShape array
 
+    // Snapshot of the endpoints tree, so that it can be traversed several times even if built from single-use sequences
+    let rec private materializeEndpoints (endpoints: Endpoint seq) : Endpoint seq =
+        endpoints
+        |> Seq.map(function
+            | NestedEndpoint(template, children, configure) ->
+                NestedEndpoint(template, materializeEndpoints children, configure)
+            | MultiEndpoint(children, configure) -> MultiEndpoint(materializeEndpoints children, configure)
+            | endpoint -> endpoint)
+        |> Seq.toArray
+        :> Endpoint seq
+
     let rec private getShapes (endpoints: Endpoint seq) =
         endpoints
         |> Seq.map(function
@@ -336,6 +347,7 @@ module RoutingInternal =
                 info.Invoker.Invoke(factory, Span(Array.map placeholderArg info.Parameters))
                 |> nonNull
                 :?> Endpoint seq
+                |> materializeEndpoints
             with ex ->
                 raise
                 <| InvalidOperationException(

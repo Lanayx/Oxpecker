@@ -809,6 +809,34 @@ let ``subRoutef: seq, array and module function returning seq`` () =
         test |> shouldEqual "test"
     }
 
+// Second enumeration of such sequence returns no elements
+let private singleUse (endpoints: Endpoint list) =
+    let enumerator = (endpoints :> Endpoint seq).GetEnumerator()
+    seq {
+        while enumerator.MoveNext() do
+            enumerator.Current
+    }
+
+[<Fact>]
+let ``subRoutef: single-use sequences`` () =
+    task {
+        let endpoints = [
+            subRoutef "/users/{%i}" (fun userId ->
+                singleUse [
+                    route "/a" <| text $"a{userId}"
+                    subRoute "/group" (singleUse [ route "/b" <| text $"b{userId}" ])
+                ])
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! a = client.GetStringAsync("/users/1/a")
+        let! b = client.GetStringAsync("/users/2/group/b")
+
+        a |> shouldEqual "a1"
+        b |> shouldEqual "b2"
+    }
+
 [<Fact>]
 let ``subRoutef: invalid parameter value returns 400`` () =
     task {

@@ -742,7 +742,7 @@ let webApp = [
 ]
 ```
 
-In this example `profileHandler` gets `42` as `userId` for the URL `http[s]://your-domain.com/users/42/profile`. The format string supports the same format chars and route constraints as `routef`.
+In this example `profileHandler` gets `42` as `userId` for the URL `http[s]://your-domain.com/users/42/profile`. The format string supports the same format chars and route constraints as `routef`, except for catch-all parameters (`{*%s}` and `{**%s}`), since child routes have to follow the parameters.
 
 Since endpoints have to be registered at startup, while parameter values are known only per request, the function is called at startup with placeholder values (to get the endpoints structure and configuration) and then on every request with real values (to get the handler). The function of a `subRoutef` nested in another `subRoutef` is called several times per request, since rebuilding the outer endpoints calls it with placeholder values again. Hence:
 
