@@ -435,17 +435,12 @@ module Routers =
 
     let routef (path: PrintfFormat<'T, unit, unit, EndpointHandler>) (handler: 'T) : Endpoint =
         let template, _, requestDelegate = routefInner path handler
-
         SimpleEndpoint(HttpVerbs.Any, template, requestDelegate, id)
 
     let subRoute (path: string) (endpoints: Endpoint seq) : Endpoint = NestedEndpoint(path, endpoints, id)
 
-    let subRoutef<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
-        (path: PrintfFormat<'T, unit, unit, 'Endpoints>)
-        (endpointsFactory: 'T)
-        : Endpoint =
+    let subRoutef (path: PrintfFormat<'T, unit, unit, #seq<Endpoint>>) (endpointsFactory: 'T) : Endpoint =
         let template, _, endpoints = subRoutefInner path endpointsFactory
-
         NestedEndpoint(template, endpoints, id)
 
     let routeGroup (endpoints: Endpoint seq) : Endpoint = MultiEndpoint(endpoints, id)
