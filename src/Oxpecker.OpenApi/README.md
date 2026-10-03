@@ -125,7 +125,7 @@ _Note: `Option<_>` and `ValueOption<_>` are **not** supported by Swashbuckle ([i
 
 To make endpoints discoverable by OpenApi, you need to call one of the following functions: `addOpenApi` or `addOpenApiSimple` on the endpoint.
 
-_Note1: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically when using `routef` function from `Oxpecker.OpenApi` namespace._
+_Note1: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically when using `routef` and `subRoutef` functions from `Oxpecker.OpenApi` namespace._
 
 _Note2: use `[<CLIMutable>]` attribute on your records and `[<Required>]` or `[<JsonRequired>]` on their fields to control `required` fields in schema._
 
@@ -147,6 +147,16 @@ type OpenApiConfig (?requestBody : RequestBody,
 ```
 Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code.
 `configureOperation` parameter is a function that allows you to do very low-level modifications the `OpenApiOperation` object.
+
+`addOpenApi` and `addOpenApiSimple` can also be applied to a group of endpoints (`subRoute`, `subRoutef`, `routeGroup` or HTTP verb groups) to describe all of its endpoints. Group and endpoint configurations are combined, so you can, for example, describe a common error response once for the whole group:
+
+```fsharp
+subRoute "/api" [
+    route "/a" handlerA |> addOpenApiSimple<unit, ResponseA>
+    route "/b" handlerB |> addOpenApiSimple<unit, ResponseB>
+]
+|> addOpenApi(OpenApiConfig(responseBodies = [ ResponseBody(typeof<Error>, statusCode = 400) ]))
+```
 
 ### addOpenApiSimple
 
