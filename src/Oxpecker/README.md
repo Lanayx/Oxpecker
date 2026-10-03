@@ -744,10 +744,10 @@ let webApp = [
 
 In this example `profileHandler` gets `42` as `userId` for the URL `http[s]://your-domain.com/users/42/profile`. The format string supports the same format chars and route constraints as `routef`.
 
-Since endpoints have to be registered at startup, while parameter values are known only per request, the function is called once at startup with placeholder values (to get the endpoints structure and configuration) and then once per request with real values (to get the handler). Hence:
+Since endpoints have to be registered at startup, while parameter values are known only per request, the function is called at startup with placeholder values (to get the endpoints structure and configuration) and then on every request with real values (to get the handler). The function of a `subRoutef` nested in another `subRoutef` is called several times per request, since rebuilding the outer endpoints calls it with placeholder values again. Hence:
 
-- Number, order, nesting and templates of the returned endpoints must not depend on the parameter values; an exception is thrown otherwise. Endpoint configuration (`configureEndpoint`, `addMetadata`, etc.) is taken from the startup call, so it must not depend on them either.
-- The function must only construct endpoints: keep it cheap and free of side effects, since it runs on every request.
+- Number, order, nesting and templates of the returned endpoints must not depend on the parameter values; this is checked on every request and an exception is thrown otherwise. Endpoint configuration (`configureEndpoint`, `addMetadata`, etc.) is taken from the startup call, so it must not depend on them either.
+- The function must only construct endpoints: keep it cheap and free of side effects, since it can run several times per request.
 - Route parameter names are taken from the function parameter names, so they must be unique across the whole route (including nested `routef` and `subRoutef` parameters).
 
 #### addMetadata

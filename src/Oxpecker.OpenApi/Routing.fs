@@ -25,7 +25,7 @@ module Routing =
             | _ -> OpenApiSchema(Type = JsonSchemaType.String)
         | _ -> OpenApiSchema(Type = JsonSchemaType.String)
 
-    // Merges by name instead of replacing, so that subRoutef (group) and routef (endpoint) parameters are combined
+    // Replaces only path parameters with the same names, so that subRoutef (group) and routef (endpoint) parameters are combined
     let private addPathParameters
         (mappings: (string * char * string option) array)
         (builder: IEndpointConventionBuilder)
@@ -36,10 +36,11 @@ module Routing =
             | null -> ()
             | existing ->
                 for parameter in existing do
-                    if
-                        mappings
-                        |> Array.forall(fun (name, _, _) -> not(String.Equals(name, parameter.Name)))
-                    then
+                    let isReplaced =
+                        parameter.In = Nullable ParameterLocation.Path
+                        && mappings
+                           |> Array.exists(fun (name, _, _) -> String.Equals(name, parameter.Name))
+                    if not isReplaced then
                         parameters.Add parameter
             for name, format, modifier in mappings do
                 parameters.Add(

@@ -846,20 +846,42 @@ let ``subRoutef: exceptions from factory and handlers are not wrapped`` () =
 let ``subRoutef: endpoints depending on parameter values fail`` () =
     task {
         let endpoints = [
-            subRoutef "/users/{%i}" (fun userId -> [
+            subRoutef "/removed/{%i}" (fun userId -> [
                 if userId = 0 then
                     route "/zero" <| text "zero"
                 route "/profile" <| text $"Profile {userId}"
+            ])
+            subRoutef "/added/{%i}" (fun userId -> [
+                route "/profile" <| text $"Profile {userId}"
+                if userId <> 0 then
+                    route "/extra" <| text "extra"
+            ])
+            subRoutef "/addedNested/{%i}" (fun userId -> [
+                route "/profile" <| text $"Profile {userId}"
+                subRoute "/group" [
+                    route "/a" <| text "a"
+                    if userId <> 0 then
+                        route "/b" <| text "b"
+                ]
+            ])
+            subRoutef "/changed/{%i}" (fun userId -> [
+                route "/profile" <| text $"Profile {userId}"
+                route(if userId = 0 then "/zero" else "/other") <| text "other"
             ])
         ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
-        let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> client.GetAsync("/users/5/profile"))
-
-        ex.Message
-        |> shouldEqual
-            "subRoutef '/users/{%i}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
+        let! profile = client.GetStringAsync("/added/0/profile")
+        profile |> shouldEqual "Profile 0"
+        for path in [ "/removed"; "/added"; "/addedNested"; "/changed" ] do
+            let! ex = Assert.ThrowsAsync<InvalidOperationException>(fun () -> client.GetAsync(path + "/5/profile"))
+            ex.Message
+            |> shouldEqual(
+                "subRoutef '"
+                + path
+                + "/{%i}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
+            )
     }
 
 [<Fact>]

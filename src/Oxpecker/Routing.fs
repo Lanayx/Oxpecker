@@ -256,29 +256,61 @@ module RoutingInternal =
         |> nonNull
         :?> Endpoint seq
 
-    // Finds the handler at indexPath, checking that every node on the way has the same kind and template as at startup
-    // (templates[depth] is ValueNone for MultiEndpoint)
+    // Structure and templates of the endpoints returned by subRoutef factory at startup
+    [<NoEquality; NoComparison>]
+    type private EndpointShape =
+        | SimpleShape of RouteTemplate
+        | NestedShape of RouteTemplate * EndpointShape array
+        | MultiShape of EndpointShape array
+
+    let rec private getShapes (endpoints: Endpoint seq) =
+        endpoints
+        |> Seq.map(function
+            | SimpleEndpoint(_, template, _, _) -> SimpleShape template
+            | NestedEndpoint(template, children, _) -> NestedShape(template, getShapes children)
+            | MultiEndpoint(children, _) -> MultiShape(getShapes children))
+        |> Seq.toArray
+
+    // Checks that all endpoints have the same structure and templates as at startup and returns the handler at indexPath
+    // (depth is -1 for endpoints outside of indexPath, which are only checked)
     let rec private tryFindHandler
+        (shapes: EndpointShape array)
         (indexPath: int array)
-        (templates: RouteTemplate voption array)
         (depth: int)
         (endpoints: Endpoint seq)
-        =
-        let isLeaf = depth = indexPath.Length - 1
-        match Seq.tryItem indexPath[depth] endpoints, templates[depth] with
-        | Some(SimpleEndpoint(_, template, handler, _)), ValueSome expected when isLeaf && template = expected ->
-            ValueSome handler
-        | Some(NestedEndpoint(template, children, _)), ValueSome expected when not isLeaf && template = expected ->
-            tryFindHandler indexPath templates (depth + 1) children
-        | Some(MultiEndpoint(children, _)), ValueNone when not isLeaf ->
-            tryFindHandler indexPath templates (depth + 1) children
-        | _ -> ValueNone
+        : struct (bool * EndpointHandler voption) =
+        use enumerator = endpoints.GetEnumerator()
+        let mutable index = 0
+        let mutable isValid = true
+        let mutable handler = ValueNone
+        while isValid && enumerator.MoveNext() do
+            if index < shapes.Length then
+                let isOnPath = depth >= 0 && index = indexPath[depth]
+                let childDepth = if isOnPath then depth + 1 else -1
+                match enumerator.Current, shapes[index] with
+                | SimpleEndpoint(_, template, endpointHandler, _), SimpleShape expected when template = expected ->
+                    if isOnPath then
+                        handler <- ValueSome endpointHandler
+                | NestedEndpoint(template, children, _), NestedShape(expected, childShapes) when template = expected ->
+                    let struct (isChildValid, childHandler) = tryFindHandler childShapes indexPath childDepth children
+                    isValid <- isChildValid
+                    if isOnPath then
+                        handler <- childHandler
+                | MultiEndpoint(children, _), MultiShape childShapes ->
+                    let struct (isChildValid, childHandler) = tryFindHandler childShapes indexPath childDepth children
+                    isValid <- isChildValid
+                    if isOnPath then
+                        handler <- childHandler
+                | _ -> isValid <- false
+            else
+                isValid <- false
+            index <- index + 1
+        struct (isValid && index = shapes.Length, handler)
 
     // Keeps the structure, templates, verbs and configuration of the endpoints, but replaces handlers with resolvers
     let rec private wrapEndpoints
-        (resolve: int array -> RouteTemplate voption array -> EndpointHandler)
+        (resolve: int array -> EndpointHandler)
         (indexPath: int list)
-        (templates: RouteTemplate voption list)
         (endpoints: Endpoint seq)
         : Endpoint seq =
         endpoints
@@ -286,17 +318,10 @@ module RoutingInternal =
             let indexPath = index :: indexPath
             match endpoint with
             | SimpleEndpoint(verbs, template, _, configure) ->
-                let templates = ValueSome template :: templates
-                let handler = resolve (indexPath |> List.rev |> List.toArray) (templates |> List.rev |> List.toArray)
-                SimpleEndpoint(verbs, template, handler, configure)
+                SimpleEndpoint(verbs, template, resolve(indexPath |> List.rev |> List.toArray), configure)
             | NestedEndpoint(template, children, configure) ->
-                NestedEndpoint(
-                    template,
-                    wrapEndpoints resolve indexPath (ValueSome template :: templates) children,
-                    configure
-                )
-            | MultiEndpoint(children, configure) ->
-                MultiEndpoint(wrapEndpoints resolve indexPath (ValueNone :: templates) children, configure))
+                NestedEndpoint(template, wrapEndpoints resolve indexPath children, configure)
+            | MultiEndpoint(children, configure) -> MultiEndpoint(wrapEndpoints resolve indexPath children, configure))
         |> Seq.toArray
         :> Endpoint seq
 
@@ -317,16 +342,17 @@ module RoutingInternal =
                     $"subRoutef '%s{path}': endpoints factory failed when called with placeholder arguments at startup. It should only construct endpoints.",
                     ex
                 )
-        let resolve (indexPath: int array) (templates: RouteTemplate voption array) : EndpointHandler =
+        let shapes = getShapes startupEndpoints
+        let resolve (indexPath: int array) : EndpointHandler =
             fun ctx ->
-                match invokeFactory ctx info factory |> tryFindHandler indexPath templates 0 with
-                | ValueSome handler -> handler ctx
-                | ValueNone ->
+                match invokeFactory ctx info factory |> tryFindHandler shapes indexPath 0 with
+                | struct (true, ValueSome handler) -> handler ctx
+                | _ ->
                     raise
                     <| InvalidOperationException(
                         $"subRoutef '%s{path}': endpoints factory returned different endpoints than at startup. Number, order, nesting and templates of endpoints must not depend on route values."
                     )
-        info.Template, info.Mappings, wrapEndpoints resolve [] [] startupEndpoints
+        info.Template, info.Mappings, wrapEndpoints resolve [] startupEndpoints
 
     let subRoutefInner<'T, 'Endpoints when 'Endpoints :> Endpoint seq>
         (path: PrintfFormat<'T, unit, unit, 'Endpoints>)

@@ -2,11 +2,13 @@
 
 open System.ComponentModel
 open System.Net
+open System.Threading.Tasks
 open Microsoft.AspNetCore.Hosting
 open Microsoft.AspNetCore.Builder
 open Microsoft.AspNetCore.TestHost
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.OpenApi
 open Oxpecker
 open Oxpecker.OpenApi
 open Xunit
@@ -620,6 +622,107 @@ let ``subRoutef path parameters work fine`` () =
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<Fact>]
+let ``Path parameters don't replace other parameters with the same name`` () =
+    task {
+        // group transformer runs before the routef one
+        let addQueryParameter (builder: IEndpointConventionBuilder) =
+            builder.AddOpenApiOperationTransformer(fun operation _ _ ->
+                let parameter =
+                    OpenApiParameter(
+                        Name = "postId",
+                        In = ParameterLocation.Query,
+                        Schema = OpenApiSchema(Type = JsonSchemaType.String)
+                    )
+                match operation.Parameters with
+                | null -> operation.Parameters <- ResizeArray [ parameter :> IOpenApiParameter ]
+                | parameters -> parameters.Add parameter
+                Task.CompletedTask)
+        let endpoints = [
+            GET [
+                subRoutef "/users/{%i}" (fun userId -> [
+                    routef "/posts/{%i}" (fun postId -> text $"Post {userId} {postId}")
+                    |> addOpenApiSimple<unit, string>
+                ])
+                |> configureEndpoint addQueryParameter
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/users/{userId}/posts/{postId}": {
+      "get": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
             }
           }
         ],
