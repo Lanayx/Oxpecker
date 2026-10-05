@@ -188,6 +188,8 @@ let endpoints = [
         route "streamJson" streamingJson
         route "streamHtml1" streamingHtml1
         route "streamHtml2" streamingHtml2
+        subRoutef "{%O:guid}" (fun (jobId: Guid) -> [ route "" (json {| JobId = jobId |}) ])
+        |> addOpenApiSimple<unit, {| JobId: Guid |}>
     ]
     POST [
         route "/x" (bindJson handler4)
