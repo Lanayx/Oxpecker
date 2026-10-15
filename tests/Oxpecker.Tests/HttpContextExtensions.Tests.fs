@@ -173,6 +173,14 @@ let ``BindQuery binds defaults without matching query parameters`` (queryString:
     result |> shouldEqual emptyInputModel
     collection |> shouldEqual [||]
 
+[<Fact>]
+let ``BindQuery binds the request query string`` () =
+    let ctx = createContext()
+    ctx.Request.QueryString <- QueryString("?Count=5")
+
+    ctx.BindQuery<EmptyInputModel>()
+    |> shouldEqual { emptyInputModel with Count = 5 }
+
 [<Theory>]
 [<InlineData("application/x-www-form-urlencoded", true)>]
 [<InlineData("application/x-www-form-urlencoded", false)>]
@@ -296,6 +304,30 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
         result
         |> shouldEqual
             $"""<!DOCTYPE html>{Environment.NewLine}<html><head></head><body><h1 id="header">Hello world</h1></body></html>"""
+    }
+
+[<Fact>]
+let ``WriteHtmlView encodes long non-ASCII text across buffer chunks`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+        // the odd prefix makes surrogate pairs straddle chunk boundaries
+        let text = "a" + String.replicate 10_000 "é😀"
+
+        do! ctx.WriteHtmlView(raw text)
+
+        (ctx.Response.Body :?> MemoryStream).ToArray()
+        |> shouldEqual(Encoding.UTF8.GetBytes $"<!DOCTYPE html>{Environment.NewLine}{text}")
+    }
+
+[<Fact>]
+let ``WriteHtmlView throws on a lone surrogate like StreamWriter`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+
+        let! _ = Assert.ThrowsAsync<EncoderFallbackException>(fun () -> ctx.WriteHtmlView(raw(string(char 0xD800))))
+        ()
     }
 
 [<Fact>]

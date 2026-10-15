@@ -1,6 +1,7 @@
 namespace Oxpecker
 
 open System
+open System.Buffers
 open System.Collections.Generic
 open System.IO
 open System.Runtime.CompilerServices
@@ -15,6 +16,25 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Microsoft.Net.Http.Headers
 open Oxpecker.ViewEngine
+
+module internal HtmlWriting =
+    // StreamWriter's default encoding: no BOM, throws on invalid surrogates
+    let private utf8 = UTF8Encoding(false, true)
+
+    let render (view: #HtmlElement) (writer: IBufferWriter<byte>) (cancellationToken: Threading.CancellationToken) =
+        let sb = Tools.StringBuilderPool.Get()
+        try
+            sb.AppendLine("<!DOCTYPE html>") |> ignore
+            view.Render sb
+            let encoder = utf8.GetEncoder()
+            let mutable bytes = 0L
+            let mutable completed = false
+            for chunk in sb.GetChunks() do
+                encoder.Convert(chunk.Span, writer, false, &bytes, &completed)
+            encoder.Convert(ReadOnlySpan.Empty, writer, true, &bytes, &completed)
+        finally
+            Tools.StringBuilderPool.Return(sb)
+        cancellationToken.ThrowIfCancellationRequested()
 
 type RouteParseException(message: string, ex) =
     inherit Exception(message, ex)
@@ -308,7 +328,7 @@ type HttpContextExtensions() =
         if ctx.Request.Method <> HttpMethods.Head then
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView, cancellationToken)
+                    HtmlWriting.render htmlView memoryStream cancellationToken
                     ctx.Response.ContentLength <- memoryStream.Length
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
                     return! memoryStream.CopyToAsync(ctx.Response.Body, cancellationToken)
@@ -319,7 +339,7 @@ type HttpContextExtensions() =
         else
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView, cancellationToken)
+                    HtmlWriting.render htmlView memoryStream cancellationToken
                     ctx.Response.ContentLength <- memoryStream.Length
                 finally
                     memoryStream.Dispose()

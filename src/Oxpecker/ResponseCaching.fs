@@ -8,7 +8,7 @@ module ResponseCaching =
     open Microsoft.AspNetCore.Http
     open Microsoft.AspNetCore.ResponseCaching
 
-    let private noCacheHeader = CacheControlHeaderValue(NoCache = true, NoStore = true)
+    let private noCacheHeader = CacheControlHeaderValue(NoCache = true, NoStore = true).ToString()
 
     /// <summary>
     /// Enables (or suppresses) response caching by clients and proxy servers.
@@ -28,15 +28,14 @@ module ResponseCaching =
         : EndpointHandler =
         fun (ctx: HttpContext) ->
 
-            let tHeaders = ctx.Response.GetTypedHeaders()
             let headers = ctx.Response.Headers
 
             match cacheControl with
             | None ->
-                tHeaders.CacheControl <- noCacheHeader
+                headers.CacheControl <- noCacheHeader
                 headers.Pragma <- "no-cache"
                 headers.Expires <- "-1"
-            | Some control -> tHeaders.CacheControl <- control
+            | Some control -> ctx.Response.GetTypedHeaders().CacheControl <- control
 
             if vary.IsSome then
                 headers.Vary <- vary.Value
