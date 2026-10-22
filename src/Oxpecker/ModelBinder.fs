@@ -597,13 +597,9 @@ type ModelBinder(?options: ModelBinderOptions) =
         /// It will try to match each property of 'T with a key from the data dictionary and parse the associated value to the value of 'T's property.
         /// </summary>
         member this.Bind<'T>(data) =
-            match data with
-            | :? FormCollection as formCollection ->
-                ModelParser.parseModel<'T> cache options (RawData.initComplexData(formCollectionDict formCollection))
-            | :? QueryCollection as queryCollection ->
-                ModelParser.parseModel<'T> cache options (RawData.initComplexData(queryCollectionDict queryCollection))
-            | _ ->
-                use dictionary = DictionaryPool.get()
-                for KeyValue(key, value) in data do
-                    dictionary.Add(key, value)
-                ModelParser.parseModel<'T> cache options (RawData.initComplexData dictionary)
+            let dictionary =
+                match data with
+                | :? FormCollection as formCollection -> formCollection |> formCollectionDict
+                | :? QueryCollection as queryCollection -> queryCollection |> queryCollectionDict
+                | _ -> Dictionary data
+            ModelParser.parseModel<'T> cache options (RawData.initComplexData dictionary)

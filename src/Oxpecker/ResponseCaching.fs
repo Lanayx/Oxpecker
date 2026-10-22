@@ -35,7 +35,7 @@ module ResponseCaching =
                 headers.CacheControl <- noCacheHeader
                 headers.Pragma <- "no-cache"
                 headers.Expires <- "-1"
-            | Some control -> ctx.Response.GetTypedHeaders().CacheControl <- control
+            | Some control -> headers.CacheControl <- control.ToString()
 
             if vary.IsSome then
                 headers.Vary <- vary.Value

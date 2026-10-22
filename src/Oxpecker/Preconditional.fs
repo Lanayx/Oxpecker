@@ -102,6 +102,34 @@ type HttpContext with
                 | true -> AllConditionsMet
                 | false -> ResourceNotModified
 
+// Helpers to chain validation functions; inlined so the validators are called directly, without closures
+let inline private bind
+    (requestHeaders: RequestHeaders)
+    ([<InlineIfLambda>] result: RequestHeaders -> Precondition)
+    (prev: Precondition)
+    =
+    match prev with
+    | NoConditionsSpecified -> result requestHeaders
+    | AllConditionsMet ->
+        match result requestHeaders with
+        | NoConditionsSpecified -> AllConditionsMet
+        | AllConditionsMet -> AllConditionsMet
+        | ConditionFailed -> ConditionFailed
+        | ResourceNotModified -> ResourceNotModified
+    | ConditionFailed -> ConditionFailed
+    | ResourceNotModified -> ResourceNotModified
+
+let inline private ifNotSpecified
+    (requestHeaders: RequestHeaders)
+    ([<InlineIfLambda>] result: RequestHeaders -> Precondition)
+    (prev: Precondition)
+    =
+    match prev with
+    | NoConditionsSpecified -> result requestHeaders
+    | AllConditionsMet -> AllConditionsMet
+    | ConditionFailed -> ConditionFailed
+    | ResourceNotModified -> ResourceNotModified
+
 type PreconditionExtensions() =
     /// <summary>
     /// Validates the following conditional HTTP headers of the HTTP request:
@@ -144,21 +172,11 @@ type PreconditionExtensions() =
 
         // Validate headers in correct precedence
         // RFC: https://tools.ietf.org/html/rfc7232#section-6
-        let afterIfUnmodifiedSince =
-            match ctx.ValidateIfMatch eTag requestHeaders with
-            | NoConditionsSpecified -> ctx.ValidateIfUnmodifiedSince lastModified requestHeaders
-            | result -> result
-        let afterIfNoneMatch =
-            match afterIfUnmodifiedSince with
-            | NoConditionsSpecified -> ctx.ValidateIfNoneMatch eTag requestHeaders
-            | AllConditionsMet ->
-                match ctx.ValidateIfNoneMatch eTag requestHeaders with
-                | NoConditionsSpecified -> AllConditionsMet
-                | result -> result
-            | result -> result
-        match afterIfNoneMatch with
-        | NoConditionsSpecified -> ctx.ValidateIfModifiedSince lastModified requestHeaders
-        | result -> result
+        requestHeaders
+        |> ctx.ValidateIfMatch eTag
+        |> ifNotSpecified requestHeaders (ctx.ValidateIfUnmodifiedSince lastModified)
+        |> bind requestHeaders (ctx.ValidateIfNoneMatch eTag)
+        |> ifNotSpecified requestHeaders (ctx.ValidateIfModifiedSince lastModified)
 
     /// <summary>
     /// Sends a default HTTP 304 Not Modified response to the client.

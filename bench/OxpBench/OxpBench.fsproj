@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <IsPackable>false</IsPackable>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <TieredPGO>true</TieredPGO>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="..\Shared\Endpoints.fs" />
+        <Compile Include="Program.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Oxpecker\Oxpecker.fsproj" />
+    </ItemGroup>
+</Project>
