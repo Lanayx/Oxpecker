@@ -4,6 +4,7 @@ open System
 open System.Buffers
 open System.Net
 open System.Text
+open System.Threading
 open Oxpecker.ViewEngine.Tools
 open Xunit
 open FsUnit.Light
@@ -67,7 +68,7 @@ let private countChunks (sb: StringBuilder) =
 
 let private encode (sb: StringBuilder) =
     let writer = ArrayBufferWriter<byte>()
-    writeUtf8 writer sb
+    writeUtf8 writer sb CancellationToken.None
     writer.WrittenSpan.ToArray()
 
 [<Fact>]
