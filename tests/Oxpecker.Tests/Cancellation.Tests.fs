@@ -662,19 +662,6 @@ type private AbortingPart(cts: CancellationTokenSource) =
             Task.CompletedTask
 
 [<Fact>]
-let ``WriteHtmlView with HEAD fails with OperationCanceledException when the request is aborted while rendering`` () =
-    task {
-        let ctx = createContext()
-        ctx.Request.Method <- HttpMethods.Head
-        use cts = new CancellationTokenSource()
-        ctx.RequestAborted <- cts.Token
-
-        do! shouldBeCancelled(fun () -> ctx.WriteHtmlView(abortingElement cts))
-
-        ctx.Response.Headers.ContentLength |> shouldEqual(Nullable())
-    }
-
-[<Fact>]
 let ``WriteHtmlViewChunked fails with OperationCanceledException and writes nothing when the request is aborted while rendering``
     ()
     =

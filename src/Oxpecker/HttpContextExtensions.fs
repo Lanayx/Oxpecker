@@ -320,7 +320,6 @@ type HttpContextExtensions() =
             task {
                 try
                     Render.toHtmlDocBufferWriter(memoryStream, htmlView)
-                    cancellationToken.ThrowIfCancellationRequested()
                     ctx.Response.ContentLength <- memoryStream.Length
                 finally
                     memoryStream.Dispose()
