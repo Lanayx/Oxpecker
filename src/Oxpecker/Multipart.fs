@@ -108,7 +108,7 @@ module internal MultipartHeaders =
                 validateHeader name value
                 sb.Append(name).Append(": ").Append(value).Append("\r\n") |> ignore
             sb.Append("\r\n") |> ignore
-            writeUtf8 writer sb
+            writeUtf8 writer sb CancellationToken.None
         finally
             StringBuilderPool.Return sb
 

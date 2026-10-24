@@ -299,6 +299,20 @@ let ``WriteHtmlViewAsync should add html to the context`` () =
     }
 
 [<Fact>]
+let ``WriteHtmlView encodes long non-ASCII text across buffer chunks`` () =
+    task {
+        let ctx = DefaultHttpContext()
+        ctx.Response.Body <- new MemoryStream()
+        // the odd prefix makes surrogate pairs straddle chunk boundaries
+        let text = "a" + String.replicate 10_000 "é😀"
+
+        do! ctx.WriteHtmlView(raw text)
+
+        (ctx.Response.Body :?> MemoryStream).ToArray()
+        |> shouldEqual(Encoding.UTF8.GetBytes $"<!DOCTYPE html>{Environment.NewLine}{text}")
+    }
+
+[<Fact>]
 let ``WriteHtmlViewChunked should add the html document to the context`` () =
     task {
         let ctx = DefaultHttpContext()

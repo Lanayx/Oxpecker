@@ -16,10 +16,11 @@ type Render =
 
     /// Copies the content of the builder as UTF-8 into an array of the exact size; like `writeUtf8`, a surrogate pair
     /// split between two chunks is encoded as one scalar instead of two replacement characters.
-    static member private copyStringBuilderToBytes(sb: StringBuilder) : byte[] =
+    static member private copyStringBuilderToBytes(sb: StringBuilder, cancellationToken: CancellationToken) : byte[] =
         let mutable total = 0
         let mutable endsWithHigh = false
         for chunk in sb.GetChunks() do
+            cancellationToken.ThrowIfCancellationRequested()
             let span = chunk.Span
             if endsWithHigh && span.Length > 0 && Char.IsLowSurrogate(span[0]) then
                 // counted as two 3-byte replacement characters, encoded as one 4-byte scalar
@@ -30,6 +31,7 @@ type Render =
         let mutable written = 0
         let mutable pendingHigh = ReadOnlyMemory<char>.Empty
         for chunk in sb.GetChunks() do
+            cancellationToken.ThrowIfCancellationRequested()
             let mutable span = chunk.Span
             if not pendingHigh.IsEmpty then
                 if span.Length > 0 && Char.IsLowSurrogate(span[0]) then
@@ -66,21 +68,23 @@ type Render =
             StringBuilderPool.Return(sb)
 
     /// Render HTMLElement to UTF8 encoded bytes
-    static member toBytes(view: #HtmlElement) =
+    static member toBytes(view: #HtmlElement, [<Struct>] ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultValueArg cancellationToken CancellationToken.None
         let sb = StringBuilderPool.Get()
         try
             view.Render sb
-            Render.copyStringBuilderToBytes sb
+            Render.copyStringBuilderToBytes(sb, cancellationToken)
         finally
             StringBuilderPool.Return(sb)
 
     /// Render HTMLElement to UTF8 encoded bytes with DOCTYPE prefix
-    static member toHtmlDocBytes(view: #HtmlElement) =
+    static member toHtmlDocBytes(view: #HtmlElement, [<Struct>] ?cancellationToken: CancellationToken) =
+        let cancellationToken = defaultValueArg cancellationToken CancellationToken.None
         let sb = StringBuilderPool.Get()
         sb.AppendLine("<!DOCTYPE html>") |> ignore
         try
             view.Render sb
-            Render.copyStringBuilderToBytes sb
+            Render.copyStringBuilderToBytes(sb, cancellationToken)
         finally
             StringBuilderPool.Return(sb)
 
@@ -89,11 +93,15 @@ type Render =
     /// </summary>
     /// <param name="writer">The buffer writer to encode into; it is not flushed.</param>
     /// <param name="view">The element to render.</param>
-    static member toBufferWriter(writer: IBufferWriter<byte>, view: #HtmlElement) =
+    /// <param name="cancellationToken">Optional token checked before each encoded chunk, e.g. `HttpContext.RequestAborted`.</param>
+    static member toBufferWriter
+        (writer: IBufferWriter<byte>, view: #HtmlElement, [<Struct>] ?cancellationToken: CancellationToken)
+        =
+        let cancellationToken = defaultValueArg cancellationToken CancellationToken.None
         let sb = StringBuilderPool.Get()
         try
             view.Render sb
-            writeUtf8 writer sb
+            writeUtf8 writer sb cancellationToken
         finally
             StringBuilderPool.Return(sb)
 
@@ -102,12 +110,16 @@ type Render =
     /// </summary>
     /// <param name="writer">The buffer writer to encode into; it is not flushed.</param>
     /// <param name="view">The element to render.</param>
-    static member toHtmlDocBufferWriter(writer: IBufferWriter<byte>, view: #HtmlElement) =
+    /// <param name="cancellationToken">Optional token checked before each encoded chunk, e.g. `HttpContext.RequestAborted`.</param>
+    static member toHtmlDocBufferWriter
+        (writer: IBufferWriter<byte>, view: #HtmlElement, [<Struct>] ?cancellationToken: CancellationToken)
+        =
+        let cancellationToken = defaultValueArg cancellationToken CancellationToken.None
         let sb = StringBuilderPool.Get()
         sb.AppendLine("<!DOCTYPE html>") |> ignore
         try
             view.Render sb
-            writeUtf8 writer sb
+            writeUtf8 writer sb cancellationToken
         finally
             StringBuilderPool.Return(sb)
 

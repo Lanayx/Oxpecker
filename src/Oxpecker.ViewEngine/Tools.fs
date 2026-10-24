@@ -3,6 +3,7 @@ module Oxpecker.ViewEngine.Tools
 open System
 open System.Buffers
 open System.Text
+open System.Threading
 open Microsoft.Extensions.ObjectPool
 
 let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
@@ -16,9 +17,11 @@ let StringBuilderPool = DefaultObjectPoolProvider().CreateStringBuilderPool()
 /// </remarks>
 /// <param name="writer">The buffer writer to encode into; it is not flushed.</param>
 /// <param name="sb">The builder whose content is encoded.</param>
-let writeUtf8 (writer: #IBufferWriter<byte>) (sb: StringBuilder) =
+/// <param name="cancellationToken">Checked before each chunk.</param>
+let writeUtf8 (writer: #IBufferWriter<byte>) (sb: StringBuilder) (cancellationToken: CancellationToken) =
     let mutable pendingHigh = ReadOnlyMemory<char>.Empty
     for chunk in sb.GetChunks() do
+        cancellationToken.ThrowIfCancellationRequested()
         let mutable span = chunk.Span
         if not pendingHigh.IsEmpty then
             if span.Length > 0 && Char.IsLowSurrogate(span[0]) then

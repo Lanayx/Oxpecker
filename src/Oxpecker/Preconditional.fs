@@ -102,6 +102,34 @@ type HttpContext with
                 | true -> AllConditionsMet
                 | false -> ResourceNotModified
 
+// Helpers to chain validation functions; inlined so the validators are called directly, without closures
+let inline private bind
+    (requestHeaders: RequestHeaders)
+    ([<InlineIfLambda>] result: RequestHeaders -> Precondition)
+    (prev: Precondition)
+    =
+    match prev with
+    | NoConditionsSpecified -> result requestHeaders
+    | AllConditionsMet ->
+        match result requestHeaders with
+        | NoConditionsSpecified -> AllConditionsMet
+        | AllConditionsMet -> AllConditionsMet
+        | ConditionFailed -> ConditionFailed
+        | ResourceNotModified -> ResourceNotModified
+    | ConditionFailed -> ConditionFailed
+    | ResourceNotModified -> ResourceNotModified
+
+let inline private ifNotSpecified
+    (requestHeaders: RequestHeaders)
+    ([<InlineIfLambda>] result: RequestHeaders -> Precondition)
+    (prev: Precondition)
+    =
+    match prev with
+    | NoConditionsSpecified -> result requestHeaders
+    | AllConditionsMet -> AllConditionsMet
+    | ConditionFailed -> ConditionFailed
+    | ResourceNotModified -> ResourceNotModified
+
 type PreconditionExtensions() =
     /// <summary>
     /// Validates the following conditional HTTP headers of the HTTP request:
@@ -136,26 +164,6 @@ type PreconditionExtensions() =
         let responseHeaders = ctx.Response.GetTypedHeaders()
         let requestHeaders = ctx.Request.GetTypedHeaders()
 
-        // Helper bind functions to chain validation functions
-        let bind (result: RequestHeaders -> Precondition) =
-            function
-            | NoConditionsSpecified -> result requestHeaders
-            | AllConditionsMet ->
-                match result requestHeaders with
-                | NoConditionsSpecified -> AllConditionsMet
-                | AllConditionsMet -> AllConditionsMet
-                | ConditionFailed -> ConditionFailed
-                | ResourceNotModified -> ResourceNotModified
-            | ConditionFailed -> ConditionFailed
-            | ResourceNotModified -> ResourceNotModified
-
-        let ifNotSpecified (result: RequestHeaders -> Precondition) =
-            function
-            | NoConditionsSpecified -> result requestHeaders
-            | AllConditionsMet -> AllConditionsMet
-            | ConditionFailed -> ConditionFailed
-            | ResourceNotModified -> ResourceNotModified
-
         // Set ETag and Last-Modified in the response
         if eTag.IsSome then
             responseHeaders.ETag <- eTag.Value
@@ -166,9 +174,9 @@ type PreconditionExtensions() =
         // RFC: https://tools.ietf.org/html/rfc7232#section-6
         requestHeaders
         |> ctx.ValidateIfMatch eTag
-        |> ifNotSpecified(ctx.ValidateIfUnmodifiedSince lastModified)
-        |> bind(ctx.ValidateIfNoneMatch eTag)
-        |> ifNotSpecified(ctx.ValidateIfModifiedSince lastModified)
+        |> ifNotSpecified requestHeaders (ctx.ValidateIfUnmodifiedSince lastModified)
+        |> bind requestHeaders (ctx.ValidateIfNoneMatch eTag)
+        |> ifNotSpecified requestHeaders (ctx.ValidateIfModifiedSince lastModified)
 
     /// <summary>
     /// Sends a default HTTP 304 Not Modified response to the client.
