@@ -22,15 +22,15 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>3.0.0-beta-3</Version>
-        <PackageVersion>3.0.0-beta-3</PackageVersion>
+        <Version>3.0.0-beta-4</Version>
+        <PackageVersion>3.0.0-beta-4</PackageVersion>
         <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
         <PackageReference Include="TypeShape" Version="10.0.0" />
-        <PackageReference Include="Oxpecker.ViewEngine" Version="3.0.0-beta-2" />
+        <PackageReference Include="Oxpecker.ViewEngine" Version="3.0.0-beta-3" />
     </ItemGroup>
     <ItemGroup>
         <None Include="..\..\images\oxpecker-128.png" Pack="true" PackagePath="\" />

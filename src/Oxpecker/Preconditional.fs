@@ -72,14 +72,17 @@ type HttpContext with
                 | false -> ConditionFailed
 
     member private this.ValidateIfNoneMatch (eTag: EntityTagHeaderValue option) (requestHeaders: RequestHeaders) =
-        match requestHeaders.IfNoneMatch.Any() with
+        let ifNoneMatch = requestHeaders.IfNoneMatch
+        match ifNoneMatch.Any() with
         | false -> NoConditionsSpecified
         | true ->
             match eTag with
             | None -> AllConditionsMet
             | Some eTag ->
-                requestHeaders.IfNoneMatch
-                |> Seq.exists _.Compare(eTag, false)
+                let mutable found = false
+                for i in 0 .. ifNoneMatch.Count - 1 do
+                    found <- found || ifNoneMatch[i].Compare(eTag, false)
+                found
                 |> function
                     | false -> AllConditionsMet
                     | true ->
@@ -101,6 +104,34 @@ type HttpContext with
                 with
                 | true -> AllConditionsMet
                 | false -> ResourceNotModified
+
+// Helpers to chain validation functions; inlined so the validators are called directly, without closures
+let inline private bind
+    (requestHeaders: RequestHeaders)
+    ([<InlineIfLambda>] result: RequestHeaders -> Precondition)
+    (prev: Precondition)
+    =
+    match prev with
+    | NoConditionsSpecified -> result requestHeaders
+    | AllConditionsMet ->
+        match result requestHeaders with
+        | NoConditionsSpecified -> AllConditionsMet
+        | AllConditionsMet -> AllConditionsMet
+        | ConditionFailed -> ConditionFailed
+        | ResourceNotModified -> ResourceNotModified
+    | ConditionFailed -> ConditionFailed
+    | ResourceNotModified -> ResourceNotModified
+
+let inline private ifNotSpecified
+    (requestHeaders: RequestHeaders)
+    ([<InlineIfLambda>] result: RequestHeaders -> Precondition)
+    (prev: Precondition)
+    =
+    match prev with
+    | NoConditionsSpecified -> result requestHeaders
+    | AllConditionsMet -> AllConditionsMet
+    | ConditionFailed -> ConditionFailed
+    | ResourceNotModified -> ResourceNotModified
 
 type PreconditionExtensions() =
     /// <summary>
@@ -133,42 +164,21 @@ type PreconditionExtensions() =
         (ctx: HttpContext, eTag: EntityTagHeaderValue option, lastModified: DateTimeOffset option)
         =
         // Parse headers
-        let responseHeaders = ctx.Response.GetTypedHeaders()
         let requestHeaders = ctx.Request.GetTypedHeaders()
-
-        // Helper bind functions to chain validation functions
-        let bind (result: RequestHeaders -> Precondition) =
-            function
-            | NoConditionsSpecified -> result requestHeaders
-            | AllConditionsMet ->
-                match result requestHeaders with
-                | NoConditionsSpecified -> AllConditionsMet
-                | AllConditionsMet -> AllConditionsMet
-                | ConditionFailed -> ConditionFailed
-                | ResourceNotModified -> ResourceNotModified
-            | ConditionFailed -> ConditionFailed
-            | ResourceNotModified -> ResourceNotModified
-
-        let ifNotSpecified (result: RequestHeaders -> Precondition) =
-            function
-            | NoConditionsSpecified -> result requestHeaders
-            | AllConditionsMet -> AllConditionsMet
-            | ConditionFailed -> ConditionFailed
-            | ResourceNotModified -> ResourceNotModified
 
         // Set ETag and Last-Modified in the response
         if eTag.IsSome then
-            responseHeaders.ETag <- eTag.Value
+            ctx.Response.Headers.ETag <- eTag.Value.ToString()
         if lastModified.IsSome then
-            responseHeaders.LastModified <- cutOffMs lastModified.Value
+            ctx.Response.Headers.LastModified <- HeaderUtilities.FormatDate(cutOffMs lastModified.Value)
 
         // Validate headers in correct precedence
         // RFC: https://tools.ietf.org/html/rfc7232#section-6
         requestHeaders
         |> ctx.ValidateIfMatch eTag
-        |> ifNotSpecified(ctx.ValidateIfUnmodifiedSince lastModified)
-        |> bind(ctx.ValidateIfNoneMatch eTag)
-        |> ifNotSpecified(ctx.ValidateIfModifiedSince lastModified)
+        |> ifNotSpecified requestHeaders (ctx.ValidateIfUnmodifiedSince lastModified)
+        |> bind requestHeaders (ctx.ValidateIfNoneMatch eTag)
+        |> ifNotSpecified requestHeaders (ctx.ValidateIfModifiedSince lastModified)
 
     /// <summary>
     /// Sends a default HTTP 304 Not Modified response to the client.

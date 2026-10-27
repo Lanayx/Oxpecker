@@ -132,9 +132,9 @@ module RoutingInternal =
             | MultiEndpoint(endpoints, configure) ->
                 MultiEndpoint(Seq.map (fun e -> AddFilter.Compose(filterMiddleware, e)) endpoints, configure)
 
-    let private getArgByIndex (routeData: RouteData) (mappings: (string * char * Option<_>) array) (index: int) =
+    let private getArgByIndex (data: RouteValueDictionary) (mappings: (string * char * Option<_>) array) (index: int) =
         let placeholderName, formatChar, modifier = mappings[index]
-        let routeValue = routeData.Values[placeholderName] |> string
+        let routeValue = data[placeholderName] |> string
         RouteTemplateBuilder.parse formatChar modifier routeValue
 
     let private invokeHandler<'T>
@@ -144,7 +144,7 @@ module RoutingInternal =
         (mappings: (string * char * Option<_>) array)
         (ctxInParameterList: bool)
         =
-        let routeData = ctx.GetRouteData()
+        let routeData = ctx.Request.RouteValues
         if ctxInParameterList then
             match mappings.Length with
             | 0 -> invoker.Invoke(handler, ctx)
@@ -165,7 +165,7 @@ module RoutingInternal =
                     handler,
                     Span [|
                         for placeholderName, formatChar, modifier in mappings do
-                            let routeValue = routeData.Values[placeholderName] |> string
+                            let routeValue = routeData[placeholderName] |> string
                             RouteTemplateBuilder.parse formatChar modifier routeValue
                         ctx
                     |]
@@ -173,14 +173,18 @@ module RoutingInternal =
             |> nonNull
             :?> Task
         else
-            invoker.Invoke(
-                handler,
-                Span [|
-                    for placeholderName, formatChar, modifier in mappings do
-                        let routeValue = routeData.Values[placeholderName] |> string
-                        RouteTemplateBuilder.parse formatChar modifier routeValue
-                |]
-            )
+            match mappings.Length with
+            | 1 -> invoker.Invoke(handler, getArgByIndex routeData mappings 0)
+            | 2 -> invoker.Invoke(handler, getArgByIndex routeData mappings 0, getArgByIndex routeData mappings 1)
+            | _ ->
+                invoker.Invoke(
+                    handler,
+                    Span [|
+                        for placeholderName, formatChar, modifier in mappings do
+                            let routeValue = routeData[placeholderName] |> string
+                            RouteTemplateBuilder.parse formatChar modifier routeValue
+                    |]
+                )
             |> nonNull
             :?> FSharpFunc<HttpContext, Task>
             <| ctx
@@ -239,7 +243,7 @@ module RoutingInternal =
             null
 
     let private invokeFactory (ctx: HttpContext) (info: RoutefInfo) (factory: obj) =
-        let routeData = ctx.GetRouteData()
+        let routeData = ctx.Request.RouteValues
         let mappings = info.Mappings
         match mappings.Length with
         | 1 -> info.Invoker.Invoke(factory, getArgByIndex routeData mappings 0)

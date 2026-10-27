@@ -308,7 +308,7 @@ type HttpContextExtensions() =
         if ctx.Request.Method <> HttpMethods.Head then
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView, cancellationToken)
+                    Render.toHtmlDocBufferWriter(memoryStream, htmlView, cancellationToken)
                     ctx.Response.ContentLength <- memoryStream.Length
                     memoryStream.Seek(0, SeekOrigin.Begin) |> ignore
                     return! memoryStream.CopyToAsync(ctx.Response.Body, cancellationToken)
@@ -319,7 +319,7 @@ type HttpContextExtensions() =
         else
             task {
                 try
-                    do! Render.toHtmlDocStreamAsync(memoryStream, htmlView, cancellationToken)
+                    Render.toHtmlDocBufferWriter(memoryStream, htmlView, cancellationToken)
                     ctx.Response.ContentLength <- memoryStream.Length
                 finally
                     memoryStream.Dispose()
@@ -349,7 +349,7 @@ type HttpContextExtensions() =
             use _ = enumerator :> IAsyncDisposable
             while! enumerator.MoveNextAsync() do
                 cancellationToken.ThrowIfCancellationRequested()
-                Render.toBufferWriter(writer, enumerator.Current)
+                Render.toBufferWriter(writer, enumerator.Current, cancellationToken)
                 let! _ = writer.FlushAsync(cancellationToken)
                 ()
             cancellationToken.ThrowIfCancellationRequested()

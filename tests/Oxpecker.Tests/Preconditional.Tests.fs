@@ -128,6 +128,19 @@ let ``HTTP GET with If-Match and matching ETag`` () =
     }
 
 [<Fact>]
+let ``HTTP GET with matching If-Match and matching If-None-Match returns 304`` () =
+    task {
+        use! server = WebApp.webApp (createETag "abc" |> Some, None)
+        let client = server.GetTestClient()
+        client.DefaultRequestHeaders.Add("If-Match", "\"abc\"")
+        client.DefaultRequestHeaders.Add("If-None-Match", "\"abc\"")
+
+        let! response = client.GetAsync(Urls.rangeProcessingDisabled)
+
+        response.StatusCode |> shouldEqual HttpStatusCode.NotModified
+    }
+
+[<Fact>]
 let ``HTTP GET with If-Unmodified-Since and no lastModified`` () =
     task {
         use! server = WebApp.webApp (None, None)
