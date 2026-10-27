@@ -72,14 +72,17 @@ type HttpContext with
                 | false -> ConditionFailed
 
     member private this.ValidateIfNoneMatch (eTag: EntityTagHeaderValue option) (requestHeaders: RequestHeaders) =
-        match requestHeaders.IfNoneMatch.Any() with
+        let ifNoneMatch = requestHeaders.IfNoneMatch
+        match ifNoneMatch.Any() with
         | false -> NoConditionsSpecified
         | true ->
             match eTag with
             | None -> AllConditionsMet
             | Some eTag ->
-                requestHeaders.IfNoneMatch
-                |> Seq.exists _.Compare(eTag, false)
+                let mutable found = false
+                for i in 0 .. ifNoneMatch.Count - 1 do
+                    found <- found || ifNoneMatch[i].Compare(eTag, false)
+                found
                 |> function
                     | false -> AllConditionsMet
                     | true ->
@@ -161,14 +164,13 @@ type PreconditionExtensions() =
         (ctx: HttpContext, eTag: EntityTagHeaderValue option, lastModified: DateTimeOffset option)
         =
         // Parse headers
-        let responseHeaders = ctx.Response.GetTypedHeaders()
         let requestHeaders = ctx.Request.GetTypedHeaders()
 
         // Set ETag and Last-Modified in the response
         if eTag.IsSome then
-            responseHeaders.ETag <- eTag.Value
+            ctx.Response.Headers.ETag <- eTag.Value.ToString()
         if lastModified.IsSome then
-            responseHeaders.LastModified <- cutOffMs lastModified.Value
+            ctx.Response.Headers.LastModified <- HeaderUtilities.FormatDate(cutOffMs lastModified.Value)
 
         // Validate headers in correct precedence
         // RFC: https://tools.ietf.org/html/rfc7232#section-6
