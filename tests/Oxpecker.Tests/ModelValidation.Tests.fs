@@ -227,6 +227,43 @@ let ``Recursive type is validated on every level`` () =
     memberNames errors
     |> shouldEqual [ "Subcategories[0].Subcategories[0].Title"; "Subcategories[1].Title" ]
 
+/// Every level is another type: Nest<int> holds Nest<int list>, which holds Nest<int list list>, and so on without an end.
+type Nest<'T> = {
+    [<Required>]
+    Label: string | null
+    Inner: Nest<'T list> option
+}
+
+[<Fact>]
+let ``Generic type nesting ever growing instances of itself is validated`` () =
+    let model: Nest<int> = {
+        Label = "outer"
+        Inner =
+            Some {
+                Label = null
+                Inner = Some { Label = null; Inner = None }
+            }
+    }
+    validateModel model
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Inner.Label"; "Inner.Inner.Label" ]
+
+type Box<'T> = { Content: 'T }
+
+[<Fact>]
+let ``Generic type holding another instance of itself is validated`` () =
+    validateModel {
+        Content = { Content = invalidAddress 1 }
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Content.Content.Street"; "Content.Content.Zip" ]
+
+    (validateModel { Content = { Content = validAddress } }).IsValid
+    |> shouldEqual true
+    (validateModel { Content = { Content = 1 } }).IsValid |> shouldEqual true
+
 type Shipment = {
     Stops: Address list
     Depots: Address[]
@@ -384,6 +421,40 @@ let ``Union case fields are validated`` () =
 
     (validateModel { Contact = Nobody }).IsValid |> shouldEqual true
     (validateModel { Contact = Postal validAddress }).IsValid |> shouldEqual true
+
+[<Struct>]
+type Gauge = {
+    [<Range(1, 10)>]
+    Level: int
+}
+
+/// A struct union has the fields of all its cases, those of the other cases hold default values.
+[<Struct>]
+type Reading =
+    | Missing
+    | Measured of gauge: Gauge
+    | Estimated of guess: Gauge * note: string
+
+type Sensor = { Reading: Reading }
+
+[<Fact>]
+let ``Struct union is validated through the fields of its case only`` () =
+    // the default gauge is invalid, but no gauge belongs to these values
+    (validateModel Missing).IsValid |> shouldEqual true
+    (validateModel { Reading = Missing }).IsValid |> shouldEqual true
+    (validateModel(Measured { Level = 5 })).IsValid |> shouldEqual true
+
+    validateModel(Measured { Level = 50 })
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "gauge.Level" ]
+
+    validateModel {
+        Reading = Estimated({ Level = 0 }, "low")
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Reading.guess.Level" ]
 
 type Transfer = { Legs: Address * Address }
 
@@ -664,6 +735,15 @@ let ``Invalid object met again is still an invalid member of the object referrin
     |> memberNames
     |> shouldEqual [ "Parcel.Destination" ]
 
+[<Fact>]
+let ``Valid object met again is a valid member whatever else is invalid`` () =
+    // the parcel is validated itself: its destination is valid, the invalid address is not a part of it
+    let shared = validAddress
+    validateModel [ box shared; box(invalidAddress 1); box { Destination = shared } ]
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "[1].Street"; "[1].Zip"; "[2].Destination" ]
+
 type Folder(name: string | null) =
     [<Required>]
     member val Name = name with get, set
@@ -684,6 +764,27 @@ let ``Object is not validated itself when the object it is nested in is invalid 
     let valid = Folder("documents")
     valid.Entries.Add(Entry valid)
     validateModel valid |> errorsOf |> memberNames |> shouldEqual [ "Entries[0]" ]
+
+type Shelf(name: string | null) =
+    member val Books = ResizeArray<Book>() with get
+    [<Required>]
+    member val Name = name with get, set
+
+and Book(shelf: Shelf) =
+    member _.Shelf = shelf
+    interface IValidatableObject with
+        member _.Validate(_: ValidationContext) =
+            seq { yield ValidationResult("Book is rejected") }
+
+[<Fact>]
+let ``Object referring back to the object it is nested in doesn't wait for the rest of that object`` () =
+    // the name of the shelf is checked after its books, so the book is validated itself: nothing is wrong by then
+    let invalid = Shelf(null)
+    invalid.Books.Add(Book invalid)
+    validateModel invalid
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Books[0]"; "Name" ]
 
 type AlwaysInvalidAttribute() =
     inherit ValidationAttribute("Always invalid")
