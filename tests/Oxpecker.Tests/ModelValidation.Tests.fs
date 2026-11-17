@@ -524,6 +524,19 @@ let ``Framework types and simple values are not traversed`` () =
     |> memberNames
     |> shouldEqual [ "Payload.Street"; "Payload.Zip" ]
 
+type Slot(name: string | null) =
+    let mutable name = name
+    /// Returned by reference: cannot be read by compiled code.
+    [<Required>]
+    member _.Name: byref<string | null> = &name
+    member _.Chars: ReadOnlySpan<char> = "abc".AsSpan()
+
+[<Fact>]
+let ``Properties returning references and ref structs don't break validation`` () =
+    (validateModel(Slot "slot")).IsValid |> shouldEqual true
+
+    validateModel(Slot null) |> errorsOf |> memberNames |> shouldEqual [ "Name" ]
+
 type Money = {
     [<Range(0, 100)>]
     Amount: int

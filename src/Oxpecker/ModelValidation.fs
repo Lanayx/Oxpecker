@@ -8,6 +8,7 @@ module ModelValidation =
     open System.Collections.Concurrent
     open System.Collections.Generic
     open System.ComponentModel.DataAnnotations
+    open System.Linq.Expressions
     open System.Reflection
     open System.Runtime.CompilerServices
     open System.Text
@@ -87,8 +88,12 @@ module ModelValidation =
     /// Recursive validation of an object graph on top of <see cref="System.ComponentModel.DataAnnotations.Validator"/>.
     module private ObjectGraph =
 
+        /// Reads a property of the object passed to it.
+        type Getter = Func<obj, obj | null>
+
         type PropertyMetadata = {
-            Info: PropertyInfo
+            Name: string
+            Get: Getter
             Validators: ValidationAttribute[]
             Display: DisplayAttribute | null
             /// Whether the property value may contain something to validate.
@@ -99,11 +104,11 @@ module ModelValidation =
             /// Nothing to validate inside: simple values, framework types and collections of those.
             | Leaf
             /// An option, validated as the value it holds.
-            | Optional of value: PropertyInfo
+            | Optional of value: Getter
             /// A voption, validated as the value it holds.
-            | ValueOptional of isSome: PropertyInfo * value: PropertyInfo
+            | ValueOptional of isSome: Getter * value: Getter
             /// A dictionary entry: only its value is validated, the key becomes a part of the path.
-            | KeyValue of key: PropertyInfo * value: PropertyInfo
+            | KeyValue of key: Getter * value: Getter
             /// An object with properties, type-level validation and/or items to validate.
             | Composite
 
@@ -145,6 +150,21 @@ module ModelValidation =
             | null -> false
             | mapping -> mapping.SourceConstructFlags = SourceConstructFlags.Field
 
+        /// Pointers, references and ref structs are not objects: such a value is neither traversed nor read by compiled code.
+        let isNotObject (t: Type) =
+            t.IsPointer || t.IsByRef || t.IsByRefLike
+
+        /// Compiles a reader of the property. Properties are read for every validated object,
+        /// and compiled code does it several times faster than PropertyInfo.GetValue.
+        let getter (t: Type) (p: PropertyInfo) : Getter =
+            if isNotObject p.PropertyType then
+                // Cannot be a part of an expression tree, but reflection is able to read it.
+                Getter(fun instance -> p.GetValue instance)
+            else
+                let instance = Expression.Parameter(typeof<obj>)
+                let value = Expression.Property(Expression.Convert(instance, t), p)
+                Expression.Lambda<Getter>(Expression.Convert(value, typeof<obj>), instance).Compile()
+
         /// Item types of a collection type, empty when they are not known statically.
         let itemTypes (t: Type) = [|
             if t.IsArray then
@@ -174,22 +194,23 @@ module ModelValidation =
             t.IsSealed && not(visiting.Contains t) && (metadataFor visiting t).Kind.IsLeaf
 
         and createMetadata (visiting: HashSet<Type>) (t: Type) =
-            let property (name: string) = nonNull(t.GetProperty name)
-            let holding index kind =
+            let property (name: string) = getter t (nonNull(t.GetProperty name))
+            // The kind is created on demand: nothing is compiled for a leaf.
+            let holding index (kind: unit -> ValueKind) =
                 if isStaticLeaf visiting (t.GetGenericArguments()[index]) then
                     leaf
                 else
-                    { leaf with Kind = kind }
+                    { leaf with Kind = kind() }
 
             if isGeneric typedefof<Nullable<_>> t then
                 // Only matters as a declared type: a boxed Nullable is either null or the value it holds.
-                holding 0 Composite
+                holding 0 (fun () -> Composite)
             elif isGeneric typedefof<option<_>> t then
-                holding 0 (Optional(property "Value"))
+                holding 0 (fun () -> Optional(property "Value"))
             elif isGeneric typedefof<voption<_>> t then
-                holding 0 (ValueOptional(property "IsSome", property "Value"))
+                holding 0 (fun () -> ValueOptional(property "IsSome", property "Value"))
             elif isGeneric typedefof<KeyValuePair<_, _>> t then
-                holding 1 (KeyValue(property "Key", property "Value"))
+                holding 1 (fun () -> KeyValue(property "Key", property "Value"))
             else
                 let isCollection = typeof<IEnumerable>.IsAssignableFrom t
                 // A collection is validated through its items; properties of a model are followed, as well as items of a tuple.
@@ -207,12 +228,13 @@ module ModelValidation =
                             let traverse =
                                 traversable
                                 && (not fieldsOnly || isField p)
-                                && not(propertyType.IsPointer || propertyType.IsByRef || propertyType.IsByRefLike)
+                                && not(isNotObject propertyType)
                                 && not(Attribute.IsDefined(p, typeof<SkipNestedValidationAttribute>, true))
                                 && not(isStaticLeaf visiting propertyType)
                             if validators.Length > 0 || traverse then
                                 {
-                                    Info = p
+                                    Name = p.Name
+                                    Get = getter t p
                                     Validators = validators
                                     Display = p.GetCustomAttribute<DisplayAttribute>(true)
                                     Traverse = traverse
@@ -324,11 +346,11 @@ module ModelValidation =
             member this.Visit(value: obj, metadata: TypeMetadata) : unit =
                 match metadata.Kind with
                 | Leaf -> ()
-                | Optional valueProperty
-                | KeyValue(_, valueProperty) -> this.VisitNullable(valueProperty.GetValue value)
-                | ValueOptional(isSome, valueProperty) ->
-                    if true.Equals(isSome.GetValue value) then
-                        this.VisitNullable(valueProperty.GetValue value)
+                | Optional getValue
+                | KeyValue(_, getValue) -> this.VisitNullable(getValue.Invoke value)
+                | ValueOptional(isSome, getValue) ->
+                    if true.Equals(isSome.Invoke value) then
+                        this.VisitNullable(getValue.Invoke value)
                 | Composite -> this.VisitComposite(value, metadata)
 
             member private this.VisitNullable(value: obj | null) =
@@ -344,11 +366,11 @@ module ModelValidation =
                     let mutable nodeContext: ValidationContext | null = null
 
                     for property in metadata.Properties do
-                        let value = property.Info.GetValue node
+                        let value = property.Get.Invoke node
                         if property.Validators.Length > 0 then
                             let context = this.ContextOf(node, &nodeContext)
-                            context.MemberName <- property.Info.Name
-                            context.DisplayName <- displayName property.Display property.Info.Name
+                            context.MemberName <- property.Name
+                            context.DisplayName <- displayName property.Display property.Name
                             let start = results.Count
                             if not(Validator.TryValidateValue(value, context, results, property.Validators)) then
                                 this.Qualify start
@@ -362,7 +384,7 @@ module ModelValidation =
                                     let length = path.Length
                                     if length > 0 then
                                         path.Append('.') |> ignore
-                                    path.Append(property.Info.Name) |> ignore
+                                    path.Append(property.Name) |> ignore
                                     this.Visit(value, valueMetadata)
                                     path.Length <- length
 
@@ -373,16 +395,15 @@ module ModelValidation =
                                 let itemMetadata = metadataOf(item.GetType())
                                 match itemMetadata.Kind with
                                 | Leaf -> ()
-                                | KeyValue(keyProperty, valueProperty) ->
-                                    match valueProperty.GetValue item with
+                                | KeyValue(getKey, getValue) ->
+                                    match getValue.Invoke item with
                                     | null -> ()
                                     | value ->
                                         let valueMetadata = metadataOf(value.GetType())
                                         if not valueMetadata.Kind.IsLeaf then
                                             let path = this.Descend(node, metadata)
                                             let length = path.Length
-                                            path.Append('[').Append(string(keyProperty.GetValue item)).Append(']')
-                                            |> ignore
+                                            path.Append('[').Append(string(getKey.Invoke item)).Append(']') |> ignore
                                             this.Visit(value, valueMetadata)
                                             path.Length <- length
                                 | _ ->
