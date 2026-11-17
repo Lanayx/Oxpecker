@@ -211,6 +211,12 @@ module ModelValidation =
                 holding 0 (fun () -> ValueOptional(property "IsSome", property "Value"))
             elif isGeneric typedefof<KeyValuePair<_, _>> t then
                 holding 1 (fun () -> KeyValue(property "Key", property "Value"))
+            elif t = typeof<DictionaryEntry> then
+                // An entry of a non-generic dictionary such as Hashtable: the type of its value is only known at runtime.
+                {
+                    leaf with
+                        Kind = KeyValue(property "Key", property "Value")
+                }
             else
                 let isCollection = typeof<IEnumerable>.IsAssignableFrom t
                 // A collection is validated through its items; properties of a model are followed, as well as items of a tuple.
@@ -286,21 +292,37 @@ module ModelValidation =
             /// Reference type objects validated so far, created on the first descent. Every object is validated once:
             /// it ends cycles and keeps the work linear when an object is reachable through many paths
             /// (re-validating it for each path is exponential for a chain of objects sharing their children).
-            let mutable visited: HashSet<obj> | null = null
+            /// The value is the number of problems found by the time the object was entered.
+            let mutable visited: Dictionary<obj, int> | null = null
+            /// How many times an invalid object was met again: its errors are not reported for the second time,
+            /// but it is an invalid member of the object referring to it.
+            let mutable invalidMetAgain = 0
 
             /// Returns false when the object has already been validated, or is being validated further up the path.
             member private _.Enter(node: obj) =
                 match visited with
                 | null -> true
-                | visited -> visited.Add node
+                | visited ->
+                    let problems = results.Count + invalidMetAgain
+                    if visited.TryAdd(node, problems) then
+                        true
+                    else
+                        // Has anything gone wrong since the object was entered? While the object is still being validated
+                        // (a cycle), it went wrong inside of it. Once the object is finished, it may also have gone wrong
+                        // elsewhere, but telling that apart takes a second write for every object, so the object is
+                        // treated as invalid. That is safe: the model is invalid anyway, and the object referring to
+                        // this one is validated itself as soon as the problem is fixed.
+                        if problems > visited[node] then
+                            invalidMetAgain <- invalidMetAgain + 1
+                        false
 
             /// Has to be called before visiting anything stored in the node; returns the path to append a segment to.
-            member private _.Descend(node: obj, metadata: TypeMetadata) =
+            member private _.Descend(node: obj, metadata: TypeMetadata, errorsBefore: int) =
                 if isNull visited then
                     // Nothing but the node has been entered before the first descent.
-                    let tracked = HashSet<obj>(ReferenceEqualityComparer.Instance)
+                    let tracked = Dictionary<obj, int>(ReferenceEqualityComparer.Instance)
                     if metadata.IsReferenceType then
-                        tracked.Add node |> ignore
+                        tracked.Add(node, errorsBefore)
                     visited <- tracked
                 match path with
                 | null ->
@@ -362,6 +384,7 @@ module ModelValidation =
                 RuntimeHelpers.EnsureSufficientExecutionStack()
                 if not metadata.IsReferenceType || this.Enter node then
                     let errorsBefore = results.Count
+                    let metAgainBefore = invalidMetAgain
                     // One context serves all members of the node, unlike Validator which creates one per property.
                     let mutable nodeContext: ValidationContext | null = null
 
@@ -380,7 +403,7 @@ module ModelValidation =
                             | value ->
                                 let valueMetadata = metadataOf(value.GetType())
                                 if not valueMetadata.Kind.IsLeaf then
-                                    let path = this.Descend(node, metadata)
+                                    let path = this.Descend(node, metadata, errorsBefore)
                                     let length = path.Length
                                     if length > 0 then
                                         path.Append('.') |> ignore
@@ -401,13 +424,13 @@ module ModelValidation =
                                     | value ->
                                         let valueMetadata = metadataOf(value.GetType())
                                         if not valueMetadata.Kind.IsLeaf then
-                                            let path = this.Descend(node, metadata)
+                                            let path = this.Descend(node, metadata, errorsBefore)
                                             let length = path.Length
                                             path.Append('[').Append(string(getKey.Invoke item)).Append(']') |> ignore
                                             this.Visit(value, valueMetadata)
                                             path.Length <- length
                                 | _ ->
-                                    let path = this.Descend(node, metadata)
+                                    let path = this.Descend(node, metadata, errorsBefore)
                                     let length = path.Length
                                     path.Append('[').Append(index).Append(']') |> ignore
                                     this.Visit(item, itemMetadata)
@@ -415,9 +438,10 @@ module ModelValidation =
                             index <- index + 1
 
                     // Same as in Validator: the object itself is validated only when its members are valid,
-                    // and members here include everything nested in them.
+                    // and members here include everything nested in them, validated just now or earlier.
                     if
                         results.Count = errorsBefore
+                        && invalidMetAgain = metAgainBefore
                         && (metadata.TypeValidators.Length > 0 || node :? IValidatableObject)
                     then
                         let context =
@@ -451,7 +475,13 @@ module ModelValidation =
     /// </summary>
     let validateModelWith (ctx: ValidationContext) (model: 'T) =
         let instance = ctx.ObjectInstance
-        if not(typeof<'T>.IsValueType || obj.ReferenceEquals(instance, model)) then
+        // A value type model is boxed anew wherever an object is needed: it is the same model when the values are equal.
+        let isInstance =
+            if typeof<'T>.IsValueType then
+                instance.Equals(box model)
+            else
+                obj.ReferenceEquals(instance, model)
+        if not isInstance then
             invalidArg (nameof ctx) "The model must be the ObjectInstance of the ValidationContext supplied."
         let validationResults = ResizeArray()
         ObjectGraph.Walker(ctx, validationResults).Visit instance

@@ -350,6 +350,17 @@ let ``Dictionary values are validated and addressed by key`` () =
         "Shops[7].Zip"
     ]
 
+type Atlas = { Places: Collections.Hashtable }
+
+[<Fact>]
+let ``Values of non-generic dictionaries are validated and addressed by key`` () =
+    let places = Collections.Hashtable()
+    places["office"] <- invalidAddress 1
+    validateModel { Places = places }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Places[office].Street"; "Places[office].Zip" ]
+
 type Contact =
     | Postal of Address
     | Courier of company: string * depot: Address
@@ -631,6 +642,49 @@ let ``IValidatableObject is validated only when everything nested is valid`` () 
     let errors = validateModel { Destination = validAddress } |> errorsOf
     errors |> messagesFor "Destination" |> shouldEqual [ "Parcel is rejected" ]
 
+type Dispatch = { Origin: Address; Parcel: Parcel }
+
+[<Fact>]
+let ``Invalid object met again is still an invalid member of the object referring to it`` () =
+    // errors of the address are reported once, but the parcel is not validated: its destination is invalid
+    let invalid = invalidAddress 1
+    validateModel {
+        Origin = invalid
+        Parcel = { Destination = invalid }
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Origin.Street"; "Origin.Zip" ]
+
+    validateModel {
+        Origin = validAddress
+        Parcel = { Destination = validAddress }
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Parcel.Destination" ]
+
+type Folder(name: string | null) =
+    [<Required>]
+    member val Name = name with get, set
+    member val Entries = ResizeArray<Entry>() with get
+
+and Entry(folder: Folder) =
+    member _.Folder = folder
+    interface IValidatableObject with
+        member _.Validate(_: ValidationContext) =
+            seq { yield ValidationResult("Entry is rejected") }
+
+[<Fact>]
+let ``Object is not validated itself when the object it is nested in is invalid and is its member`` () =
+    let invalid = Folder(null)
+    invalid.Entries.Add(Entry invalid)
+    validateModel invalid |> errorsOf |> memberNames |> shouldEqual [ "Name" ]
+
+    let valid = Folder("documents")
+    valid.Entries.Add(Entry valid)
+    validateModel valid |> errorsOf |> memberNames |> shouldEqual [ "Entries[0]" ]
+
 type AlwaysInvalidAttribute() =
     inherit ValidationAttribute("Always invalid")
     override _.IsValid(_: obj | null) = false
@@ -709,6 +763,18 @@ let ``SkipNestedValidation excludes the property value but not the property itse
 let ``ValidationContext of another object is rejected`` () =
     let validationContext = ValidationContext(validAddress)
     (fun () -> validateModelWith validationContext (invalidAddress 1) |> ignore)
+    |> shouldFail<ArgumentException>
+
+[<Fact>]
+let ``ValidationContext of a value type model has to hold an equal value`` () =
+    let point: Point = { X = 50 }
+    validateModelWith (ValidationContext(point)) point
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "X" ]
+
+    // the context is created for a valid point, the model is another one
+    (fun () -> validateModelWith (ValidationContext({ X = 5 }: Point)) point |> ignore)
     |> shouldFail<ArgumentException>
 
 type RouteForm = {
