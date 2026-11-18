@@ -53,6 +53,7 @@ An in depth functional reference to all of Oxpecker's features.
       - [Binding Forms](#binding-forms)
       - [Binding Query Strings](#binding-query-strings)
     - [Model validation](#model-validation)
+      - [Nested models](#nested-models)
     - [File Upload](#file-upload)
     - [WebSockets](#websockets)
     - [Grpc](#grpc)
@@ -1098,6 +1099,69 @@ type ModelState<'T> =
     | Invalid of InvalidModel<'T>
 ```
 This type is intended to be used for create/edit pages to simplify passing validation data to the view. An example of usage can be found in the [ContactApp example](https://github.com/Lanayx/Oxpecker/tree/develop/examples/ContactApp).
+
+
+#### Nested models
+
+Validation is recursive: everything reachable from the model is validated the same way the model itself is. Errors of nested values get the path from the model as their member name, and this is the name to pass to `errors.ErrorMessagesFor`:
+
+| Value                                                    | Member name of a nested error                   |
+|----------------------------------------------------------|-------------------------------------------------|
+| Record, class, struct or anonymous record                | `Address.Street`                                |
+| Item of a list, array, `seq` or any other collection     | `Items[0].Name`                                 |
+| `option` and `voption`                                   | `Address.Street` (`None` is skipped)            |
+| Value of a `Map` or of a dictionary                      | `Translations[en].Title`                        |
+| Field of a union case                                    | `Contact.Item.Street`, `Contact.depot.Street`   |
+| Item of a tuple (struct tuples are not followed)         | `Route.Item2.Street`                            |
+| The nested object itself (see the first rule below)      | `Address`                                       |
+
+```fsharp
+type Address = {
+    [<Required>]
+    Street: string
+    [<Range(1, 99999)>]
+    Zip: int
+}
+
+type Order = {
+    [<Required>]
+    Customer: string
+    Billing: Address option
+    Deliveries: Address list
+}
+
+let addOrder : EndpointHandler =
+    fun (ctx: HttpContext) ->
+        task {
+            match! ctx.BindAndValidateJson<Order>() with
+            | ModelValidationResult.Valid order ->
+                return! ctx.Write <| Ok order
+            | ModelValidationResult.Invalid (_, errors) ->
+                // e.g. "Billing.Street", "Deliveries[1].Zip"
+                let zipErrors = errors.ErrorMessagesFor "Deliveries[1].Zip"
+                return! ctx.Write <| BadRequest errors.All
+        }
+```
+
+For forms the member names are the same as the [names of the form fields](#binding-forms) (`Deliveries[1].Zip`), so they can be used to look up errors of a particular input.
+
+A few rules to be aware of:
+- The object itself (attributes applied to its type and `IValidatableObject`) is only validated when all its members are valid, including everything nested in them. This extends the rule of `Validator`, which skips `IValidatableObject` when an attribute of the object's properties fails, so `Validate` can rely on the attributes having passed.
+- Records and unions are followed through their fields, classes and structs through their public properties. Types from the `System.*` and `Microsoft.*` namespaces are not followed (collections are validated through their items).
+- Every object is validated once, even when it is referenced from several places or contains itself (a cycle). Its errors are reported for the first place only, yet they keep every object referring to it from being validated itself (see the first rule). Objects of a cycle (e.g. a child referring back to its parent) contain each other, so the first rule applies to the cycle as a whole: they are validated themselves, nested ones first, after the members of all of them have been checked, and an invalid one keeps the others from being validated themselves.
+- Every nested object gets its own `ValidationContext` with the same services and `Items` as the one of the model.
+- Properties and their validation attributes are looked up the way `Validator` does it, through `TypeDescriptor`, so what a registered `TypeDescriptionProvider` supplies (e.g. `AssociatedMetadataTypeTypeDescriptionProvider` for a `MetadataType` class) applies to nested objects as well.
+- Member names returned by `IValidatableObject` are relative to the object: `Street` reported by `Address` becomes `Address.Street`, and a name starting with an index, such as `[0].Street` reported by a collection, becomes `Items[0].Street`.
+
+If a property holds an object that shouldn't be validated (for instance a type from a third party library with expensive or throwing property getters), mark it with `[<SkipNestedValidation>]`. Validation attributes of the property itself are still applied:
+
+```fsharp
+type Import = {
+    [<Required>]
+    [<SkipNestedValidation>]
+    Document: ThirdPartyDocument
+}
+```
 
 
 ### File Upload
