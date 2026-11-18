@@ -719,6 +719,33 @@ let ``Nested IValidatableObject gets qualified member names`` () =
     |> shouldEqual [ "Check-in is after check-out" ]
     errors |> messagesFor "Stay" |> shouldEqual [ "Stay is empty" ]
 
+/// A collection validating its items itself: it names them by index.
+type Batch() =
+    inherit ResizeArray<Address>()
+    interface IValidatableObject with
+        member this.Validate(_: ValidationContext) =
+            seq {
+                for index in 1 .. this.Count - 1 do
+                    if this[index] = this[0] then
+                        yield ValidationResult("Address is repeated", [ $"[{index}].Street" ])
+            }
+
+type Round = { Batch: Batch }
+
+[<Fact>]
+let ``Member names starting with an index are appended to the path as they are`` () =
+    let batch = Batch()
+    batch.Add validAddress
+    batch.Add { validAddress with Zip = 54321 }
+    batch.Add validAddress
+
+    validateModel batch |> errorsOf |> memberNames |> shouldEqual [ "[2].Street" ]
+
+    validateModel { Batch = batch }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Batch[2].Street" ]
+
 type Parcel = {
     Destination: Address
 } with
@@ -1041,6 +1068,60 @@ let ``Validation attributes supplied through TypeDescriptor are applied`` () =
     |> Seq.toList
     |> shouldEqual [ "Always invalid" ]
 
+/// A model described by its own TypeDescriptionProvider: the answers are its properties for TypeDescriptor.
+type Survey() =
+    member val Answers = Dictionary<string, string>() with get
+    /// Not used: the title is one of the answers.
+    member _.Title: string | null = null
+
+/// A property whose value is one of the answers.
+type AnswerProperty(name: string) =
+    inherit PropertyDescriptor(name, [| RequiredAttribute() :> Attribute |])
+    override _.ComponentType = typeof<Survey>
+    override _.PropertyType = typeof<string>
+    override _.IsReadOnly = true
+    override _.CanResetValue(_: obj) = false
+    override _.ResetValue(_: obj) = ()
+    override _.SetValue(_: obj | null, _: obj | null) = ()
+    override _.ShouldSerializeValue(_: obj) = false
+    override _.GetValue(survey: obj | null) : obj | null =
+        match survey with
+        | :? Survey as survey ->
+            match survey.Answers.TryGetValue name with
+            | true, answer -> answer
+            | _ -> null
+        | _ -> null
+
+/// Title stands for the property of the survey but reads an answer, Email exists for TypeDescriptor only.
+type SurveyDescriptor(parent: ICustomTypeDescriptor | null) =
+    inherit CustomTypeDescriptor(parent)
+    override _.GetProperties() =
+        PropertyDescriptorCollection [| AnswerProperty "Title" :> PropertyDescriptor; AnswerProperty "Email" |]
+    override this.GetProperties(_: Attribute[] | null) = this.GetProperties()
+
+type SurveyProvider() =
+    inherit TypeDescriptionProvider(TypeDescriptor.GetProvider typeof<Survey>)
+    override _.GetTypeDescriptor(objectType: Type, instance: obj | null) : ICustomTypeDescriptor | null =
+        SurveyDescriptor(base.GetTypeDescriptor(objectType, instance))
+
+[<Fact>]
+let ``Properties and their values are the ones TypeDescriptor has`` () =
+    TypeDescriptor.AddProvider(SurveyProvider(), typeof<Survey>)
+    let survey = Survey()
+    survey.Answers["Title"] <- "Feedback"
+    let viaValidator = ResizeArray<ValidationResult>()
+    Validator.TryValidateObject(survey, ValidationContext(survey), viaValidator, true)
+    |> shouldEqual false
+
+    // the title is among the answers, the email is not
+    let errors = validateModel survey |> errorsOf
+    memberNames errors |> shouldEqual [ "Email" ]
+    memberNames errors
+    |> shouldEqual(viaValidator |> Seq.collect _.MemberNames |> Seq.toList)
+
+    survey.Answers["Email"] <- "ann@example.org"
+    (validateModel survey).IsValid |> shouldEqual true
+
 type Draft() =
     [<Required>]
     member val Mark: string | null = null with get, set
@@ -1151,6 +1232,33 @@ let ``Value type model is validated itself, not the equal value of its Validatio
     |> errorsOf
     |> memberNames
     |> shouldEqual [ "Rank" ]
+
+[<Struct>]
+type Voucher = {
+    Amount: int
+} with
+    interface IValidatableObject with
+        member _.Validate(ctx: ValidationContext) =
+            let limit = ctx.GetRequiredService<FooService>().Value
+            let tenant = ctx.Items["tenant"]
+            seq {
+                yield ValidationResult($"{ctx.DisplayName} is above {limit} for {tenant}", [ string ctx.MemberName ])
+            }
+
+[<Fact>]
+let ``Value type model is validated with the settings of its ValidationContext`` () =
+    let voucher = { Amount = 50 }
+    let services = ServiceCollection().AddSingleton<FooService>(FooService(10)).BuildServiceProvider()
+    let items = Dictionary<obj, obj | null>()
+    items["tenant"] <- "acme"
+    let validationContext = ValidationContext(voucher, services, items)
+    validationContext.DisplayName <- "Gift voucher"
+    validationContext.MemberName <- "Gift"
+
+    validateModelWith validationContext voucher
+    |> errorsOf
+    |> messagesFor "Gift"
+    |> shouldEqual [ "Gift voucher is above 10 for acme" ]
 
 type RouteForm = {
     [<Required>]

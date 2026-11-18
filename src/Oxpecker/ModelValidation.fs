@@ -15,6 +15,7 @@ module ModelValidation =
     open System.Text
     open Microsoft.AspNetCore.Http
     open Microsoft.FSharp.Reflection
+    open Oxpecker.ViewEngine.Tools
 
     /// <summary>
     /// Stops model validation from descending into the value of a property: the object, or the collection items, stored in it are not validated.
@@ -177,6 +178,14 @@ module ModelValidation =
                         attribute
             |]
 
+        /// Whether the descriptor reads the property it stands for, as the descriptors of the framework do: compiled
+        /// code can read such a property instead. A descriptor of another TypeDescriptionProvider may take the value
+        /// from anywhere, so it is asked for it.
+        let readsProperty (descriptor: PropertyDescriptor) =
+            let assembly = descriptor.GetType().Assembly
+            assembly = typeof<TypeDescriptor>.Assembly
+            || assembly = typeof<Validator>.Assembly
+
         let ofType<'T when 'T :> Attribute> (attributes: Attribute[]) : 'T[] =
             attributes
             |> Array.choose(fun attribute ->
@@ -272,33 +281,42 @@ module ModelValidation =
                 // Records and unions are followed through their fields only: other members are computed and may
                 // produce a new object on every call (e.g. "member this.Negated = { this with ... }").
                 let fieldsOnly = traversable && (FSharpType.IsRecord(t, true) || FSharpType.IsUnion(t, true))
-                let descriptors = TypeDescriptor.GetProperties t
+                let reflected = t.GetProperties(BindingFlags.Public ||| BindingFlags.Instance)
+                // The properties of a model are the ones TypeDescriptor has for its type, the same as for Validator.
                 let properties = [|
-                    for p in t.GetProperties(BindingFlags.Public ||| BindingFlags.Instance) do
-                        if p.GetIndexParameters().Length = 0 && not(isNull(p.GetGetMethod())) then
-                            match descriptors.Find(p.Name, false) with
-                            | null -> ()
-                            // The descriptor belongs to the property hiding this one in a derived class:
-                            // a hidden property is not a property of the model, the same as for Validator.
-                            | descriptor when descriptor.PropertyType <> p.PropertyType -> ()
-                            | descriptor ->
-                                let attributes = propertyAttributes descriptor
-                                let validators = ofType<ValidationAttribute> attributes
-                                let propertyType = p.PropertyType
-                                let traverse =
-                                    traversable
-                                    && (not fieldsOnly || isField p)
-                                    && not(isNotObject propertyType)
-                                    && (ofType<SkipNestedValidationAttribute> attributes).Length = 0
-                                    && not(isStaticLeaf visiting propertyType)
-                                if validators.Length > 0 || traverse then
-                                    {
-                                        Name = p.Name
-                                        Get = getter t p
-                                        Validators = validators
-                                        Display = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
-                                        Traverse = traverse
-                                    }
+                    for descriptor in TypeDescriptor.GetProperties t do
+                        let attributes = propertyAttributes descriptor
+                        let validators = ofType<ValidationAttribute> attributes
+                        // The property the descriptor stands for. There is none when a TypeDescriptionProvider adds
+                        // a property of its own, and a property hidden in a derived class has no descriptor.
+                        let backing =
+                            reflected
+                            |> Array.tryFind(fun p ->
+                                p.Name = descriptor.Name
+                                && p.PropertyType = descriptor.PropertyType
+                                && p.GetIndexParameters().Length = 0
+                                && not(isNull(p.GetGetMethod())))
+                        let traverse =
+                            match backing with
+                            | Some p ->
+                                traversable
+                                && (not fieldsOnly || isField p)
+                                && not(isNotObject p.PropertyType)
+                                && (ofType<SkipNestedValidationAttribute> attributes).Length = 0
+                                && not(isStaticLeaf visiting p.PropertyType)
+                            // What a provider adds is validated as a value, the same as Validator does it.
+                            | None -> false
+                        if validators.Length > 0 || traverse then
+                            {
+                                Name = descriptor.Name
+                                Get =
+                                    match backing with
+                                    | Some p when readsProperty descriptor -> getter t p
+                                    | _ -> Getter(fun instance -> descriptor.GetValue instance)
+                                Validators = validators
+                                Display = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
+                                Traverse = traverse
+                            }
                 |]
                 let attributes = typeAttributes t
                 let typeValidators = ofType<ValidationAttribute> attributes
@@ -397,7 +415,7 @@ module ModelValidation =
         /// Validates one object graph; results get member names relative to the root object, e.g. "Items[0].Address.Street".
         [<Sealed>]
         type Walker(rootContext: ValidationContext, results: ResizeArray<ValidationResult>) =
-            /// Path to the object being validated, created on the first descent.
+            /// Path to the object being validated, taken from the pool on the first descent.
             let mutable path: StringBuilder | null = null
             /// States of the reference type objects met so far, created on the first descent. Every object is validated
             /// once: it ends cycles and keeps the work linear when an object is reachable through many paths
@@ -426,10 +444,18 @@ module ModelValidation =
                     visited <- tracked
                 match path with
                 | null ->
-                    let created = StringBuilder()
-                    path <- created
-                    created
+                    let pooled = StringBuilderPool.Get()
+                    path <- pooled
+                    pooled
                 | path -> path
+
+            /// Gives the path back to the pool; has to be called when the walk is over, whatever its outcome.
+            member _.Release() =
+                match path with
+                | null -> ()
+                | pooled ->
+                    path <- null
+                    StringBuilderPool.Return pooled
 
             /// Returns the context of the node, creating it on the first use. Services and items come from the root context.
             member private _.ContextOf(node: obj, context: byref<ValidationContext | null>) =
@@ -456,6 +482,9 @@ module ModelValidation =
                         for name in result.MemberNames do
                             if String.IsNullOrEmpty name then
                                 prefix
+                            elif name[0] = '[' then
+                                // An item of the object, named by the object itself.
+                                prefix + name
                             else
                                 prefix + "." + name
                     |]
@@ -699,8 +728,21 @@ module ModelValidation =
                 obj.ReferenceEquals(instance, boxed)
         if not isInstance then
             invalidArg (nameof ctx) "The model must be the ObjectInstance of the ValidationContext supplied."
+        let rootContext =
+            if typeof<'T>.IsValueType then
+                // The context of the box which is validated: it has everything the supplied one does.
+                let context = ValidationContext(nonNull boxed, ctx, ctx.Items)
+                context.MemberName <- ctx.MemberName
+                context.DisplayName <- ctx.DisplayName
+                context
+            else
+                ctx
         let validationResults = ResizeArray()
-        ObjectGraph.Walker(ctx, validationResults).Visit(if typeof<'T>.IsValueType then nonNull boxed else instance)
+        let walker = ObjectGraph.Walker(rootContext, validationResults)
+        try
+            walker.Visit rootContext.ObjectInstance
+        finally
+            walker.Release()
         if validationResults.Count = 0 then
             ModelValidationResult.Valid model
         else
