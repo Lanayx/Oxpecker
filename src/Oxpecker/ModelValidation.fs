@@ -374,13 +374,25 @@ module ModelValidation =
                 member _.Equals(other: Reference) =
                     obj.ReferenceEquals(target, other.Target)
 
-        /// States of an object whose validation is finished. While the object is being validated,
-        /// its state is the number of problems found by the time it was entered.
+        /// States of an object whose validation is finished. Until then its state is the order it was entered in.
         [<Literal>]
         let FoundValid = -1
 
         [<Literal>]
         let FoundInvalid = -2
+
+        /// Whether there is something to validate about the object itself, apart from its members.
+        let isValidatedItself (node: obj) (metadata: TypeMetadata) =
+            metadata.TypeValidators.Length > 0 || node :? IValidatableObject
+
+        /// An object waiting for the cycle it is a part of: it is validated itself when the whole cycle has been walked.
+        [<Struct>]
+        type Postponed = {
+            Node: obj
+            Metadata: TypeMetadata
+            /// Path to the object, needed when it is validated itself.
+            Path: string
+        }
 
         /// Validates one object graph; results get member names relative to the root object, e.g. "Items[0].Address.Street".
         [<Sealed>]
@@ -394,14 +406,23 @@ module ModelValidation =
             /// How many times an invalid object was met again: its errors are not reported for the second time,
             /// but it is an invalid member of the object referring to it.
             let mutable invalidMetAgain = 0
+            /// How many tracked objects have been entered: the next one gets it as its order.
+            let mutable entered = 0
+            /// The earliest unfinished object (its order) referred to from the object being validated, including
+            /// everything nested in it. Referring to an object entered earlier means being a part of a cycle with it.
+            let mutable earliest = Int32.MaxValue
+            /// Objects of the cycles which have not been walked to the end yet, created for the first of them.
+            let mutable postponed: ResizeArray<Postponed> | null = null
+            let mutable postponedCount = 0
 
             /// Has to be called before visiting anything stored in the node; returns the path to append a segment to.
-            member private _.Descend(node: obj, metadata: TypeMetadata, errorsBefore: int) =
+            member private _.Descend(node: obj, metadata: TypeMetadata) =
                 if isNull visited then
                     // Nothing but the node has been entered before the first descent.
                     let tracked = Dictionary<Reference, int>()
                     if metadata.IsReferenceType then
-                        tracked.Add(Reference node, errorsBefore)
+                        tracked.Add(Reference node, 0)
+                        entered <- 1
                     visited <- tracked
                 match path with
                 | null ->
@@ -420,26 +441,29 @@ module ModelValidation =
                 | context -> context
 
             /// Makes member names of the results added since the given index relative to the root object.
-            member private _.Qualify(start: int) =
+            member private this.Qualify(start: int) =
                 match path with
                 | null -> ()
                 | path ->
                     if path.Length > 0 && results.Count > start then
-                        let prefix = path.ToString()
-                        for i in start .. results.Count - 1 do
-                            let result = results[i]
-                            let memberNames = [|
-                                for name in result.MemberNames do
-                                    if String.IsNullOrEmpty name then
-                                        prefix
-                                    else
-                                        prefix + "." + name
-                            |]
-                            results[i] <-
-                                ValidationResult(
-                                    result.ErrorMessage,
-                                    (if memberNames.Length = 0 then [| prefix |] else memberNames)
-                                )
+                        this.Qualify(start, path.ToString())
+
+            /// Puts the path to the validated object before the member names of the results added since the given index.
+            member private _.Qualify(start: int, prefix: string) =
+                for i in start .. results.Count - 1 do
+                    let result = results[i]
+                    let memberNames = [|
+                        for name in result.MemberNames do
+                            if String.IsNullOrEmpty name then
+                                prefix
+                            else
+                                prefix + "." + name
+                    |]
+                    results[i] <-
+                        ValidationResult(
+                            result.ErrorMessage,
+                            (if memberNames.Length = 0 then [| prefix |] else memberNames)
+                        )
 
             member this.Visit(value: obj) : unit =
                 this.Visit(value, metadataOf(value.GetType()))
@@ -460,36 +484,121 @@ module ModelValidation =
                 | null -> ()
                 | value -> this.Visit value
 
-            /// Validates the object unless it has been met before.
+            /// Validates the object unless it has been met before: its members and then, when they all are valid,
+            /// the object itself. It is the rule of Validator, which skips IValidatableObject when an attribute
+            /// of a property fails; members here include everything nested in them, validated just now or earlier.
             member private this.VisitComposite(node: obj, metadata: TypeMetadata) =
                 RuntimeHelpers.EnsureSufficientExecutionStack()
-                match visited with
-                | null ->
-                    // The outermost object: nothing is tracked until something nested in it is found.
-                    this.Validate(node, metadata)
-                | visited ->
-                    if not metadata.IsReferenceType then
-                        this.Validate(node, metadata)
-                    else
-                        let problems = results.Count + invalidMetAgain
-                        if visited.TryAdd(Reference node, problems) then
-                            this.Validate(node, metadata)
-                            visited[Reference node] <-
-                                if results.Count + invalidMetAgain = problems then
-                                    FoundValid
-                                else
-                                    FoundInvalid
+                // Nothing can refer to an object which is not tracked: the order of the next tracked one is enough for it.
+                let order = entered
+                let isMetAgain =
+                    match visited with
+                    // The outermost object: it becomes the first tracked one when something nested in it is found.
+                    | null -> false
+                    | visited ->
+                        if not metadata.IsReferenceType then
+                            false
+                        elif visited.TryAdd(Reference node, order) then
+                            entered <- order + 1
+                            false
                         else
                             let state = visited[Reference node]
-                            // An object which is still being validated (a cycle) contains the one referring to it, so its
-                            // validity is not known yet: it counts as invalid when a problem has been found in it so far.
-                            if state = FoundInvalid || (state >= 0 && problems > state) then
+                            if state = FoundInvalid then
                                 invalidMetAgain <- invalidMetAgain + 1
+                            elif state >= 0 && state < earliest then
+                                // Not finished, which is a cycle: it contains the object referring to it.
+                                earliest <- state
+                            true
+                if not isMetAgain then
+                    let errorsBefore = results.Count
+                    let metAgainBefore = invalidMetAgain
+                    let outerEarliest = earliest
+                    let postponedBefore = postponedCount
+                    earliest <- Int32.MaxValue
+                    let context = this.ValidateMembers(node, metadata)
+                    if earliest < order then
+                        // Something in the object refers to an object entered earlier and not finished. That one contains
+                        // this object, so they are members of each other, and whether the members are valid is known
+                        // when that object has been walked to the end.
+                        this.Postpone(node, metadata)
+                        if outerEarliest < earliest then
+                            earliest <- outerEarliest
+                    else
+                        earliest <- outerEarliest
+                        if postponedCount > postponedBefore then
+                            this.ValidatePostponed(postponedBefore, errorsBefore, metAgainBefore)
+                        let mutable valid = results.Count = errorsBefore && invalidMetAgain = metAgainBefore
+                        if valid && isValidatedItself node metadata then
+                            this.ValidateItself(node, metadata, context)
+                            this.Qualify errorsBefore
+                            valid <- results.Count = errorsBefore
+                        let state = if valid then FoundValid else FoundInvalid
+                        if postponedCount > postponedBefore then
+                            this.Finish(postponedBefore, state)
+                        if metadata.IsReferenceType then
+                            match visited with
+                            | null -> ()
+                            | visited -> visited[Reference node] <- state
 
-            /// Validates the members of the object and then, when they all are valid, the object itself.
-            member private this.Validate(node: obj, metadata: TypeMetadata) =
-                let errorsBefore = results.Count
-                let metAgainBefore = invalidMetAgain
+            /// Leaves the object for the time when the cycle it is a part of has been walked.
+            member private _.Postpone(node: obj, metadata: TypeMetadata) =
+                let waiting =
+                    match postponed with
+                    | null ->
+                        let created = ResizeArray()
+                        postponed <- created
+                        created
+                    | waiting -> waiting
+                waiting.Add {
+                    Node = node
+                    Metadata = metadata
+                    Path =
+                        match path with
+                        | null -> ""
+                        | path ->
+                            if isValidatedItself node metadata then
+                                path.ToString()
+                            else
+                                ""
+                }
+                postponedCount <- waiting.Count
+
+            /// Validates the objects which have been waiting for the current one, the first object of their cycle.
+            /// They all contain each other, so each of them is validated itself only when nothing wrong has been found
+            /// since the cycle was entered. The order is the same as without a cycle: nested objects come first.
+            member private this.ValidatePostponed(first: int, errorsBefore: int, metAgainBefore: int) =
+                match postponed with
+                | null -> ()
+                | postponed ->
+                    let mutable index = first
+                    while index < postponed.Count
+                          && results.Count = errorsBefore
+                          && invalidMetAgain = metAgainBefore do
+                        let waiting = postponed[index]
+                        if isValidatedItself waiting.Node waiting.Metadata then
+                            this.ValidateItself(waiting.Node, waiting.Metadata, null)
+                            if waiting.Path.Length > 0 && results.Count > errorsBefore then
+                                this.Qualify(errorsBefore, waiting.Path)
+                        index <- index + 1
+
+            /// Gives the objects of a walked cycle their state: containing each other, they are valid or invalid together.
+            member private _.Finish(first: int, state: int) =
+                match postponed with
+                | null -> ()
+                | postponed ->
+                    match visited with
+                    | null -> ()
+                    | visited ->
+                        for index in first .. postponed.Count - 1 do
+                            let waiting = postponed[index]
+                            if waiting.Metadata.IsReferenceType then
+                                visited[Reference waiting.Node] <- state
+                    postponed.RemoveRange(first, postponed.Count - first)
+                    postponedCount <- first
+
+            /// Validates the properties of the object and everything stored in it;
+            /// returns the context of the object when one was needed.
+            member private this.ValidateMembers(node: obj, metadata: TypeMetadata) : ValidationContext | null =
                 // One context serves all members of the node, unlike Validator which creates one per property.
                 let mutable nodeContext: ValidationContext | null = null
 
@@ -508,7 +617,7 @@ module ModelValidation =
                         | value ->
                             let valueMetadata = metadataOf(value.GetType())
                             if not valueMetadata.Kind.IsLeaf then
-                                let path = this.Descend(node, metadata, errorsBefore)
+                                let path = this.Descend(node, metadata)
                                 let length = path.Length
                                 if length > 0 then
                                     path.Append('.') |> ignore
@@ -529,47 +638,47 @@ module ModelValidation =
                                 | value ->
                                     let valueMetadata = metadataOf(value.GetType())
                                     if not valueMetadata.Kind.IsLeaf then
-                                        let path = this.Descend(node, metadata, errorsBefore)
+                                        let path = this.Descend(node, metadata)
                                         let length = path.Length
                                         path.Append('[').Append(string(getKey.Invoke item)).Append(']') |> ignore
                                         this.Visit(value, valueMetadata)
                                         path.Length <- length
                             | _ ->
-                                let path = this.Descend(node, metadata, errorsBefore)
+                                let path = this.Descend(node, metadata)
                                 let length = path.Length
                                 path.Append('[').Append(index).Append(']') |> ignore
                                 this.Visit(item, itemMetadata)
                                 path.Length <- length
                         index <- index + 1
 
-                // Same as in Validator: the object itself is validated only when its members are valid,
-                // and members here include everything nested in them, validated just now or earlier.
-                if
-                    results.Count = errorsBefore
-                    && invalidMetAgain = metAgainBefore
-                    && (metadata.TypeValidators.Length > 0 || node :? IValidatableObject)
-                then
-                    let context =
-                        if obj.ReferenceEquals(node, rootContext.ObjectInstance) then
-                            rootContext
-                        else
-                            let context = this.ContextOf(node, &nodeContext)
-                            context.MemberName <- null
-                            context.DisplayName <- displayName metadata.TypeDisplay (node.GetType().Name)
-                            context
-                    if metadata.TypeValidators.Length > 0 then
-                        Validator.TryValidateValue(node, context, results, metadata.TypeValidators)
-                        |> ignore
-                    if results.Count = errorsBefore then
-                        match node with
-                        | :? IValidatableObject as validatable ->
-                            let objectResults = validatable.Validate context
-                            if not(isNull(box objectResults)) then
-                                for result in objectResults do
-                                    if not(isNull(box result)) then
-                                        results.Add result
-                        | _ -> ()
-                    this.Qualify errorsBefore
+                nodeContext
+
+            /// Validates the object itself: the attributes applied to its type and then IValidatableObject.
+            member private _.ValidateItself(node: obj, metadata: TypeMetadata, nodeContext: ValidationContext | null) =
+                let start = results.Count
+                let context =
+                    if obj.ReferenceEquals(node, rootContext.ObjectInstance) then
+                        rootContext
+                    else
+                        let context =
+                            match nodeContext with
+                            | null -> ValidationContext(node, rootContext, rootContext.Items)
+                            | context -> context
+                        context.MemberName <- null
+                        context.DisplayName <- displayName metadata.TypeDisplay (node.GetType().Name)
+                        context
+                if metadata.TypeValidators.Length > 0 then
+                    Validator.TryValidateValue(node, context, results, metadata.TypeValidators)
+                    |> ignore
+                if results.Count = start then
+                    match node with
+                    | :? IValidatableObject as validatable ->
+                        let objectResults = validatable.Validate context
+                        if not(isNull(box objectResults)) then
+                            for result in objectResults do
+                                if not(isNull(box result)) then
+                                    results.Add result
+                    | _ -> ()
 
     /// <summary>
     /// Manually validate an object of type 'T` with a provided <see cref="System.ComponentModel.DataAnnotations.ValidationContext"/>.
@@ -580,16 +689,18 @@ module ModelValidation =
     /// </summary>
     let validateModelWith (ctx: ValidationContext) (model: 'T) =
         let instance = ctx.ObjectInstance
-        // A value type model is boxed anew wherever an object is needed: it is the same model when the values are equal.
+        let boxed = box model
+        // A value type model is boxed anew wherever an object is needed, so it is never the instance of the context:
+        // the two have to be equal, and it is the model which is validated.
         let isInstance =
             if typeof<'T>.IsValueType then
-                instance.Equals(box model)
+                instance.Equals boxed
             else
-                obj.ReferenceEquals(instance, model)
+                obj.ReferenceEquals(instance, boxed)
         if not isInstance then
             invalidArg (nameof ctx) "The model must be the ObjectInstance of the ValidationContext supplied."
         let validationResults = ResizeArray()
-        ObjectGraph.Walker(ctx, validationResults).Visit instance
+        ObjectGraph.Walker(ctx, validationResults).Visit(if typeof<'T>.IsValueType then nonNull boxed else instance)
         if validationResults.Count = 0 then
             ModelValidationResult.Valid model
         else

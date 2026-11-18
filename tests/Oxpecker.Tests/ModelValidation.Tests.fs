@@ -793,21 +793,196 @@ type Shelf(name: string | null) =
     [<Required>]
     member val Name = name with get, set
 
-and Book(shelf: Shelf) =
+and Book(shelf: Shelf, pages: int) =
     member _.Shelf = shelf
+    member _.Pages = pages
     interface IValidatableObject with
-        member _.Validate(_: ValidationContext) =
-            seq { yield ValidationResult("Book is rejected") }
+        member this.Validate(_: ValidationContext) =
+            seq {
+                if pages < 1 then
+                    yield ValidationResult("Book is empty", [ nameof this.Pages ])
+            }
+
+let private shelfOf (name: string | null) (pages: int list) =
+    let shelf = Shelf(name)
+    for count in pages do
+        shelf.Books.Add(Book(shelf, count))
+    shelf
 
 [<Fact>]
-let ``Object referring back to the object it is nested in doesn't wait for the rest of that object`` () =
-    // the name of the shelf is checked after its books, so the book is validated itself: nothing is wrong by then
-    let invalid = Shelf(null)
-    invalid.Books.Add(Book invalid)
+let ``Object referring back to the object it is nested in is validated itself after the rest of that object`` () =
+    // the name of the shelf is checked after its books, and the book is not validated itself: its shelf is invalid
+    validateModel(shelfOf null [ 0 ])
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Name" ]
+
+    validateModel(shelfOf "fiction" [ 0 ])
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Books[0].Pages" ]
+
+    (validateModel(shelfOf "fiction" [ 100; 200 ])).IsValid |> shouldEqual true
+
+[<Fact>]
+let ``Objects of a cycle contain each other`` () =
+    // the first book is an invalid member of the shelf, which the other books refer to
+    validateModel(shelfOf "fiction" [ 100; 0; 0 ])
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Books[1].Pages" ]
+
+type Library = {
+    Shelves: Shelf list
+    [<Required>]
+    City: string | null
+}
+
+[<Fact>]
+let ``Objects of a cycle don't wait for the objects the cycle is nested in`` () =
+    // the city is not a part of the shelf, so the book is validated itself
+    validateModel {
+        Shelves = [ shelfOf "fiction" [ 100 ]; shelfOf "poetry" [ 0 ] ]
+        City = null
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Shelves[1].Books[0].Pages"; "City" ]
+
+type Reader = {
+    Favourite: Book
+} with
+    interface IValidatableObject with
+        member _.Validate(_: ValidationContext) =
+            seq { yield ValidationResult("Reader is rejected") }
+
+[<Fact>]
+let ``Object of a cycle met again after the cycle is a valid or an invalid member`` () =
+    let read = shelfOf "fiction" [ 100 ]
+    validateModel [ box read; box { Favourite = read.Books[0] } ]
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "[1]" ]
+
+    // the reader is not validated: the book is invalid
+    let unread = shelfOf "fiction" [ 0 ]
+    validateModel [ box unread; box { Favourite = unread.Books[0] } ]
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "[0].Books[0].Pages" ]
+
+/// A node of any graph: the links are walked before the name is checked, the node itself is invalid when it has a flaw.
+type Knot(name: string | null, flaw: string | null) =
+    member val Links = ResizeArray<Knot>() with get
+    [<Required>]
+    member val Name = name with get, set
+    interface IValidatableObject with
+        member _.Validate(_: ValidationContext) =
+            seq {
+                match flaw with
+                | null -> ()
+                | flaw -> yield ValidationResult(flaw)
+            }
+
+let private flawsOf (model: Knot) =
+    match validateModel model with
+    | ModelValidationResult.Valid _ -> []
+    | ModelValidationResult.Invalid(_, errors) -> [
+        for error in errors.All do
+            String.concat "," error.MemberNames + ": " + string error.ErrorMessage
+      ]
+
+[<Fact>]
+let ``Every object of a cycle is validated itself after the whole cycle`` () =
+    // a -> b -> c -> a: the name of a is checked last
+    let cycle (name: string | null) =
+        let a, b, c = Knot(name, "a"), Knot("b", "b"), Knot("c", "c")
+        a.Links.Add b
+        b.Links.Add c
+        c.Links.Add a
+        a
+    flawsOf(cycle null) |> shouldEqual [ "Name: The Name field is required." ]
+    // nested objects come first, and the objects containing an invalid one are not validated themselves
+    flawsOf(cycle "a") |> shouldEqual [ "Links[0].Links[0]: c" ]
+
+[<Fact>]
+let ``Cycle nested in another object is validated on its own`` () =
+    // a -> b -> c -> b: a is not a part of the cycle, so its name doesn't matter for b and c
+    let a, b, c = Knot(null, "a"), Knot("b", null), Knot("c", "c")
+    a.Links.Add b
+    b.Links.Add c
+    c.Links.Add b
+    flawsOf a
+    |> shouldEqual [ "Links[0].Links[0]: c"; "Name: The Name field is required." ]
+
+[<Fact>]
+let ``Cycle nested in another cycle waits for the outer one`` () =
+    // a -> b -> c -> b and c -> a: all three contain each other
+    let nested (name: string | null) =
+        let a, b, c = Knot(name, null), Knot("b", "b"), Knot("c", "c")
+        a.Links.Add b
+        b.Links.Add c
+        c.Links.Add b
+        c.Links.Add a
+        a
+    flawsOf(nested null) |> shouldEqual [ "Name: The Name field is required." ]
+    flawsOf(nested "a") |> shouldEqual [ "Links[0].Links[0]: c" ]
+
+[<Fact>]
+let ``Object referring to a waiting object of a cycle is a part of that cycle`` () =
+    // a -> b -> a, then a -> c -> b: c contains a through b, which is waiting for a
+    let joined (name: string | null) (flawOfB: string | null) =
+        let a, b, c = Knot(name, "a"), Knot("b", flawOfB), Knot("c", "c")
+        a.Links.Add b
+        b.Links.Add a
+        a.Links.Add c
+        c.Links.Add b
+        a
+    flawsOf(joined null null) |> shouldEqual [ "Name: The Name field is required." ]
+    flawsOf(joined "a" null) |> shouldEqual [ "Links[1]: c" ]
+    flawsOf(joined "a" "b") |> shouldEqual [ "Links[0]: b" ]
+
+[<Fact>]
+let ``Objects of a walked cycle are finished`` () =
+    // a -> b -> c -> b, then a -> d -> c: the cycle of b and c is over when d refers to c
+    let after (flawOfC: string | null) =
+        let a, b, c, d = Knot("a", null), Knot("b", null), Knot("c", flawOfC), Knot("d", "d")
+        a.Links.Add b
+        b.Links.Add c
+        c.Links.Add b
+        a.Links.Add d
+        d.Links.Add c
+        a
+    flawsOf(after null) |> shouldEqual [ "Links[1]: d" ]
+    flawsOf(after "c") |> shouldEqual [ "Links[0].Links[0]: c" ]
+
+/// A struct is a part of a cycle when it refers to an object containing it.
+[<Struct>]
+type Stamp = {
+    Owner: Shelf
+} with
+    interface IValidatableObject with
+        member _.Validate(_: ValidationContext) =
+            seq { yield ValidationResult("Stamp is rejected") }
+
+type Stamped(name: string | null) =
+    inherit Shelf(name)
+    member val Stamp = Unchecked.defaultof<Stamp> with get, set
+    [<Required>]
+    member val Room = name with get, set
+
+[<Fact>]
+let ``Struct referring back to the object it is nested in is validated itself after the rest of that object`` () =
+    let invalid = Stamped(null)
+    invalid.Stamp <- { Owner = invalid }
     validateModel invalid
     |> errorsOf
     |> memberNames
-    |> shouldEqual [ "Books[0]"; "Name" ]
+    |> shouldEqual [ "Room"; "Name" ]
+
+    let valid = Stamped("fiction")
+    valid.Stamp <- { Owner = valid }
+    validateModel valid |> errorsOf |> memberNames |> shouldEqual [ "Stamp" ]
 
 type AlwaysInvalidAttribute() =
     inherit ValidationAttribute("Always invalid")
@@ -955,6 +1130,27 @@ let ``ValidationContext of a value type model has to hold an equal value`` () =
     // the context is created for a valid point, the model is another one
     (fun () -> validateModelWith (ValidationContext({ X = 5 }: Point)) point |> ignore)
     |> shouldFail<ArgumentException>
+
+/// Badges are equal when their serials are, whatever the ranks.
+[<Struct; CustomEquality; NoComparison>]
+type Badge = {
+    Serial: int
+    [<Range(1, 10)>]
+    Rank: int
+} with
+    override this.Equals(other: obj) =
+        match other with
+        | :? Badge as badge -> badge.Serial = this.Serial
+        | _ -> false
+    override this.GetHashCode() = this.Serial
+
+[<Fact>]
+let ``Value type model is validated itself, not the equal value of its ValidationContext`` () =
+    let validationContext = ValidationContext({ Serial = 1; Rank = 5 })
+    validateModelWith validationContext { Serial = 1; Rank = 50 }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Rank" ]
 
 type RouteForm = {
     [<Required>]
