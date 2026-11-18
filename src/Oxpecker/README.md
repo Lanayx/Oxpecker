@@ -1150,6 +1150,7 @@ A few rules to be aware of:
 - Records and unions are followed through their fields, classes and structs through their public properties. Types from the `System.*` and `Microsoft.*` namespaces are not followed (collections are validated through their items).
 - Every object is validated once, even when it is referenced from several places or contains itself (a cycle). Its errors are reported for the first place only, yet they keep every object referring to it from being validated itself (see the first rule). A reference back to an object which is still being validated, such as the parent of the current object, is the exception: only the errors found in that object so far count, so `Validate` shouldn't rely on the validity of an object containing the current one.
 - Every nested object gets its own `ValidationContext` with the same services and `Items` as the one of the model.
+- Validation attributes are looked up the way `Validator` does it, through `TypeDescriptor`, so the ones supplied by a registered provider (e.g. `AssociatedMetadataTypeTypeDescriptionProvider` for a `MetadataType` class) apply to nested objects as well.
 
 If a property holds an object that shouldn't be validated (for instance a type from a third party library with expensive or throwing property getters), mark it with `[<SkipNestedValidation>]`. Validation attributes of the property itself are still applied:
 

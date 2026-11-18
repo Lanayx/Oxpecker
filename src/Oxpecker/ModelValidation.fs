@@ -7,6 +7,7 @@ module ModelValidation =
     open System.Collections
     open System.Collections.Concurrent
     open System.Collections.Generic
+    open System.ComponentModel
     open System.ComponentModel.DataAnnotations
     open System.Linq.Expressions
     open System.Reflection
@@ -148,11 +149,40 @@ module ModelValidation =
                 || ns.StartsWith("System.", StringComparison.Ordinal)
                 || ns.StartsWith("Microsoft.", StringComparison.Ordinal)
 
-        /// Whether the property is a field of a record or of a union case.
+        /// Whether the property is a field of a record or of a union case. A field shared by several cases
+        /// of a struct union is mapped once for each of them.
         let isField (p: PropertyInfo) =
-            match p.GetCustomAttribute<CompilationMappingAttribute>() with
-            | null -> false
-            | mapping -> mapping.SourceConstructFlags = SourceConstructFlags.Field
+            p.GetCustomAttributes<CompilationMappingAttribute>()
+            |> Seq.exists(fun mapping -> mapping.SourceConstructFlags = SourceConstructFlags.Field)
+
+        /// Attributes are found the way Validator does it, through TypeDescriptor: it also knows the ones registered
+        /// for a type, e.g. by AssociatedMetadataTypeTypeDescriptionProvider for a class holding the metadata of a model.
+        let typeAttributes (t: Type) : Attribute[] = [|
+            for attribute in TypeDescriptor.GetAttributes t do
+                attribute
+        |]
+
+        /// Attributes of the property itself: its descriptor also has the ones of the property type.
+        let propertyAttributes (descriptor: PropertyDescriptor) : Attribute[] =
+            let ofPropertyType = typeAttributes descriptor.PropertyType
+            [|
+                for attribute in descriptor.Attributes do
+                    // By reference, as an equal attribute may be applied to the property as well.
+                    if
+                        not(
+                            ofPropertyType
+                            |> Array.exists(fun other -> obj.ReferenceEquals(other, attribute))
+                        )
+                    then
+                        attribute
+            |]
+
+        let ofType<'T when 'T :> Attribute> (attributes: Attribute[]) : 'T[] =
+            attributes
+            |> Array.choose(fun attribute ->
+                match attribute with
+                | :? 'T as found -> Some found
+                | _ -> None)
 
         /// Pointers, references and ref structs are not objects: such a value is neither traversed nor read by compiled code.
         let isNotObject (t: Type) =
@@ -242,27 +272,36 @@ module ModelValidation =
                 // Records and unions are followed through their fields only: other members are computed and may
                 // produce a new object on every call (e.g. "member this.Negated = { this with ... }").
                 let fieldsOnly = traversable && (FSharpType.IsRecord(t, true) || FSharpType.IsUnion(t, true))
+                let descriptors = TypeDescriptor.GetProperties t
                 let properties = [|
                     for p in t.GetProperties(BindingFlags.Public ||| BindingFlags.Instance) do
                         if p.GetIndexParameters().Length = 0 && not(isNull(p.GetGetMethod())) then
-                            let validators = Seq.toArray(p.GetCustomAttributes<ValidationAttribute>(true))
-                            let propertyType = p.PropertyType
-                            let traverse =
-                                traversable
-                                && (not fieldsOnly || isField p)
-                                && not(isNotObject propertyType)
-                                && not(Attribute.IsDefined(p, typeof<SkipNestedValidationAttribute>, true))
-                                && not(isStaticLeaf visiting propertyType)
-                            if validators.Length > 0 || traverse then
-                                {
-                                    Name = p.Name
-                                    Get = getter t p
-                                    Validators = validators
-                                    Display = p.GetCustomAttribute<DisplayAttribute>(true)
-                                    Traverse = traverse
-                                }
+                            match descriptors.Find(p.Name, false) with
+                            | null -> ()
+                            // The descriptor belongs to the property hiding this one in a derived class:
+                            // a hidden property is not a property of the model, the same as for Validator.
+                            | descriptor when descriptor.PropertyType <> p.PropertyType -> ()
+                            | descriptor ->
+                                let attributes = propertyAttributes descriptor
+                                let validators = ofType<ValidationAttribute> attributes
+                                let propertyType = p.PropertyType
+                                let traverse =
+                                    traversable
+                                    && (not fieldsOnly || isField p)
+                                    && not(isNotObject propertyType)
+                                    && (ofType<SkipNestedValidationAttribute> attributes).Length = 0
+                                    && not(isStaticLeaf visiting propertyType)
+                                if validators.Length > 0 || traverse then
+                                    {
+                                        Name = p.Name
+                                        Get = getter t p
+                                        Validators = validators
+                                        Display = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
+                                        Traverse = traverse
+                                    }
                 |]
-                let typeValidators = Seq.toArray(t.GetCustomAttributes<ValidationAttribute>(true))
+                let attributes = typeAttributes t
+                let typeValidators = ofType<ValidationAttribute> attributes
                 let hasItems =
                     isCollection
                     && (let items = itemTypes t
@@ -281,7 +320,7 @@ module ModelValidation =
                         Kind = Composite
                         Properties = properties
                         TypeValidators = typeValidators
-                        TypeDisplay = t.GetCustomAttribute<DisplayAttribute>(true)
+                        TypeDisplay = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
                         HasItems = hasItems
                         IsReferenceType = not t.IsValueType
                     }
@@ -291,24 +330,19 @@ module ModelValidation =
                         else
                             [||]
                     if cases.Length > 1 then
-                        // Field names are unique within a struct union.
-                        let owners = Dictionary<string, int>()
-                        for case in cases do
-                            for field in case.GetFields() do
-                                owners[field.Name] <- case.Tag
-                        let ofCase (case: UnionCaseInfo) = {
+                        // A field belongs to every case declaring it: cases may share a field of the same name and type.
+                        let fields = cases |> Array.map(fun case -> case.GetFields() |> Array.map _.Name)
+                        let ofCase (own: string[]) = {
                             composite with
                                 Properties =
                                     properties
                                     |> Array.filter(fun p ->
-                                        match owners.TryGetValue p.Name with
-                                        | true, owner -> owner = case.Tag
-                                        | _ -> true)
+                                        Array.contains p.Name own || not(fields |> Array.exists(Array.contains p.Name)))
                         }
                         let tag = Func<obj, int>(FSharpValue.PreComputeUnionTagReader(t, true))
                         {
                             composite with
-                                Kind = StructUnion(tag, Array.map ofCase cases)
+                                Kind = StructUnion(tag, Array.map ofCase fields)
                         }
                     else
                         composite

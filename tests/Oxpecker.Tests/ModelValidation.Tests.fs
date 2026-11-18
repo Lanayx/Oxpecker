@@ -2,6 +2,7 @@ module Oxpecker.Tests.ModelValidation
 
 open System
 open System.Collections.Generic
+open System.ComponentModel
 open System.Globalization
 open System.IO
 open System.Text
@@ -456,6 +457,28 @@ let ``Struct union is validated through the fields of its case only`` () =
     |> memberNames
     |> shouldEqual [ "Reading.guess.Level" ]
 
+/// Cases of a struct union may share a field when its name and type are the same.
+[<Struct>]
+type Dial =
+    | Idle
+    | Manual of gauge: Gauge
+    | Automatic of gauge: Gauge * program: string
+
+[<Fact>]
+let ``Field shared by the cases of a struct union is validated for each of them`` () =
+    (validateModel Idle).IsValid |> shouldEqual true
+    (validateModel(Manual { Level = 5 })).IsValid |> shouldEqual true
+
+    validateModel(Manual { Level = 50 })
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "gauge.Level" ]
+
+    validateModel(Automatic({ Level = 0 }, "eco"))
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "gauge.Level" ]
+
 type Transfer = { Legs: Address * Address }
 
 [<Fact>]
@@ -803,6 +826,61 @@ let ``Type level validation attributes of nested objects are validated`` () =
 
     let errors = validateModel { Flagged = { Number = 1 } } |> errorsOf
     errors |> messagesFor "Flagged" |> shouldEqual [ "Always invalid" ]
+
+/// Holds the validation attributes of Account.
+type AccountRules() =
+    [<Required>]
+    [<Display(Name = "User name")>]
+    member val Handle: string | null = null with get, set
+
+[<MetadataType(typeof<AccountRules>)>]
+type Account = { Handle: string | null }
+
+[<AlwaysInvalid>]
+type ArchiveRules() = class end
+
+[<MetadataType(typeof<ArchiveRules>)>]
+type Archive = { Accounts: Account list }
+
+[<Fact>]
+let ``Validation attributes supplied through TypeDescriptor are applied`` () =
+    // the way Validator learns about a metadata type: the provider adds its attributes to the ones of the model
+    TypeDescriptor.AddProvider(AssociatedMetadataTypeTypeDescriptionProvider(typeof<Account>), typeof<Account>)
+    TypeDescriptor.AddProvider(AssociatedMetadataTypeTypeDescriptionProvider(typeof<Archive>), typeof<Archive>)
+
+    validateModel { Handle = null }
+    |> errorsOf
+    |> messagesFor "Handle"
+    |> shouldEqual [ "The User name field is required." ]
+
+    validateModel {
+        Accounts = [ { Handle = "ann" }; { Handle = null } ]
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Accounts[1].Handle" ]
+
+    let errors = validateModel { Accounts = [ { Handle = "ann" } ] } |> errorsOf
+    errors.All
+    |> Seq.map _.ErrorMessage
+    |> Seq.toList
+    |> shouldEqual [ "Always invalid" ]
+
+type Draft() =
+    [<Required>]
+    member val Mark: string | null = null with get, set
+
+type Revision() =
+    inherit Draft()
+    [<Range(1, 9)>]
+    member val Mark = 0 with get, set
+
+[<Fact>]
+let ``Property hidden by a derived class is not validated`` () =
+    let errors = validateModel(Revision()) |> errorsOf
+    errors
+    |> messagesFor "Mark"
+    |> shouldEqual [ "The field Mark must be between 1 and 9." ]
 
 type Line = {
     Quantity: int
