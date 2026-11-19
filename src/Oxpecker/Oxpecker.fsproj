@@ -22,8 +22,8 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <Version>3.0.0-beta-5</Version>
-        <PackageVersion>3.0.0-beta-5</PackageVersion>
+        <Version>3.0.0-beta-6</Version>
+        <PackageVersion>3.0.0-beta-6</PackageVersion>
         <PackageReleaseNotes>Major release</PackageReleaseNotes>
     </PropertyGroup>
     <ItemGroup>
