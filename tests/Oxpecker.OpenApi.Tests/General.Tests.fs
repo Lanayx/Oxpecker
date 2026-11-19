@@ -947,6 +947,62 @@ let ``addOpenApi on group and endpoint works fine`` () =
     }
 
 [<Fact>]
+let ``ResponseBody without response type works fine`` () =
+    task {
+        let endpoints = [
+            PATCH [
+                route "/settings" <| text "OK"
+                |> addOpenApi(
+                    OpenApiConfig(responseBodies = [ ResponseBody(statusCode = 204); ResponseBody(statusCode = 404) ])
+                )
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/settings": {
+      "patch": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<Fact>]
 let ``addOpenApi applied twice to endpoint works fine`` () =
     task {
         let endpoints = [

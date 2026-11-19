@@ -145,7 +145,7 @@ type OpenApiConfig (?requestBody : RequestBody,
                     ?configureOperation : OpenApiOperation -> OpenApiOperationTransformerContext -> CancellationToken -> Task) =
     // ...
 ```
-Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code.
+Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code. Omit the response type to describe a response without a body, e.g. `ResponseBody(statusCode = 204)`.
 `configureOperation` parameter is a function that allows you to do very low-level modifications the `OpenApiOperation` object.
 
 `addOpenApi` and `addOpenApiSimple` can also be applied to a group of endpoints (`subRoute`, `subRoutef`, `routeGroup` or HTTP verb groups) to describe all of its endpoints. Group and endpoint configurations are combined, so you can, for example, describe a common error response once for the whole group:
