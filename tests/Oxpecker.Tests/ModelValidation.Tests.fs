@@ -499,6 +499,47 @@ let ``Compare between an option and another value compares the value the option 
     |> memberNames
     |> shouldEqual [ "Confirmation" ]
 
+type LooseChange = {
+    Secret: string option
+    [<Compare("Secret")>]
+    SecretAgain: string voption
+    Note: string option option
+    [<Compare("Note")>]
+    NoteAgain: string option option
+    Code: string option
+    [<Compare("Code")>]
+    [<Display(Name = "Code again")>]
+    CodeAgain: string
+}
+
+[<Fact>]
+let ``Compare compares held values of options of any kind`` () =
+    (validateModel {
+        Secret = Some "secret"
+        SecretAgain = ValueSome "secret"
+        Note = None
+        NoteAgain = Some None
+        Code = Some "1234"
+        CodeAgain = "1234"
+    })
+        .IsValid
+    |> shouldEqual true
+
+    let errors =
+        validateModel {
+            Secret = Some "secret"
+            SecretAgain = ValueSome "other"
+            Note = Some(Some "note")
+            NoteAgain = Some None
+            Code = None
+            CodeAgain = "1234"
+        }
+        |> errorsOf
+    memberNames errors |> shouldEqual [ "SecretAgain"; "NoteAgain"; "CodeAgain" ]
+    errors
+    |> messagesFor "CodeAgain"
+    |> shouldEqual [ "'Code again' and 'Code' do not match." ]
+
 [<Fact>]
 let ``Required option has to hold a value`` () =
     validateModel { Email = None; Referrer = ValueNone }

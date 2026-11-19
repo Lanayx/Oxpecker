@@ -241,24 +241,46 @@ module ModelValidation =
         let isOptionType (t: Type) =
             isGeneric typedefof<option<_>> t || isGeneric typedefof<voption<_>> t
 
-        /// Gives the attribute the value of the property as it is stored, not the value an option holds.
+        /// Compares the value it is given, held by an option or not, with the value held by the other property.
+        /// CompareAttribute reads the other property from the object, where an option is stored as it is, so it is
+        /// only asked to report a difference: the value it is given is not an option, so it finds the difference too,
+        /// and its message has the display name of the other property.
         [<Sealed>]
-        type AsStoredAttribute(attribute: ValidationAttribute, get: Getter) =
+        type HeldValueCompareAttribute(attribute: CompareAttribute, other: Getter) =
             inherit ValidationAttribute()
             override _.RequiresValidationContext = true
-            override _.IsValid(_: obj | null, context: ValidationContext) : ValidationResult | null =
-                attribute.GetValidationResult(get.Invoke context.ObjectInstance, context)
+            override _.IsValid(value: obj | null, context: ValidationContext) : ValidationResult | null =
+                if Object.Equals(value, other.Invoke context.ObjectInstance) then
+                    ValidationResult.Success
+                else
+                    attribute.GetValidationResult(value, context)
 
-        /// CompareAttribute reads the other property from the object: compared with another option, an option
-        /// is given as it is stored, and two options are equal when their values are. Compared with anything else,
-        /// it gives the value it holds, as for the other validation attributes.
-        let comparingStored (t: Type) (get: Getter) (attribute: ValidationAttribute) : ValidationAttribute =
+        /// Reads the property, an option giving the value it holds.
+        let heldGetter (t: Type) (p: PropertyInfo) : Getter =
+            let get = getter t p
+            match heldValue p.PropertyType with
+            | null -> get
+            | held ->
+                Getter(fun instance ->
+                    match get.Invoke instance with
+                    | null -> null
+                    | value -> held.Invoke value)
+
+        /// Values held by options are compared when either of the compared properties is an option. A property
+        /// CompareAttribute would not find, or not read as a plain instance property, is left to the attribute.
+        let comparingHeldValues (t: Type) (isOption: bool) (attribute: ValidationAttribute) : ValidationAttribute =
             match attribute with
-            | :? CompareAttribute as compare when
-                t.GetProperties()
-                |> Array.exists(fun p -> p.Name = compare.OtherProperty && isOptionType p.PropertyType)
-                ->
-                AsStoredAttribute(compare, get)
+            | :? CompareAttribute as compare ->
+                match t.GetProperties() |> Array.filter(fun p -> p.Name = compare.OtherProperty) with
+                | [| other |] when
+                    (isOption || isOptionType other.PropertyType)
+                    && other.GetIndexParameters().Length = 0
+                    && (match other.GetMethod with
+                        | null -> false
+                        | getMethod -> not getMethod.IsStatic)
+                    ->
+                    HeldValueCompareAttribute(compare, heldGetter t other)
+                | _ -> attribute
             | attribute -> attribute
 
         /// Item types of a collection type, empty when they are not known statically.
@@ -372,10 +394,7 @@ module ModelValidation =
                             {
                                 Name = descriptor.Name
                                 Get = get
-                                Validators =
-                                    match held with
-                                    | null -> validators
-                                    | _ -> validators |> Array.map(comparingStored t get)
+                                Validators = validators |> Array.map(comparingHeldValues t (not(isNull held)))
                                 Held = held
                                 Display = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
                                 Traverse = traverse
