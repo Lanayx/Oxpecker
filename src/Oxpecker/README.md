@@ -1053,6 +1053,8 @@ let addCar : EndpointHandler =
         }
 ```
 
+Validation attributes of an `option` or `voption` field apply to the value it holds, and `None` is validated as `null`, the same as a `Nullable` without a value. For example, `[<Range(1, 10)>] Seats: int option` accepts `None` and `Some 5` but rejects `Some 50`, while `[<Required>]` on an option rejects `None`. `[<Compare>]` compares the held value too, also with another option field. Custom validation attributes get the held value as well.
+
 If your DTO validation logic requires accessing dynamic data from your services, it is possible to implement the `IValidatableObject`
 ([link](https://learn.microsoft.com/en-us/dotnet/api/system.componentmodel.dataannotations.ivalidatableobject)) interface and access the service
 provider from the `ValidationContext` object:

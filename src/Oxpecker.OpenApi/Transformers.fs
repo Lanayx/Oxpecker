@@ -79,6 +79,32 @@ module private Helpers =
                             dstMeta[k] <- v
                     | _ -> ()
 
+    /// Copies the keywords ASP.NET Core derives from the validation attributes of a property (Range,
+    /// RegularExpression, StringLength, MinLength, MaxLength, Length, Url and Base64String) from the schema
+    /// of an option property to the schema replacing it. They constrain the value of Some, as validation does,
+    /// and accept the null of None.
+    let copyValidationKeywords (src: IOpenApiSchema) (dst: OpenApiSchema) =
+        if not(isNull src.Minimum) then
+            dst.Minimum <- src.Minimum
+        if not(isNull src.ExclusiveMinimum) then
+            dst.ExclusiveMinimum <- src.ExclusiveMinimum
+        if not(isNull src.Maximum) then
+            dst.Maximum <- src.Maximum
+        if not(isNull src.ExclusiveMaximum) then
+            dst.ExclusiveMaximum <- src.ExclusiveMaximum
+        if not(isNull src.Pattern) then
+            dst.Pattern <- src.Pattern
+        if not(isNull src.Format) then
+            dst.Format <- src.Format
+        if src.MinLength.HasValue then
+            dst.MinLength <- src.MinLength
+        if src.MaxLength.HasValue then
+            dst.MaxLength <- src.MaxLength
+        if src.MinItems.HasValue then
+            dst.MinItems <- src.MinItems
+        if src.MaxItems.HasValue then
+            dst.MaxItems <- src.MaxItems
+
     /// Generic type definition of the built-in System.Text.Json converter (.NET 11+) that
     /// serializes F# unions in the format this transformer describes. The converter is internal,
     /// so it is identified by its defining assembly and exact generic type definition.
@@ -339,7 +365,13 @@ type FSharpOptionSchemaTransformer() =
                             match Helpers.tryGetRefSchema innerSchema with
                             | None -> propSchema |> Helpers.copyMetadata innerSchema "" true
                             | Some refSchema -> propSchema |> Helpers.copyMetadata innerSchema refSchema false
-                            props[key] <- Helpers.makeNullable innerType innerSchema
+                            let nullable = Helpers.makeNullable innerType innerSchema
+                            match nullable with
+                            // Keywords put on a schema turning into a reference would end up in the shared component.
+                            | :? OpenApiSchema as target when (Helpers.tryGetRefSchema target).IsNone ->
+                                Helpers.copyValidationKeywords propSchema target
+                            | _ -> ()
+                            props[key] <- nullable
                 | _ -> ()
             }
             :> Task
