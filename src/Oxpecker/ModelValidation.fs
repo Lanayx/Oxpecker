@@ -242,6 +242,7 @@ module ModelValidation =
             isGeneric typedefof<option<_>> t || isGeneric typedefof<voption<_>> t
 
         /// Compares the value it is given, held by an option or not, with the value held by the other property.
+        /// The values are compared the way Equals of an option compares them: structurally, arrays included.
         /// CompareAttribute reads the other property from the object, where an option is stored as it is, so it is
         /// only asked to report a difference: the value it is given is not an option, so it finds the difference too,
         /// and its message has the display name of the other property.
@@ -250,7 +251,7 @@ module ModelValidation =
             inherit ValidationAttribute()
             override _.RequiresValidationContext = true
             override _.IsValid(value: obj | null, context: ValidationContext) : ValidationResult | null =
-                if Object.Equals(value, other.Invoke context.ObjectInstance) then
+                if LanguagePrimitives.GenericEqualityER value (other.Invoke context.ObjectInstance) then
                     ValidationResult.Success
                 else
                     attribute.GetValidationResult(value, context)

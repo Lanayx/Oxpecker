@@ -540,6 +540,29 @@ let ``Compare compares held values of options of any kind`` () =
     |> messagesFor "CodeAgain"
     |> shouldEqual [ "'Code again' and 'Code' do not match." ]
 
+type TagsChange = {
+    Tags: string[] option
+    [<Compare("Tags")>]
+    TagsAgain: string[] option
+}
+
+[<Fact>]
+let ``Compare compares values held by options structurally`` () =
+    let tags = [| "a"; "b" |]
+    (validateModel {
+        Tags = Some tags
+        TagsAgain = Some(Array.copy tags)
+    })
+        .IsValid
+    |> shouldEqual true
+    validateModel {
+        Tags = Some tags
+        TagsAgain = Some [| "a" |]
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "TagsAgain" ]
+
 [<Fact>]
 let ``Required option has to hold a value`` () =
     validateModel { Email = None; Referrer = ValueNone }
