@@ -439,6 +439,66 @@ type Signup = {
     Referrer: string voption
 }
 
+type PasswordChange = {
+    Password: string option
+    [<Compare("Password")>]
+    Confirmation: string option
+    Pin: int voption
+    [<Compare("Pin")>]
+    PinConfirmation: int voption
+}
+
+[<Fact>]
+let ``Compare between options compares the values they hold`` () =
+    (validateModel {
+        Password = Some "secret"
+        Confirmation = Some "secret"
+        Pin = ValueSome 1234
+        PinConfirmation = ValueSome 1234
+    })
+        .IsValid
+    |> shouldEqual true
+    (validateModel {
+        Password = None
+        Confirmation = None
+        Pin = ValueNone
+        PinConfirmation = ValueNone
+    })
+        .IsValid
+    |> shouldEqual true
+
+    validateModel {
+        Password = Some "secret"
+        Confirmation = Some "other"
+        Pin = ValueSome 1234
+        PinConfirmation = ValueNone
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Confirmation"; "PinConfirmation" ]
+
+type EmailChange = {
+    Email: string
+    [<Compare("Email")>]
+    Confirmation: string option
+}
+
+[<Fact>]
+let ``Compare between an option and another value compares the value the option holds`` () =
+    (validateModel {
+        Email = "ann@example.org"
+        Confirmation = Some "ann@example.org"
+    })
+        .IsValid
+    |> shouldEqual true
+    validateModel {
+        Email = "ann@example.org"
+        Confirmation = None
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Confirmation" ]
+
 [<Fact>]
 let ``Required option has to hold a value`` () =
     validateModel { Email = None; Referrer = ValueNone }

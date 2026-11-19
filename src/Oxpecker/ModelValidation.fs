@@ -238,6 +238,29 @@ module ModelValidation =
             else
                 null
 
+        let isOptionType (t: Type) =
+            isGeneric typedefof<option<_>> t || isGeneric typedefof<voption<_>> t
+
+        /// Gives the attribute the value of the property as it is stored, not the value an option holds.
+        [<Sealed>]
+        type AsStoredAttribute(attribute: ValidationAttribute, get: Getter) =
+            inherit ValidationAttribute()
+            override _.RequiresValidationContext = true
+            override _.IsValid(_: obj | null, context: ValidationContext) : ValidationResult | null =
+                attribute.GetValidationResult(get.Invoke context.ObjectInstance, context)
+
+        /// CompareAttribute reads the other property from the object: compared with another option, an option
+        /// is given as it is stored, and two options are equal when their values are. Compared with anything else,
+        /// it gives the value it holds, as for the other validation attributes.
+        let comparingStored (t: Type) (get: Getter) (attribute: ValidationAttribute) : ValidationAttribute =
+            match attribute with
+            | :? CompareAttribute as compare when
+                t.GetProperties()
+                |> Array.exists(fun p -> p.Name = compare.OtherProperty && isOptionType p.PropertyType)
+                ->
+                AsStoredAttribute(compare, get)
+            | attribute -> attribute
+
         /// Item types of a collection type, empty when they are not known statically.
         let itemTypes (t: Type) = [|
             if t.IsArray then
@@ -337,18 +360,23 @@ module ModelValidation =
                             // What a provider adds is validated as a value, the same as Validator does it.
                             | None -> false
                         if validators.Length > 0 || traverse then
+                            let get =
+                                match backing with
+                                | Some p when readsProperty descriptor -> getter t p
+                                | _ -> Getter(fun instance -> descriptor.GetValue instance)
+                            let held =
+                                if validators.Length > 0 then
+                                    heldValue descriptor.PropertyType
+                                else
+                                    null
                             {
                                 Name = descriptor.Name
-                                Get =
-                                    match backing with
-                                    | Some p when readsProperty descriptor -> getter t p
-                                    | _ -> Getter(fun instance -> descriptor.GetValue instance)
-                                Validators = validators
-                                Held =
-                                    if validators.Length > 0 then
-                                        heldValue descriptor.PropertyType
-                                    else
-                                        null
+                                Get = get
+                                Validators =
+                                    match held with
+                                    | null -> validators
+                                    | _ -> validators |> Array.map(comparingStored t get)
+                                Held = held
                                 Display = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
                                 Traverse = traverse
                             }
