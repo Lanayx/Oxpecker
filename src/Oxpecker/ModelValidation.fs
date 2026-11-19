@@ -97,6 +97,8 @@ module ModelValidation =
             Name: string
             Get: Getter
             Validators: ValidationAttribute[]
+            /// For an option property with validators, reads the value they apply to from the property value.
+            Held: Getter | null
             Display: DisplayAttribute | null
             /// Whether the property value may contain something to validate.
             Traverse: bool
@@ -208,6 +210,34 @@ module ModelValidation =
                 let value = Expression.Property(Expression.Convert(instance, t), p)
                 Expression.Lambda<Getter>(Expression.Convert(value, typeof<obj>), instance).Compile()
 
+        /// Validation attributes of an option apply to the value it holds, and None is validated as null,
+        /// the way a Nullable without a value is. For an option type (also one holding another option)
+        /// returns the reader of that value from a non-null option, null for any other type.
+        let rec heldValue (t: Type) : Getter | null =
+            let isOption = isGeneric typedefof<option<_>> t
+            if isOption || isGeneric typedefof<voption<_>> t then
+                let value = getter t (nonNull(t.GetProperty "Value"))
+                let read =
+                    match heldValue(t.GetGenericArguments()[0]) with
+                    | null -> value
+                    | inner ->
+                        Getter(fun option ->
+                            match value.Invoke option with
+                            | null -> null
+                            | held -> inner.Invoke held)
+                if isOption then
+                    // A boxed None is null: a non-null option is Some.
+                    read
+                else
+                    let isSome = getter t (nonNull(t.GetProperty "IsSome"))
+                    Getter(fun option ->
+                        if true.Equals(isSome.Invoke option) then
+                            read.Invoke option
+                        else
+                            null)
+            else
+                null
+
         /// Item types of a collection type, empty when they are not known statically.
         let itemTypes (t: Type) = [|
             if t.IsArray then
@@ -314,6 +344,11 @@ module ModelValidation =
                                     | Some p when readsProperty descriptor -> getter t p
                                     | _ -> Getter(fun instance -> descriptor.GetValue instance)
                                 Validators = validators
+                                Held =
+                                    if validators.Length > 0 then
+                                        heldValue descriptor.PropertyType
+                                    else
+                                        null
                                 Display = Array.tryHead(ofType<DisplayAttribute> attributes) |> Option.toObj
                                 Traverse = traverse
                             }
@@ -638,7 +673,14 @@ module ModelValidation =
                         context.MemberName <- property.Name
                         context.DisplayName <- displayName property.Display property.Name
                         let start = results.Count
-                        if not(Validator.TryValidateValue(value, context, results, property.Validators)) then
+                        let validated =
+                            match property.Held with
+                            | null -> value
+                            | held ->
+                                match value with
+                                | null -> null
+                                | value -> held.Invoke value
+                        if not(Validator.TryValidateValue(validated, context, results, property.Validators)) then
                             this.Qualify start
                     if property.Traverse then
                         match value with

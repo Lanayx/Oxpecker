@@ -364,6 +364,94 @@ let ``Missing option values are valid`` () =
     let result = validateModel { Billing = None; Pickup = ValueNone }
     result.IsValid |> shouldEqual true
 
+type Profile = {
+    [<StringLength(5, MinimumLength = 3)>]
+    Nickname: string option
+    [<Range(1, 120)>]
+    Age: int voption
+    [<RegularExpression("^\\d+$")>]
+    Code: string voption
+    [<MaxLength(2)>]
+    Tags: string[] option
+    [<StringLength(3)>]
+    Note: string option option
+}
+
+type Member = { Profile: Profile option }
+
+let private emptyProfile = {
+    Nickname = None
+    Age = ValueNone
+    Code = ValueNone
+    Tags = None
+    Note = None
+}
+
+[<Fact>]
+let ``Validation attributes of an option apply to the value it holds`` () =
+    let errors =
+        validateModel {
+            Profile =
+                Some {
+                    Nickname = Some "ab"
+                    Age = ValueSome 500
+                    Code = ValueSome "x1"
+                    Tags = Some [| "a"; "b"; "c" |]
+                    Note = Some(Some "long")
+                }
+        }
+        |> errorsOf
+    memberNames errors
+    |> shouldEqual [
+        "Profile.Nickname"
+        "Profile.Age"
+        "Profile.Code"
+        "Profile.Tags"
+        "Profile.Note"
+    ]
+    errors
+    |> messagesFor "Profile.Age"
+    |> shouldEqual [ "The field Age must be between 1 and 120." ]
+
+    let result =
+        validateModel {
+            Profile =
+                Some {
+                    Nickname = Some "abcd"
+                    Age = ValueSome 50
+                    Code = ValueSome "12"
+                    Tags = Some [| "a" |]
+                    Note = Some(Some "ok")
+                }
+        }
+    result.IsValid |> shouldEqual true
+
+[<Fact>]
+let ``None is validated as null by the validation attributes of an option`` () =
+    (validateModel emptyProfile).IsValid |> shouldEqual true
+    (validateModel { emptyProfile with Note = Some None }).IsValid
+    |> shouldEqual true
+
+type Signup = {
+    [<Required>]
+    Email: string option
+    [<Required>]
+    Referrer: string voption
+}
+
+[<Fact>]
+let ``Required option has to hold a value`` () =
+    validateModel { Email = None; Referrer = ValueNone }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Email"; "Referrer" ]
+    (validateModel {
+        Email = Some "ann@example.org"
+        Referrer = ValueSome "bob"
+    })
+        .IsValid
+    |> shouldEqual true
+
 type Network = {
     Warehouses: Map<string, Address>
     Shops: Dictionary<int, Address>
