@@ -1674,3 +1674,161 @@ let ``Inline optional enums and composite schemas are wrapped in a nullable oneO
 }"""
         resultString.ReplaceLineEndings() |> shouldEqual expected
     }
+
+type Limits = {
+    [<StringLength(5, MinimumLength = 3)>]
+    Nickname: string option
+    [<Range(1, 120)>]
+    Age: int voption
+    [<RegularExpression("^\\d+$")>]
+    Code: string option
+    [<MaxLength(2)>]
+    Tags: string array option
+    [<Url>]
+    Site: string option
+    Plain: string option
+}
+
+type Request10 = { Limits: Limits option }
+
+[<Fact>]
+let ``Validation attributes of option properties are kept in their schemas`` () =
+    task {
+        let endpoints = [
+            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Request10, unit> ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Request10"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Limits": {
+        "required": [
+          "nickname",
+          "age",
+          "code",
+          "tags",
+          "site",
+          "plain"
+        ],
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "maxLength": 5,
+            "minLength": 3,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "age": {
+            "maximum": 120,
+            "minimum": 1,
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "code": {
+            "pattern": "^\\d+$",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tags": {
+            "maxItems": 2,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "site": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uri"
+          },
+          "plain": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "Request10": {
+        "required": [
+          "limits"
+        ],
+        "type": "object",
+        "properties": {
+          "limits": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Limits"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }

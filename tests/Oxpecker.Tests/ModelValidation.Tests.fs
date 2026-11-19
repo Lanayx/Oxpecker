@@ -364,6 +364,218 @@ let ``Missing option values are valid`` () =
     let result = validateModel { Billing = None; Pickup = ValueNone }
     result.IsValid |> shouldEqual true
 
+type Profile = {
+    [<StringLength(5, MinimumLength = 3)>]
+    Nickname: string option
+    [<Range(1, 120)>]
+    Age: int voption
+    [<RegularExpression("^\\d+$")>]
+    Code: string voption
+    [<MaxLength(2)>]
+    Tags: string[] option
+    [<StringLength(3)>]
+    Note: string option option
+}
+
+type Member = { Profile: Profile option }
+
+let private emptyProfile = {
+    Nickname = None
+    Age = ValueNone
+    Code = ValueNone
+    Tags = None
+    Note = None
+}
+
+[<Fact>]
+let ``Validation attributes of an option apply to the value it holds`` () =
+    let errors =
+        validateModel {
+            Profile =
+                Some {
+                    Nickname = Some "ab"
+                    Age = ValueSome 500
+                    Code = ValueSome "x1"
+                    Tags = Some [| "a"; "b"; "c" |]
+                    Note = Some(Some "long")
+                }
+        }
+        |> errorsOf
+    memberNames errors
+    |> shouldEqual [
+        "Profile.Nickname"
+        "Profile.Age"
+        "Profile.Code"
+        "Profile.Tags"
+        "Profile.Note"
+    ]
+    errors
+    |> messagesFor "Profile.Age"
+    |> shouldEqual [ "The field Age must be between 1 and 120." ]
+
+    let result =
+        validateModel {
+            Profile =
+                Some {
+                    Nickname = Some "abcd"
+                    Age = ValueSome 50
+                    Code = ValueSome "12"
+                    Tags = Some [| "a" |]
+                    Note = Some(Some "ok")
+                }
+        }
+    result.IsValid |> shouldEqual true
+
+[<Fact>]
+let ``None is validated as null by the validation attributes of an option`` () =
+    (validateModel emptyProfile).IsValid |> shouldEqual true
+    (validateModel { emptyProfile with Note = Some None }).IsValid
+    |> shouldEqual true
+
+type Signup = {
+    [<Required>]
+    Email: string option
+    [<Required>]
+    Referrer: string voption
+}
+
+type PasswordChange = {
+    Password: string option
+    [<Compare("Password")>]
+    Confirmation: string option
+    Pin: int voption
+    [<Compare("Pin")>]
+    PinConfirmation: int voption
+}
+
+[<Fact>]
+let ``Compare between options compares the values they hold`` () =
+    (validateModel {
+        Password = Some "secret"
+        Confirmation = Some "secret"
+        Pin = ValueSome 1234
+        PinConfirmation = ValueSome 1234
+    })
+        .IsValid
+    |> shouldEqual true
+    (validateModel {
+        Password = None
+        Confirmation = None
+        Pin = ValueNone
+        PinConfirmation = ValueNone
+    })
+        .IsValid
+    |> shouldEqual true
+
+    validateModel {
+        Password = Some "secret"
+        Confirmation = Some "other"
+        Pin = ValueSome 1234
+        PinConfirmation = ValueNone
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Confirmation"; "PinConfirmation" ]
+
+type EmailChange = {
+    Email: string
+    [<Compare("Email")>]
+    Confirmation: string option
+}
+
+[<Fact>]
+let ``Compare between an option and another value compares the value the option holds`` () =
+    (validateModel {
+        Email = "ann@example.org"
+        Confirmation = Some "ann@example.org"
+    })
+        .IsValid
+    |> shouldEqual true
+    validateModel {
+        Email = "ann@example.org"
+        Confirmation = None
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Confirmation" ]
+
+type LooseChange = {
+    Secret: string option
+    [<Compare("Secret")>]
+    SecretAgain: string voption
+    Note: string option option
+    [<Compare("Note")>]
+    NoteAgain: string option option
+    Code: string option
+    [<Compare("Code")>]
+    [<Display(Name = "Code again")>]
+    CodeAgain: string
+}
+
+[<Fact>]
+let ``Compare compares held values of options of any kind`` () =
+    (validateModel {
+        Secret = Some "secret"
+        SecretAgain = ValueSome "secret"
+        Note = None
+        NoteAgain = Some None
+        Code = Some "1234"
+        CodeAgain = "1234"
+    })
+        .IsValid
+    |> shouldEqual true
+
+    let errors =
+        validateModel {
+            Secret = Some "secret"
+            SecretAgain = ValueSome "other"
+            Note = Some(Some "note")
+            NoteAgain = Some None
+            Code = None
+            CodeAgain = "1234"
+        }
+        |> errorsOf
+    memberNames errors |> shouldEqual [ "SecretAgain"; "NoteAgain"; "CodeAgain" ]
+    errors
+    |> messagesFor "CodeAgain"
+    |> shouldEqual [ "'Code again' and 'Code' do not match." ]
+
+type TagsChange = {
+    Tags: string[] option
+    [<Compare("Tags")>]
+    TagsAgain: string[] option
+}
+
+[<Fact>]
+let ``Compare compares values held by options structurally`` () =
+    let tags = [| "a"; "b" |]
+    (validateModel {
+        Tags = Some tags
+        TagsAgain = Some(Array.copy tags)
+    })
+        .IsValid
+    |> shouldEqual true
+    validateModel {
+        Tags = Some tags
+        TagsAgain = Some [| "a" |]
+    }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "TagsAgain" ]
+
+[<Fact>]
+let ``Required option has to hold a value`` () =
+    validateModel { Email = None; Referrer = ValueNone }
+    |> errorsOf
+    |> memberNames
+    |> shouldEqual [ "Email"; "Referrer" ]
+    (validateModel {
+        Email = Some "ann@example.org"
+        Referrer = ValueSome "bob"
+    })
+        .IsValid
+    |> shouldEqual true
+
 type Network = {
     Warehouses: Map<string, Address>
     Shops: Dictionary<int, Address>

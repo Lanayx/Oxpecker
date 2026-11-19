@@ -32,7 +32,9 @@ module Configuration =
             AcceptsMetadata(contentTypes, requestType, isOptional)
 
     type ResponseBody(?responseType: Type, ?contentTypes: string array, ?statusCode: int) =
-        let responseType = responseType |> Option.toObj
+        // ApiExplorer drops a null response type for any status code other than 200 and 201,
+        // so a response without a body is described with Void, like ASP.NET Core's Produces does
+        let responseType = responseType |> Option.defaultValue typeof<Void>
         let contentTypes = contentTypes |> Option.toObj
         let statusCode = statusCode |> Option.defaultValue 200
         member this.ToAttribute() =

@@ -127,7 +127,7 @@ To make endpoints discoverable by OpenApi, you need to call one of the following
 
 _Note1: you don't have to describe routing parameters when using those functions, they will be inferred from the route template automatically when using `routef` and `subRoutef` functions from `Oxpecker.OpenApi` namespace._
 
-_Note2: use `[<CLIMutable>]` attribute on your records and `[<Required>]` or `[<JsonRequired>]` on their fields to control `required` fields in schema._
+_Note2: use `[<CLIMutable>]` attribute on your records and `[<Required>]` or `[<JsonRequired>]` on their fields to control `required` fields in schema. Every record with a `[<Required>]` field, nested ones included, needs `[<CLIMutable>]`. Otherwise generating the document fails with "JsonPropertyInfo ... is marked required but does not specify a setter", unless `RespectRequiredConstructorParameters` is enabled in `ConfigureHttpJsonOptions`. Validation attributes such as `Range`, `StringLength` or `RegularExpression` are shown in the schema, on `option` and `voption` fields too when `FSharpOptionSchemaTransformer` is registered._
 
 _Note3: use `<Nullable>enable</Nullable>` in your project to disallow `null` value for reference types._
 
@@ -145,7 +145,7 @@ type OpenApiConfig (?requestBody : RequestBody,
                     ?configureOperation : OpenApiOperation -> OpenApiOperationTransformerContext -> CancellationToken -> Task) =
     // ...
 ```
-Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code.
+Response body schema will be inferred from the types passed to `requestBody` and `responseBodies` parameters. Each `ResponseBody` object in sequence must have different status code. Omit the response type to describe a response without a body, e.g. `ResponseBody(statusCode = 204)`.
 `configureOperation` parameter is a function that allows you to do very low-level modifications the `OpenApiOperation` object.
 
 `addOpenApi` and `addOpenApiSimple` can also be applied to a group of endpoints (`subRoute`, `subRoutef`, `routeGroup` or HTTP verb groups) to describe all of its endpoints. Group and endpoint configurations are combined, so you can, for example, describe a common error response once for the whole group:
