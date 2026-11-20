@@ -1841,7 +1841,9 @@ type OptionDescriptions = {
 let ``Option and voption array descriptions are preserved`` () =
     task {
         let endpoints = [
-            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<OptionDescriptions, unit> ]
+            POST [
+                route "/" <| text "Hello World" |> addOpenApiSimple<OptionDescriptions, unit>
+            ]
         ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
@@ -1932,15 +1934,12 @@ let ``Option and voption array descriptions are preserved`` () =
     }
 
 [<RequireQualifiedAccess>]
-type Reason =
-    | Standard of code: string * description: string option * priority: int voption
+type Reason = Standard of code: string * description: string option * priority: int voption
 
 [<Fact>]
 let ``Option and voption union case fields are not marked required`` () =
     task {
-        let endpoints = [
-            POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Reason, unit> ]
-        ]
+        let endpoints = [ POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Reason, unit> ] ]
         use! server = WebApp.webApp endpoints
         let client = server.GetTestClient()
 
