@@ -527,8 +527,7 @@ let ``F# unions are represented according to STJ union serialization format`` ()
             "required": [
               "$type",
               "width",
-              "height",
-              "label"
+              "height"
             ],
             "type": "object",
             "properties": {
@@ -1354,9 +1353,7 @@ let ``Null-represented unions are not wrapped in a nullable oneOf`` () =
       "NullableUnionFields": {
         "required": [
           "$type",
-          "m",
-          "n",
-          "c"
+          "n"
         ],
         "type": "object",
         "properties": {
@@ -1560,10 +1557,7 @@ let ``Inline optional enums and composite schemas are wrapped in a nullable oneO
                   },
                   "union": {
                     "required": [
-                      "$type",
-                      "d",
-                      "t",
-                      "m"
+                      "$type"
                     ],
                     "type": "object",
                     "properties": {
@@ -1819,6 +1813,206 @@ let ``Validation attributes of option properties are kept in their schemas`` () 
                 "$ref": "#/components/schemas/Limits"
               }
             ]
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<CLIMutable>]
+type OptionDescriptions = {
+    [<Description("Enabled description")>]
+    Enabled: bool option
+    [<Description("Emails description")>]
+    Emails: string[] option
+    [<Description("Tags description")>]
+    Tags: string[] voption
+}
+
+[<Fact>]
+let ``Option and voption array descriptions are preserved`` () =
+    task {
+        let endpoints = [
+            POST [
+                route "/" <| text "Hello World" |> addOpenApiSimple<OptionDescriptions, unit>
+            ]
+        ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptionDescriptions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OptionDescriptions": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Enabled description"
+          },
+          "emails": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Emails description"
+          },
+          "tags": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags description"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Oxpecker.OpenApi.Tests"
+    }
+  ]
+}"""
+        resultString.ReplaceLineEndings() |> shouldEqual expected
+    }
+
+[<RequireQualifiedAccess>]
+type Reason = Standard of code: string * description: string option * priority: int voption
+
+[<Fact>]
+let ``Option and voption union case fields are not marked required`` () =
+    task {
+        let endpoints = [ POST [ route "/" <| text "Hello World" |> addOpenApiSimple<Reason, unit> ] ]
+        use! server = WebApp.webApp endpoints
+        let client = server.GetTestClient()
+
+        let! result = client.GetAsync("/openapi/v1.json")
+        let! resultString = result.Content.ReadAsStringAsync()
+
+        result.StatusCode |> shouldEqual HttpStatusCode.OK
+        let expected =
+            """{
+  "openapi": "3.2.0",
+  "info": {
+    "title": "Oxpecker.OpenApi.Tests | v1",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost"
+    }
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "tags": [
+          "Oxpecker.OpenApi.Tests"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reason"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Reason": {
+        "required": [
+          "$type",
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "$type": {
+            "const": "standard",
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "priority": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       }
