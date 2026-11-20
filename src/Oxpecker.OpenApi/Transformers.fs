@@ -57,18 +57,27 @@ module private Helpers =
                 | _ -> None
             | _ -> None
 
+    let private getMetadata (schema: OpenApiSchema) =
+        match schema.Metadata with
+        | null ->
+            let dict = Dictionary<string, obj>() :> IDictionary<string, obj>
+            schema.Metadata <- dict
+            dict
+        | m -> m
+
     let copyMetadata (dst: OpenApiSchema) refSchemaId isSimple (src: IOpenApiSchema) =
+        match src.Description with
+        | null -> ()
+        | desc ->
+            if isSimple then
+                dst.Description <- desc
+            else
+                (getMetadata dst)["x-ref-description"] <- desc
         if src :? IMetadataContainer then
             match (src :?> IMetadataContainer).Metadata with
             | null -> ()
             | srcMeta ->
-                let dstMeta =
-                    match dst.Metadata with
-                    | null ->
-                        let dict = Dictionary<string, obj>() :> IDictionary<string, obj>
-                        dst.Metadata <- dict
-                        dict
-                    | m -> m
+                let dstMeta = getMetadata dst
                 for KeyValue(k, v) in srcMeta do
                     match k with
                     | "x-schema-id" -> dstMeta[k] <- refSchemaId
@@ -142,14 +151,6 @@ module private Helpers =
     /// so that a second visit through the property recursion of the schema pipeline (single-case
     /// unions expose their fields as properties of the union type) leaves them intact.
     let private transformedKey = "x-fsharp-union-schema"
-
-    let private getMetadata (schema: OpenApiSchema) =
-        match schema.Metadata with
-        | null ->
-            let dict = Dictionary<string, obj>() :> IDictionary<string, obj>
-            schema.Metadata <- dict
-            dict
-        | m -> m
 
     let markTransformed (schema: OpenApiSchema) =
         (getMetadata schema)[transformedKey] <- (true :> obj)
@@ -323,7 +324,9 @@ module private Helpers =
                             let fieldName = getFieldName ctx field
                             let! fieldSchema = getFieldSchema ctx field ct
                             properties[fieldName] <- fieldSchema
-                            required.Add fieldName |> ignore
+                            match field.PropertyType with
+                            | FSharpOptionKind _ -> ()
+                            | _ -> required.Add fieldName |> ignore
                         branches.Add(
                             OpenApiSchema(
                                 Type = Nullable JsonSchemaType.Object,
